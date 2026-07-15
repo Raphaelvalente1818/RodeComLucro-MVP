@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PRD Técnico — Encontrar frete · WhatsApp · RODE COM LUCRO</title>
+<style>
+  :root{--brand:#2563eb;--brand-d:#1e40af;--ink:#0f172a;--ink-6:#475569;--ink-4:#94a3b8;--line:#e2e8f0;--bg:#f1f5f9;--card:#fff;--lucro:#059669}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.6;-webkit-text-size-adjust:100%}
+  .wrap{max-width:920px;margin:0 auto;padding:40px 20px 90px}
+  header.doc{border-bottom:3px solid var(--brand);padding-bottom:20px;margin-bottom:10px}
+  .kicker{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand)}
+  h1{font-size:30px;line-height:1.15;margin:8px 0 6px;font-weight:800;letter-spacing:-.01em}
+  .sub{color:var(--ink-6);font-size:15px;max-width:64ch}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  .pill{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 14px}
+  .pill b{display:block;font-size:16px;color:var(--ink)}
+  .pill span{color:var(--ink-4);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .toc{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 4px}
+  .toc a{font-size:12px;font-weight:600;color:var(--brand-d);background:#eef4ff;border:1px solid #dbe6ff;border-radius:999px;padding:4px 11px;text-decoration:none}
+  .toc a:hover{background:#dbe6ff}
+  section{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-top:18px;scroll-margin-top:14px}
+  h2{font-size:18px;margin:0 0 14px;display:flex;align-items:center;gap:9px;font-weight:800}
+  h2 .n{display:inline-flex;width:26px;height:26px;align-items:center;justify-content:center;background:var(--brand);color:#fff;border-radius:8px;font-size:13px;font-weight:800;flex:none}
+  h4{margin:18px 0 8px;font-size:14px;color:var(--brand-d);font-weight:700}
+  h4:first-of-type{margin-top:4px}
+  p{margin:0 0 10px;color:var(--ink-6)}
+  .hint{font-size:12px;color:var(--ink-4);margin-top:-4px}
+  ul,ol{margin:0;padding-left:22px}
+  li{margin:6px 0;color:var(--ink-6)}
+  ul.check{list-style:none;padding-left:0}
+  ul.check li{position:relative;padding-left:28px;margin:9px 0}
+  ul.check li::before{content:'';position:absolute;left:0;top:4px;width:16px;height:16px;border:2px solid var(--lucro);border-radius:4px}
+  .badge{display:inline-block;background:#eff6ff;color:var(--brand-d);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:800;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;flex:none}
+  .tags{display:flex;flex-wrap:wrap;gap:7px}
+  .tags span{background:#eff6ff;color:var(--brand-d);border:1px solid #dbeafe;border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600}
+  /* Modelo de dados */
+  .entidade{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 12px;background:#fbfdff}
+  .ent-nome{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px;font-weight:700;color:var(--brand-d);margin:0 0 8px}
+  ul.campos{list-style:none;padding-left:0;margin:0;display:grid;gap:5px}
+  ul.campos li{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--ink-6);background:#fff;border:1px solid var(--line);border-radius:7px;padding:5px 9px;overflow-wrap:anywhere;word-break:break-word;margin:0}
+  /* API */
+  .endpoint{border-left:3px solid var(--brand);background:#fbfdff;border-radius:0 10px 10px 0;padding:10px 14px;margin:0 0 12px}
+  .ep-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .ep-rota{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:var(--ink);overflow-wrap:anywhere;word-break:break-word}
+  .ep-desc{font-size:13px;margin:7px 0 0}
+  .teste{border-left:3px solid var(--brand);padding-left:15px;margin:14px 0}
+  .empty{color:var(--ink-4)}
+  /* Diagramas */
+  .mermaid-box{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px;margin:6px 0 10px;overflow-x:auto;text-align:center}
+  .mermaid{font-size:14px}
+  .disclaimer{margin-top:26px;font-size:12px;color:var(--ink-4);border-top:1px solid var(--line);padding-top:16px}
+  @media print{body{background:#fff}.wrap{padding:0}.toc{display:none}section{break-inside:avoid;border:none;border-bottom:1px solid var(--line);border-radius:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="doc">
+    <div class="kicker">RODE COM LUCRO · PRD Técnico</div>
+    <h1>Encontrar frete · WhatsApp</h1>
+    <p class="sub">Guia de desenvolvimento para dev full-stack sênior. O protótipo está 100% mockado; este documento orienta a construção real da funcionalidade.</p>
+    <div class="meta">
+      <div class="pill"><span>Esforço</span><b>10–14 dev-dias</b></div>
+      <div class="pill"><span>Prazo</span><b>2 a 3 semanas</b></div>
+      <div class="pill"><span>Custo estimado</span><b>R$ 21k–R$ 29k</b></div>
+      <div class="pill"><span>Premissa</span><b>R$ 2.100/dev-dia</b></div>
+    </div>
+  </header>
+  <nav class="toc"><a href="#s1">Visão técnica</a><a href="#s2">Arquitetura</a><a href="#s3">Stack</a><a href="#s4">Modelo de dados</a><a href="#s5">Contratos de API</a><a href="#s6">Frontend / fluxo</a><a href="#s7">Lógica de negócio</a><a href="#s8">Integrações</a><a href="#s9">Segurança &amp; LGPD</a><a href="#s10">Não-funcionais</a><a href="#s11">Etapas</a><a href="#s12">Plano de teste</a><a href="#s13">Critérios de aceite</a><a href="#s14">Diagramas</a></nav>
+
+  <section id="s1"><h2><span class="n">1</span>Visão técnica</h2><p>Camada de WhatsApp do modulo 'Encontrar frete' do RODE COM LUCRO: leva oportunidades de carga ao caminhoneiro autonomo de forma proativa (push segmentado por rota/regiao/disponibilidade) e reativa (ele pergunta 'tem carga perto de mim?'), via WhatsApp Cloud API (Meta). NAO e um chatbot de calculo (isso e o modulo calc-wpp) nem o feed (find-app): e uma camada de NOTIFICACAO+CONSULTA que reusa o motor de matching e o calculo de veredito ja existentes no backend (src/lib/calc.ts: calcularFrete -&gt; veredito 'bom'|'aceitavel'|'ruim') e empurra o motorista de volta ao app via deep link para a rota /frete/:id ja presente no AppPrototype. O nucleo tecnico e: (1) gestao de consentimento com double opt-in e opt-out por palavra-chave (PARAR/SAIR), auditavel para LGPD; (2) segmentacao que cruza oportunidades novas com o perfil do motorista (origem habitual, regiao, janela de disponibilidade, raio); (3) orquestracao de envio com templates HSM aprovados pela Meta, respeitando a janela de 24h, com fila idempotente, retry e webhooks de status (sent/delivered/read/failed); (4) controle rigido de frequencia e custo por motorista (teto diario, janela de silencio noturna no fuso America/Sao_Paulo, deduplicacao por oportunidade); (5) painel de operacao interno (no AdminApp, que ja tem uma aba WhatsApp) com fila de disparos, status de entrega/leitura, taxa de opt-out e custo acumulado por motorista/campanha. Implementado em Supabase (Postgres 15 + RLS + Edge Functions em Deno/TypeScript) com pg_cron/pg_net para jobs de varredura e agregacao. O dado pessoal sensivel aqui e o telefone E.164 e a localizacao aproximada do motorista; ambos exigem base legal de consentimento e minimizacao. Reaproveita: tabela de oportunidades/fretes (fonte Fretebras|RODE|manual), perfil/modelo de custo do motorista (consumoKmL, manutencaoKm, pneusKm, depreciacaoKm, arlaPct, alimentacaoDia), preco de diesel por rota e o calculo de veredito - sem reimplementar nada disso. O veredito enviado no WhatsApp e identicamente o do app (fonte unica de verdade via rpc_veredito_frete).</p></section>
+  <section id="s2"><h2><span class="n">2</span>Arquitetura</h2><ul><li>Event-driven em cima do Postgres: a insercao de uma oportunidade nova (qualquer fonte Fretebras|RODE|manual) dispara um trigger AFTER INSERT que chama (via pg_net) a Edge Function match-and-enqueue; ela roda o matching contra os motoristas opted-in compativeis e materializa linhas em wa_message_queue. Desacopla coleta de envio e permite reprocessar sem reraspar a Fretebras.</li><li>Tres Edge Functions Deno separadas por responsabilidade: (a) wa-webhook (inbound + status callbacks da Meta, verifica X-Hub-Signature-256, idempotencia por wa_message_id, roteia PARAR/SIM/'tem carga'/location); (b) wa-dispatcher (drena a fila respeitando rate limit Meta 80 msg/s, teto por motorista e janela de silencio, chama o Cloud API); (c) match-and-enqueue (segmentacao). Cada uma escala e falha de forma isolada.</li><li>Fila persistente em tabela wa_message_queue com estados PENDING-&gt;SENDING-&gt;SENT-&gt;DELIVERED-&gt;READ / FAILED / SKIPPED, claim atomico via UPDATE com subquery SELECT ... FOR UPDATE SKIP LOCKED, e dedupe por unique(motorista_id, oportunidade_id, template_kind). Garante idempotencia e at-least-once sem duplicar mensagem.</li><li>Consentimento como fonte unica de verdade: wa_consent com estado PENDING/OPTED_IN/OPTED_OUT e historico append-only em wa_consent_events; o dispatcher reconsulta o estado vigente imediatamente antes de cada envio (nunca por cache stale) - opt-out honrado em tempo real.</li><li>pg_cron orquestra os jobs periodicos: (1) varredura a cada 5 min de oportunidades novas nao enfileiradas (rede de seguranca caso o trigger/pg_net falhe); (2) resumo diario 07:00 America/Sao_Paulo; (3) expurgo/expiracao de itens de fila com agendado_para vencido alem de 24h (sessao expirada); (4) agregacao horaria de custo/entrega para wa_ops_daily; (5) checagem de quality rating na Graph API com alerta.</li><li>Segredos (WHATSAPP_TOKEN, PHONE_NUMBER_ID, APP_SECRET, VERIFY_TOKEN) em Supabase Vault / env das Edge Functions, nunca no repo nem no client. O PWA so fala com o backend RODE; nunca com a Meta diretamente.</li><li>Reuso de servicos de dominio como RPC Postgres: rpc_match_motoristas(oportunidade_id) e rpc_veredito_frete(oportunidade_id, motorista_id) - este ultimo encapsula a mesma logica de calcularFrete (src/lib/calc.ts) usada pelo find-app - sao chamados pelo match-and-enqueue, garantindo que o numero no WhatsApp seja identico ao do app.</li><li>Tabela wa_config (singleton) guarda flags operacionais (kill_switch, orcamento_diario_centavos) lidas pelo dispatcher a cada drenagem; mutadas apenas por RPC admin com trilha em wa_events.</li></ul></section>
+  <section id="s3"><h2><span class="n">3</span>Stack sugerida</h2><div class="tags"><span>Backend: Supabase (Postgres 15 + Row Level Security) com Edge Functions em Deno/TypeScript (std http) para webhook, dispatcher e fan-out; pg_cron + pg_net para jobs e chamadas HTTP agendadas</span><span>Mensageria: WhatsApp Business Platform - Meta Cloud API (Graph API v21+), cloud-hosted, numero verificado, templates HSM (UTILITY/MARKETING) aprovados; webhook de inbound e de message status</span><span>Geoespacial: extensao PostGIS para geocodificar origem/destino/posicao e calcular distancia motorista-carga (ST_Distance/ST_DWithin em geography); cache de geocoding em tabela geo_cache</span><span>Frontend (painel de operacao): React 18 + TypeScript + Vite, dentro do AdminApp existente (Tailwind, lucide-react, recharts); deep link para o PWA do motorista (rota /frete/:id ja existente)</span><span>Fila/concorrencia: tabela Postgres com UPDATE + SELECT FOR UPDATE SKIP LOCKED (sem broker externo no MVP); idempotencia por chaves unicas e wa_message_id</span><span>Observabilidade: Supabase Logs + tabela wa_events (trilha de auditoria) e wa_inbound; alertas de quebra (queda de delivery rate, numero rebaixado) via cron que le quality rating na Graph API</span><span>Testes: Vitest (unit, logica pura de segmentacao/frequencia/normalizacao), Deno test (handlers das Edge Functions), supabase start local + Postgres efemero para integracao; nock/fetch-mock para o Cloud API; Playwright opcional para o WaOpsPanel</span></div></section>
+  <section id="s4"><h2><span class="n">4</span>Modelo de dados</h2><div class="entidade">
+        <p class="ent-nome">wa_consent</p>
+        <ul class="campos"><li>id uuid pk</li><li>motorista_id uuid fk-&gt;motoristas unique</li><li>telefone_e164 text not null check (telefone_e164 ~ '^\+55\d{10,11}$')</li><li>estado text not null check in ('PENDING','OPTED_IN','OPTED_OUT') default 'PENDING'</li><li>finalidade text not null default 'ofertas_frete'</li><li>opt_in_token uuid</li><li>opt_in_expira_em timestamptz</li><li>opt_in_em timestamptz</li><li>opt_in_canal text check in ('app','whatsapp','web')</li><li>opt_out_em timestamptz</li><li>opt_out_motivo text</li><li>created_at/updated_at timestamptz default now(). Indice parcial unique(telefone_e164) where estado&lt;&gt;'OPTED_OUT'.</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">wa_consent_events</p>
+        <ul class="campos"><li>id uuid pk</li><li>motorista_id uuid fk</li><li>telefone_hash text (sha256 do E.164, para sobreviver a purge LGPD)</li><li>tipo text check in ('OPT_IN_REQUEST','OPT_IN_CONFIRM','OPT_OUT','RESUBSCRIBE')</li><li>origem text check in ('app','whatsapp','web')</li><li>payload jsonb (texto recebido, template, ip se web)</li><li>criado_em timestamptz default now(). Append-only (sem UPDATE/DELETE via RLS) para auditoria LGPD.</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">wa_preferencias</p>
+        <ul class="campos"><li>motorista_id uuid pk fk</li><li>rota_habitual_origem text</li><li>rota_habitual_destino text</li><li>regioes text[] default '{}' (UFs)</li><li>disponibilidade text check in ('LIVRE','OCUPADO') default 'LIVRE'</li><li>disponivel_ate date</li><li>raio_km int default 150 check (raio_km between 10 and 600)</li><li>teto_diario int default 3 check (teto_diario between 1 and 10)</li><li>silencio_inicio time default '21:00'</li><li>silencio_fim time default '07:00'</li><li>resumo_diario bool default false</li><li>updated_at timestamptz default now().</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">motorista_localizacao</p>
+        <ul class="campos"><li>motorista_id uuid pk fk</li><li>geom geography(Point,4326) null</li><li>cidade text</li><li>uf text</li><li>precisao text check in ('GPS','CIDADE','ROTA')</li><li>origem text check in ('app','whatsapp_share','checkin')</li><li>atualizado_em timestamptz default now(). Indice GIST(geom). Retencao curta (job anonimiza apos 7 dias).</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">wa_message_queue</p>
+        <ul class="campos"><li>id uuid pk</li><li>motorista_id uuid fk</li><li>oportunidade_id uuid fk null</li><li>template_kind text check in ('NOVA_OFERTA','RESUMO_DIARIO','LEMBRETE_DISP','RESPOSTA_PERTO','OPTIN_CONFIRM')</li><li>template_name text</li><li>variaveis jsonb</li><li>estado text check in ('PENDING','SENDING','SENT','DELIVERED','READ','FAILED','SKIPPED') default 'PENDING'</li><li>skip_motivo text check in (null,'TETO','SILENCIO','SEM_CONSENT','VEREDITO_RUIM','KILL_SWITCH','LGPD')</li><li>wa_message_id text null</li><li>erro_codigo text</li><li>custo_centavos int null</li><li>categoria_cobranca text check in (null,'UTILITY','MARKETING','SERVICE')</li><li>tentativas int default 0</li><li>agendado_para timestamptz default now()</li><li>enviado_em timestamptz</li><li>atualizado_em timestamptz default now()</li><li>unique(motorista_id,oportunidade_id,template_kind). Indice (estado,agendado_para)</li><li>unique(wa_message_id) where wa_message_id is not null.</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">wa_inbound</p>
+        <ul class="campos"><li>id uuid pk</li><li>wa_message_id text unique not null</li><li>telefone_e164 text</li><li>motorista_id uuid fk null</li><li>tipo text check in ('text','location','button','audio')</li><li>texto text</li><li>geom geography(Point,4326) null</li><li>intencao text check in ('OPT_OUT','OPT_IN_CONFIRM','CARGA_PERTO','DISPONIBILIDADE','OUTRO')</li><li>recebido_em timestamptz default now(). Idempotencia por wa_message_id.</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">wa_template</p>
+        <ul class="campos"><li>id uuid pk</li><li>kind text</li><li>name text unique</li><li>lang text default 'pt_BR'</li><li>categoria text check in ('UTILITY','MARKETING')</li><li>status_meta text check in ('APPROVED','PENDING','REJECTED','PAUSED','DISABLED')</li><li>corpo text</li><li>variaveis_def jsonb</li><li>ativo bool default true. Espelho local dos templates aprovados na Meta</li><li>dispatcher so usa name com status_meta='APPROVED' e ativo=true.</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">wa_config</p>
+        <ul class="campos"><li>id int pk default 1 check (id=1)</li><li>kill_switch bool default false</li><li>kill_switch_motivo text</li><li>orcamento_diario_centavos int default 50000</li><li>quality_rating text check in ('GREEN','MEDIUM','LOW','UNKNOWN') default 'UNKNOWN'</li><li>quality_atualizado_em timestamptz</li><li>updated_at timestamptz. Singleton de flags operacionais.</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">wa_events</p>
+        <ul class="campos"><li>id uuid pk</li><li>ator uuid (auth.uid()) null</li><li>acao text (KILL_SWITCH_ON|KILL_SWITCH_OFF|TEMPLATE_PAUSE|ALERTA_QUALIDADE|BUDGET_STOP)</li><li>payload jsonb</li><li>criado_em timestamptz default now(). Trilha de auditoria operacional.</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">wa_ops_daily (materialized view)</p>
+        <ul class="campos"><li>dia date</li><li>motorista_id uuid</li><li>template_kind text</li><li>enviadas int</li><li>entregues int</li><li>lidas int</li><li>falhas int</li><li>opt_outs int</li><li>custo_centavos int. Agregacao por job para o painel</li><li>refresh horario</li><li>sem PII financeira individual exposta na API.</li></ul>
+      </div></section>
+  <section id="s5"><h2><span class="n">5</span>Contratos de API</h2><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/functions/v1/wa-webhook</code></div>
+        <p class="ep-desc">Verificacao do webhook pela Meta. Le query hub.mode='subscribe', hub.verify_token, hub.challenge. Se hub.verify_token === Vault.VERIFY_TOKEN responde 200 com hub.challenge em text/plain (sem aspas, sem JSON); senao 403. Idempotente, sem efeito colateral.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/wa-webhook</code></div>
+        <p class="ep-desc">Recebe inbound + status callbacks. (1) Valida X-Hub-Signature-256 = 'sha256='+HMAC_SHA256(APP_SECRET, raw_body); comparacao constant-time; invalido =&gt; 401 e nada gravado. (2) entry[].changes[].value.messages: idempotencia por wa_message_id (insert wa_inbound on conflict do nothing); classifica intencao (regex normalizada PARAR|SAIR=&gt;OPT_OUT; SIM=&gt;OPT_IN_CONFIRM; 'tem carga'|'carga perto'=&gt;CARGA_PERTO; type=location=&gt;atualiza motorista_localizacao precisao=GPS). (3) value.statuses: upsert estado em wa_message_queue por wa_message_id (sent-&gt;delivered-&gt;read transicoes monotonicas; pricing.category e billable em custo_centavos/categoria_cobranca uma unica vez). Sempre responde 200 apos persistir; payload nao reconhecido =&gt; 200 + log. Body limit 256KB.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/match-and-enqueue</code></div>
+        <p class="ep-desc">Body { oportunidade_id }. Auth por service_role (chamada interna por trigger pg_net ou cron). Roda rpc_match_motoristas(oportunidade_id), filtra OPTED_IN + compatibilidade rota/regiao/raio/disponibilidade + compat_score&gt;=0.6 + veredito IN ('bom','aceitavel') + teto diario + dedupe (unique). Insere PENDING em wa_message_queue com variaveis ja calculadas. Resposta 200 { enfileiradas:int, ignoradas_por_teto:int, ignoradas_sem_consent:int, ignoradas_veredito_ruim:int, ignoradas_score:int }. Re-execucao com mesmo oportunidade_id e idempotente (nao duplica por unique).</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/wa-dispatcher</code></div>
+        <p class="ep-desc">Sem body (cron a cada 1 min) ou { limit:int default 200 }. Auth service_role. Claim atomico: UPDATE ... WHERE id IN (SELECT id FROM wa_message_queue WHERE estado='PENDING' AND agendado_para&lt;=now() ORDER BY agendado_para FOR UPDATE SKIP LOCKED LIMIT $limit) SET estado='SENDING'. Por item revalida consent OPTED_IN, janela de silencio e janela 24h; monta payload HSM (ou sessao se inbound&lt;24h para RESPOSTA_PERTO) e chama POST graph.facebook.com/v21.0/{PHONE_NUMBER_ID}/messages. Grava wa_message_id + estado SENT. Erro: classifica retryable (80007 rate-limit, 131000, 5xx =&gt; tentativas++ com backoff 2^n min, max 3) vs permanente (131026, 131047, 132xxx =&gt; FAILED). Respeita rate-limit 80 msg/s (token bucket). Resposta 200 { processadas, enviadas, falhas, reagendadas }.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/api/wa/opt-in (RPC rpc_wa_opt_in)</code></div>
+        <p class="ep-desc">Chamado pelo PWA (JWT do motorista, RLS). Body { telefone_e164, finalidade='ofertas_frete' }. Valida formato E.164 (+55DDDNNNNNNNNN). Upsert wa_consent estado PENDING (se ja OPTED_IN retorna idempotente sem reenfileirar), insere wa_consent_events OPT_IN_REQUEST (origem='app'), enfileira template wa_optin_confirm (RESPOSTA livre nao; HSM). Resposta { estado:'PENDING'|'OPTED_IN' }.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/api/wa/preferencias (RPC rpc_wa_set_prefs)</code></div>
+        <p class="ep-desc">JWT motorista, RLS auth.uid()=motorista_id. Upsert wa_preferencias (rota_habitual_origem/destino, regioes[], disponibilidade, disponivel_ate, raio_km 10..600, teto_diario 1..10, silencio_inicio/fim, resumo_diario). Valida limites; rejeita 422 fora de range. Tambem atualizavel via inbound 'livre'/'ocupado'/'&lt;UF&gt;'. Resposta: preferencias vigentes.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/api/admin/wa/ops</code></div>
+        <p class="ep-desc">Painel (papel admin|operacao, RLS por role claim; 403 caso contrario). Query: de, ate, motorista_id?, template_kind?, estado?, page, page_size. Retorna { kpis:{enviadas,entregues,lidas,falhas,opt_outs,custo_centavos,entrega_pct,leitura_pct,optout_pct}, quality_rating, kill_switch_ativo, fila:[{id,motorista_alias,template_kind,estado,custo_centavos,horario}] }. Nao expoe telefone nem custo financeiro individual por motorista (somente alias/hash).</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/api/admin/wa/kill-switch (RPC rpc_wa_kill_switch)</code></div>
+        <p class="ep-desc">Papel admin. Body { ativo:bool, motivo }. Seta flag global wa_config.kill_switch e grava wa_events (ator=auth.uid(), acao). Dispatcher le a flag a cada drenagem; ativo=true =&gt; nenhum envio novo (itens permanecem PENDING). Resposta { kill_switch_ativo }.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/api/wa/lgpd/excluir (RPC rpc_wa_lgpd_purge)</code></div>
+        <p class="ep-desc">Direito do titular (JWT motorista ou admin com motorista_id). Apaga/anonimiza wa_consent, wa_preferencias, motorista_localizacao, wa_inbound e cancela PENDING (=&gt;SKIPPED motivo LGPD); mantem wa_consent_events anonimizado (telefone hash) por obrigacao de prova de opt-out. Resposta { removido:true, em }.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/api/wa/lgpd/exportar (RPC rpc_wa_lgpd_export)</code></div>
+        <p class="ep-desc">Export dos dados pessoais do titular (JWT motorista). Retorna JSON com consent, preferencias, ultima localizacao, inbound e historico de disparos do proprio motorista. Sem dados de terceiros.</p>
+      </div></section>
+  <section id="s6"><h2><span class="n">6</span>Frontend / fluxo</h2><ul><li>Fluxo conversacional (WhatsApp) - DISPARO PROATIVO 'Nova oferta': template HSM UTILITY pt_BR 'wa_nova_oferta'. Corpo: 'Carga nova na sua rota, {{1}}! {{2}} -&gt; {{3}} | {{4}} | R$ {{5}} | veredito {{6}} ({{7}} acima do piso ANTT). A ~{{8}} de voce. Ver no app:' + botao URL deep link rodecomlucro://frete/{id} (fallback https://app.rodecomlucro.com.br/frete/{id}) + botao Quick Reply 'PARAR'. Variaveis: 1=nome, 2=origem (ex.: Goiania-GO), 3=destino (ex.: Sao Paulo-SP), 4=carga/carroceria, 5=valor, 6=BOM|ACEITAVEL, 7=%vs piso, 8=distancia (ex.: 80 km). Sem disparo para veredito RUIM.</li><li>Fluxo conversacional - DOUBLE OPT-IN: template HSM 'wa_optin_confirm': 'Voce pediu para receber avisos de frete do RODE COM LUCRO na sua rota {{1}} -&gt; {{2}}. Responda SIM para confirmar. Para sair a qualquer momento, mande PARAR.' Vira OPTED_IN somente apos 'SIM' dentro de 24h do envio; sem SIM, wa_consent permanece PENDING e o token expira (nenhum disparo de oferta).</li><li>Fluxo conversacional - REATIVO 'tem carga perto de mim?': dentro da janela de 24h responde em mensagem livre (sessao, mais barata) com ate 3 cargas mais proximas dentro de raio_km e da janela de disponibilidade, ordenadas por distancia crescente, cada uma 'origem -&gt; destino | R$ valor | veredito | a ~Xkm | app.rodecomlucro.com.br/frete/{id}'. Sem posicao recente (&gt;6h): pede compartilhamento de localizacao do WhatsApp ou a cidade atual.</li><li>Fluxo conversacional - RESUMO DIARIO (opt-in extra resumo_diario=true): template HSM 'wa_resumo_diario' as 07:00 America/Sao_Paulo: 'Bom dia, {{1}}! {{2}} cargas boas na sua rota hoje. A melhor: {{3}} -&gt; {{4}} por R$ {{5}}. Ver todas:' + deep link para o feed filtrado. Nao envia para OCUPADO, OPTED_OUT ou quando {{2}}=0.</li><li>Fluxo conversacional - OPT-OUT/DISPONIBILIDADE (inbound livre): 'PARAR'/'SAIR' (case/acentos/espacos-insensivel) -&gt; confirma saida e cessa disparos imediatamente; 'livre'/'ocupado' atualiza disponibilidade; '&lt;UF&gt;' (ex.: 'MG') atualiza regioes e responde confirmando a nova segmentacao.</li><li>Painel de operacao (React 18/TS no AdminApp existente) - tela WaOpsPanel: cards de KPI (enviadas, entrega %, leitura %, opt-out %, custo acumulado no periodo) com recharts; tabela paginada da fila (alias do motorista, template_kind, estado com badge colorido por estado, custo, horario) com filtros por periodo/estado/template_kind; estado via React Query contra GET /api/admin/wa/ops; banner 'Qualidade do numero: {rating}' (verde GREEN / amarelo MEDIUM / vermelho LOW) e botao kill-switch global (confirmacao dupla) ligado a POST /api/admin/wa/kill-switch.</li><li>Toggle de consentimento no PWA do motorista (Perfil/Configuracoes, reusa AppPrototype): 'Avisos de frete no WhatsApp' + campos rota_habitual (origem/destino), regioes (UFs), disponibilidade, raio_km, teto_diario, janela de silencio, resumo_diario. O deep link das mensagens cai na rota /frete/:id ja existente no AppPrototype; nenhuma tela nova no app alem do toggle. Estados de erro (telefone invalido, opt-in pendente aguardando SIM, ja confirmado) exibidos inline.</li></ul></section>
+  <section id="s7"><h2><span class="n">7</span>Lógica de negócio</h2><ul><li>Segmentacao (match-and-enqueue): para cada oportunidade nova, candidatos = motoristas OPTED_IN cuja regiao/rota_habitual contem a origem (UF/cidade) OU cuja motorista_localizacao.geom esta a &lt;= raio_km da origem (ST_DWithin em geography), com disponibilidade='LIVRE' e (disponivel_ate is null OR disponivel_ate &gt;= data_coleta). compat_score = 0.45*proximidade_origem + 0.40*aderencia_rota(origem-&gt;destino vs rota habitual) + 0.15*aderencia_carroceria, normalizado em [0,1]. So enfileira se compat_score &gt;= 0.6 (anti-spam).</li><li>Veredito reusado: variavel {{6}} vem de rpc_veredito_frete(op,motorista), que encapsula calcularFrete de src/lib/calc.ts (custoTotal = diesel + ARLA + manutencao/km + pneus/km + depreciacao/km + pedagio + alimentacao, com volta vazia dobrando km/pedagio). Mapeia 'bom'-&gt;BOM, 'aceitavel'-&gt;ACEITAVEL, 'ruim'-&gt;RUIM. So enfileira NOVA_OFERTA/RESUMO se veredito IN ('bom','aceitavel'); RUIM nunca empurra push (evita opt-out). {{7}} = % do valor acima do piso ANTT da rota.</li><li>Distancia ao motorista {{8}}: ST_Distance(motorista_localizacao.geom, origem_geom) arredondada ('a ~80 km de voce'); se sem posicao recente (atualizado_em &gt; 6h ou null), usa cidade/UF da rota habitual e omite a distancia do template (variante de template sem {{8}} ou {{8}}='sua regiao').</li><li>Controle de frequencia: antes de enfileirar conta itens com estado IN ('SENT','DELIVERED','READ') do motorista no dia corrente (00:00-23:59 America/Sao_Paulo); se &gt;= teto_diario marca SKIPPED skip_motivo='TETO'. Deduplicacao por unique(motorista_id,oportunidade_id,template_kind) impede reenvio da mesma carga.</li><li>Janela de silencio: se hora local America/Sao_Paulo esta dentro de [silencio_inicio, silencio_fim) (tratando faixa que cruza meia-noite), agenda agendado_para = proximo silencio_fim (mesmo dia ou seguinte) em vez de enviar - nada de madrugada. Itens reagendados ficam PENDING e o dispatcher os pega no horario.</li><li>Janela de 24h (Meta): disparos proativos sempre via template HSM APPROVED; resposta a inbound dentro de 24h da ultima mensagem do motorista (RESPOSTA_PERTO) pode ir como mensagem livre de sessao (mais barata); fora da janela, so template.</li><li>Idempotencia e retry: claim FOR UPDATE SKIP LOCKED; status callbacks atualizam por wa_message_id (transicoes monotonicas, callback duplicado e no-op). Falhas retryable (80007 rate-limit, 131000 generico, 5xx) re-tentam com backoff exponencial 2^tentativas minutos ate 3x; permanentes (131026 nao-WhatsApp, 131047 fora da janela, 132xxx template) marcam FAILED sem retry.</li><li>Custo e orcamento: cada conversa cobrada e registrada (custo_centavos, categoria) do statuses/pricing do webhook; agregado por motorista/campanha (wa_ops_daily). Se a soma do dia &gt; wa_config.orcamento_diario_centavos, dispatcher ativa BUDGET_STOP (nenhum envio novo) e registra wa_events; kill_switch global manual sobrepoe tudo.</li><li>Roteamento de inbound: normaliza texto (trim, lower, sem acento). PARAR|SAIR=&gt;OPT_OUT (estado OPTED_OUT + SKIPPED dos PENDING); SIM (somente se wa_consent.estado=PENDING e opt_in_expira_em&gt;now())=&gt;OPTED_IN; 'tem carga'|'carga perto'|'tem frete'=&gt;CARGA_PERTO; 'livre'|'ocupado'=&gt;DISPONIBILIDADE; UF valida=&gt;atualiza regioes; demais=&gt;OUTRO (resposta padrao com instrucoes).</li></ul></section>
+  <section id="s8"><h2><span class="n">8</span>Integrações</h2><ul><li>WhatsApp Cloud API (Meta Graph v21+): envio de templates HSM e mensagens de sessao, webhook de inbound e de message status, leitura de quality rating do numero</li><li>Supabase: Postgres + RLS, Edge Functions (Deno), Vault para segredos, pg_cron + pg_net para jobs agendados e chamadas HTTP</li><li>PostGIS: geocoding (via geo_cache alimentado por provedor ex.: Google/Mapbox/Nominatim) e calculo de distancia/raio motorista-carga</li><li>Modulo find-app / oportunidades (fonte Fretebras + RODE-direto + manual): origem dos eventos de oportunidade e do rpc_match_motoristas</li><li>Modulo calc (src/lib/calc.ts: calcularFrete, perfil/modelo de custo do motorista) e modulo diesel (preco por rota): insumos do rpc_veredito_frete reaproveitado</li><li>Deep link / PWA do motorista: rota /frete/:id (esquema rodecomlucro:// com fallback https) acionada pelos botoes dos templates</li><li>AdminApp (painel interno RODE, aba WhatsApp ja existente): consumo de /api/admin/wa/ops e wa_ops_daily para a operacao dos disparos</li></ul></section>
+  <section id="s9"><h2><span class="n">9</span>Segurança & LGPD</h2><ul><li>LGPD base legal: consentimento explicito e especifico (finalidade 'ofertas_frete') com double opt-in; opt_in_em, canal e o texto recebido guardados em wa_consent_events (append-only) como prova; opt-out por PARAR/SAIR honrado em tempo real e auditavel. telefone_hash em wa_consent_events sobrevive a purge para manter prova do opt-out.</li><li>Minimizacao e retencao: telefone E.164 e localizacao aproximada sao PII; motorista_localizacao com retencao curta (job anonimiza/zera geom apos 7 dias); nao armazenar historico de posicao alem do necessario para responder 'carga perto de mim'.</li><li>Direitos do titular: rpc_wa_lgpd_purge apaga consent/preferencias/localizacao/fila PENDING/inbound e remove o numero da segmentacao; rpc_wa_lgpd_export entrega os dados pessoais a pedido. Ambos so o proprio titular (JWT) ou admin autorizado.</li><li>Verificacao de assinatura do webhook (X-Hub-Signature-256 = HMAC-SHA256 do raw body com APP_SECRET, comparacao constant-time) obrigatoria - rejeitar 401 payloads nao assinados/invalidos para impedir injecao de eventos/opt-out forjado.</li><li>Segredos (token Meta, PHONE_NUMBER_ID, APP_SECRET, VERIFY_TOKEN) so no Vault/env das Edge Functions; nunca no repo, no bundle do PWA ou em logs (mascarar telefone em logs); tokens rotacionaveis.</li><li>RLS no Postgres: motorista le/escreve apenas suas proprias preferencias/consentimento/localizacao (auth.uid()=motorista_id); wa_message_queue, wa_inbound, wa_config e wa_events sem acesso ao motorista (apenas service_role); painel admin atras de papel (admin|operacao) com trilha em wa_events; deep link /frete/:id usa id opaco (uuid, nao sequencial).</li><li>Conformidade Meta/anti-spam como seguranca do canal: so templates APPROVED, respeito a janela de 24h, monitoramento de quality rating; disparo irregular bloqueia o numero e quebra a entrega para toda a base. Rate-limit de inbound por telefone para evitar flood de comandos.</li><li>Validacao de entrada: E.164 validado por regex no opt-in; coordenadas de location validadas (lat/long em faixa plausivel do Brasil) antes de gravar; body do webhook limitado a 256KB; rejeicao de tipos de mensagem nao suportados sem erro 500.</li></ul></section>
+  <section id="s10"><h2><span class="n">10</span>Não-funcionais</h2><ul><li>Disparo: oportunidade nova compativel enfileirada em &lt;= 60s da insercao (trigger pg_net; cron de 5 min como rede de seguranca); throughput do dispatcher respeitando 80 msg/s do tier inicial da Meta com escalonamento por tier.</li><li>Resposta a 'tem carga perto de mim?': mensagem de volta em &lt;= 5s p95 quando ha posicao recente (consulta PostGIS com indice GIST em geom).</li><li>Confiabilidade: fila com retry e idempotencia garante at-least-once sem duplicar; falha de uma Edge Function ou do Cloud API nao perde itens (ficam PENDING e o cron re-drena).</li><li>Entregabilidade: meta de delivery rate &gt; 95% e opt-out rate &lt; 2% por semana; alerta automatico se o quality rating do numero cair para MEDIUM/LOW.</li><li>Custo controlado: teto diario por motorista (default 3 disparos), kill-switch global e parada por orcamento, custo por motorista/campanha registrado e visivel no painel; sem match irrelevante (compat_score &gt;= 0.6) que gere conversa paga inutil.</li><li>Fuso e horario: todos os calculos de janela de silencio, teto diario e resumo no fuso America/Sao_Paulo, incluindo transicoes de horario; sem enviar de madrugada.</li><li>Degradacao graciosa: sem posicao recente cai para segmentacao por rota habitual; se o Cloud API estiver fora a fila acumula e drena ao voltar; template REJECTED/PAUSED suspende aquele kind (status_meta) sem derrubar os outros.</li></ul></section>
+  <section id="s11"><h2><span class="n">11</span>Etapas de implementação</h2><ol><li>1. Provisionar o canal: numero verificado na Meta, WABA, app com webhook; cadastrar e submeter os templates HSM (wa_nova_oferta, wa_resumo_diario, wa_optin_confirm, wa_lembrete_disp) para aprovacao (caminho critico - comeca antes de tudo). Guardar segredos no Vault.</li><li>2. Modelo de dados: migrations (wa_consent, wa_consent_events, wa_preferencias, motorista_localizacao com PostGIS, wa_message_queue, wa_inbound, wa_template, wa_config, wa_events) + RLS + indices GIST/uniques/parciais + checks. Habilitar extensoes postgis, pg_cron, pg_net.</li><li>3. Webhook (wa-webhook): GET de verificacao + POST com validacao de assinatura constant-time, idempotencia por wa_message_id, parsing de statuses (custo unico) e roteamento de intencao (PARAR/SIM/'tem carga'/location).</li><li>4. Consentimento: rpc_wa_opt_in + double opt-in (enfileira OPTIN_CONFIRM, processa SIM no webhook com expiracao 24h) + opt-out em tempo real + registro append-only. Toggle no Perfil do PWA.</li><li>5. Segmentacao (match-and-enqueue): reusar rpc_match_motoristas e rpc_veredito_frete (calcularFrete); aplicar consentimento, compatibilidade rota/regiao/raio/disponibilidade, limiar 0.6, gate de veredito, teto e dedupe; trigger AFTER INSERT na oportunidade + cron de varredura.</li><li>6. Dispatcher (wa-dispatcher): claim SKIP LOCKED, revalidacao de consent + silencio + janela 24h + kill_switch + orcamento, chamada ao Cloud API, gravacao de wa_message_id, classificacao de erro e retry/backoff, token bucket 80 msg/s.</li><li>7. Reativo 'tem carga perto de mim?': consulta PostGIS por raio+disponibilidade na janela de 24h (sessao); fallback pedindo localizacao/cidade; atualizacao de disponibilidade por mensagem.</li><li>8. Jobs cron: resumo diario 07:00, expurgo/expiracao de fila &gt;24h, agregacao horaria para wa_ops_daily, anonimizacao de localizacao &gt;7d, checagem de quality rating com alerta.</li><li>9. Painel de operacao no AdminApp (WaOpsPanel): KPIs, fila com estados, filtros, banner de qualidade do numero e kill-switch global; ligar ao GET /api/admin/wa/ops com papel.</li><li>10. Controle de custo e LGPD: registro de custo por conversa, teto por motorista, orcamento global com parada, rpc_wa_lgpd_purge/export. Hardening, testes (unit/integracao/e2e) e piloto com subconjunto opted-in.</li><li>11. Go-live faseado: ativar com base pequena opted-in, monitorar opt-out/qualidade/custo, e so entao abrir para toda a base.</li></ol></section>
+  <section id="s12"><h2><span class="n">12</span>Plano de teste</h2><div class="teste"><h4>Unit (Vitest/Deno test - logica pura, sem rede nem DB)</h4><ul><li>compat_score: motorista com rota habitual Goiania-GO -&gt; Sao Paulo-SP e oportunidade Goiania-&gt;Sao Paulo retorna score &gt;= 0.6 (enfileira); rota divergente (Porto Alegre-RS -&gt; Curitiba-PR) retorna &lt; 0.6 (nao enfileira)</li><li>Gate de veredito reusando calcularFrete: frete SP-GYN 900km, valor R$ 2.000, defaults (diesel 6.1, consumo 2.5, volta vazia) =&gt; custoTotal &gt; valor =&gt; veredito 'ruim' =&gt; nao gera item; mesmo frete a R$ 4.500 =&gt; 'bom'/'aceitavel' =&gt; gera item</li><li>Controle de teto: teto_diario=3 e 3 itens em estado SENT/DELIVERED/READ no dia (America/Sao_Paulo) =&gt; 4o candidato vira SKIPPED skip_motivo='TETO'</li><li>Janela de silencio cruzando meia-noite: hora local 23:30 com silencio 21:00-07:00 =&gt; agendado_para = 07:00 do dia seguinte; hora local 08:00 =&gt; envia imediato (agendado_para=now)</li><li>Janela de silencio borda: exatamente 07:00 (silencio_fim) =&gt; fora do silencio (intervalo half-open) =&gt; envia</li><li>Classificacao de erro Meta: 131047 (fora da janela 24h) =&gt; FAILED sem retry; 80007 (rate-limit) =&gt; retryable, tentativas++ , backoff 2^n min; 131026 (numero nao-WhatsApp) =&gt; FAILED sem retry</li><li>Normalizacao de intencao inbound: 'PARAR', 'parar', 'Sair', ' SAIR ', 'parar!' classificam OPT_OUT; 'sim', 'SIM', 'Sim ' classificam OPT_IN_CONFIRM; 'tem carga perto de mim?' classifica CARGA_PERTO; 'mg' classifica DISPONIBILIDADE(regiao); texto aleatorio =&gt; OUTRO</li><li>Validacao E.164: '+5562999998888' valido; '62999998888', '+1202...' (nao BR) e vazio rejeitados</li><li>HMAC do webhook: assinatura calculada com APP_SECRET correto valida; assinatura com 1 byte alterado invalida (constant-time)</li><li>Formatacao da distancia: posicao a 80.4km =&gt; 'a ~80 km de voce'; sem posicao (&gt;6h) =&gt; template sem {{8}} ou 'sua regiao'</li></ul></div><div class="teste"><h4>Integracao (supabase start local + Postgres efemero + Cloud API mockado via nock)</h4><ul><li>Double opt-in fim-a-fim: rpc_wa_opt_in cria wa_consent PENDING com opt_in_expira_em=now()+24h e enfileira OPTIN_CONFIRM; inbound 'SIM' do mesmo telefone dentro de 24h move para OPTED_IN e grava wa_consent_events OPT_IN_CONFIRM; 'SIM' apos expiracao NAO confirma (permanece PENDING)</li><li>Opt-out em tempo real: motorista OPTED_IN com 2 itens PENDING manda 'PARAR' =&gt; estado OPTED_OUT, os 2 PENDING viram SKIPPED skip_motivo='SEM_CONSENT', e o dispatcher nao envia nada apos o opt-out</li><li>Idempotencia do webhook (status): o mesmo status callback (wa_message_id repetido, delivered) processado 2x atualiza estado uma vez e registra custo_centavos uma unica vez (nao soma duas vezes)</li><li>Idempotencia do webhook (inbound): mesmo wa_message_id de inbound recebido 2x insere 1 linha em wa_inbound (on conflict do nothing) e nao re-executa o opt-out</li><li>Fan-out + dedupe: oportunidade BOM compativel com 5 motoristas opted-in =&gt; 5 itens PENDING; re-chamar match-and-enqueue com o mesmo oportunidade_id NAO cria duplicatas (unique respeitada), retorno enfileiradas=0</li><li>Status lifecycle: callbacks na ordem sent-&gt;delivered-&gt;read atualizam wa_message_queue para READ; callback fora de ordem (read antes de delivered) nao regride o estado</li><li>Reativo 'carga perto de mim?': inbound location a 50km de 2 cargas dentro do raio (e 1 fora) responde as 2 ordenadas por distancia crescente, como mensagem de sessao (nao template) dentro da janela de 24h</li><li>Kill-switch: com wa_config.kill_switch=true, dispatcher drena mas envia 0 (itens permanecem PENDING); ao setar false, proxima drenagem envia</li><li>Orcamento: com custo do dia ja &gt; orcamento_diario_centavos, dispatcher para novos envios e grava wa_events BUDGET_STOP</li><li>Trigger de oportunidade: INSERT de oportunidade nova dispara match-and-enqueue (via pg_net mock) e materializa itens em &lt;= 60s; se o trigger falhar, o cron de 5 min pega a oportunidade nao enfileirada</li><li>RLS: motorista A nao consegue ler/alterar wa_preferencias do motorista B; service_role consegue; motorista nao le wa_message_queue</li></ul></div><div class="teste"><h4>E2E / operacao (staging com numero de teste Meta e WaOpsPanel real)</h4><ul><li>Jornada completa: motorista ativa o toggle no app -&gt; recebe wa_optin_confirm -&gt; manda SIM -&gt; entra carga compativel BOM -&gt; recebe wa_nova_oferta -&gt; clica no deep link e abre /frete/:id no PWA; WaOpsPanel mostra delivered/read e o custo daquele item</li><li>Resumo diario 07:00: motorista com resumo_diario=true e &gt;=1 carga boa recebe wa_resumo_diario as 07:00 America/Sao_Paulo; motorista OCUPADO ou OPTED_OUT ou com 0 cargas boas NAO recebe</li><li>Kill-switch operacional: operador aciona kill-switch no WaOpsPanel (confirmacao dupla) e nenhum disparo novo sai; fila acumula PENDING; banner e wa_events refletem a acao</li><li>Quebra de template: wa_nova_oferta marcado REJECTED/PAUSED suspende so esse kind (status_meta), enquanto wa_resumo_diario continua funcionando; WaOpsPanel sinaliza o template afetado</li><li>Alerta de qualidade: cron detecta quality_rating=LOW =&gt; banner vermelho no painel e wa_events ALERTA_QUALIDADE; operador pode acionar kill-switch</li><li>LGPD purge e2e: motorista solicita exclusao -&gt; rpc_wa_lgpd_purge remove consent/preferencias/localizacao/inbound, cancela PENDING (SKIPPED motivo LGPD), e o numero deixa de ser segmentado; wa_consent_events permanece anonimizado como prova</li></ul></div></section>
+  <section id="s13"><h2><span class="n">13</span>Critérios de aceite</h2><ul class="check"><li>Dado um motorista sem consentimento (sem wa_consent ou estado&lt;&gt;OPTED_IN), quando entra uma oportunidade compativel, entao nenhuma mensagem e enviada, nenhum item PENDING e criado para ele e o retorno de match-and-enqueue contabiliza ignoradas_sem_consent&gt;=1.</li><li>Dado um motorista que ativou os avisos no app, quando ele NAO responde SIM dentro de 24h (opt_in_expira_em vencido), entao wa_consent permanece PENDING e nenhum disparo de oferta ocorre; quando responde SIM dentro de 24h, entao vira OPTED_IN, grava wa_consent_events OPT_IN_CONFIRM e passa a receber.</li><li>Dado um motorista OPTED_IN com itens PENDING, quando ele envia 'PARAR' ou 'SAIR' (em qualquer caixa/acentuacao/espacos), entao o estado vira OPTED_OUT em tempo real, todos os PENDING dele viram SKIPPED skip_motivo='SEM_CONSENT' e nenhuma mensagem posterior e enviada.</li><li>Dado teto_diario=3, quando 3 disparos ja foram enviados no dia corrente (fuso America/Sao_Paulo, estados SENT/DELIVERED/READ), entao o 4o candidato do dia e SKIPPED skip_motivo='TETO' e nao gera custo nem chamada ao Cloud API.</li><li>Dada a janela de silencio 21:00-07:00, quando uma carga compativel entra as 23:30 horario local, entao o item fica PENDING com agendado_para=07:00 do dia seguinte e nao e enviado de madrugada; quando entra as 08:00, e enviado imediatamente.</li><li>Dada uma oportunidade cujo rpc_veredito_frete retorna 'ruim' para o caminhao do motorista, quando ela e processada, entao nenhum item NOVA_OFERTA/RESUMO e enfileirado (apenas 'bom'/'aceitavel' empurram push) e o retorno contabiliza ignoradas_veredito_ruim&gt;=1.</li><li>Dada uma oportunidade com compat_score &lt; 0.6 para o motorista, quando processada, entao nao gera item (ignoradas_score&gt;=1), evitando spam.</li><li>Dado um inbound 'tem carga perto de mim?' com localizacao atualizada (&lt;6h), quando processado dentro da janela de 24h, entao o motorista recebe em &lt;= 5s p95 ate 3 cargas dentro do raio_km ordenadas por distancia crescente, cada uma com veredito e deep link, como mensagem de sessao (nao template).</li><li>Dado um inbound 'tem carga perto de mim?' sem localizacao recente, quando processado, entao o sistema responde pedindo o compartilhamento de localizacao ou a cidade atual, sem listar cargas.</li><li>Dado um disparo NOVA_OFERTA enviado, quando a Meta retorna delivered e depois read, entao wa_message_queue reflete os estados em ordem monotonica (DELIVERED depois READ), o custo e registrado uma unica vez e o WaOpsPanel mostra entrega/leitura/custo daquele item.</li><li>Dado o mesmo (motorista_id, oportunidade_id, template_kind), quando match-and-enqueue roda duas vezes, entao existe no maximo um item na fila (unique respeitada) e nenhuma mensagem e duplicada.</li><li>Dado um payload de webhook com X-Hub-Signature-256 ausente ou invalido, quando recebido, entao a Edge Function responde 401 e nada e gravado (sem opt-out/opt-in forjado).</li><li>Dado wa_config.kill_switch=true, quando o dispatcher roda, entao nenhum envio novo ocorre e os itens permanecem PENDING; quando o operador desativa, entao a proxima drenagem envia.</li><li>Dado que o custo agregado do dia ultrapassa orcamento_diario_centavos, quando o dispatcher roda, entao novos envios sao bloqueados e um wa_events BUDGET_STOP e registrado.</li><li>Dado o WaOpsPanel, quando o operador (papel admin|operacao) filtra por periodo, entao ve enviadas, % entrega, % leitura, % opt-out e custo acumulado agregados, sem expor telefone nem custo financeiro individual por motorista; um usuario sem papel recebe 403.</li><li>Dado que o quality rating do numero cai para LOW, quando o cron de checagem roda, entao um wa_events ALERTA_QUALIDADE e gerado, o banner do painel fica vermelho e o operador pode acionar o kill-switch.</li><li>Dado um pedido de exclusao LGPD do titular, quando rpc_wa_lgpd_purge executa, entao consent/preferencias/localizacao/inbound sao apagados, os PENDING viram SKIPPED motivo='LGPD', o numero deixa de ser segmentado e wa_consent_events permanece (anonimizado) como prova do opt-out.</li></ul></section>
+  <section id="s14"><h2><span class="n">14</span>Diagramas</h2><p class="hint">Renderizados com Mermaid — requer internet ao abrir o arquivo.</p><h4>Arquitetura da solução</h4><div class="mermaid-box"><pre class="mermaid">flowchart LR
+  motorista[&quot;Motorista (WhatsApp)&quot;] --&gt; meta[&quot;Meta Cloud API (Graph v21+)&quot;]
+  pwa[&quot;PWA Motorista (AppPrototype)&quot;] --&gt; rpc[&quot;RPCs (rpc_wa_opt_in / rpc_wa_set_prefs)&quot;]
+  admin[&quot;AdminApp (WaOpsPanel)&quot;] --&gt; opsapi[&quot;GET /api/admin/wa/ops&quot;]
+  meta --&gt; webhook[&quot;Edge Function wa-webhook&quot;]
+  webhook --&gt; db[(&quot;Postgres 15 + RLS + PostGIS&quot;)]
+  rpc --&gt; db
+  opsapi --&gt; db
+  db --&gt; match[&quot;Edge Function match-and-enqueue&quot;]
+  match --&gt; db
+  cron[&quot;pg_cron + pg_net (jobs)&quot;] --&gt; disp[&quot;Edge Function wa-dispatcher&quot;]
+  disp --&gt; db
+  disp --&gt; meta
+  oport[&quot;Oportunidades (Fretebras / RODE / manual)&quot;] --&gt; db</pre></div><h4>Casos de uso</h4><div class="mermaid-box"><pre class="mermaid">flowchart LR
+  motorista[&quot;Motorista&quot;]
+  empresa[&quot;Fonte de oportunidade (Fretebras/RODE)&quot;]
+  admin[&quot;Admin / Operacao&quot;]
+  sistemaExt[&quot;Sistema (Edge Functions + cron)&quot;]
+  subgraph Sistema[&quot;Sistema&quot;]
+    uc1[&quot;Ativar avisos (double opt-in)&quot;]
+    uc2[&quot;Definir preferencias / segmentacao&quot;]
+    uc3[&quot;Receber Nova Oferta (push)&quot;]
+    uc4[&quot;Consultar tem carga perto de mim&quot;]
+    uc5[&quot;Opt-out PARAR/SAIR&quot;]
+    uc6[&quot;Segmentar e enfileirar disparos&quot;]
+    uc7[&quot;Operar painel e kill-switch&quot;]
+    uc8[&quot;LGPD purge / export&quot;]
+  end
+  motorista --&gt; uc1
+  motorista --&gt; uc2
+  motorista --&gt; uc3
+  motorista --&gt; uc4
+  motorista --&gt; uc5
+  motorista --&gt; uc8
+  empresa --&gt; uc6
+  sistemaExt --&gt; uc6
+  sistemaExt --&gt; uc3
+  admin --&gt; uc7
+  admin --&gt; uc8</pre></div><h4>Fluxo principal</h4><div class="mermaid-box"><pre class="mermaid">flowchart TD
+  ins[&quot;Insert oportunidade nova&quot;] --&gt; trig[&quot;Trigger AFTER INSERT chama match-and-enqueue&quot;]
+  trig --&gt; matchq[&quot;rpc_match_motoristas + filtros&quot;]
+  matchq --&gt; consent{&quot;Motorista OPTED_IN?&quot;}
+  consent -- &quot;Nao&quot; --&gt; skip1[&quot;Ignora (ignoradas_sem_consent)&quot;]
+  consent -- &quot;Sim&quot; --&gt; ver{&quot;Veredito bom/aceitavel?&quot;}
+  ver -- &quot;ruim&quot; --&gt; skip2[&quot;Ignora (ignoradas_veredito_ruim)&quot;]
+  ver -- &quot;Sim&quot; --&gt; score{&quot;compat_score ≥ 0.6 e teto?&quot;}
+  score -- &quot;Nao&quot; --&gt; skip3[&quot;SKIPPED (score/TETO)&quot;]
+  score -- &quot;Sim&quot; --&gt; enq[&quot;Insere PENDING em wa_message_queue&quot;]
+  enq --&gt; claim[&quot;wa-dispatcher: claim FOR UPDATE SKIP LOCKED&quot;]
+  claim --&gt; silencio{&quot;Janela de silencio?&quot;}
+  silencio -- &quot;Sim&quot; --&gt; resched[&quot;agendado_para = proximo silencio_fim&quot;]
+  silencio -- &quot;Nao&quot; --&gt; send[&quot;POST Cloud API (template HSM)&quot;]
+  send --&gt; ok{&quot;Sucesso?&quot;}
+  ok -- &quot;Sim&quot; --&gt; sent[&quot;estado SENT -&gt; DELIVERED -&gt; READ&quot;]
+  ok -- &quot;Nao&quot; --&gt; err{&quot;Erro retryable?&quot;}
+  err -- &quot;Sim&quot; --&gt; retry[&quot;tentativas++ backoff 2^n (max 3)&quot;]
+  err -- &quot;Nao&quot; --&gt; failed[&quot;estado FAILED&quot;]</pre></div><h4>UML — classes/serviços</h4><div class="mermaid-box"><pre class="mermaid">classDiagram
+  class WaWebhook {
+    +verify(challenge) text
+    +handleInbound(body) void
+    +handleStatus(body) void
+    -validateSignature(raw) bool
+  }
+  class MatchAndEnqueue {
+    +run(oportunidade_id) Resultado
+    -compatScore(mot, op) float
+  }
+  class WaDispatcher {
+    +drain(limit) Resultado
+    -claim() Item
+    -classifyError(code) string
+  }
+  class RpcVereditoFrete {
+    +veredito(op, motorista) string
+  }
+  class WaConsent {
+    +uuid motorista_id
+    +text telefone_e164
+    +text estado
+  }
+  class WaMessageQueue {
+    +uuid id
+    +text template_kind
+    +text estado
+    +int custo_centavos
+  }
+  class WaConfig {
+    +bool kill_switch
+    +int orcamento_diario_centavos
+    +text quality_rating
+  }
+  MatchAndEnqueue ..&gt; RpcVereditoFrete
+  MatchAndEnqueue ..&gt; WaConsent
+  MatchAndEnqueue ..&gt; WaMessageQueue
+  WaDispatcher ..&gt; WaMessageQueue
+  WaDispatcher ..&gt; WaConfig
+  WaWebhook ..&gt; WaMessageQueue
+  WaWebhook ..&gt; WaConsent</pre></div><h4>Banco de dados (ER)</h4><div class="mermaid-box"><pre class="mermaid">erDiagram
+  MOTORISTAS ||--|| WA_CONSENT : tem
+  MOTORISTAS ||--|| WA_PREFERENCIAS : configura
+  MOTORISTAS ||--|| MOTORISTA_LOCALIZACAO : posiciona
+  MOTORISTAS ||--o{ WA_CONSENT_EVENTS : audita
+  MOTORISTAS ||--o{ WA_MESSAGE_QUEUE : recebe
+  MOTORISTAS ||--o{ WA_INBOUND : envia
+  WA_TEMPLATE ||--o{ WA_MESSAGE_QUEUE : usa
+  WA_CONFIG ||--o{ WA_EVENTS : registra
+  WA_CONSENT {
+    uuid id PK
+    uuid motorista_id FK
+    text telefone_e164
+    text estado
+  }
+  WA_CONSENT_EVENTS {
+    uuid id PK
+    uuid motorista_id FK
+    text telefone_hash
+    text tipo
+  }
+  WA_PREFERENCIAS {
+    uuid motorista_id PK
+    int raio_km
+    int teto_diario
+    bool resumo_diario
+  }
+  MOTORISTA_LOCALIZACAO {
+    uuid motorista_id PK
+    text precisao
+    text uf
+  }
+  WA_MESSAGE_QUEUE {
+    uuid id PK
+    uuid motorista_id FK
+    uuid oportunidade_id FK
+    text template_kind
+    text estado
+  }
+  WA_INBOUND {
+    uuid id PK
+    text wa_message_id
+    uuid motorista_id FK
+    text intencao
+  }
+  WA_TEMPLATE {
+    uuid id PK
+    text name
+    text status_meta
+  }
+  WA_CONFIG {
+    int id PK
+    bool kill_switch
+    int orcamento_diario_centavos
+  }
+  WA_EVENTS {
+    uuid id PK
+    uuid ator
+    text acao
+  }</pre></div><h4>Lógica do plano de testes</h4><div class="mermaid-box"><pre class="mermaid">flowchart TD
+  subgraph Unit[&quot;Unit (Vitest / Deno test)&quot;]
+    u1[&quot;compat_score ≥ 0.6 vs rota divergente&quot;]
+    u2[&quot;Gate veredito (calcularFrete ruim/bom)&quot;]
+    u3[&quot;Teto diario e janela de silencio&quot;]
+    u4[&quot;Classificacao erro Meta (80007/131047/131026)&quot;]
+    u5[&quot;Normalizacao intencao + E.164 + HMAC&quot;]
+  end
+  subgraph Integracao[&quot;Integracao (supabase local + nock)&quot;]
+    i1[&quot;Double opt-in fim-a-fim (SIM em 24h)&quot;]
+    i2[&quot;Opt-out tempo real (PENDING -&gt; SKIPPED)&quot;]
+    i3[&quot;Idempotencia webhook (status/inbound)&quot;]
+    i4[&quot;Fan-out + dedupe (unique)&quot;]
+    i5[&quot;Kill-switch e orcamento (BUDGET_STOP)&quot;]
+    i6[&quot;RLS motorista A vs B&quot;]
+  end
+  subgraph E2E[&quot;E2E (staging + WaOpsPanel)&quot;]
+    e1[&quot;Jornada: toggle -&gt; SIM -&gt; oferta -&gt; deep link&quot;]
+    e2[&quot;Resumo diario 07:00&quot;]
+    e3[&quot;Kill-switch operacional&quot;]
+    e4[&quot;Quebra template / alerta qualidade&quot;]
+    e5[&quot;LGPD purge e2e&quot;]
+  end
+  Unit --&gt; Integracao
+  Integracao --&gt; E2E</pre></div></section>
+
+  <p class="disclaimer">Documento gerado para orientar o desenvolvimento. Estimativas de esforço/custo são ordem de grandeza para planejamento (premissa R$ 2.100/dev-dia, equipe enxuta) — não é proposta comercial. O veredito de lucratividade do produto é estimativa; o piso ANTT é referência regulatória.</p>
+</div>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose', flowchart: { useMaxWidth: true }, er: { useMaxWidth: true } });
+</script>
+</body>
+</html>

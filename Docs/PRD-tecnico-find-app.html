@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PRD Técnico — Encontrar frete · App · RODE COM LUCRO</title>
+<style>
+  :root{--brand:#2563eb;--brand-d:#1e40af;--ink:#0f172a;--ink-6:#475569;--ink-4:#94a3b8;--line:#e2e8f0;--bg:#f1f5f9;--card:#fff;--lucro:#059669}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.6;-webkit-text-size-adjust:100%}
+  .wrap{max-width:920px;margin:0 auto;padding:40px 20px 90px}
+  header.doc{border-bottom:3px solid var(--brand);padding-bottom:20px;margin-bottom:10px}
+  .kicker{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand)}
+  h1{font-size:30px;line-height:1.15;margin:8px 0 6px;font-weight:800;letter-spacing:-.01em}
+  .sub{color:var(--ink-6);font-size:15px;max-width:64ch}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  .pill{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 14px}
+  .pill b{display:block;font-size:16px;color:var(--ink)}
+  .pill span{color:var(--ink-4);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .toc{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 4px}
+  .toc a{font-size:12px;font-weight:600;color:var(--brand-d);background:#eef4ff;border:1px solid #dbe6ff;border-radius:999px;padding:4px 11px;text-decoration:none}
+  .toc a:hover{background:#dbe6ff}
+  section{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-top:18px;scroll-margin-top:14px}
+  h2{font-size:18px;margin:0 0 14px;display:flex;align-items:center;gap:9px;font-weight:800}
+  h2 .n{display:inline-flex;width:26px;height:26px;align-items:center;justify-content:center;background:var(--brand);color:#fff;border-radius:8px;font-size:13px;font-weight:800;flex:none}
+  h4{margin:18px 0 8px;font-size:14px;color:var(--brand-d);font-weight:700}
+  h4:first-of-type{margin-top:4px}
+  p{margin:0 0 10px;color:var(--ink-6)}
+  .hint{font-size:12px;color:var(--ink-4);margin-top:-4px}
+  ul,ol{margin:0;padding-left:22px}
+  li{margin:6px 0;color:var(--ink-6)}
+  ul.check{list-style:none;padding-left:0}
+  ul.check li{position:relative;padding-left:28px;margin:9px 0}
+  ul.check li::before{content:'';position:absolute;left:0;top:4px;width:16px;height:16px;border:2px solid var(--lucro);border-radius:4px}
+  .badge{display:inline-block;background:#eff6ff;color:var(--brand-d);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:800;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;flex:none}
+  .tags{display:flex;flex-wrap:wrap;gap:7px}
+  .tags span{background:#eff6ff;color:var(--brand-d);border:1px solid #dbeafe;border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600}
+  /* Modelo de dados */
+  .entidade{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 12px;background:#fbfdff}
+  .ent-nome{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px;font-weight:700;color:var(--brand-d);margin:0 0 8px}
+  ul.campos{list-style:none;padding-left:0;margin:0;display:grid;gap:5px}
+  ul.campos li{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--ink-6);background:#fff;border:1px solid var(--line);border-radius:7px;padding:5px 9px;overflow-wrap:anywhere;word-break:break-word;margin:0}
+  /* API */
+  .endpoint{border-left:3px solid var(--brand);background:#fbfdff;border-radius:0 10px 10px 0;padding:10px 14px;margin:0 0 12px}
+  .ep-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .ep-rota{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:var(--ink);overflow-wrap:anywhere;word-break:break-word}
+  .ep-desc{font-size:13px;margin:7px 0 0}
+  .teste{border-left:3px solid var(--brand);padding-left:15px;margin:14px 0}
+  .empty{color:var(--ink-4)}
+  /* Diagramas */
+  .mermaid-box{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px;margin:6px 0 10px;overflow-x:auto;text-align:center}
+  .mermaid{font-size:14px}
+  .disclaimer{margin-top:26px;font-size:12px;color:var(--ink-4);border-top:1px solid var(--line);padding-top:16px}
+  @media print{body{background:#fff}.wrap{padding:0}.toc{display:none}section{break-inside:avoid;border:none;border-bottom:1px solid var(--line);border-radius:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="doc">
+    <div class="kicker">RODE COM LUCRO · PRD Técnico</div>
+    <h1>Encontrar frete · App</h1>
+    <p class="sub">Guia de desenvolvimento para dev full-stack sênior. O protótipo está 100% mockado; este documento orienta a construção real da funcionalidade.</p>
+    <div class="meta">
+      <div class="pill"><span>Esforço</span><b>19–29 dev-dias</b></div>
+      <div class="pill"><span>Prazo</span><b>4 a 5 semanas</b></div>
+      <div class="pill"><span>Custo estimado</span><b>R$ 40k–R$ 61k</b></div>
+      <div class="pill"><span>Premissa</span><b>R$ 2.100/dev-dia</b></div>
+    </div>
+  </header>
+  <nav class="toc"><a href="#s1">Visão técnica</a><a href="#s2">Arquitetura</a><a href="#s3">Stack</a><a href="#s4">Modelo de dados</a><a href="#s5">Contratos de API</a><a href="#s6">Frontend / fluxo</a><a href="#s7">Lógica de negócio</a><a href="#s8">Integrações</a><a href="#s9">Segurança &amp; LGPD</a><a href="#s10">Não-funcionais</a><a href="#s11">Etapas</a><a href="#s12">Plano de teste</a><a href="#s13">Critérios de aceite</a><a href="#s14">Diagramas</a></nav>
+
+  <section id="s1"><h2><span class="n">1</span>Visão técnica</h2><p>O modulo &quot;Encontrar frete (App)&quot; e o diferencial do RODE COM LUCRO: um feed de oportunidades onde cada frete ja chega com o veredito de lucro calculado para o CAMINHAO daquele motorista (BOM/ACEITAVEL/RUIM + resultado em R$), nao pelo valor bruto. O coracao tecnico nao e a UI (ja 100% mockada em src/components/produto/AppPrototype.tsx, com dados de referencia em src/data/produto.ts) e sim uma arquitetura multi-fonte de ingestao: fretes entram de tres fontes (Fretebras via parceria/raspagem, RODE_DIRETO vindo do Portal B2B /empresa, e cadastro MANUAL), passam por uma camada de qualidade (normalizar cidade/UF contra IBGE, geocodificar, parsear valor/peso/distancia, descartar lixo), sao deduplicados numa unica oferta com proveniencia, e tem o veredito MATERIALIZADO no backend cruzando o frete com o perfil de custo do motorista (reusando o motor puro calcularFrete de src/lib/calc.ts — mesma logica que produz os numeros do mock: SP-&gt;Recife R$8.000 = custo R$9.777, minimo R$12.222, veredito RUIM; Goiania-&gt;SP R$6.500 = lucro +R$2.300, BOM). O feed apenas le esse resultado pronto, garantindo p95 &lt; 2s mesmo com ~1.000 fretes. Jobs agendados coletam em ciclos (15-30min), recalculam vereditos quando o perfil ou o preco do diesel mudam, e marcam fretes expirados/preenchidos. Escolhas-chave: fonte como cidadao de primeira classe (RODE_DIRETO com prioridade e latencia de segundos), pipeline idempotente e re-executavel, veredito sempre no servidor (consistencia + LGPD), e PII de contato revelada so sob acao explicita do motorista (auditavel). RISCO PRINCIPAL confirmado no spike (scraper/output): a coleta Fretebras NAO capturou payloads de frete utilizaveis (a API mascara preco para sessao nao-confiavel e retornou apenas tracking/empty), portanto a estabilidade/legalidade da fonte Fretebras e o maior risco, mitigado pela arquitetura ja multi-fonte, pela PREFERENCIA por parceria/API oficial, e pela entrega do RODE_DIRETO primeiro (cold start nao depende de raspagem). Decisao de fasing: RODE_DIRETO + MANUAL formam o MVP entregavel; Fretebras e incremental e isolado por circuit breaker.</p></section>
+  <section id="s2"><h2><span class="n">2</span>Arquitetura</h2><ul><li>Pipeline de ingestao em 4 estagios desacoplados e idempotentes: COLETA (fontes) -&gt; NORMALIZACAO/QUALIDADE -&gt; DEDUP -&gt; PUBLICACAO (tabela fretes consultada pelo feed). Cada estagio e re-executavel; o registro bruto nunca e perdido (fica em raw_fretes com hash unico) para reprocessamento quando a regra de parsing muda. Fila implementada via tabela ingest_queue + pg_cron worker; cada item carrega tentativas, ultimo_erro e proximo_retry (backoff exponencial: 1min, 5min, 30min, depois dead-letter).</li><li>Fonte como cidadao de primeira classe: enum Fonte = {FRETEBRAS, RODE_DIRETO, MANUAL}. RODE_DIRETO entra por chamada sincrona do Portal B2B ao /internal/ingest (latencia de segundos, alta confianca, sem dedup contra si mesmo); FRETEBRAS entra por Edge Function cron (15-30min) preferindo API/parceria, com spike Playwright como fallback isolado em worker dedicado; MANUAL entra pelo admin. Falha de uma fonte nunca derruba as outras (isolamento por worker + circuit breaker que abre apos 3 falhas consecutivas e mantem fretes ja publicados das outras fontes).</li><li>Veredito calculado no BACKEND, nunca no cliente: ao publicar/atualizar um frete OU ao mudar o perfil do motorista (perfil_hash novo), um worker chama calcularFrete(frete x perfil) e materializa o resultado em fretes_veredito (frete_id, perfil_hash, lucro_centavos, veredito, rs_por_km, custo_centavos, valor_minimo_centavos, margem_real_pct). Reaproveita o motor puro src/lib/calc.ts (calcularFrete + FRETE_DEFAULTS) ja existente e testado. O feed le essa tabela ja pronta com JOIN por perfil_hash do usuario -&gt; resposta &lt; 2s sem CPU de calculo no request.</li><li>Estrategia de materializacao de veredito (escolha explicita para nao explodir N_fretes x N_perfis): veredito materializado SOB DEMANDA por perfil_hash. Perfis distintos colapsam pelo hash (motoristas com mesmo consumo/margem/diesel-regional compartilham a mesma linha de veredito). Na primeira leitura do feed por um perfil_hash inedito, o backend dispara calculo em lote para os fretes ATIVOS daquele perfil (com lock para evitar thundering herd) e cacheia. Recalculo disparado por: novo frete ATIVO, mudanca de status, mudanca de perfil_hash, ou mudanca do preco regional de diesel (modulo Diesel).</li><li>Camada de qualidade explicita e auditavel: normaliza cidade/UF contra base IBGE de municipios (fuzzy match sobre nome_normalizado), geocodifica via PostGIS para distancia/raio, parseia valor (centavos inteiros), peso (kg) e distancia (km via rota real ou haversine fallback), e quarentena registros incompletos ou implausiveis (valor&lt;=0, origem=destino, rs_por_km fora de faixa). Tudo registrado em collector_runs e raw_fretes.erro_parsing.</li><li>Deduplicacao por chave canonica + janela temporal: dedupe_key = sha1(origem_municipio_id | destino_municipio_id | faixaValor(valor_centavos) | carroceria | dia(data_coleta)). Coletas distintas da mesma oferta colapsam num unico frete mantendo array de frete_proveniencias (fonte + url + coletado_em + raw_frete_id). RODE_DIRETO tem prioridade de exibicao sobre raspagem quando colidem (campos exibidos vem do registro RODE_DIRETO).</li><li>Estado do frete como maquina de estados explicita: ATIVO -&gt; {EXPIRADO (TTL 24-48h desde data_coleta), PREENCHIDO (empresa fechou no Portal), REMOVIDO (takedown/moderacao)}. Transicoes irreversiveis exceto reativacao manual pelo admin. So ATIVO aparece no feed. Job de expiracao roda a cada 10min.</li><li>Mobile-first PWA: feed virtualizado/paginado por cursor (keyset pagination por (ordem, id) para estabilidade), offline-first com cache (React Query persistido em IndexedDB) para abrir o ultimo feed sem sinal; revalida ao reconectar. Service worker faz cache do shell.</li><li>Observabilidade da coleta: cada execucao de job registra collector_runs (fonte, inicio, fim, capturados, publicados, descartados, erros, layout_quebrado). Alerta automatico quando uma fonte fica N ciclos consecutivos sem publicar (quebra silenciosa de layout/endpoint) — exposto no painel admin e via notificacao.</li></ul></section>
+  <section id="s3"><h2><span class="n">3</span>Stack sugerida</h2><div class="tags"><span>Frontend: PWA React + TypeScript (Vite), mobile-first; React Query (TanStack) para server-state + cache offline (persistQueryClient/IndexedDB); virtualizacao de lista (react-window/virtuoso) acima de 200 itens; Tailwind (ja no projeto). Reusa src/components/produto/AppPrototype.tsx (componentes Oportunidades/FreteCard/VeredictoBadge/Detalhe) e src/lib/calc.ts.</span><span>Backend: Node/TypeScript em Supabase Edge Functions (Deno) para API do feed e jobs; Postgres (Supabase) com Row Level Security e PostGIS para geo/distancia. O motor calcularFrete e compartilhado entre front (calculadora) e back (materializacao) — codigo unico em src/lib/calc.ts importado tambem pelas Edge Functions.</span><span>Coleta: coletor agendado (Edge Function cron 15-30min) preferindo API/parceria Fretebras; fallback Playwright (evolucao de scraper/scrape.mjs) rodando em worker dedicado/container externo (Edge Function Deno nao roda Playwright), credenciais/storageState em secrets. NOTA: o spike atual (scraper/output) nao capturou fretes utilizaveis — o fallback precisa de sessao autenticada confiavel antes de ser produtivel.</span><span>Fila/jobs: pg_cron + tabela ingest_queue para os 4 estagios do pipeline; idempotencia por raw_fretes.hash e fretes.dedupe_key; jobs de expiracao e recalculo via pg_cron.</span><span>Storage: Supabase Storage privado com URLs assinadas (para eventuais anexos do Portal B2B); secrets fora do repo (.env ja em .gitignore como no spike).</span><span>Geocoding/distancia: base de municipios IBGE (seed) + PostGIS (haversine) com opcao de provedor de rotas real para distancia/pedagio; tabela ANTT versionada por vigencia e feed de diesel regional (modulo Diesel) como insumos do veredito.</span><span>Testes: Vitest para unit/integracao (motor de calculo, qualidade, dedup, contratos de API com cliente Supabase apontando para branch de teste); Playwright para e2e do app PWA; k6 (ou Artillery) para carga do feed com ~1.000 fretes.</span></div></section>
+  <section id="s4"><h2><span class="n">4</span>Modelo de dados</h2><div class="entidade">
+        <p class="ent-nome">municipios</p>
+        <ul class="campos"><li>id (int, codigo IBGE PK), nome (text), uf (char2), latlng (geography(Point,4326)), nome_normalizado (text, lower/sem acento, indexado GIN trigram para fuzzy match). Seed: base completa de municipios IBGE (~5.570).</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">raw_fretes</p>
+        <ul class="campos"><li>id (uuid PK), fonte (enum FRETEBRAS|RODE_DIRETO|MANUAL), payload (jsonb bruto), hash (text UNIQUE, idempotencia da ingestao), coletado_em (timestamptz), processado (bool default false), erro_parsing (text null), quarentena (bool default false), motivo_quarentena (text null)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">ingest_queue</p>
+        <ul class="campos"><li>id (uuid PK), raw_frete_id (fk raw_fretes), estagio (enum NORMALIZACAO|DEDUP|PUBLICACAO), tentativas (int default 0), proximo_retry (timestamptz), ultimo_erro (text null), criado_em (timestamptz). Worker pega itens com proximo_retry &lt;= now() FOR UPDATE SKIP LOCKED.</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">fretes</p>
+        <ul class="campos"><li>id (uuid PK), origem_municipio_id (fk municipios), destino_municipio_id (fk municipios), origem_texto/destino_texto (text), distancia_km (numeric), valor_centavos (bigint), carga (text), peso_kg (int null), carroceria (text), data_coleta (timestamptz), entrega_em (text), exige_rastreador/exige_gerenciadora/exige_seguro (bool), observacoes (text), embarcador_id (uuid null), score_embarcador (numeric null), prazo_pagamento_dias (int null), media_mercado_centavos (bigint null), pct_mercado (numeric null), amostra_mercado (int null), pct_tabela_antt (numeric null), tabela_minima_centavos (bigint null), fonte (enum), direto (bool generated = fonte='RODE_DIRETO'), dedupe_key (text indexado UNIQUE parcial onde status='ATIVO'), status (enum ATIVO|EXPIRADO|PREENCHIDO|REMOVIDO default ATIVO), expira_em (timestamptz), interessados (int default 0), criado_em/atualizado_em (timestamptz). Indices: (status, criado_em), (origem_municipio_id, destino_municipio_id, carroceria).</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">frete_contatos</p>
+        <ul class="campos"><li>frete_id (fk fretes PK), canal (enum whatsapp|telefone), valor (text — PII, NUNCA exposto em SELECT do feed/detalhe), criado_em (timestamptz). Tabela SEPARADA com RLS restritiva: nenhuma policy de SELECT direto pelo cliente</li><li>acessada SO pela Edge Function de /contato via service-role. Expurgada quando o frete sai (EXPIRADO/PREENCHIDO/REMOVIDO).</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">frete_proveniencias</p>
+        <ul class="campos"><li>id (uuid PK), frete_id (fk fretes), fonte (enum), url_origem (text null), coletado_em (timestamptz), raw_frete_id (fk raw_fretes). UNIQUE(frete_id, raw_frete_id).</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">perfis_motorista</p>
+        <ul class="campos"><li>user_id (uuid PK/fk auth.users), consumo_km_l (numeric), preco_diesel (numeric null = usa regional do modulo Diesel), manutencao_km/pneus_km/depreciacao_km/alimentacao_dia/arla_pct/margem_desejada_pct (numeric, defaults = FRETE_DEFAULTS de calc.ts), carroceria (text), regioes (text[]), cidade_base (text), perfil_hash (text gerado deterministicamente dos campos de custo+margem</li><li>muda -&gt; invalida veredito)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">fretes_veredito</p>
+        <ul class="campos"><li>frete_id (fk fretes), perfil_hash (text), custo_centavos (bigint), lucro_centavos (bigint), valor_minimo_centavos (bigint), rs_por_km (numeric), margem_real_pct (numeric), veredito (enum BOM|ACEITAVEL|RUIM), calculado_em (timestamptz), PK composta (frete_id, perfil_hash). Index (perfil_hash, veredito, lucro_centavos desc) para feed filtrado/ordenado.</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">collector_runs</p>
+        <ul class="campos"><li>id (uuid PK), fonte (enum), iniciado_em/finalizado_em (timestamptz), capturados (int), publicados (int), descartados (int), quarentenados (int), erros (int), layout_quebrado (bool), detalhe (jsonb). Index (fonte, iniciado_em desc) para detectar N ciclos sem publicar.</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">freight_events</p>
+        <ul class="campos"><li>id (uuid PK), user_id (uuid), frete_id (uuid), tipo (enum feed_view|detail_view|contact_reveal|interesse), metadata (jsonb null — ex.: finalidade do contact_reveal), criado_em (timestamptz). Instrumentacao do funil + auditoria LGPD do contact_reveal (append-only, retencao definida em politica).</li></ul>
+      </div></section>
+  <section id="s5"><h2><span class="n">5</span>Contratos de API</h2><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/api/feed/fretes</code></div>
+        <p class="ep-desc">Feed paginado com veredito ja materializado para o perfil_hash do usuario do JWT. Query: ?filtro=todas|boas, ?ordenar=lucro|rs_km|vs_mercado (default lucro), ?origemUf, ?destinoUf, ?raioKm, ?cursor (opaco, keyset), ?limite (default 30, max 100). Resposta 200: { itens: FreteFeedDTO[], proximoCursor: string|null, atualizadoAte: ISO8601 }. FreteFeedDTO: { id, origem{municipio,uf}, destino{municipio,uf}, distanciaKm, valorCentavos, veredito ('bom'|'aceitavel'|'ruim'), lucroCentavos, custoCentavos, valorMinimoCentavos, rsPorKm, pctMercado|null, amostraMercado|null, pctTabelaAntt|null, fonte, direto (bool), scoreEmbarcador|null, prazoPagamentoDias|null, interessados, coletadoHa (ISO ou rotulo), expiraEm }. NAO inclui contato/peso bruto/PII. Se perfil_hash inedito: dispara materializacao em lote (com lock) antes de responder. RLS garante que o veredito lido e o do perfil do usuario do JWT. Registra freight_events.feed_view (1 por pagina, batched).</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/api/fretes/:id</code></div>
+        <p class="ep-desc">Detalhe completo: composicao de custo (custoDiesel, custoArla, custoPedagio, custoManutencao, custoPneus, custoDepreciacao, custoAlimentacao em centavos — derivada de calcularFrete), pctTabelaAntt + tabelaMinimaCentavos, pctMercado + amostraMercado, scoreEmbarcador + prazoPagamentoDias, exigencias (rastreador/gerenciadora/seguro), carga/peso/carroceria, dataColeta/entregaEm, observacoes, fonte e proveniencias (lista dedup: fonte+url+coletadoEm). Registra freight_events.detail_view. Resposta NAO inclui contato (revelado so via POST /contato). 404 se status != ATIVO; 410 (Gone) se status=EXPIRADO/PREENCHIDO/REMOVIDO (distingue 'nunca existiu' de 'expirou').</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/api/fretes/:id/contato</code></div>
+        <p class="ep-desc">Revela o contato do anunciante. Body vazio. Le frete_contatos via service-role (cliente nunca acessa a tabela). Registra freight_events.contact_reveal { frete_id, user_id, criado_em, metadata.finalidade } para auditoria/base legal LGPD. Resposta 200: { canal: 'whatsapp'|'telefone', valor: string, mensagemPronta: string } com origem-&gt;destino e valorMinimo do motorista pre-preenchidos (ex.: 'Sobre o frete Sao Paulo -&gt; Recife: pelo meu custo consigo fechar a partir de R$ 12.222. Conseguimos ajustar?'). Rate-limited 60/h por usuario (429 ao exceder). 410 se frete nao-ATIVO.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/api/fretes/:id/interesse</code></div>
+        <p class="ep-desc">Motorista demonstra interesse (SO fonte=RODE_DIRETO). Body vazio; idempotente por (frete_id, user_id) — UNIQUE constraint. Incrementa interessados atomicamente (so na primeira vez) e cria candidatura visivel no Portal B2B. Resposta 200: { ok: true, jaInteressado: boolean, interessados: int }. 409 para fonte FRETEBRAS|MANUAL (fora de escopo do matching). 410 se nao-ATIVO. Registra freight_events.interesse.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/internal/ingest</code></div>
+        <p class="ep-desc">Endpoint interno (coletores/Portal B2B, auth service-role apenas). Body: { fonte, coletadoEm, registros: RawFrete[] }. Para cada registro: upsert em raw_fretes por hash (idempotente — reenvio nao duplica), enfileira em ingest_queue. Resposta 202: { recebidos: int, novos: int, duplicados: int }. 401 se nao service-role. Usado por: job Fretebras, trigger do Portal B2B ao publicar, CRUD manual do admin. Para RODE_DIRETO com contato, persiste em frete_contatos (PII isolada).</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/internal/fretes/:id/status</code></div>
+        <p class="ep-desc">Transiciona status (job de expiracao, baixa do Portal B2B, takedown). Auth service-role. Body: { status: 'ATIVO'|'EXPIRADO'|'PREENCHIDO'|'REMOVIDO', motivo }. Valida transicao (ex.: REMOVIDO-&gt;ATIVO so via admin flag). Ao sair de ATIVO: expurga frete_contatos (PII) e remove veredito do feed em segundos. Resposta 200: { id, status, atualizadoEm }. 409 se transicao invalida.</p>
+      </div></section>
+  <section id="s6"><h2><span class="n">6</span>Frontend / fluxo</h2><ul><li>Tela Oportunidades (feed): evolui src/components/produto/AppPrototype.tsx (Oportunidades + FreteCard + VeredictoBadge ja existentes). Substituir o array estatico OPORTUNIDADES por useInfiniteQuery (React Query) chamando GET /api/feed/fretes com cursor; manter o cartao por frete com origem-&gt;destino, distancia, valor e badge de veredito + resultado em R$ (verde para lucro, vermelho para prejuizo, como no mock: Goiania-&gt;SP '+R$ 2.300', SP-&gt;Recife '−R$ 1.777').</li><li>Barra de controles: chips de filtro Todas | So boas e seletor de ordenacao Lucro | R$/km | vs mercado (o mock ja tem chips placeholder Todas/Boas/Por rota). Estado em URL/searchParams para deep-link e persistencia; refetch ao mudar filtro/ordem.</li><li>Tela Detalhe do frete: evolui Detalhe + ResultadoFrete; le GET /api/fretes/:id e mostra a grade Custo/Lucro/Minimo (como ANALISE_EXEMPLO: custo R$9.777, lucro −R$1.777, minimo R$12.222), composicao de custo, % vs ANTT com piso, % vs mercado com amostra, score e prazo do embarcador, exigencias, datas e observacoes. Botao 'Ver contato' (POST /contato, revela WhatsApp e mensagem pronta) e, para RODE_DIRETO, botao 'Tenho interesse' (POST /interesse) com estado otimista e selo 'N interessados'.</li><li>Estado e dados: React Query como cache server-state (staleTime ~ ciclo de coleta, ex.: 15min), persistencia offline (persistQueryClient + IndexedDB) para abrir o ultimo feed sem sinal; banner 'atualizado ha X' / 'offline'. Lista virtualizada (react-window/virtuoso) acima de 200 itens. Skeletons no carregamento; empty state de cold start ('poucos fretes na sua rota agora — cadastre suas preferencias').</li><li>Indicadores visuais especificos do RODE: selo RODE-direto (direto=true), carimbo de frescor 'coletado ha X', badge de fonte (RODE-direto/Fretebras/Manual), contador 'N interessados' nos diretos. Acessibilidade: vereditos com icone + cor + texto (nao so cor — daltonismo); foco/aria nos botoes de acao; toques &gt;= 44px (mobile).</li></ul></section>
+  <section id="s7"><h2><span class="n">7</span>Lógica de negócio</h2><ul><li>Veredito por viagem (reusa src/lib/calc.ts calcularFrete, sem reimplementar): custoTotal = custoDiesel + custoArla + custoManutencao + custoPneus + custoDepreciacao + custoPedagio + custoAlimentacao. fatorDistancia = voltaVazia ? 2 : 1 aplica a distancia, diesel, arla, manutencao, pneus, depreciacao e pedagio (alimentacao = alimentacaoDia * dias, nao dobra). lucro = valorFrete - custoTotal. REGRA EXATA do motor: lucro &lt; 0 -&gt; RUIM; lucro &gt;= 0 E margemRealPct (=lucro/valorFrete*100) &lt; margemDesejadaPct -&gt; ACEITAVEL; senao -&gt; BOM. valorMinimo = custoTotal * (1 + margemDesejadaPct/100). Conversao: centavos inteiros no banco, reais no motor — converter na borda.</li><li>Entradas por perfil: consumoKmL, precoDiesel (regional via modulo Diesel quando perfil.preco_diesel=null), manutencaoKm, pneusKm, depreciacaoKm, alimentacaoDia, dias (do preset de rota), arlaPct, margemDesejadaPct (defaults = FRETE_DEFAULTS: consumo 2.5, diesel 6.1, manutencao 0.35, pneus 0.12, depreciacao 0.25, alimentacao 90, arla 5, margem 20). perfil_hash = sha1(JSON canonico dos campos de custo+margem); muda -&gt; veredito daquele perfil_hash e recalculado na proxima leitura.</li><li>Ordenacao (tie-break SEMPRE por id asc para estabilidade/keyset): 'lucro' = lucro_centavos desc; 'rs_km' = (valor_centavos/distancia_km) desc; 'vs_mercado' = pct_mercado desc (fretes sem pct_mercado vao para o fim). Paginacao keyset por (chave_ordem, id) — nao OFFSET — para estabilidade com insercoes concorrentes.</li><li>pct_mercado = (valor_centavos - media_mercado_centavos)/media_mercado_centavos*100, onde media_mercado_centavos = media movel de valor/km dos ultimos 30 dias na rota (origem UF -&gt; destino UF + carroceria). Exige amostra minima (&gt;= 10 fretes); abaixo disso, pct_mercado e amostra ficam null e o indicador e oculto no front.</li><li>Filtro: 'boas' = veredito = 'BOM'; 'todas' = sem filtro. Aplicado em SQL sobre fretes_veredito JOIN fretes WHERE status='ATIVO' AND perfil_hash = &lt;do usuario&gt;.</li><li>dedupe_key = sha1(origem_municipio_id|destino_municipio_id|faixaValor(valor_centavos)|carroceria|dia(data_coleta)). faixaValor agrupa valores proximos (bucket de 5%) para tolerar variacao de coleta. Upsert por dedupe_key WHERE status='ATIVO'; em colisao mantem o frete e anexa frete_proveniencias, priorizando RODE_DIRETO para os campos exibidos (se o existente e raspagem e chega um RODE_DIRETO, os campos exibidos passam a vir do RODE_DIRETO e direto=true).</li><li>Plausibilidade/quarentena: rejeitar se valor_centavos &lt;= 0, origem_municipio_id = destino_municipio_id, distancia_km &lt;= 0, ou rs_por_km fora de [R$0,50/km, R$50/km]. Normalizar cidade por fuzzy match (trigram) contra IBGE; sem match com similaridade &gt;= limiar -&gt; quarentena (quarentena=true, motivo_quarentena) para revisao do admin, NAO aparece no feed.</li><li>TTL/expiracao: expira_em = data_coleta + TTL (24-48h configuravel por fonte). Job a cada 10min: ATIVO -&gt; EXPIRADO quando now() &gt; expira_em. PREENCHIDO/REMOVIDO vem de evento externo (/internal/fretes/:id/status). So ATIVO no feed. Ao expirar, expurga frete_contatos.</li></ul></section>
+  <section id="s8"><h2><span class="n">8</span>Integrações</h2><ul><li>Fretebras: preferir parceria/API oficial; fallback no spike Playwright (scraper/scrape.mjs). NOTA CRITICA: o spike atual (scraper/output, geradoEm 2026-06-18) capturou 6 respostas mas ZERO payloads de frete utilizaveis (apenas tracking/empty/success) — a API mascara preco para sessao nao-confiavel, entao o fallback exige sessao autenticada confiavel (storageState) antes de ser produtivel. Volume/frequencia respeitando Termos de Uso; credenciais em secrets.</li><li>Portal da Empresa (B2B, modulo /empresa) como fonte RODE_DIRETO: integracao bidirecional via /internal/ingest (publicar, com contato indo para frete_contatos) e /internal/fretes/:id/status (encerrar=PREENCHIDO); candidaturas alimentadas por POST /interesse. E a fonte prioritaria do MVP (cold start sem depender de raspagem).</li><li>Tabela do piso minimo ANTT (versionada por vigencia) para pct_tabela_antt e tabela_minima_centavos; consumida pela camada de veredito/enriquecimento.</li><li>Feed de preco do diesel por regiao/rota (modulo Diesel) para o precoDiesel usado no calcularFrete quando perfil.preco_diesel=null; mudanca de preco regional dispara recalculo de veredito dos perfis afetados.</li><li>Geocodificacao + base de municipios IBGE (seed ~5.570 municipios) + PostGIS para normalizacao e distancia (haversine; provedor de rotas opcional para distancia real e pedagio, com fallback gracioso).</li><li>Supabase: Postgres + RLS + PostGIS + pg_trgm + pg_cron, Edge Functions (cron de coleta/expiracao/recalculo e API do feed), Storage privado (anexos do Portal B2B), service-role para endpoints /internal.</li></ul></section>
+  <section id="s9"><h2><span class="n">9</span>Segurança & LGPD</h2><ul><li>RLS no Postgres: perfis_motorista, fretes_veredito e freight_events filtrados por user_id = auth.uid(); cada motorista so le o veredito calculado com o proprio perfil_hash. fretes tem SELECT publico SO de colunas nao-PII e WHERE status='ATIVO'. Endpoints /internal usam service-role (chave nunca exposta ao cliente; validada na Edge Function).</li><li>PII de contato isolada em tabela separada frete_contatos SEM policy de SELECT para o cliente: nunca incluida no payload do feed/detalhe; lida apenas pela Edge Function /contato via service-role. Cada revelacao registra freight_events.contact_reveal (finalidade, timestamp, usuario) — base legal e auditoria LGPD (legitimo interesse + registro de consentimento de uso).</li><li>Coleta Fretebras: respeitar Termos de Uso (preferir parceria/API oficial), volume/frequencia minimos, credenciais e storageState de sessao em secrets do gestor (fora do repo, .env em .gitignore como no spike). Avaliar base legal da raspagem com juridico antes de produtizar — o spike atual nao capturou dados, reforcando que a via legal/parceria e a prioritaria.</li><li>Retencao minima (LGPD): raw_fretes com TTL de reprocessamento e expurgo programado; frete_contatos expurgado quando a oferta sai (EXPIRADO/PREENCHIDO/REMOVIDO); freight_events com politica de retencao definida; logs de coleta sem PII desnecessaria; suporte a direito de exclusao do contato do anunciante.</li><li>Anti-abuso: /internal apenas service-role (401 caso contrario); rate-limit em /contato (60/h por usuario, 429 ao exceder) para impedir scraping reverso do contato; idempotencia por (frete_id, user_id) em /interesse impede inflar 'interessados'; idempotencia por hash em /ingest impede duplicacao de carga.</li><li>Endurecimento da raspagem e moderacao: sem credenciais no client; coletor isolado em worker dedicado; takedown rapido via status REMOVIDO para frete fantasma/golpe reportado; validacao de plausibilidade tambem como barreira anti-spam de anuncio fraudulento.</li><li>Transporte e segredos: HTTPS obrigatorio; JWT do Supabase validado em toda rota /api; secrets (service-role, storageState, credenciais ANTT/diesel) no gestor de secrets do Supabase, nunca em .env versionado.</li></ul></section>
+  <section id="s10"><h2><span class="n">10</span>Não-funcionais</h2><ul><li>Performance: feed p95 &lt; 2s em 4G; lista paginada por cursor keyset e virtualizada acima de 200 fretes; veredito lido ja materializado (zero calculo no request, exceto primeira materializacao de perfil_hash inedito que tem orcamento separado). Detalhe p95 &lt; 1s. Recalculo em lote de veredito para ~1.000 fretes concluido dentro de um ciclo de coleta (&lt; 5min).</li><li>Frescor: coleta em ciclos de 15-30min com carimbo 'atualizado ha X'; fretes acima do TTL (24-48h) saem do feed em ate 10min; meta &lt; 2% de expirados ainda visiveis em qualquer snapshot.</li><li>Confiabilidade: falha de uma fonte nao derruba o feed (isolamento por worker + circuit breaker que abre apos 3 falhas consecutivas); coleta com retry e backoff exponencial (1/5/30min, depois dead-letter); jobs idempotentes (raw_fretes.hash, dedupe_key, upsert); chamadas do Portal idempotentes.</li><li>Qualidade de dado: &lt; 5% de cartoes com erro de parsing E deduplicacao &gt; 95% de precisao, medidos continuamente (quarentenados/total e duplicatas residuais detectadas/total) e expostos no painel admin. Metrica calculada por collector_runs e por amostragem manual de QA.</li><li>Observabilidade: collector_runs por execucao; alerta automatico quando uma fonte fica N (&gt;=3) ciclos consecutivos sem publicar (quebra silenciosa); testes de contrato contra o shape esperado da fonte para detectar mudanca de layout cedo.</li><li>Resiliencia offline-first (PWA): abre o ultimo feed cacheado sem sinal e revalida ao reconectar; degradacao graciosa quando geocoding/rota indisponivel (haversine fallback + indicador de 'distancia estimada'). Cold start: feed funcional so com RODE_DIRETO + MANUAL, sem depender de Fretebras.</li></ul></section>
+  <section id="s11"><h2><span class="n">11</span>Etapas de implementação</h2><ol><li>1. Modelo de dados + migracoes: tabelas municipios (seed IBGE), raw_fretes, ingest_queue, fretes, frete_contatos, frete_proveniencias, fretes_veredito, perfis_motorista, collector_runs, freight_events. Habilitar PostGIS e pg_trgm; definir RLS e policies (PII isolada em frete_contatos). Gerar tipos TS (supabase gen types).</li><li>2. Camada de qualidade pura e testavel: modulo normalizarMunicipio(), parseValorCentavos(), parsePesoKg(), geocodificar(), validarPlausibilidade(). Testes unitarios com fixtures de dados sujos (o spike nao gerou payloads reais — criar fixtures sinteticas realistas baseadas no shape esperado da Fretebras + casos do mock produto.ts).</li><li>3. Deduplicacao: dedupeKey() + upsert que colapsa proveniencias com prioridade RODE_DIRETO. Testes de colisao e nao-colisao.</li><li>4. Motor de veredito no backend: worker que cruza frete x perfil reusando calcularFrete() de src/lib/calc.ts, materializa fretes_veredito; recalcula em novo frete, mudanca de status, mudanca de perfil_hash e mudanca de diesel regional. Testes batem os numeros EXATOS de ANALISE_EXEMPLO e OPORTUNIDADES (produto.ts).</li><li>5. Ingestao RODE_DIRETO (MVP, entregar PRIMEIRO — cold start nao depende de raspagem): funcao no Portal B2B que ao publicar/encerrar oportunidade chama /internal/ingest e /internal/fretes/:id/status, persistindo contato em frete_contatos.</li><li>6. Cadastro manual (admin): tela/endpoint para frete avulso (fonte=MANUAL) reusando a mesma camada de qualidade. Completa o MVP sem Fretebras.</li><li>7. Coletor Fretebras (incremental, isolado): preferir API/parceria; fallback evoluindo scraper/scrape.mjs para coletor agendado em worker dedicado, com sessao autenticada confiavel (o spike atual nao captura dados). Circuit breaker + collector_runs. Credenciais em secrets. Bloqueado por validacao juridica.</li><li>8. API do feed: GET /api/feed/fretes (filtros/ordenacao/cursor keyset), GET /api/fretes/:id (410 para expirado), POST /contato (rate-limit + auditoria), POST /interesse (idempotente). RLS por usuario; veredito lido ja materializado.</li><li>9. Job de expiracao (pg_cron 10min): EXPIRADO por TTL + expurgo de frete_contatos; integra status PREENCHIDO do Portal.</li><li>10. Frontend: ligar AppPrototype (Oportunidades/Detalhe) ao GET real via useInfiniteQuery; chips Todas/Boas, ordenacao em URL, virtualizacao acima de 200, offline cache (IndexedDB), 'atualizado ha X', 'Ver contato', 'Tenho interesse' otimista.</li><li>11. Observabilidade + alertas: dashboard de collector_runs no admin, alerta de quebra de coleta (N ciclos sem publicar), metricas de cobertura/qualidade por fonte.</li><li>12. Hardening: e2e feed-&gt;detalhe-&gt;contato/interesse, carga do feed com ~1.000 fretes (k6, p95 &lt; 2s), revisao LGPD (PII de contato isolada, retencao de raw e contatos, auditoria de contact_reveal).</li></ol></section>
+  <section id="s12"><h2><span class="n">12</span>Plano de teste</h2><div class="teste"><h4>unit</h4><ul><li>calcularFrete (motor src/lib/calc.ts) — ANALISE_EXEMPLO: distanciaKm=2650, valorFrete=8000, voltaVazia, defaults FRETE_DEFAULTS -&gt; veredito='ruim', custoTotal ~9777, valorMinimo ~12222, lucro ~ -1777, margemRealPct negativa. Numeros batem o mock produto.ts (custo R$9.777, minimo R$12.222, lucro −R$1.777).</li><li>calcularFrete — Goiania-&gt;SP: distanciaKm=900, valorFrete=6500 -&gt; veredito='bom', lucro positivo (~+2300 no mock), valorMinimo &lt; valorFrete. Com margemDesejadaPct elevada (ex.: 60%) o MESMO frete cai para 'aceitavel' (fronteira margemRealPct &lt; margemDesejadaPct).</li><li>calcularFrete — fronteira RUIM/ACEITAVEL: frete com lucro=0 -&gt; 'aceitavel' (lucro&gt;=0 e margemReal 0% &lt; margem desejada); frete com lucro=-0.01 -&gt; 'ruim'.</li><li>calcularFrete — efeito de voltaVazia: mesmo frete com voltaVazia=true tem custoTotal maior (fatorDistancia=2 em diesel/manutencao/pneus/depreciacao/pedagio, alimentacao inalterada) e pode rebaixar veredito de BOM para RUIM.</li><li>calcularFrete — sensibilidade ao consumo: mesmo frete com consumoKmL=3.2 tem lucro MAIOR que com 2.5 (menos litros), provando dependencia do caminhao.</li><li>normalizarMunicipio: 'S. Paulo/SP', 'sao paulo - sp', 'S.PAULO/SP', 'São Paulo,SP' -&gt; todos IBGE 3550308; 'Goiania/GO' -&gt; 5208707; 'Cidade Inexistente/ZZ' e similaridade &lt; limiar -&gt; quarentena.</li><li>parseValorCentavos: 'R$ 8.000' -&gt; 800000; '8000,00' -&gt; 800000; '8.000,50' -&gt; 800050; 'R$ 6.500' -&gt; 650000; 'combinar'/''/null -&gt; null (quarentena).</li><li>parsePesoKg: '30 t' -&gt; 30000; '32t' -&gt; 32000; '18 toneladas' -&gt; 18000; 'a combinar' -&gt; null.</li><li>validarPlausibilidade: valor=0 -&gt; rejeitado; origem==destino -&gt; rejeitado; distancia_km=0 -&gt; rejeitado; rs_por_km=0.10 ou =60 -&gt; rejeitado; Goiania-&gt;SP 900km R$6.500 (rs_km ~7,2) -&gt; aceito.</li><li>dedupeKey: duas coletas da mesma oferta Goiania-&gt;SP R$6.500 (uma FRETEBRAS, uma RODE_DIRETO, valores dentro do bucket 5%, mesma carroceria, mesmo dia) -&gt; mesma chave; oferta BH-&gt;SP R$4.200 -&gt; chave distinta; mesma rota mas dia diferente -&gt; chave distinta.</li><li>perfilHash: dois perfis identicos em custo+margem -&gt; mesmo hash; mudar consumoKmL de 2.5 para 3.2 -&gt; hash diferente (invalida veredito).</li></ul></div><div class="teste"><h4>integracao</h4><ul><li>POST /internal/ingest com lote bruto (RODE_DIRETO) -&gt; registros passam por qualidade, dedup e aparecem em fretes com 1 proveniencia; contato gravado em frete_contatos. Reenvio do MESMO lote (mesmo hash) -&gt; 202 com novos=0, duplicados=N, sem duplicar em fretes.</li><li>Publicar oportunidade RODE_DIRETO no Portal B2B -&gt; GET /api/feed/fretes retorna o frete em segundos com direto=true; /internal/fretes/:id/status status=PREENCHIDO -&gt; frete some do feed na proxima leitura e frete_contatos expurgado.</li><li>GET /api/feed/fretes?filtro=boas&amp;ordenar=rs_km -&gt; retorna apenas veredito='bom' ordenado por valor/distancia desc, tie-break por id; proximoCursor funcional (segunda pagina nao repete nem pula itens) e atualizadoAte preenchido.</li><li>GET /api/feed/fretes?filtro=todas -&gt; os tres vereditos (bom/aceitavel/ruim) aparecem para o mesmo usuario (ex.: Goiania-&gt;SP bom, RJ-&gt;SP aceitavel, SP-&gt;Recife ruim do dataset mock).</li><li>Veredito por caminhao: dois usuarios com perfil_hash diferente (consumo 2.5 vs 3.2) leem o MESMO frete -&gt; lucro_centavos e veredito coerentemente diferentes (3.2 km/L &gt;= lucro do 2.5).</li><li>Mudar perfil (consumo) via update em perfis_motorista -&gt; perfil_hash novo -&gt; proxima leitura do feed recalcula e materializa fretes_veredito para o novo hash.</li><li>Job de expiracao: frete com expira_em no passado -&gt; vira EXPIRADO e some; GET /api/fretes/:id desse frete -&gt; 410.</li><li>Colisao de dedup multi-fonte: ingerir a mesma oferta de FRETEBRAS e RODE_DIRETO -&gt; 1 unico frete, 2 frete_proveniencias, exibido com direto=true (prioridade RODE_DIRETO).</li><li>POST /api/fretes/:id/interesse em fonte=FRETEBRAS -&gt; 409; em RODE_DIRETO 1a vez -&gt; interessados+1 e jaInteressado=false-&gt;candidatura no Portal; 2a chamada do mesmo usuario -&gt; jaInteressado=true, interessados inalterado (idempotente).</li><li>POST /api/fretes/:id/contato -&gt; 200 com canal/valor/mensagemPronta (mensagem cita origem-&gt;destino e valorMinimo do usuario); registra freight_events.contact_reveal; 61a chamada na mesma hora -&gt; 429.</li><li>RLS: usuario A nao consegue ler fretes_veredito de perfil_hash de usuario B; SELECT direto em frete_contatos pelo cliente retorna vazio/negado.</li></ul></div><div class="teste"><h4>e2e</h4><ul><li>Fluxo feliz (Playwright): motorista abre o app -&gt; feed carrega &lt; 2s -&gt; aplica 'So boas' (so cartoes verdes) -&gt; ordena por Lucro (Goiania-&gt;SP no topo) -&gt; abre detalhe -&gt; ve grade Custo/Lucro/Minimo e % vs ANTT/mercado -&gt; clica 'Ver contato' (WhatsApp + mensagem pronta aparecem, contact_reveal registrado) -&gt; em RODE_DIRETO clica 'Tenho interesse' e contador incrementa de N para N+1.</li><li>Resiliencia: mock de falha da fonte Fretebras (circuit breaker abre) -&gt; feed continua mostrando RODE_DIRETO/MANUAL (nao vazio) e o painel admin mostra alerta de quebra de coleta.</li><li>Offline: abrir feed online, perder conexao, reabrir app -&gt; ultimo feed cacheado (IndexedDB) aparece com banner 'offline / atualizado ha X'; ao reconectar, revalida e atualiza 'atualizado agora'.</li><li>LGPD: inspecionar o payload JSON do feed e do detalhe -&gt; nenhum campo de contato/WhatsApp/telefone presente ate o clique explicito em 'Ver contato'; apos o clique, o valor aparece SO na resposta do POST /contato.</li><li>Expiracao em sessao aberta: motorista com feed aberto; frete expira; tentar abrir o detalhe -&gt; recebe 410 e mensagem 'esse frete nao esta mais disponivel', sem quebrar a UI.</li></ul></div><div class="teste"><h4>carga/qualidade</h4><ul><li>Feed com ~1.000 fretes ATIVOS e veredito materializado: k6 com 50 VUs em GET /api/feed/fretes -&gt; p95 &lt; 2s; paginacao por cursor estavel sob insercoes concorrentes (sem itens repetidos/pulados).</li><li>Materializacao em lote: para perfil_hash inedito com 1.000 fretes ATIVOS, recalculo completo concluido em &lt; 5min (dentro do ciclo de coleta); leitura subsequente do feed le do cache.</li><li>Pipeline de qualidade sobre fixtures sinteticas (o spike scraper/output nao capturou fretes reais): medir taxa de erro de parsing &lt; 5% (quarentenados/total) e precisao de dedup &gt; 95% (duplicatas residuais detectadas manualmente / total) num conjunto de QA com casos sujos conhecidos.</li><li>Idempotencia sob concorrencia: 100 chamadas simultaneas de /interesse do mesmo usuario no mesmo frete -&gt; interessados incrementa exatamente 1; 100 reenvios do mesmo lote /ingest -&gt; zero duplicatas em fretes.</li></ul></div></section>
+  <section id="s13"><h2><span class="n">13</span>Critérios de aceite</h2><ul class="check"><li>DADO um motorista com perfil 'carreta 6 eixos, 2,5 km/L, margem 20%' QUANDO abre o feed ENTAO cada cartao mostra veredito (BOM/ACEITAVEL/RUIM) e o resultado em R$ calculado para o SEU caminhao (ex.: Goiania-&gt;SP = +R$ 2.300, SP-&gt;Recife = −R$ 1.777, batendo o motor calcularFrete) E o feed carrega em p95 &lt; 2s em 4G.</li><li>DADO o MESMO frete e DOIS motoristas com consumo diferente (2,5 vs 3,2 km/L) QUANDO ambos abrem o detalhe ENTAO o lucro e o veredito diferem coerentemente (maior consumo = menor custo de diesel = maior lucro), provando veredito por caminhao e nao global.</li><li>DADO o filtro 'So boas' ativo QUANDO o motorista aplica ENTAO o feed mostra APENAS veredito BOM (nenhum ACEITAVEL/RUIM); QUANDO alterna para 'Todas' ENTAO os tres vereditos reaparecem para o mesmo perfil.</li><li>DADO ordenacao por 'R$ por km' QUANDO selecionada ENTAO os cartoes ficam em ordem decrescente de valor_centavos/distancia_km; por 'vs mercado' em ordem decrescente de pct_mercado (fretes sem amostra &gt;=10 vao ao fim); a ordem e estavel com tie-break por id.</li><li>DADO a MESMA oferta coletada da Fretebras E publicada como RODE_DIRETO (mesma dedupe_key) QUANDO o motorista abre o feed ENTAO ve UM unico cartao com selo RODE-direto (prioridade) E o detalhe lista as duas proveniencias.</li><li>DADO um frete cuja expira_em (data_coleta + TTL) ja passou QUANDO o job de expiracao (10min) roda ENTAO o frete vira EXPIRADO, some do feed E GET /api/fretes/:id retorna 410; o contato em frete_contatos e expurgado.</li><li>DADO uma empresa que encerra a oportunidade no Portal B2B QUANDO /internal/fretes/:id/status muda para PREENCHIDO ENTAO o frete RODE_DIRETO correspondente sai do feed na proxima leitura (segundos) e some das candidaturas ativas.</li><li>DADO um registro bruto da Fretebras com cidade 'S. Paulo/SP' QUANDO passa pela camada de qualidade ENTAO e normalizado para IBGE 3550308 (Sao Paulo, SP) e geocodificado; registros com valor=0 ou origem=destino sao quarentenados e NAO aparecem no feed.</li><li>DADO um frete fonte=FRETEBRAS QUANDO o motorista tenta 'Tenho interesse' ENTAO recebe 409; DADO um RODE_DIRETO QUANDO clica pela 1a vez ENTAO interessados incrementa em 1 e a candidatura aparece no Portal; QUANDO clica de novo ENTAO jaInteressado=true e interessados nao muda (idempotente).</li><li>DADO o motorista QUANDO abre feed e detalhe ENTAO o contato (WhatsApp/telefone) NAO esta em nenhum payload de leitura ate clicar 'Ver contato'; esse clique retorna o contato + mensagem pronta com origem-&gt;destino e seu valorMinimo, E registra freight_events.contact_reveal (auditoria LGPD).</li><li>DADO a fonte Fretebras indisponivel (circuit breaker aberto apos &gt;=3 falhas) QUANDO o motorista abre o feed ENTAO os fretes RODE_DIRETO e MANUAL continuam aparecendo (feed nao vazio) E o admin recebe alerta de quebra de coleta.</li><li>DADO o pipeline em producao QUANDO medido continuamente ENTAO &lt; 5% de cartoes com erro de parsing (quarentenados/total) E dedup &gt; 95% de precisao (duplicatas residuais/total), com ambas as metricas visiveis no painel admin via collector_runs.</li><li>DADO uma chamada a /api/feed/fretes ou /api/fretes/:id sem JWT valido QUANDO recebida ENTAO retorna 401; DADO uma chamada a /internal/* sem service-role ENTAO retorna 401; DADO o 61o POST /contato do mesmo usuario na mesma hora ENTAO retorna 429.</li></ul></section>
+  <section id="s14"><h2><span class="n">14</span>Diagramas</h2><p class="hint">Renderizados com Mermaid — requer internet ao abrir o arquivo.</p><h4>Arquitetura da solução</h4><div class="mermaid-box"><pre class="mermaid">flowchart LR
+  pwa[&quot;PWA React (AppPrototype)&quot;] --&gt; feedApi[&quot;Edge Function /api/feed/fretes&quot;]
+  whats[&quot;WhatsApp (mensagem pronta)&quot;] -.-&gt; contatoApi[&quot;Edge Function POST /contato&quot;]
+  pwa --&gt; contatoApi
+  feedApi --&gt; veredito[(&quot;fretes_veredito&quot;)]
+  feedApi --&gt; fretesTbl[(&quot;fretes + RLS&quot;)]
+  contatoApi --&gt; contatos[(&quot;frete_contatos (PII, service-role)&quot;)]
+  portal[&quot;Portal B2B /empresa&quot;] --&gt; ingest[&quot;POST /internal/ingest&quot;]
+  fretebras[&quot;Coletor Fretebras (Playwright worker)&quot;] --&gt; ingest
+  admin[&quot;Cadastro MANUAL (admin)&quot;] --&gt; ingest
+  ingest --&gt; raw[(&quot;raw_fretes&quot;)]
+  raw --&gt; queue[(&quot;ingest_queue (pg_cron worker)&quot;)]
+  queue --&gt; fretesTbl
+  cron[&quot;Jobs pg_cron (coleta/expiracao/recalculo)&quot;] --&gt; fretesTbl
+  cron --&gt; veredito
+  calc[&quot;calcularFrete (src/lib/calc.ts)&quot;] --&gt; veredito
+  diesel[&quot;Modulo Diesel + Tabela ANTT + IBGE/PostGIS&quot;] --&gt; calc</pre></div><h4>Casos de uso</h4><div class="mermaid-box"><pre class="mermaid">flowchart LR
+  motorista[&quot;Motorista&quot;]
+  empresa[&quot;Empresa (Embarcador)&quot;]
+  admin[&quot;Admin&quot;]
+  sistema[&quot;Sistema (jobs/cron)&quot;]
+  subgraph sistemaBox[&quot;Sistema&quot;]
+    uc1[&quot;Ver feed com veredito&quot;]
+    uc2[&quot;Filtrar e ordenar fretes&quot;]
+    uc3[&quot;Ver detalhe do frete&quot;]
+    uc4[&quot;Ver contato (POST /contato)&quot;]
+    uc5[&quot;Demonstrar interesse (RODE_DIRETO)&quot;]
+    uc6[&quot;Publicar/encerrar frete (B2B)&quot;]
+    uc7[&quot;Cadastrar frete MANUAL&quot;]
+    uc8[&quot;Coletar e materializar veredito&quot;]
+  end
+  motorista --&gt; uc1
+  motorista --&gt; uc2
+  motorista --&gt; uc3
+  motorista --&gt; uc4
+  motorista --&gt; uc5
+  empresa --&gt; uc6
+  admin --&gt; uc7
+  sistema --&gt; uc8</pre></div><h4>Fluxo principal</h4><div class="mermaid-box"><pre class="mermaid">flowchart TD
+  start[&quot;Motorista abre feed&quot;] --&gt; getFeed[&quot;GET /api/feed/fretes (JWT -&gt; perfil_hash)&quot;]
+  getFeed --&gt; dec1{&quot;perfil_hash ja materializado?&quot;}
+  dec1 --&gt;|&quot;Nao&quot;| lote[&quot;Materializa veredito em lote (com lock)&quot;]
+  lote --&gt; leitura[&quot;Le fretes_veredito JOIN fretes status=ATIVO&quot;]
+  dec1 --&gt;|&quot;Sim&quot;| leitura
+  leitura --&gt; render[&quot;Renderiza cartoes (veredito + R$)&quot;]
+  render --&gt; detalhe[&quot;GET /api/fretes/:id&quot;]
+  detalhe --&gt; dec2{&quot;status = ATIVO?&quot;}
+  dec2 --&gt;|&quot;Nao&quot;| gone[&quot;410 Gone: frete indisponivel&quot;]
+  dec2 --&gt;|&quot;Sim&quot;| acao[&quot;Clica Ver contato&quot;]
+  acao --&gt; dec3{&quot;Rate-limit 60/h ok?&quot;}
+  dec3 --&gt;|&quot;Nao&quot;| err429[&quot;429 Too Many Requests&quot;]
+  dec3 --&gt;|&quot;Sim&quot;| reveal[&quot;POST /contato: le frete_contatos + log contact_reveal&quot;]
+  reveal --&gt; ok[&quot;200: canal + valor + mensagemPronta&quot;]</pre></div><h4>UML — classes/serviços</h4><div class="mermaid-box"><pre class="mermaid">classDiagram
+  class CalcEngine {
+    +calcularFrete(frete, perfil) Resultado
+    +FRETE_DEFAULTS
+  }
+  class Resultado {
+    +custoTotal
+    +lucro
+    +valorMinimo
+    +margemRealPct
+    +veredito
+  }
+  class VeredictoWorker {
+    +materializar(frete, perfilHash)
+    +recalcular(trigger)
+  }
+  class IngestService {
+    +ingest(fonte, registros) Recebido
+    +upsertPorHash(raw)
+  }
+  class QualidadeService {
+    +normalizarMunicipio(texto) int
+    +parseValorCentavos(txt) bigint
+    +validarPlausibilidade(frete) bool
+  }
+  class DedupService {
+    +dedupeKey(frete) text
+    +colapsarProveniencias(frete)
+  }
+  class FeedService {
+    +listar(filtro, ordenar, cursor) FreteFeedDTO
+    +revelarContato(freteId) Contato
+  }
+  CalcEngine ..&gt; Resultado
+  VeredictoWorker ..&gt; CalcEngine
+  IngestService ..&gt; QualidadeService
+  QualidadeService ..&gt; DedupService
+  FeedService ..&gt; VeredictoWorker</pre></div><h4>Banco de dados (ER)</h4><div class="mermaid-box"><pre class="mermaid">erDiagram
+  municipios ||--o{ fretes : &quot;origem/destino&quot;
+  raw_fretes ||--o{ ingest_queue : &quot;enfileira&quot;
+  raw_fretes ||--o{ frete_proveniencias : &quot;origina&quot;
+  fretes ||--o{ frete_proveniencias : &quot;tem&quot;
+  fretes ||--|| frete_contatos : &quot;PII&quot;
+  fretes ||--o{ fretes_veredito : &quot;materializa&quot;
+  perfis_motorista ||--o{ fretes_veredito : &quot;perfil_hash&quot;
+  fretes ||--o{ freight_events : &quot;gera&quot;
+  municipios {
+    int id PK
+    text nome
+    char uf
+  }
+  raw_fretes {
+    uuid id PK
+    text hash UK
+    enum fonte
+  }
+  ingest_queue {
+    uuid id PK
+    uuid raw_frete_id FK
+    enum estagio
+  }
+  fretes {
+    uuid id PK
+    int origem_municipio_id FK
+    int destino_municipio_id FK
+    text dedupe_key UK
+    enum status
+    enum fonte
+  }
+  frete_contatos {
+    uuid frete_id PK
+    enum canal
+    text valor
+  }
+  frete_proveniencias {
+    uuid id PK
+    uuid frete_id FK
+    uuid raw_frete_id FK
+  }
+  perfis_motorista {
+    uuid user_id PK
+    text perfil_hash
+    numeric consumo_km_l
+  }
+  fretes_veredito {
+    uuid frete_id PK
+    text perfil_hash PK
+    enum veredito
+    bigint lucro_centavos
+  }
+  freight_events {
+    uuid id PK
+    uuid user_id
+    uuid frete_id
+    enum tipo
+  }</pre></div><h4>Lógica do plano de testes</h4><div class="mermaid-box"><pre class="mermaid">flowchart TD
+  start[&quot;Plano de teste&quot;] --&gt; unit[&quot;UNIT (Vitest)&quot;]
+  unit --&gt; u1[&quot;calcularFrete: SP-&gt;Recife = RUIM, custo ~9777, min ~12222&quot;]
+  unit --&gt; u2[&quot;calcularFrete: Goiania-&gt;SP = BOM, lucro ~+2300&quot;]
+  unit --&gt; u3[&quot;normalizarMunicipio / parseValorCentavos / perfilHash&quot;]
+  unit --&gt; u4[&quot;dedupeKey: colisao mesma oferta, distinta por dia&quot;]
+  u1 --&gt; integ[&quot;INTEGRACAO (Supabase branch teste)&quot;]
+  u2 --&gt; integ
+  u3 --&gt; integ
+  u4 --&gt; integ
+  integ --&gt; i1[&quot;POST /internal/ingest idempotente (novos/duplicados)&quot;]
+  integ --&gt; i2[&quot;GET /feed?filtro=boas&amp;ordenar=rs_km + cursor estavel&quot;]
+  integ --&gt; i3[&quot;Veredito por caminhao (2.5 vs 3.2 km/L)&quot;]
+  integ --&gt; i4[&quot;Expiracao TTL -&gt; 410; RLS bloqueia frete_contatos&quot;]
+  i1 --&gt; e2e[&quot;E2E (Playwright + k6)&quot;]
+  i2 --&gt; e2e
+  i3 --&gt; e2e
+  i4 --&gt; e2e
+  e2e --&gt; t1[&quot;Fluxo feliz feed-&gt;detalhe-&gt;contato-&gt;interesse&quot;]
+  e2e --&gt; t2[&quot;Resiliencia: circuit breaker, feed nao vazio&quot;]
+  e2e --&gt; t3[&quot;Offline IndexedDB + LGPD sem PII no payload&quot;]
+  e2e --&gt; t4[&quot;Carga ~1.000 fretes: p95 &lt; 2s&quot;]</pre></div></section>
+
+  <p class="disclaimer">Documento gerado para orientar o desenvolvimento. Estimativas de esforço/custo são ordem de grandeza para planejamento (premissa R$ 2.100/dev-dia, equipe enxuta) — não é proposta comercial. O veredito de lucratividade do produto é estimativa; o piso ANTT é referência regulatória.</p>
+</div>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose', flowchart: { useMaxWidth: true }, er: { useMaxWidth: true } });
+</script>
+</body>
+</html>

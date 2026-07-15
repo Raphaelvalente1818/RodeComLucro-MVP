@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PRD Técnico — Financeiro · App · RODE COM LUCRO</title>
+<style>
+  :root{--brand:#2563eb;--brand-d:#1e40af;--ink:#0f172a;--ink-6:#475569;--ink-4:#94a3b8;--line:#e2e8f0;--bg:#f1f5f9;--card:#fff;--lucro:#059669}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.6;-webkit-text-size-adjust:100%}
+  .wrap{max-width:920px;margin:0 auto;padding:40px 20px 90px}
+  header.doc{border-bottom:3px solid var(--brand);padding-bottom:20px;margin-bottom:10px}
+  .kicker{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand)}
+  h1{font-size:30px;line-height:1.15;margin:8px 0 6px;font-weight:800;letter-spacing:-.01em}
+  .sub{color:var(--ink-6);font-size:15px;max-width:64ch}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  .pill{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 14px}
+  .pill b{display:block;font-size:16px;color:var(--ink)}
+  .pill span{color:var(--ink-4);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .toc{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 4px}
+  .toc a{font-size:12px;font-weight:600;color:var(--brand-d);background:#eef4ff;border:1px solid #dbe6ff;border-radius:999px;padding:4px 11px;text-decoration:none}
+  .toc a:hover{background:#dbe6ff}
+  section{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-top:18px;scroll-margin-top:14px}
+  h2{font-size:18px;margin:0 0 14px;display:flex;align-items:center;gap:9px;font-weight:800}
+  h2 .n{display:inline-flex;width:26px;height:26px;align-items:center;justify-content:center;background:var(--brand);color:#fff;border-radius:8px;font-size:13px;font-weight:800;flex:none}
+  h4{margin:18px 0 8px;font-size:14px;color:var(--brand-d);font-weight:700}
+  h4:first-of-type{margin-top:4px}
+  p{margin:0 0 10px;color:var(--ink-6)}
+  .hint{font-size:12px;color:var(--ink-4);margin-top:-4px}
+  ul,ol{margin:0;padding-left:22px}
+  li{margin:6px 0;color:var(--ink-6)}
+  ul.check{list-style:none;padding-left:0}
+  ul.check li{position:relative;padding-left:28px;margin:9px 0}
+  ul.check li::before{content:'';position:absolute;left:0;top:4px;width:16px;height:16px;border:2px solid var(--lucro);border-radius:4px}
+  .badge{display:inline-block;background:#eff6ff;color:var(--brand-d);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:800;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;flex:none}
+  .tags{display:flex;flex-wrap:wrap;gap:7px}
+  .tags span{background:#eff6ff;color:var(--brand-d);border:1px solid #dbeafe;border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600}
+  /* Modelo de dados */
+  .entidade{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 12px;background:#fbfdff}
+  .ent-nome{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px;font-weight:700;color:var(--brand-d);margin:0 0 8px}
+  ul.campos{list-style:none;padding-left:0;margin:0;display:grid;gap:5px}
+  ul.campos li{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--ink-6);background:#fff;border:1px solid var(--line);border-radius:7px;padding:5px 9px;overflow-wrap:anywhere;word-break:break-word;margin:0}
+  /* API */
+  .endpoint{border-left:3px solid var(--brand);background:#fbfdff;border-radius:0 10px 10px 0;padding:10px 14px;margin:0 0 12px}
+  .ep-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .ep-rota{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:var(--ink);overflow-wrap:anywhere;word-break:break-word}
+  .ep-desc{font-size:13px;margin:7px 0 0}
+  .teste{border-left:3px solid var(--brand);padding-left:15px;margin:14px 0}
+  .empty{color:var(--ink-4)}
+  /* Diagramas */
+  .mermaid-box{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px;margin:6px 0 10px;overflow-x:auto;text-align:center}
+  .mermaid{font-size:14px}
+  .disclaimer{margin-top:26px;font-size:12px;color:var(--ink-4);border-top:1px solid var(--line);padding-top:16px}
+  @media print{body{background:#fff}.wrap{padding:0}.toc{display:none}section{break-inside:avoid;border:none;border-bottom:1px solid var(--line);border-radius:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="doc">
+    <div class="kicker">RODE COM LUCRO · PRD Técnico</div>
+    <h1>Financeiro · App</h1>
+    <p class="sub">Guia de desenvolvimento para dev full-stack sênior. O protótipo está 100% mockado; este documento orienta a construção real da funcionalidade.</p>
+    <div class="meta">
+      <div class="pill"><span>Esforço</span><b>16–22 dev-dias</b></div>
+      <div class="pill"><span>Prazo</span><b>3 a 4 semanas</b></div>
+      <div class="pill"><span>Custo estimado</span><b>R$ 34k–R$ 46k</b></div>
+      <div class="pill"><span>Premissa</span><b>R$ 2.100/dev-dia</b></div>
+    </div>
+  </header>
+  <nav class="toc"><a href="#s1">Visão técnica</a><a href="#s2">Arquitetura</a><a href="#s3">Stack</a><a href="#s4">Modelo de dados</a><a href="#s5">Contratos de API</a><a href="#s6">Frontend / fluxo</a><a href="#s7">Lógica de negócio</a><a href="#s8">Integrações</a><a href="#s9">Segurança &amp; LGPD</a><a href="#s10">Não-funcionais</a><a href="#s11">Etapas</a><a href="#s12">Plano de teste</a><a href="#s13">Critérios de aceite</a><a href="#s14">Diagramas</a></nav>
+
+  <section id="s1"><h2><span class="n">1</span>Visão técnica</h2><p>Modulo Financeiro (canal App) do RODE COM LUCRO: um caixa de apoio offline-first para o caminhoneiro autonomo (1 caminhao, MEI/PF) com o principio inegociavel de MINIMO de digitacao (registrar gasto em &lt;=3 toques). Persiste lancamentos de gasto (categoria, valor em centavos, local/UF, data, origem app/WhatsApp/Manutencao/Diesel/Fretes), consolida o saldo do mes (receita dos fretes finalizados - custos), compara lucro estimado x real, mantem provisoes (manutencao/pneus/depreciacao/emergencia) com reservado/usado/restante, mostra gastos por categoria (% do total), acompanha a meta de lucro do mes e entrega inteligencia fiscal de ISS por municipio (ex.: Sao Paulo 5% vs Barueri 2%, economia ~R$ 3.000/ano). Hoje tudo e mockado em src/data/financeiro.ts (FINANCEIRO_RESUMO, PROVISOES, GASTOS_CATEGORIA, GASTOS_RECENTES, META_MES, PROVISAO_MANUTENCAO, IMPACTO_MANUTENCAO, FRETES_MES, CATEGORIAS_GASTO) e src/data/copiloto.ts (RESPOSTAS_COPILOTO). O alvo e substituir esses mocks por dados reais: Postgres (Supabase) com RLS por usuario, valores SEMPRE em centavos inteiros (BIGINT), Edge Functions para escrita validada e agregacao, sync offline-first com idempotencia por client_id (UUIDv4 no device) + op_seq (last-write-wins deterministico), e imports automaticos a partir dos modulos Diesel (abastecimento), Manutencao (alerta resolvido com custoEstimado de CUSTO_MEDIO_ALERTA em src/data/manutencao.ts) e Fretes (pedagio/viagem). Receita e lucro estimado NAO sao digitados aqui: vem do modulo Fretes/Viagens; o modulo reusa calcularFrete() (src/lib/calc.ts, que opera em R$ float) apenas como referencia do lucro estimado por frete, convertendo o resultado para centavos (Math.round(lucro*100)) na fronteira; o Financeiro consolida o REAL em BIGINT. ATENCAO de integracao: fmtBRLCent/fmtBRL (src/lib/calc.ts) recebem REAIS, logo todo display de centavos usa fmtBRLCent(valor_centavos/100). Saldo deve SEMPRE fechar e ser auditavel: saldo_mes = receita_fretes - sum(gastos); lucro_real = receita - custos. Disclaimer obrigatorio e sempre presente na inteligencia fiscal (estimativa, nao orientacao para sonegar, consulte contador). Substitui FINANCEIRO_RESUMO.lucroEstimado=R$18.400 / lucroReal=R$17.900 por agregados reais materializados, e e auditavel/testavel ponta a ponta (unit, integracao RLS/trigger/idempotencia, e2e offline).</p></section>
+  <section id="s2"><h2><span class="n">2</span>Arquitetura</h2><ul><li>Frontend: PWA mobile-first React 18 + TypeScript (Vite) reusando a base atual em src/; novo modulo isolado em src/features/financeiro (telas, store Zustand, repositorio offline). Reusa fmtBRLCent/fmtBRL de src/lib/calc.ts — ATENCAO: fmtBRLCent recebe REAIS (numero), entao todo display de centavos faz fmtBRLCent(valor_centavos/100). calcularFrete (src/lib/calc.ts, opera em R$ float) e usado APENAS como referencia do lucro estimado por frete; o resultado .lucro e convertido para centavos (Math.round(lucro*100)) antes de somar; o Financeiro consolida o REAL em BIGINT.</li><li>Offline-first com cache local: IndexedDB (via Dexie) como source-of-truth do device para a tabela gastos. Cada lancamento nasce com client_id (UUIDv4 via crypto.randomUUID()), op_seq (contador monotonico por client_id, incrementa a cada edicao/exclusao) e sync_state (pending|synced|failed). Outbox queue (tabela Dexie outbox) processada por SyncEngine quando navigator.onLine; Service Worker (Workbox) faz precache do shell e registra Background Sync tag 'financeiro-sync'. O cache do /resumo tambem vai ao Dexie (chave competencia) para abrir a tela offline.</li><li>Backend: Supabase/Postgres 15 com Row Level Security por auth.uid() em TODAS as tabelas com user_id. Valores SEMPRE em centavos inteiros (BIGINT), nunca float/numeric para dinheiro. CRUD do proprio dono via PostgREST+RLS; escrita sensivel (sync em lote, imports de outros modulos, recalculo de agregados, export) via Edge Functions (Deno/TS) com service-role server-side.</li><li>Idempotencia em 3 niveis: (a) gasto manual: UNIQUE(user_id, client_id), upsert ON CONFLICT DO UPDATE guardado por op_seq&gt;excluded; (b) import automatico: UNIQUE(user_id, dedupe_key) WHERE dedupe_key IS NOT NULL, ON CONFLICT DO NOTHING; (c) export: UNIQUE(user_id, competencia, tipo) reusa arquivo recente. Nenhum reenvio cria duplicata.</li><li>Agregacao materializada: financeiro_resumo_mes e gasto_categoria_mes recalculados por (a) trigger AFTER INSERT/UPDATE/DELETE em gasto chamando funcao SECURITY DEFINER fn_recompute_resumo(user_id, competencia) e (b) pg_cron diario (03:00 America/Sao_Paulo) de reconciliacao que recomputa todas as competencias com gasto alterado nas ultimas 48h. O dashboard SEMPRE le o materializado; o trigger marca atualizado_ate=now().</li><li>Imports: Edge Function /import disparada por eventos dos modulos Diesel (abastecimento confirmado), Manutencao (alerta resolvido -&gt; custoEstimado vira gasto categoria Manutencao/Pneus) e Fretes (pedagio da viagem finalizada). Insere gasto com origem e dedupe_key. Receita_centavos e lucro_estimado_centavos do mes vem do modulo Fretes (sum calcularFrete().lucro convertido a centavos dos fretes finalizados) e alimentam financeiro_resumo_mes; NUNCA digitados no Financeiro.</li><li>Tabelas de referencia versionadas por vigencia: iss_municipio (aliquota ISS por codigo IBGE de 7 digitos, vigencia_inicio/fim) e provisao_template (default de reserva mensal por categoria, derivado de CUSTO_MEDIO_ALERTA: Pneus R$1.200, Manutencao agregando Troca de oleo R$250+Revisao R$400=R$2.400). Carregadas por seed SQL + pg_cron de atualizacao.</li><li>Export PDF/CSV gerado server-side por Edge Function: CSV nativo (string), PDF via pdf-lib/Deno; salvo em Storage privado bucket financeiro-exports (path namespaced por user_id) com URL assinada TTL 300s. Bucket NUNCA publico.</li><li>Fuso horario: toda fronteira de mes/competencia usa America/Sao_Paulo; 'data' do gasto e DATE (sem hora); 'hoje' no device respeita o fuso local do caminhoneiro mas a competencia e fixada server-side para evitar gasto cair no mes errado por UTC.</li></ul></section>
+  <section id="s3"><h2><span class="n">3</span>Stack sugerida</h2><div class="tags"><span>Frontend: React 18, TypeScript, Vite (PWA existente), Zustand (financeiroStore com slices resumo/gastos/provisoes/meta/syncStatus), Dexie (IndexedDB: tabelas gastos_local, outbox, resumo_cache), Workbox (Service Worker + Background Sync), react-hook-form + zod (form de gasto, schema valor_centavos&gt;0 inteiro), crypto.randomUUID() para client_id, formatadores Intl pt-BR de src/lib/calc.ts (fmtBRLCent/fmtBRL).</span><span>Backend: Supabase (Postgres 15) com Row Level Security, PostgREST (CRUD do dono), Supabase Edge Functions (Deno + TypeScript) para sync/import/agregacao/iss/export, pg_cron (reconciliacao diaria 03:00 BRT e refresh de iss_municipio).</span><span>Auth: Supabase Auth telefone/OTP (ja usado pelo caminhoneiro); JWT com auth.uid() como base de TODAS as policies RLS.</span><span>Storage: Supabase Storage bucket privado financeiro-exports (path {user_id}/{competencia}.{tipo}) com signed URLs TTL 300s.</span><span>Geracao de arquivos: CSV nativo no Edge Function; PDF via pdf-lib no Deno para o extrato mensal (cabecalho + resumo + categorias + provisoes).</span><span>Geo/local do gasto: Geolocation API do browser -&gt; reverse geocode (IBGE/Nominatim) para cidade/UF e municipio_ibge; domicilio fiscal por municipio_ibge em perfil_financeiro para o ISS.</span><span>Testes: Vitest (unit logica pura), Testing Library + jsdom (componentes/store/SyncEngine com fake IndexedDB), Supabase local (pgTAP ou execucao SQL via CLI) para RLS/trigger/idempotencia, Playwright (e2e PWA com offline emulado via context.setOffline e Background Sync), MSW para mockar Edge Functions no front.</span><span>Observabilidade: Supabase logs + tabela financeiro_sync_log (upsert/conflict/reject por client_id, sem PII alem do necessario); Sentry no front para erros do SyncEngine/outbox.</span></div></section>
+  <section id="s4"><h2><span class="n">4</span>Modelo de dados</h2><div class="entidade">
+        <p class="ent-nome">perfil_financeiro</p>
+        <ul class="campos"><li>user_id UUID PK FK auth.users ON DELETE CASCADE, capacidade_tanque_l INT NULL, municipio_ibge VARCHAR(7) NULL (domicilio fiscal), uf CHAR(2) NULL, meta_lucro_mes_centavos BIGINT NOT NULL DEFAULT 0 CHECK (meta_lucro_mes_centavos &gt;= 0), receita_servico_anual_centavos BIGINT NULL (base para ISS), regime VARCHAR(8) NOT NULL DEFAULT 'MEI' CHECK (regime IN ('MEI','PF')), created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now()</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">gasto</p>
+        <ul class="campos"><li>id UUID PK DEFAULT gen_random_uuid(), user_id UUID NOT NULL FK auth.users, client_id UUID NOT NULL (UUIDv4 do device, idempotencia), op_seq INT NOT NULL DEFAULT 0 (last-write-wins), categoria VARCHAR(20) NOT NULL CHECK (categoria IN ('Diesel','Pedagio','Alimentacao','Pernoite','Manutencao','Pneus','Documento','Seguro','Multa','Outros')), valor_centavos BIGINT NOT NULL CHECK (valor_centavos &gt; 0), local VARCHAR(120) NULL, uf CHAR(2) NULL, municipio_ibge VARCHAR(7) NULL, data DATE NOT NULL CHECK (data &lt;= (now() AT TIME ZONE 'America/Sao_Paulo')::date + INTERVAL '1 day'), competencia DATE NOT NULL GENERATED ALWAYS AS (date_trunc('month', data)::date) STORED, origem VARCHAR(12) NOT NULL CHECK (origem IN ('app','WhatsApp','Manutencao','Diesel','Fretes')), alerta_tipo VARCHAR(30) NULL, dedupe_key TEXT NULL, frete_id UUID NULL, deleted_at timestamptz NULL (soft delete), created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(). CONSTRAINTS: UNIQUE(user_id, client_id)</li><li>UNIQUE(user_id, dedupe_key) WHERE dedupe_key IS NOT NULL</li><li>INDEX(user_id, competencia, deleted_at)</li><li>INDEX(user_id, data DESC)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">provisao</p>
+        <ul class="campos"><li>id UUID PK DEFAULT gen_random_uuid(), user_id UUID NOT NULL FK, competencia DATE NOT NULL (1o dia do mes), categoria VARCHAR(20) NOT NULL CHECK (categoria IN ('Manutencao','Pneus','Depreciacao','Emergencia')), reservado_centavos BIGINT NOT NULL CHECK (reservado_centavos &gt;= 0), usado_centavos BIGINT NOT NULL DEFAULT 0 CHECK (usado_centavos &gt;= 0). UNIQUE(user_id, competencia, categoria). restante_centavos = GREATEST(0, reservado - usado) e pct = reservado&gt;0 ? usado/reservado : 0 (calculados na leitura). Apenas Manutencao/Pneus tem usado debitado por gasto</li><li>Depreciacao/Emergencia sao reservas nao debitadas por gasto direto</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">financeiro_resumo_mes</p>
+        <ul class="campos"><li>user_id UUID NOT NULL, competencia DATE NOT NULL, receita_centavos BIGINT NOT NULL DEFAULT 0, custos_centavos BIGINT NOT NULL DEFAULT 0, lucro_real_centavos BIGINT NOT NULL DEFAULT 0 (receita-custos), lucro_estimado_centavos BIGINT NOT NULL DEFAULT 0 (sum calcularFrete().lucro dos fretes do mes, em centavos), fretes_finalizados INT NOT NULL DEFAULT 0, media_lucro_centavos BIGINT NOT NULL DEFAULT 0 (fretes&gt;0 ? lucro_real/fretes : 0), atualizado_ate timestamptz NOT NULL DEFAULT now(). PK(user_id, competencia). Tabela materializada, FONTE UNICA do dashboard, escrita SO por fn_recompute_resumo (SECURITY DEFINER)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">gasto_categoria_mes</p>
+        <ul class="campos"><li>user_id UUID NOT NULL, competencia DATE NOT NULL, categoria VARCHAR(20) NOT NULL, total_centavos BIGINT NOT NULL, pct NUMERIC(5,4) NOT NULL (total / sum(todas categorias do mes), 0..1). PK(user_id, competencia, categoria). Materializada a partir de gasto (deleted_at IS NULL). Soma de pct fecha em 1.0000 +-arred</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">iss_municipio</p>
+        <ul class="campos"><li>id UUID PK DEFAULT gen_random_uuid(), municipio_ibge VARCHAR(7) NOT NULL, nome VARCHAR(120) NOT NULL, uf CHAR(2) NOT NULL, aliquota_pct NUMERIC(4,2) NOT NULL CHECK (aliquota_pct BETWEEN 0 AND 5) (ex.: 5.00, 2.00), vigencia_inicio DATE NOT NULL, vigencia_fim DATE NULL, fonte TEXT NULL. UNIQUE(municipio_ibge, vigencia_inicio)</li><li>INDEX(uf, aliquota_pct)</li><li>EXCLUDE evitando overlap de vigencia por municipio. Tabela publica de referencia (RLS: SELECT para authenticated</li><li>escrita so service-role/seed)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">export_arquivo</p>
+        <ul class="campos"><li>id UUID PK DEFAULT gen_random_uuid(), user_id UUID NOT NULL FK, competencia DATE NOT NULL, tipo VARCHAR(3) NOT NULL CHECK (tipo IN ('PDF','CSV')), storage_path TEXT NULL, status VARCHAR(10) NOT NULL DEFAULT 'queued' CHECK (status IN ('queued','ready','error')), erro TEXT NULL, created_at timestamptz NOT NULL DEFAULT now(). UNIQUE(user_id, competencia, tipo) (idempotencia de export)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">financeiro_sync_log</p>
+        <ul class="campos"><li>id UUID PK DEFAULT gen_random_uuid(), user_id UUID NOT NULL, client_id UUID NULL, evento VARCHAR(20) NOT NULL CHECK (evento IN ('upsert','conflict','reject','import','estorno')), detalhe JSONB NULL (sem PII alem de categoria/motivo), created_at timestamptz NOT NULL DEFAULT now(). INDEX(user_id, created_at DESC). Retencao 90 dias (cron purga)</li></ul>
+      </div></section>
+  <section id="s5"><h2><span class="n">5</span>Contratos de API</h2><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/financeiro/gastos:sync</code></div>
+        <p class="ep-desc">Sync offline-first em lote (idempotente). Auth: JWT do dono; user_id SEMPRE derivado de auth.uid(), NUNCA do payload. Request: { client_ts: ISO8601, items: [{ client_id (UUIDv4), op_seq INT, categoria, valor_centavos, local?, uf?, municipio_ibge?, data (YYYY-MM-DD), origem(app|WhatsApp), alerta_tipo?, deleted_at? }] } (max 200 itens/lote). Upsert ON CONFLICT (user_id, client_id) DO UPDATE WHERE excluded.op_seq &gt; gasto.op_seq (last-write-wins por op_seq, nao por relogio do device). Response 200: { results: [{ client_id, id?, sync_state: synced|duplicate|rejected, reason? (enum: valor_invalido|categoria_invalida|data_futura|posse|payload_malformado) }], resumo_invalidado: true, server_ts }. Erros: 400 payload malformado (lote inteiro rejeitado, nenhum item gravado), 401 sem JWT, 413 lote&gt;200. Por-item: validacao falha =&gt; rejected, demais itens do lote seguem (parcial OK). Grava financeiro_sync_log por upsert/conflict/reject.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/rest/v1/gasto?user_id=eq.{uid}&amp;data=gte.{ini}&amp;data=lte.{fim}&amp;deleted_at=is.null&amp;order=data.desc,created_at.desc&amp;limit=50&amp;offset=0</code></div>
+        <p class="ep-desc">Lista gastos do periodo via PostgREST com RLS (substitui GASTOS_RECENTES). RLS forca user_id=auth.uid() mesmo se filtro omitido. Filtra deleted_at IS NULL. Paginado (limit&lt;=50). Response: array de gasto com valor_centavos (front formata com fmtBRLCent(valor_centavos/100)). Header Prefer: count=exact para total.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">DELETE (logico via PATCH)</span><code class="ep-rota">/rest/v1/gasto?id=eq.{id}</code></div>
+        <p class="ep-desc">Soft delete: PATCH set deleted_at=now(), op_seq=op_seq+1. RLS garante posse (USING user_id=auth.uid()). Trigger AFTER UPDATE: se categoria provisionavel (Manutencao|Pneus) estorna provisao.usado_centavos da competencia (usado -= valor, clamp &gt;=0) e marca financeiro_resumo_mes/gasto_categoria_mes para recomputo. Hard delete NUNCA exposto ao cliente (so via /lgpd/excluir-dados).</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/functions/v1/financeiro/resumo?competencia=YYYY-MM</code></div>
+        <p class="ep-desc">Painel do mes (substitui FINANCEIRO_RESUMO+GASTOS_CATEGORIA+META_MES+PROVISOES+FRETES_MES). Le tabelas materializadas (nao soma ao vivo). Se competencia ausente =&gt; mes corrente (America/Sao_Paulo). Response 200: { competencia, receita_centavos, custos_centavos, lucro_real_centavos (receita-custos), lucro_estimado_centavos, saldo_centavos, delta_estimado_real_centavos, fretes_finalizados, media_lucro_centavos, gastos_categoria:[{categoria,total_centavos,pct (0..1, 4 casas)}] (ordenado desc por total), provisoes:[{categoria,reservado_centavos,usado_centavos,restante_centavos,pct}], meta:{alvo_centavos,atual_centavos,faltam_centavos,fretes_para_meta,pct_atingido}, atualizado_ate (timestamptz), stale (bool: true se atualizado_ate &lt; now()-15min) }. Se nao ha resumo materializado =&gt; 200 com zeros e stale=false. RLS: so o dono.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">PUT</span><code class="ep-rota">/functions/v1/financeiro/meta</code></div>
+        <p class="ep-desc">Define meta de lucro do mes. Request: { competencia (YYYY-MM), meta_lucro_mes_centavos (BIGINT &gt;=0) }. Persiste em perfil_financeiro (meta corrente) e/ou meta_competencia; recalcula faltam_centavos=max(0,meta-lucro_real), pct_atingido=meta&gt;0?min(1,lucro_real/meta):0, fretes_para_meta=media_lucro&gt;0?ceil(faltam/media_lucro):null. Response: bloco meta atualizado. Valida meta_lucro_mes_centavos inteiro &gt;=0 (rejeita negativo/float).</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/financeiro/import</code></div>
+        <p class="ep-desc">Endpoint INTERNO (service-role + secret X-Internal-Token compartilhado entre modulos; NUNCA exposto ao app/cliente). Importa custo automatico. Request: { user_id, categoria, valor_centavos, origem(Diesel|Manutencao|Fretes), dedupe_key (ex.: diesel:&lt;abast_id&gt;, manut:&lt;alerta_id&gt;, pedagio:&lt;viagem_id&gt;), data, alerta_tipo?, local?, uf?, frete_id? }. Idempotente por UNIQUE(user_id, dedupe_key): reenvio =&gt; 200 { sync_state: duplicate }. Debita provisao.usado quando categoria in (Manutencao,Pneus). Mapeia alerta_tipo-&gt;categoria (Pneus=&gt;Pneus; Troca de oleo/Revisao geral/Freios=&gt;Manutencao). Response: { id, sync_state: imported|duplicate }. 403 se X-Internal-Token invalido.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/functions/v1/financeiro/iss?municipio_ibge={ibge}&amp;base_servico_anual_centavos={base}</code></div>
+        <p class="ep-desc">Inteligencia fiscal ISS (substitui logica fiscal). Le iss_municipio na vigencia corrente (vigencia_inicio&lt;=hoje AND (vigencia_fim IS NULL OR vigencia_fim&gt;=hoje)). municipio_ibge default = perfil_financeiro.municipio_ibge. base_servico_anual default = receita_servico estimada (receita anualizada do dono). Response: { municipio_atual:{ibge,nome,uf,aliquota_pct}, melhor:{ibge,nome,uf,aliquota_pct}, economia_ano_centavos (&gt;=0; round(base*(at-melhor)/100)), disclaimer (texto fixo obrigatorio: estimativa, nao orientacao p/ sonegar, consulte contador) }. Se municipio sem vigencia =&gt; 404 municipio_sem_aliquota.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/financeiro/export</code></div>
+        <p class="ep-desc">Gera extrato do mes. Request: { competencia (YYYY-MM), tipo: PDF|CSV }. Idempotente por UNIQUE(user_id, competencia, tipo): reusa export_arquivo ready se gerado &lt;24h, senao regenera. Cria export_arquivo (status queued-&gt;ready|error), salva em Storage privado bucket financeiro-exports/{user_id}/{competencia}.{tipo}, retorna { export_id, status, signed_url (TTL 300s), expires_in:300 }. CSV: header + 1 linha por gasto (data,categoria,valor,local,uf,origem). PDF: cabecalho + receita/custos/lucro + tabela categorias + provisoes. 422 se competencia sem dados.</p>
+      </div></section>
+  <section id="s6"><h2><span class="n">6</span>Frontend / fluxo</h2><ul><li>Tela Financeiro (src/features/financeiro/FinanceiroScreen.tsx): cabecalho Saldo do mes (receita-custos via fmtBRLCent(saldo_centavos/100)); cards Lucro estimado x real com delta destacado (ex.: estimado R$ 18.400 vs real R$ 17.900 =&gt; -R$ 500, cor de atencao); barra Meta do mes (pct_atingido, faltam R$ 4.100, 2 fretes para meta); lista Gastos por categoria (CategoriaBar com valor e %, Diesel ~62% no topo); painel Provisoes (reservado/usado/restante por categoria com barra pct); faixa Inteligencia fiscal ISS (municipio atual SP 5% vs melhor Barueri 2% + economia anual ~R$ 3.000 + disclaimer obrigatorio sempre visivel). Le do endpoint /resumo; skeleton enquanto carrega; selo 'atualizado ate &lt;timestamp&gt;' e badge 'desatualizado' quando stale=true.</li><li>Sheet Registrar gasto (src/features/financeiro/RegistrarGastoSheet.tsx) — MINIMO de digitacao (meta &lt;=3 toques: valor, categoria, salvar): valor em destaque com teclado numerico e mascara de centavos (parseCentavos no submit); categoria por chips contextuais (no posto sugere Diesel; perto de oficina sugere Manutencao); local pre-preenchido por GPS/reverse-geocode (editavel); data=hoje (America/Sao_Paulo). Salvar grava em Dexie + enfileira no outbox e fecha em &lt;1s mesmo offline, com badge 'enviando' ate sincronizar. zod bloqueia valor 0/negativo/nao-inteiro antes de gravar.</li><li>Estado: store Zustand financeiroStore com slices { resumo, gastos, provisoes, meta, syncStatus }. Repositorio gastosRepo encapsula Dexie (CRUD local, op_seq) + outbox. SyncEngine observa navigator.onLine + evento Background Sync, faz POST /gastos:sync, concilia sync_state (pending-&gt;synced|failed) por client_id, e ao receber resumo_invalidado:true refaz /resumo (invalida cache Dexie).</li><li>Componente HistoricoGastos (src/features/financeiro/HistoricoGastos.tsx): lista gastos reais com chip de origem (app/WhatsApp/Manutencao/Diesel/Fretes), swipe para editar/excluir; itens pending mostram icone de relogio; gastos com origem Diesel/Manutencao/Fretes marcados 'automatico' e o valor so e editavel apos confirmacao explicita.</li><li>Acao Exportar (PDF/CSV) no menu da tela: chama /export, mostra progresso (queued-&gt;ready), abre a signed_url; trata erro/expiracao (re-solicita).</li><li>Edge cases UI: offline (banner discreto + fila visivel no syncStatus); conflito de sync (toast nao-bloqueante, dado nunca perdido); valor 0/negativo bloqueado pelo zod com mensagem; gasto importado nao-editavel no valor sem confirmacao; competencia sem dados mostra estado vazio coerente (saldo R$ 0, sem categorias).</li></ul></section>
+  <section id="s7"><h2><span class="n">7</span>Lógica de negócio</h2><ul><li>Saldo e lucro (tudo em centavos BIGINT): custos_centavos = sum(gasto.valor_centavos do mes WHERE deleted_at IS NULL); saldo_mes_centavos = receita_centavos - custos_centavos; lucro_real_centavos = receita_centavos - custos_centavos (= saldo neste modelo). lucro_estimado_centavos = sum(Math.round(calcularFrete(frete).lucro * 100)) dos fretes finalizados no mes (vem do modulo Fretes). delta_estimado_real_centavos = lucro_estimado - lucro_real. Mock alvo: receita 4.120.000, custos 2.280.000 =&gt; lucro_real 1.840.000; lucro_estimado 1.840.000 vs real 1.790.000 quando ha gastos adicionais =&gt; delta -50.000 (R$ 500).</li><li>Gastos por categoria: por categoria do enum com gastos no mes, total_centavos = sum(valor_centavos); pct = total / sum(todos os gastos do mes) com NUMERIC(5,4). Ordenar desc por total (Diesel domina ~62%). A soma dos pct fecha em 1.0000 (resto de arredondamento absorvido pela maior categoria para fechar exatamente 1). Materializado em gasto_categoria_mes.</li><li>Provisoes: ao INSERIR gasto de categoria provisionavel (Manutencao,Pneus) -&gt; provisao.usado_centavos += valor da competencia; ao EXCLUIR (soft delete) -&gt; usado -= valor; ao EDITAR valor -&gt; usado += (novo-antigo). restante = GREATEST(0, reservado - usado); pct = reservado&gt;0 ? usado/reservado : 0. Depreciacao/Emergencia: reservas fixas, nao debitadas por gasto direto. Default mensal de provisao_template derivado de CUSTO_MEDIO_ALERTA (Pneus R$1.200, Manutencao R$2.400, Depreciacao R$3.000, Emergencia R$1.500).</li><li>Meta do mes: faltam_centavos = max(0, meta - lucro_real); pct_atingido = meta&gt;0 ? min(1, lucro_real/meta) : 0; media_lucro_centavos = fretes_finalizados&gt;0 ? round(lucro_real/fretes_finalizados) : 0; fretes_para_meta = media_lucro&gt;0 ? ceil(faltam/media_lucro) : null. Mock: meta 2.200.000, lucro_real 1.790.000, media 204.400 =&gt; faltam 410.000, pct 0.81, fretes 2 (ceil(410000/204400)=2).</li><li>Inteligencia fiscal ISS: municipio_ibge do domicilio (perfil_financeiro) -&gt; aliquota_atual em iss_municipio na vigencia corrente; melhor = menor aliquota_pct na UF (ou whitelist de polos: Barueri 2%). economia_ano_centavos = round(base_servico_anual_centavos * (aliquota_atual - aliquota_melhor) / 100), clamp &gt;=0. base_servico = receita_servico_anual_centavos do perfil (receita de transporte anualizada). Mock: base ~10.000.000 (R$100k/ano), SP 5% -&gt; Barueri 2% =&gt; economia 300.000 (R$ 3.000). Disclaimer SEMPRE retornado.</li><li>Import automatico (dedupe deterministico): Diesel -&gt; categoria Diesel, dedupe_key 'diesel:'+abastecimento_id; Manutencao -&gt; categoria Manutencao|Pneus por alerta_tipo (Pneus=&gt;Pneus, demais=&gt;Manutencao), dedupe_key 'manut:'+alerta_id, valor=custoEstimado do alerta resolvido (CUSTO_MEDIO_ALERTA, ex.: Pneus R$2.400 =&gt; 240.000); Fretes/Pedagio -&gt; categoria Pedagio, dedupe_key 'pedagio:'+viagem_id. ON CONFLICT(user_id, dedupe_key) DO NOTHING ignora reenvio.</li><li>Idempotencia de sync: cada gasto manual tem client_id UUIDv4 + op_seq. /gastos:sync upsert ON CONFLICT(user_id, client_id) DO UPDATE WHERE excluded.op_seq &gt; gasto.op_seq. Retorno por item: synced (aplicado), duplicate (op_seq&lt;=existente, nada muda), rejected (valor&lt;=0|categoria invalida|data futura|posse). Conflito resolvido por op_seq (last-write-wins deterministico, nao por relogio do device).</li><li>Conversao monetaria: UI converte R$ -&gt; centavos via parseCentavos (ex.: 'R$ 1.200,50' -&gt; 120050; trata separador de milhar e virgula decimal pt-BR); display usa fmtBRLCent(valor_centavos/100). NUNCA float para somar dinheiro; somas em BIGINT no Postgres. calcularFrete (float R$) so para lucro_estimado, convertido a centavos com Math.round na fronteira.</li></ul></section>
+  <section id="s8"><h2><span class="n">8</span>Integrações</h2><ul><li>Modulo Diesel (src/data/diesel.ts): evento de abastecimento confirmado -&gt; POST /functions/v1/financeiro/import (categoria Diesel, dedupe_key 'diesel:&lt;abastecimento_id&gt;', X-Internal-Token).</li><li>Modulo Manutencao (src/data/manutencao.ts): alerta resolvido com custoEstimado (CUSTO_MEDIO_ALERTA) -&gt; POST /import (categoria Manutencao|Pneus por alerta_tipo, debita provisao, dedupe_key 'manut:&lt;alerta_id&gt;').</li><li>Modulo Fretes/Viagens: fornece receita_centavos, lucro_estimado via calcularFrete (src/lib/calc.ts, convertido a centavos) e pedagio da viagem finalizada (categoria Pedagio, dedupe_key 'pedagio:&lt;viagem_id&gt;').</li><li>Canal WhatsApp (Cloud API, modulo fin-wpp / src/data/copiloto.ts): lancamentos com origem='WhatsApp' entram pelo mesmo /gastos:sync apos confirmacao do motorista; LLM nunca executa SQL, so produz JSON validado.</li><li>Supabase Storage: bucket privado financeiro-exports (path {user_id}/{competencia}.{tipo}) com signed URLs TTL 300s para PDF/CSV.</li><li>Tabela iss_municipio (IBGE/legislacao municipal) e reverse-geocode (IBGE/Nominatim) para municipio/UF do gasto e domicilio fiscal.</li><li>Modulo Admin (src/data/admin.ts): consome agregados ANONIMIZADOS de financeiro_resumo_mes para KPIs, sem expor o financeiro individual identificavel.</li></ul></section>
+  <section id="s9"><h2><span class="n">9</span>Segurança & LGPD</h2><ul><li>RLS em TODAS as tabelas com user_id: policies SELECT/INSERT/UPDATE/DELETE com USING (user_id = auth.uid()); gasto adiciona WITH CHECK (user_id = auth.uid()) no insert/update e bloqueia troca de user_id (trigger ou check OLD.user_id=NEW.user_id). financeiro_resumo_mes, gasto_categoria_mes: apenas SELECT do dono; escrita exclusivamente por fn_recompute_resumo (SECURITY DEFINER). iss_municipio: SELECT para authenticated, escrita so service-role.</li><li>Edge Functions de import e agregacao usam service_role APENAS server-side; service key NUNCA no bundle do cliente. /import exige header X-Internal-Token (secret compartilhado entre modulos) e valida que user_id pertence ao chamador interno; sem token valido =&gt; 403. /gastos:sync deriva user_id de auth.uid() do JWT, NUNCA do payload.</li><li>LGPD: dado financeiro e sensivel. Minimizacao (so o necessario: categoria, valor, local, data); base legal = execucao de contrato (controle de gastos) + consentimento explicito separado para a inteligencia fiscal ISS. Criptografia em repouso (Postgres/Storage gerenciados) e em transito (TLS). Exports em Storage privado com signed URL TTL 300s; bucket NUNCA publico; path namespaced por user_id.</li><li>Direitos do titular: endpoint /lgpd/exportar-dados (portabilidade: todos os gastos+resumo+provisoes do usuario em JSON/CSV) e /lgpd/excluir-dados (HARD delete real de gasto/perfil_financeiro/provisao/export_arquivo/sync_log a pedido, alem do soft delete operacional). Retencao: financeiro_sync_log 90 dias (cron purga); gastos retidos enquanto conta ativa. ON DELETE CASCADE de auth.users limpa perfil.</li><li>ISS/fiscal: disclaimer explicito e obrigatorio em todo retorno de /iss (estimativa, NAO orientacao para sonegar, consulte um contador antes de mudar domicilio fiscal). Nunca recomenda mudanca de domicilio como instrucao — apresenta como informacao comparativa para evitar leitura como evasao/planejamento ilicito.</li><li>Validacao server-side independente do cliente (defesa em profundidade): valor_centavos&gt;0 inteiro, categoria/origem no enum, data &lt;= hoje+1d (tolerancia fuso), municipio_ibge 7 digitos valido, lote &lt;=200 itens. LLM/WhatsApp NUNCA executa SQL livre: so produz JSON validado que passa por zod + checagem de dono na camada de aplicacao antes de qualquer escrita.</li><li>Auditoria e anonimizacao: trilha em financeiro_sync_log para upsert/conflict/reject/import/estorno (sem PII alem de categoria/motivo). Modulo Admin consome SOMENTE agregados anonimizados (medias/somatorios sobre financeiro_resumo_mes), nunca o financeiro individual identificavel; queries de admin sem coluna user_id exposta.</li></ul></section>
+  <section id="s10"><h2><span class="n">10</span>Não-funcionais</h2><ul><li>Offline-first: lancar gasto sem sinal confirma em &lt;1s; sincroniza ao voltar a rede sem duplicar (idempotencia por client_id+op_seq). A tela Financeiro abre em &lt;2s em 3G usando cache Dexie do /resumo antes do refetch.</li><li>Confiabilidade: o saldo SEMPRE fecha e e auditavel (saldo = receita - custos; lucro_real = receita - custos); agregados reconciliados por pg_cron diario (03:00 BRT) alem do recomputo por trigger; selo 'atualizado ate &lt;timestamp&gt;' e flag stale quando &gt; 15min.</li><li>Idempotencia em todas as escritas: sync por (user_id, client_id), imports por (user_id, dedupe_key), export por (user_id, competencia, tipo). Reenvio nunca duplica.</li><li>Precisao monetaria: valores em centavos inteiros (BIGINT), sem float em soma de dinheiro; locale pt-BR (fmtBRLCent(centavos/100)). iss_municipio e provisao_template versionados por vigencia, sem quebrar historico.</li><li>Performance: /resumo le tabelas materializadas (sem somar gastos ao vivo); p95 &lt; 800ms. Lista de gastos paginada (limit&lt;=50) e virtualizada acima de 200 itens. Trigger de recompute idempotente e barato (scan por user_id+competencia indexado).</li><li>Resiliencia de sync: outbox com retry exponencial (1s,2s,4s,... cap 5min) + Background Sync; falha de uma escrita nao trava as demais (parcial OK); conflitos registrados em financeiro_sync_log, dado nunca perdido silenciosamente.</li><li>Degradacao graciosa: se Diesel/Manutencao/Fretes caem, o registro MANUAL continua funcionando; imports atrasados sao reconciliados pelo dedupe sem duplicar. /resumo sem materializado retorna zeros (nao erro).</li></ul></section>
+  <section id="s11"><h2><span class="n">11</span>Etapas de implementação</h2><ol><li>1. Schema e RLS: migrations de perfil_financeiro, gasto, provisao, financeiro_resumo_mes, gasto_categoria_mes, iss_municipio, export_arquivo, financeiro_sync_log (centavos BIGINT, checks, indices, UNIQUE de idempotencia, generated column competencia); policies RLS por auth.uid(); seed iss_municipio (Sao Paulo 3550308 5%, Barueri 3505708 2%, capitais) e provisao_template a partir de CUSTO_MEDIO_ALERTA.</li><li>2. CRUD do dono via PostgREST + RLS: listar/criar/editar/soft-delete gasto; substituir GASTOS_RECENTES e CATEGORIAS_GASTO do mock (src/data/financeiro.ts) por dados reais; formatar com fmtBRLCent(centavos/100).</li><li>3. Camada offline-first: gastosRepo (Dexie: gastos_local, outbox, op_seq), SyncEngine (navigator.onLine + Background Sync); Edge Function /gastos:sync com upsert idempotente ON CONFLICT(user_id,client_id) guardado por op_seq; Service Worker (Workbox) precache shell + tag financeiro-sync.</li><li>4. Agregacao: fn_recompute_resumo (SECURITY DEFINER) + trigger AFTER INSERT/UPDATE/DELETE em gasto materializando financeiro_resumo_mes e gasto_categoria_mes; Edge Function /resumo lendo os materializados (substitui FINANCEIRO_RESUMO/GASTOS_CATEGORIA/FRETES_MES).</li><li>5. Provisoes e meta: tabela provisao com debito/estorno de usado ao lancar/excluir gasto Manutencao/Pneus (substitui PROVISOES/PROVISAO_MANUTENCAO); endpoint /meta e calculo faltam/pct/fretes_para_meta (substitui META_MES).</li><li>6. Imports automaticos: Edge Function interna /import (X-Internal-Token) com dedupe_key chamada por Diesel (abastecimento), Manutencao (alerta resolvido -&gt; custoEstimado), Fretes (pedagio/viagem); ligar receita_centavos e lucro_estimado_centavos vindos de Fretes/calcularFrete.</li><li>7. Inteligencia fiscal ISS: Edge Function /iss lendo iss_municipio por vigencia corrente, calculo da economia anual e disclaimer obrigatorio.</li><li>8. Export PDF/CSV: Edge Function /export (CSV nativo + PDF pdf-lib) em Storage privado com signed URL TTL 300s, idempotente por (user_id,competencia,tipo); UI de exportar.</li><li>9. LGPD: endpoints /lgpd/exportar-dados e /lgpd/excluir-dados (hard delete); consentimento separado para ISS; retencao/purga de sync_log.</li><li>10. Hardening: testes (Vitest unit, Supabase local RLS/trigger/idempotencia, Playwright e2e offline), reconciliacao pg_cron, observabilidade (sync_log/Sentry), revisao final LGPD/RLS e disclaimers.</li></ol></section>
+  <section id="s12"><h2><span class="n">12</span>Plano de teste</h2><div class="teste"><h4>Unitario (logica pura de calculo e conversao, Vitest, sem rede)</h4><ul><li>parseCentavos: 'R$ 350,00' -&gt; 35000; 'R$ 1.200,50' -&gt; 120050; '350' -&gt; 35000; 'R$ 0,99' -&gt; 99; entrada '0' / '-10' / 'abc' / vazia -&gt; erro de validacao zod (nao retorna numero)</li><li>saldo/lucro: receita 4.120.000 - custos 2.280.000 = lucro_real 1.840.000; com lucro_estimado 1.840.000 e real 1.790.000 -&gt; delta_estimado_real = -50.000 (R$ 500). Soma de 3 gastos {580000,21000,6000} -&gt; custos parcial 607.000 sem erro de float</li><li>lucro_estimado a partir de calcularFrete: para FRETE_DEFAULTS + frete sp-gyn (900km, valor 5.000) -&gt; Math.round(calcularFrete(...).lucro*100) retorna inteiro de centavos; somatorio de 9 fretes finalizados nunca usa float intermediario apos a conversao</li><li>gastos por categoria: mock Diesel 1.410.000 de total 2.280.000 -&gt; pct 0.6184; ordenacao desc com Diesel primeiro; soma de todos os pct fecha exatamente em 1.0000 (resto de arredondamento absorvido pela maior categoria)</li><li>meta: meta 2.200.000, lucro_real 1.790.000, media_lucro 204.400 -&gt; faltam 410.000, pct_atingido 0.81, fretes_para_meta = ceil(410000/204400) = 2. Caso meta=0 -&gt; pct 0 e fretes_para_meta null (sem divisao por zero). Caso lucro_real&gt;=meta -&gt; faltam 0, pct 1</li><li>provisao: reservado 240.000 (R$ 2.400) com gasto Manutencao 163.000 -&gt; usado 163.000, restante 77.000, pct 0.6792; ao excluir o gasto -&gt; usado volta a 0, restante 240.000; usado nunca fica negativo (clamp); editar valor 163.000-&gt;200.000 ajusta usado para 200.000</li><li>provisao Pneus: gasto Pneus 240.000 (R$ 2.400) debita provisao Pneus (reservado 120.000) -&gt; usado 240.000, restante 0 (clamp em GREATEST(0,...)), pct 1 (cap, mesmo com estouro)</li><li>ISS: SP (3550308) 5% vs Barueri (3505708) 2% sobre base 10.000.000 -&gt; economia 300.000 (R$ 3.000); aliquota_atual=aliquota_melhor -&gt; economia 0 (clamp &gt;=0); disclaimer presente e nao-vazio no retorno</li><li>op_seq / last-write-wins: dois updates do mesmo client_id com op_seq 1 e 2 -&gt; estado final reflete op_seq 2; chegada fora de ordem (op_seq 2 antes de 1) -&gt; op_seq 1 e descartado (duplicate)</li><li>mapeamento alerta_tipo-&gt;categoria: 'Pneus'-&gt;Pneus; 'Troca de oleo'/'Revisao geral'/'Freios'-&gt;Manutencao; dedupe_key gerado deterministicamente ('manut:'+id)</li></ul></div><div class="teste"><h4>Integracao (Postgres + RLS + Edge Functions, Supabase local)</h4><ul><li>RLS isolamento: usuario A NAO le, edita nem soft-deleta gasto do usuario B (SELECT retorna vazio; UPDATE/DELETE afetam 0 linhas); tentativa de INSERT com user_id de B via WITH CHECK e rejeitada; update tentando trocar user_id e bloqueado</li><li>/gastos:sync idempotente: enviar o mesmo client_id com op_seq 0 duas vezes -&gt; 1 registro, 2a resposta sync_state=duplicate; mesmo client_id com op_seq 1 -&gt; aplica update (synced); item com valor_centavos=0 -&gt; rejected reason=valor_invalido, demais itens do lote seguem (parcial OK); lote de 201 itens -&gt; 413</li><li>/gastos:sync seguranca: payload com user_id forjado e ignorado (user_id vem do JWT); sem JWT -&gt; 401; categoria fora do enum -&gt; rejected reason=categoria_invalida; data futura (hoje+3d) -&gt; rejected reason=data_futura</li><li>/import idempotente: import com dedupe_key 'diesel:abast_123' duas vezes -&gt; 1 gasto, 2a resposta duplicate; sem X-Internal-Token -&gt; 403; import de alerta Manutencao (custoEstimado R$ 950 -&gt; 95.000) cria gasto categoria Manutencao E debita provisao.usado_centavos da competencia</li><li>trigger de agregacao: apos INSERT de gasto, financeiro_resumo_mes.custos_centavos e gasto_categoria_mes refletem o novo total/pct e atualizado_ate=now(); apos soft delete, custos diminuem e resumo fecha; competencia derivada (generated column) coloca o gasto no mes correto</li><li>provisao estorno via soft delete: soft delete de gasto Manutencao 95.000 estorna usado (usado -= 95.000, clamp &gt;=0) e recomputa resumo; saldo volta a fechar (receita-custos consistente)</li><li>/resumo: le materializados (nao soma ao vivo); competencia sem dados -&gt; 200 com zeros e stale=false; apos 16min sem recompute -&gt; stale=true; RLS impede ler resumo de outro usuario</li><li>/export idempotente: 2 chamadas (competencia, tipo=CSV) em &lt;24h reusam mesmo export_arquivo/storage_path; signed_url valida abre o arquivo; acesso ao path sem assinatura -&gt; negado; URL expira apos TTL 300s; competencia sem dados -&gt; 422</li><li>/iss vigencia: com vigencia corrente retorna aliquota_atual/melhor; municipio sem vigencia ativa -&gt; 404 municipio_sem_aliquota; troca de vigencia (nova linha) nao quebra historico de meses anteriores</li><li>cron reconciliacao: inserir gasto direto via SQL (bypass de trigger simulado) e rodar fn de reconciliacao -&gt; financeiro_resumo_mes converge para o valor correto</li></ul></div><div class="teste"><h4>E2E offline-first (PWA, Playwright com context offline + Background Sync)</h4><ul><li>registrar gasto offline em &lt;=3 toques (valor R$ 580 + chip Diesel + Salvar): grava em Dexie, badge 'enviando', sheet fecha em &lt;1s; ao reconectar (setOffline(false)), SyncEngine envia e badge vira 'sincronizado' e o gasto aparece com origem='app' sem duplicar</li><li>perda de rede no meio do sync: cortar conexao durante POST /gastos:sync -&gt; outbox faz retry exponencial; ao voltar, NAO cria duplicata (mesmo client_id) e o historico mostra 1 item</li><li>abrir Financeiro offline: mostra ultimo /resumo do cache Dexie em &lt;2s com selo 'atualizado ate &lt;timestamp&gt;' e badge desatualizado; ao reconectar refaz /resumo e atualiza saldo/categorias/provisoes</li><li>editar e excluir offline: editar valor de gasto pending incrementa op_seq local; excluir gasto pending some da lista; ao sincronizar, servidor reflete estado final (last-write-wins por op_seq) sem registro fantasma</li><li>importar custo do modulo Manutencao (alerta Freios resolvido, R$ 540) reflete no historico com chip origem='Manutencao' e atualiza painel de provisoes (usado de Manutencao sobe) apos refetch do /resumo</li><li>exportar PDF do mes: aciona /export, UI mostra queued-&gt;ready, abre signed_url; o extrato contem receita R$ 41.200, custos R$ 22.800, lucro R$ 18.400, Diesel ~62% e provisoes</li><li>fluxo completo de meta: definir meta R$ 22.000 via /meta -&gt; tela mostra faltam R$ 4.100, 2 fretes, 81%; registrar lucro adicional (frete) reduz faltam e recalcula fretes_para_meta</li><li>disclaimer ISS sempre visivel: abrir faixa Inteligencia fiscal mostra SP 5% -&gt; Barueri 2%, economia ~R$ 3.000/ano E o texto de disclaimer (estimativa/consulte contador) sempre presente</li></ul></div></section>
+  <section id="s13"><h2><span class="n">13</span>Critérios de aceite</h2><ul class="check"><li>Dado um gasto registrado offline (valor + categoria + Salvar em &lt;=3 toques), quando o sinal volta, entao o lancamento e sincronizado EXATAMENTE uma vez (idempotencia por client_id+op_seq), aparece no historico com origem='app', e nenhum duplicado e criado mesmo apos retry da outbox.</li><li>Dado receita dos fretes de R$ 41.200 e custos de R$ 22.800 no mes, quando abro o Financeiro, entao o saldo/lucro real exibido e R$ 18.400 (lucro_real = receita - custos, em centavos: 4.120.000 - 2.280.000 = 1.840.000) e o painel mostra lucro estimado x real com o delta destacado, tudo a partir de centavos via fmtBRLCent(centavos/100).</li><li>Dado os gastos do mes, quando vejo Gastos por categoria, entao Diesel aparece no topo com ~62% (0.6184), a lista esta ordenada desc por total, e a soma dos percentuais fecha EXATAMENTE em 100% (1.0000) sem erro de arredondamento acumulado.</li><li>Dado meta de R$ 22.000, lucro real de R$ 17.900 e media de R$ 2.044/frete, quando vejo a Meta do mes, entao o app mostra faltam R$ 4.100, fretes_para_meta = 2 (ceil(410.000/204.400)) e pct_atingido = 81%; dado meta = 0, entao pct = 0 e fretes_para_meta = null sem divisao por zero.</li><li>Dado uma provisao de manutencao reservada de R$ 2.400 e um gasto de Manutencao de R$ 1.630 lancado, quando vejo Provisoes, entao mostra usado R$ 1.630, restante R$ 770 e pct 68%; quando excluo o gasto, entao usado e estornado de volta a R$ 0 e usado nunca fica negativo.</li><li>Dado domicilio fiscal em Sao Paulo (IBGE 3550308, ISS 5%) e base de servico anual de R$ 100.000, quando consulto a inteligencia fiscal, entao o app indica Barueri (IBGE 3505708, ISS 2%) e economia estimada de R$ 3.000/ano (300.000 centavos) ACOMPANHADA do disclaimer obrigatorio (estimativa, nao orientacao para sonegar, consulte contador), e o disclaimer nunca pode estar ausente.</li><li>Dado um abastecimento confirmado no modulo Diesel ou um alerta de manutencao resolvido com custoEstimado, quando o /import roda (mesmo reenviado), entao um gasto e criado UMA vez com a origem correta e dedupe_key deterministico, sem duplicar; e se categoria for Manutencao/Pneus, a provisao correspondente e debitada.</li><li>Dado o usuario A autenticado, quando tenta ler, editar ou excluir um gasto do usuario B, entao o acesso e negado pela RLS (auth.uid()): SELECT retorna vazio e UPDATE/DELETE afetam 0 linhas; e o user_id do payload de /gastos:sync e sempre ignorado em favor do JWT.</li><li>Dado o resumo do mes com dados, quando solicito Exportar PDF ou CSV, entao recebo uma signed_url de TTL 300s para um arquivo em Storage privado namespaced por user_id com o extrato correto (receita, custos, lucro, categorias, provisoes); duas chamadas em &lt;24h reusam o mesmo arquivo (idempotencia por user_id+competencia+tipo).</li><li>Dado o Financeiro aberto offline, quando nao ha rede, entao a tela abre em &lt;2s a partir do cache Dexie do /resumo com selo 'atualizado ate &lt;timestamp&gt;' e badge de desatualizado; e registrar um novo gasto confirma em &lt;1s sem rede.</li><li>Dado o titular dos dados, quando solicita exclusao via /lgpd/excluir-dados, entao gastos, perfil, provisoes, exports e logs do usuario sao removidos em hard delete real (alem do soft delete operacional), cumprindo a LGPD.</li></ul></section>
+  <section id="s14"><h2><span class="n">14</span>Diagramas</h2><p class="hint">Renderizados com Mermaid — requer internet ao abrir o arquivo.</p><h4>Arquitetura da solução</h4><div class="mermaid-box"><pre class="mermaid">flowchart LR
+  pwa[&quot;PWA React + Zustand (financeiroStore)&quot;]
+  dexie[(&quot;Dexie IndexedDB (gastos_local, outbox, resumo_cache)&quot;)]
+  sw[&quot;Service Worker Workbox (Background Sync 'financeiro-sync')&quot;]
+  wpp[&quot;Canal WhatsApp (Cloud API / fin-wpp)&quot;]
+  edge[&quot;Edge Functions Deno (gastos:sync, resumo, meta, import, iss, export)&quot;]
+  postgrest[&quot;PostgREST + RLS (CRUD do dono)&quot;]
+  db[(&quot;Postgres 15 + RLS (gasto, provisao, resumo_mes...)&quot;)]
+  cron[&quot;pg_cron (reconciliacao 03:00 BRT)&quot;]
+  ext[&quot;Diesel / Manutencao / Fretes (calcularFrete)&quot;]
+  store[&quot;Storage privado (financeiro-exports, signed URL 300s)&quot;]
+  pwa --&gt; dexie
+  pwa --&gt; sw
+  sw --&gt;|&quot;POST gastos:sync&quot;| edge
+  wpp --&gt;|&quot;origem=WhatsApp&quot;| edge
+  pwa --&gt;|&quot;GET /resumo, /iss&quot;| edge
+  pwa --&gt; postgrest
+  edge --&gt; db
+  postgrest --&gt; db
+  cron --&gt; db
+  ext --&gt;|&quot;POST /import (X-Internal-Token)&quot;| edge
+  edge --&gt; store</pre></div><h4>Casos de uso</h4><div class="mermaid-box"><pre class="mermaid">flowchart LR
+  motorista([&quot;Motorista autonomo (MEI/PF)&quot;])
+  sistemaExt([&quot;Sistema (Diesel/Manutencao/Fretes)&quot;])
+  admin([&quot;Admin&quot;])
+  subgraph sistema[&quot;Sistema Financeiro App&quot;]
+    uc1[&quot;Registrar gasto offline (≤3 toques)&quot;]
+    uc2[&quot;Ver saldo e lucro estimado x real&quot;]
+    uc3[&quot;Acompanhar meta do mes&quot;]
+    uc4[&quot;Ver gastos por categoria e provisoes&quot;]
+    uc5[&quot;Consultar inteligencia fiscal ISS&quot;]
+    uc6[&quot;Exportar extrato PDF/CSV&quot;]
+    uc7[&quot;Importar custo automatico (dedupe_key)&quot;]
+    uc8[&quot;Consumir agregados anonimizados&quot;]
+  end
+  motorista --&gt; uc1
+  motorista --&gt; uc2
+  motorista --&gt; uc3
+  motorista --&gt; uc4
+  motorista --&gt; uc5
+  motorista --&gt; uc6
+  sistemaExt --&gt; uc7
+  admin --&gt; uc8</pre></div><h4>Fluxo principal</h4><div class="mermaid-box"><pre class="mermaid">flowchart TD
+  start([&quot;Motorista abre Registrar gasto&quot;])
+  inputV[&quot;Informa valor, categoria, local GPS, data=hoje&quot;]
+  zod{&quot;zod: valor_centavos &gt; 0 inteiro?&quot;}
+  errVal[&quot;Bloqueia com mensagem (valor invalido)&quot;]
+  saveLocal[&quot;Grava Dexie + enfileira outbox (client_id, op_seq)&quot;]
+  closeSheet[&quot;Fecha sheet em &lt;1s, badge 'enviando'&quot;]
+  online{&quot;navigator.onLine?&quot;}
+  wait[&quot;Aguarda Background Sync / retry exponencial&quot;]
+  sync[&quot;POST /gastos:sync (lote idempotente)&quot;]
+  conflict{&quot;sync_state por item?&quot;}
+  synced[&quot;Marca synced, badge 'sincronizado'&quot;]
+  dup[&quot;duplicate (op_seq ≤ existente, ignora)&quot;]
+  rejected[&quot;rejected (reason: valor/categoria/data/posse)&quot;]
+  refresh[&quot;resumo_invalidado: refaz /resumo&quot;]
+  start --&gt; inputV --&gt; zod
+  zod --&gt;|&quot;nao&quot;| errVal --&gt; inputV
+  zod --&gt;|&quot;sim&quot;| saveLocal --&gt; closeSheet --&gt; online
+  online --&gt;|&quot;nao&quot;| wait --&gt; sync
+  online --&gt;|&quot;sim&quot;| sync --&gt; conflict
+  conflict --&gt;|&quot;synced&quot;| synced --&gt; refresh
+  conflict --&gt;|&quot;duplicate&quot;| dup
+  conflict --&gt;|&quot;rejected&quot;| rejected</pre></div><h4>UML — classes/serviços</h4><div class="mermaid-box"><pre class="mermaid">classDiagram
+  class FinanceiroStore {
+    +resumo
+    +gastos
+    +provisoes
+    +meta
+    +syncStatus
+    +carregarResumo(competencia)
+  }
+  class GastosRepo {
+    +criarLocal(gasto) Gasto
+    +softDelete(id)
+    +incrementarOpSeq(client_id)
+    +enfileirarOutbox(item)
+  }
+  class SyncEngine {
+    +observarOnline()
+    +postGastosSync(items) Resultado
+    +conciliarSyncState(client_id)
+  }
+  class Gasto {
+    +UUID client_id
+    +int op_seq
+    +string categoria
+    +bigint valor_centavos
+    +date data
+    +string origem
+    +string dedupe_key
+  }
+  class Provisao {
+    +string categoria
+    +bigint reservado_centavos
+    +bigint usado_centavos
+    +restante() bigint
+    +pct() number
+  }
+  class FnRecomputeResumo {
+    +recompute(user_id, competencia)
+  }
+  class CalcEngine {
+    +calcularFrete(input) Resultado
+    +fmtBRLCent(reais) string
+    +parseCentavos(txt) bigint
+  }
+  FinanceiroStore --&gt; GastosRepo
+  FinanceiroStore --&gt; SyncEngine
+  GastosRepo --&gt; Gasto
+  SyncEngine ..&gt; Gasto
+  FnRecomputeResumo --&gt; Gasto
+  FnRecomputeResumo --&gt; Provisao
+  SyncEngine ..&gt; CalcEngine</pre></div><h4>Banco de dados (ER)</h4><div class="mermaid-box"><pre class="mermaid">erDiagram
+  PERFIL_FINANCEIRO ||--o{ GASTO : possui
+  PERFIL_FINANCEIRO ||--o{ PROVISAO : reserva
+  PERFIL_FINANCEIRO ||--o{ FINANCEIRO_RESUMO_MES : consolida
+  PERFIL_FINANCEIRO ||--o{ EXPORT_ARQUIVO : exporta
+  FINANCEIRO_RESUMO_MES ||--o{ GASTO_CATEGORIA_MES : detalha
+  GASTO ||--o{ FINANCEIRO_SYNC_LOG : registra
+  ISS_MUNICIPIO ||--o{ PERFIL_FINANCEIRO : domicilio
+  PERFIL_FINANCEIRO {
+    uuid user_id PK
+    varchar municipio_ibge
+    bigint meta_lucro_mes_centavos
+    varchar regime
+  }
+  GASTO {
+    uuid id PK
+    uuid user_id FK
+    uuid client_id
+    int op_seq
+    varchar categoria
+    bigint valor_centavos
+    date competencia
+    varchar origem
+    text dedupe_key
+  }
+  PROVISAO {
+    uuid id PK
+    uuid user_id FK
+    date competencia
+    varchar categoria
+    bigint reservado_centavos
+    bigint usado_centavos
+  }
+  FINANCEIRO_RESUMO_MES {
+    uuid user_id PK
+    date competencia PK
+    bigint receita_centavos
+    bigint custos_centavos
+    bigint lucro_real_centavos
+    bigint lucro_estimado_centavos
+  }
+  GASTO_CATEGORIA_MES {
+    uuid user_id PK
+    date competencia PK
+    varchar categoria PK
+    bigint total_centavos
+    numeric pct
+  }
+  ISS_MUNICIPIO {
+    uuid id PK
+    varchar municipio_ibge
+    numeric aliquota_pct
+    date vigencia_inicio
+  }
+  EXPORT_ARQUIVO {
+    uuid id PK
+    uuid user_id FK
+    date competencia
+    varchar tipo
+    varchar status
+  }
+  FINANCEIRO_SYNC_LOG {
+    uuid id PK
+    uuid user_id FK
+    uuid client_id
+    varchar evento
+  }</pre></div><h4>Lógica do plano de testes</h4><div class="mermaid-box"><pre class="mermaid">flowchart TD
+  subgraph unit[&quot;Unitario (Vitest, sem rede)&quot;]
+    u1[&quot;parseCentavos 'R$ 1.200,50' -&gt; 120050&quot;]
+    u2[&quot;saldo/lucro: 4.120.000-2.280.000=1.840.000, delta -50.000&quot;]
+    u3[&quot;categoria: Diesel pct 0.6184, soma fecha 1.0000&quot;]
+    u4[&quot;meta: faltam 410.000, ceil=2, pct 0.81&quot;]
+    u5[&quot;op_seq last-write-wins, ISS economia 300.000&quot;]
+  end
+  subgraph integ[&quot;Integracao (Supabase local, RLS/trigger)&quot;]
+    i1[&quot;RLS: A nao le/edita gasto de B&quot;]
+    i2[&quot;/gastos:sync idempotente (duplicate, parcial OK, 413)&quot;]
+    i3[&quot;/import dedupe_key + debita provisao&quot;]
+    i4[&quot;trigger recompute resumo + estorno soft delete&quot;]
+    i5[&quot;/resumo materializado, /iss vigencia, cron reconcilia&quot;]
+  end
+  subgraph e2e[&quot;E2E offline-first (Playwright offline)&quot;]
+    e1[&quot;Registrar gasto offline ≤3 toques sem duplicar&quot;]
+    e2[&quot;Perda de rede no sync -&gt; retry, 1 item&quot;]
+    e3[&quot;Abrir Financeiro offline &lt;2s do cache Dexie&quot;]
+    e4[&quot;Import Manutencao + meta + disclaimer ISS visivel&quot;]
+  end
+  unit --&gt; integ --&gt; e2e</pre></div></section>
+
+  <p class="disclaimer">Documento gerado para orientar o desenvolvimento. Estimativas de esforço/custo são ordem de grandeza para planejamento (premissa R$ 2.100/dev-dia, equipe enxuta) — não é proposta comercial. O veredito de lucratividade do produto é estimativa; o piso ANTT é referência regulatória.</p>
+</div>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose', flowchart: { useMaxWidth: true }, er: { useMaxWidth: true } });
+</script>
+</body>
+</html>

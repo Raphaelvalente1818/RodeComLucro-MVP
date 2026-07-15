@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Roadmap & Estimativa — RODE COM LUCRO</title>
+<style>
+  :root{--brand:#2563eb;--ink:#0f172a;--ink6:#475569;--ink4:#94a3b8;--line:#e2e8f0;--bg:#f1f5f9}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.55}
+  .wrap{max-width:1000px;margin:0 auto;padding:36px 22px 70px}
+  header.doc{border-bottom:3px solid var(--brand);padding-bottom:16px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+  .kicker{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand)}
+  h1{font-size:26px;margin:6px 0 2px;font-weight:800}
+  .sub{color:var(--ink6);font-size:14px}
+  .pbtn{border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 14px;font-size:13px;font-weight:700;color:var(--ink6);cursor:pointer}
+  .pills{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px}
+  .pill{background:#fff;border:1px solid var(--line);border-radius:12px;padding:9px 14px}
+  .pill b{display:block;font-size:18px}
+  .pill span{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink4)}
+  section{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-top:16px}
+  h2{font-size:16px;margin:0 0 16px;font-weight:800}
+  .gantt{min-width:600px}
+  .axisrow{display:flex}
+  .axisrow .sp{width:90px;flex:none}
+  .axis{position:relative;height:18px;flex:1}
+  .mlabel{position:absolute;top:0;transform:translateX(-50%);font-size:10px;font-weight:700;color:var(--ink4);white-space:nowrap}
+  .row{display:flex;align-items:stretch}
+  .lbl{width:90px;flex:none;display:flex;align-items:center;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--ink4)}
+  .lane{position:relative;height:42px;flex:1;border-top:1px dashed #eef2f7}
+  .grid{position:absolute;top:0;height:100%;width:1px;background:#eef2f7}
+  .bar{position:absolute;top:7px;height:28px;display:flex;align-items:center;border-radius:7px;padding:0 9px;color:#fff;font-size:11px;font-weight:700;overflow:hidden}
+  .bar span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .legend{display:flex;gap:16px;margin:12px 0 0 90px;font-size:11px;color:var(--ink6)}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink4);background:var(--bg)}
+  .disc{margin-top:20px;font-size:12px;color:var(--ink4);border-top:1px solid var(--line);padding-top:14px}
+  @media print{body{background:#fff}.wrap{padding:0}.pbtn{display:none}section{break-inside:avoid}}
+</style></head>
+<body><div class="wrap">
+  <header class="doc">
+    <div><div class="kicker">RODE COM LUCRO · Fase 3</div><h1>Roadmap & Estimativa do MVP</h1><div class="sub">Seleção de 5 módulo(s) · gerado em 25/06/2026</div></div>
+    <button class="pbtn" onclick="window.print()">Imprimir / salvar em PDF</button>
+  </header>
+  <div class="pills">
+    <div class="pill"><span>Módulos</span><b>5 de 12</b></div>
+    <div class="pill"><span>Esforço</span><b>75–113 dev-dias</b></div>
+    <div class="pill"><span>Custo estimado</span><b>R$ 158k–R$ 237k</b></div>
+    <div class="pill"><span>Prazo</span><b>~2–3 meses</b></div>
+    <div class="pill"><span>Frentes paralelas</span><b>2</b></div>
+  </div>
+  <section><h2>Roadmap em calendário</h2>
+    <div class="gantt">
+      <div class="axisrow"><span class="sp"></span><div class="axis"><span class="mlabel" style="left:18.104166666666664%">Mês 1</span><span class="mlabel" style="left:54.3125%">Mês 2</span><span class="mlabel" style="left:90.52083333333333%">Mês 3</span></div></div>
+      <div class="row"><span class="lbl">Frente 1</span><div class="lane"><span class="grid" style="left:36.20833333333333%"></span><span class="grid" style="left:72.41666666666666%"></span><div class="bar" style="left:0%;width:41.66666666666667%;background:#2563eb"><span>Encontrar frete · App</span></div><div class="bar" style="left:41.66666666666667%;width:33.33333333333333%;background:#2563eb"><span>Calculadora de frete · App</span></div><div class="bar" style="left:75%;width:25%;background:#059669"><span>Encontrar frete · WhatsApp</span></div></div></div><div class="row"><span class="lbl">Frente 2</span><div class="lane"><span class="grid" style="left:36.20833333333333%"></span><span class="grid" style="left:72.41666666666666%"></span><div class="bar" style="left:0%;width:41.66666666666667%;background:#d97706"><span>Painel administrativo · Web</span></div><div class="bar" style="left:41.66666666666667%;width:33.33333333333333%;background:#059669"><span>Calculadora de frete · WhatsApp</span></div></div></div>
+      <div class="legend"><span><i style="background:#2563eb"></i>App</span><span><i style="background:#059669"></i>WhatsApp</span><span><i style="background:#d97706"></i>Web</span></div>
+    </div>
+  </section>
+  <section><h2>Módulos selecionados</h2>
+    <table><thead><tr><th>Funcionalidade</th><th>Canal</th><th>Prioridade</th><th>Dev-dias</th><th>Prazo</th><th>Custo</th></tr></thead><tbody><tr><td>Calculadora de frete</td><td>App</td><td>Core</td><td>14–22</td><td>3 a 4 semanas</td><td>R$ 29k–R$ 46k</td></tr><tr><td>Calculadora de frete</td><td>WhatsApp</td><td>Evolução</td><td>13–19</td><td>3 a 4 semanas</td><td>R$ 27k–R$ 40k</td></tr><tr><td>Encontrar frete</td><td>App</td><td>Core</td><td>19–29</td><td>4 a 5 semanas</td><td>R$ 40k–R$ 61k</td></tr><tr><td>Encontrar frete</td><td>WhatsApp</td><td>Evolução</td><td>10–14</td><td>2 a 3 semanas</td><td>R$ 21k–R$ 29k</td></tr><tr><td>Painel administrativo</td><td>Web</td><td>Essencial</td><td>19–29</td><td>3 a 5 semanas</td><td>R$ 40k–R$ 61k</td></tr></tbody></table>
+  </section>
+  <p class="disc">Estimativas de ordem de grandeza para planejamento e priorização — não é proposta comercial. Custo = dev-dias × R$ 2.100/dev-dia (ajuste ao seu time/fornecedor). O roadmap agenda os módulos em 2 frente(s) paralela(s), núcleo primeiro, no prazo máximo de cada módulo (cenário conservador); o prazo total não é a soma dos módulos.</p>
+</div></body></html>

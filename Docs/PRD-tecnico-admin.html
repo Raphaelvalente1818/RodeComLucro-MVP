@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PRD Técnico — Painel administrativo · Web · RODE COM LUCRO</title>
+<style>
+  :root{--brand:#2563eb;--brand-d:#1e40af;--ink:#0f172a;--ink-6:#475569;--ink-4:#94a3b8;--line:#e2e8f0;--bg:#f1f5f9;--card:#fff;--lucro:#059669}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.6;-webkit-text-size-adjust:100%}
+  .wrap{max-width:920px;margin:0 auto;padding:40px 20px 90px}
+  header.doc{border-bottom:3px solid var(--brand);padding-bottom:20px;margin-bottom:10px}
+  .kicker{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand)}
+  h1{font-size:30px;line-height:1.15;margin:8px 0 6px;font-weight:800;letter-spacing:-.01em}
+  .sub{color:var(--ink-6);font-size:15px;max-width:64ch}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  .pill{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 14px}
+  .pill b{display:block;font-size:16px;color:var(--ink)}
+  .pill span{color:var(--ink-4);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .toc{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 4px}
+  .toc a{font-size:12px;font-weight:600;color:var(--brand-d);background:#eef4ff;border:1px solid #dbe6ff;border-radius:999px;padding:4px 11px;text-decoration:none}
+  .toc a:hover{background:#dbe6ff}
+  section{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-top:18px;scroll-margin-top:14px}
+  h2{font-size:18px;margin:0 0 14px;display:flex;align-items:center;gap:9px;font-weight:800}
+  h2 .n{display:inline-flex;width:26px;height:26px;align-items:center;justify-content:center;background:var(--brand);color:#fff;border-radius:8px;font-size:13px;font-weight:800;flex:none}
+  h4{margin:18px 0 8px;font-size:14px;color:var(--brand-d);font-weight:700}
+  h4:first-of-type{margin-top:4px}
+  p{margin:0 0 10px;color:var(--ink-6)}
+  .hint{font-size:12px;color:var(--ink-4);margin-top:-4px}
+  ul,ol{margin:0;padding-left:22px}
+  li{margin:6px 0;color:var(--ink-6)}
+  ul.check{list-style:none;padding-left:0}
+  ul.check li{position:relative;padding-left:28px;margin:9px 0}
+  ul.check li::before{content:'';position:absolute;left:0;top:4px;width:16px;height:16px;border:2px solid var(--lucro);border-radius:4px}
+  .badge{display:inline-block;background:#eff6ff;color:var(--brand-d);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:800;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;flex:none}
+  .tags{display:flex;flex-wrap:wrap;gap:7px}
+  .tags span{background:#eff6ff;color:var(--brand-d);border:1px solid #dbeafe;border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600}
+  /* Modelo de dados */
+  .entidade{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 12px;background:#fbfdff}
+  .ent-nome{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px;font-weight:700;color:var(--brand-d);margin:0 0 8px}
+  ul.campos{list-style:none;padding-left:0;margin:0;display:grid;gap:5px}
+  ul.campos li{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--ink-6);background:#fff;border:1px solid var(--line);border-radius:7px;padding:5px 9px;overflow-wrap:anywhere;word-break:break-word;margin:0}
+  /* API */
+  .endpoint{border-left:3px solid var(--brand);background:#fbfdff;border-radius:0 10px 10px 0;padding:10px 14px;margin:0 0 12px}
+  .ep-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .ep-rota{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:var(--ink);overflow-wrap:anywhere;word-break:break-word}
+  .ep-desc{font-size:13px;margin:7px 0 0}
+  .teste{border-left:3px solid var(--brand);padding-left:15px;margin:14px 0}
+  .empty{color:var(--ink-4)}
+  /* Diagramas */
+  .mermaid-box{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px;margin:6px 0 10px;overflow-x:auto;text-align:center}
+  .mermaid{font-size:14px}
+  .disclaimer{margin-top:26px;font-size:12px;color:var(--ink-4);border-top:1px solid var(--line);padding-top:16px}
+  @media print{body{background:#fff}.wrap{padding:0}.toc{display:none}section{break-inside:avoid;border:none;border-bottom:1px solid var(--line);border-radius:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="doc">
+    <div class="kicker">RODE COM LUCRO · PRD Técnico</div>
+    <h1>Painel administrativo · Web</h1>
+    <p class="sub">Guia de desenvolvimento para dev full-stack sênior. O protótipo está 100% mockado; este documento orienta a construção real da funcionalidade.</p>
+    <div class="meta">
+      <div class="pill"><span>Esforço</span><b>19–29 dev-dias</b></div>
+      <div class="pill"><span>Prazo</span><b>3 a 5 semanas</b></div>
+      <div class="pill"><span>Custo estimado</span><b>R$ 40k–R$ 61k</b></div>
+      <div class="pill"><span>Premissa</span><b>R$ 2.100/dev-dia</b></div>
+    </div>
+  </header>
+  <nav class="toc"><a href="#s1">Visão técnica</a><a href="#s2">Arquitetura</a><a href="#s3">Stack</a><a href="#s4">Modelo de dados</a><a href="#s5">Contratos de API</a><a href="#s6">Frontend / fluxo</a><a href="#s7">Lógica de negócio</a><a href="#s8">Integrações</a><a href="#s9">Segurança &amp; LGPD</a><a href="#s10">Não-funcionais</a><a href="#s11">Etapas</a><a href="#s12">Plano de teste</a><a href="#s13">Critérios de aceite</a><a href="#s14">Diagramas</a></nav>
+
+  <section id="s1"><h2><span class="n">1</span>Visão técnica</h2><p>O Painel Administrativo do RODE COM LUCRO e o back-office da verdade: uma SPA web interna (React 18 + TS montada condicionalmente em /admin a partir de src/App.tsx, fora do fluxo B2C/B2B, com lazy import ja existente) que transforma os eventos brutos emitidos pelo app do caminhoneiro (B2C) e pelo Portal da Empresa (B2B) em KPIs operacionais, no FUNIL ponta-a-ponta e no GATE de validacao do MVP (&gt;=160 jornadas completas sobre base ~1.000 cadastrados; hoje mockado em 168/160). O coracao tecnico nao e a UI (as 11 views ja existem mockadas em src/admin/AdminApp.tsx lendo src/data/admin.ts) e sim tres camadas backend: (1) instrumentacao de eventos com JSON Schema versionado por (event_name, schema_version) e contrato unico track(eventName, props), gravados append-only em analytics_event com UNIQUE(idempotency_key); (2) pipeline de agregacao por jobs pg_cron + Edge Functions sobre Postgres (materialized views + tabelas rollup diarias) que e a UNICA fonte de verdade dos numeros, garantindo que o mesmo KPI bata (&lt;2%) entre Visao geral, Funil e Simulacoes; (3) autorizacao por papel (admin/operacao/suporte) sobre Supabase Auth (claim app_role via custom access token hook) + RLS, com trilha de auditoria INSERT-only de toda acao sensivel. Principio LGPD inegociavel: o admin NUNCA expoe financeiro nem localizacao individual identificavel do motorista — financeiro/geo so aparecem agregados com k-anonimato&gt;=5, e identificadores de motorista nas listas sao driverHash irreversivel. A definicao de jornada completa e versionada (journey_definition) para nao inflar/deflacionar a meta de 160. O painel le SEMPRE de visoes pre-agregadas (cada tela &lt;2s p95) e estampa 'dados atualizados ate &lt;refreshedAt&gt;' porque o MVP usa agregacao por job, nao streaming. O veredito de fretes vem do motor compartilhado calcularFrete() (src/lib/calc.ts) gravado no evento — o admin nunca recalcula. Reusa identidade, motor de calculo e os dados de fretes/embarcadores/parceiros (src/data/ofertas.ts, empresa.ts) dos modulos existentes.</p></section>
+  <section id="s2"><h2><span class="n">2</span>Arquitetura</h2><ul><li>Front /admin isolado: hoje src/admin/AdminApp.tsx e montado diretamente em src/App.tsx (location.pathname==='/admin' -&gt; &lt;AdminApp/&gt;), com um unico estado local view:AdminView e nav das 11 ADMIN_VIEWS — NAO ha sub-rotas. Manter esse modelo (lazy import ja existe: const AdminApp = lazy(()=&gt;import('./admin/AdminApp'))), mas envolver o componente num &lt;AdminGuard&gt; que valida sessao Supabase + linha admin_user.ativo antes de renderizar; sem isso redireciona para /mvp. Em producao NENHUM numero vem de src/data/admin.ts — todo dado vem de endpoints /admin/* (Edge Functions) ou de views Supabase via supabase-js com RLS.</li><li>Instrumentacao como camada unica: SDK fino src/lib/track.ts expoe track(eventName, props) usado no app B2C (src/mvp/MvpApp.tsx, ProfitCalculator) e no portal B2B (/empresa). Eventos bufferizados em memoria + localStorage (resiliencia a reload), flush por lote (a cada 10 eventos ou 5s) para a Edge Function ingest-event, que valida contra JSON Schema versionado por (event_name, schema_version) e grava append-only em analytics_event. Eventos server-side (aceite de frete, aprovacao de embarcador) chamam o mesmo insert via service role.</li><li>Fonte unica de verdade por pre-agregacao: jobs cron (pg_cron + Edge Functions) materializam rollups diarios (mv_funnel_daily, agg_kpi_daily, mv_route_demand, mv_region_demand, mv_source_share, agg_financeiro_daily, agg_veredito, agg_embarcador, agg_parceiro_receita, agg_alertas, wpp_message_agg) e a view de validacao v_journey_completion + agg_validation. O painel le SO destas views/tabelas, nunca varre analytics_event cru em request. Cada rollup grava refreshed_at -&gt; cada tela mostra 'dados ate &lt;timestamp&gt;'.</li><li>Autorizacao por papel com RLS: tabela admin_user(user_id, role admin|operacao|suporte, ativo) define o papel; o papel e propagado ao JWT via custom access token hook do Supabase Auth (claim app_role) e lido nas policies por auth.jwt()-&gt;&gt;'app_role'. RLS nas tabelas/views agregadas e nas RPCs restringe por papel. Acoes sensiveis (suspender motorista, derrubar frete, aprovar/reprovar embarcador, revelar PII) passam por RPCs SECURITY DEFINER que checam papel e gravam audit_log ANTES de aplicar.</li><li>LGPD por design: views agregadas aplicam k-anonimato (HAVING count(distinct actor_id)&gt;=5) e nunca selecionam cpf, telefone, lat/lng ou valor de lancamento individual; financeiro/geo so aparecem agregados. analytics_event guarda actor_id, mas o driverHash exposto nas listas e um hash opaco (sha256(actor_id||salt) truncado) sem caminho de volta. Acesso a qualquer PII residual (contato de embarcador) e logado em audit_log com motivo.</li><li>Observabilidade: erros do app/jobs vao para tabela app_log(nivel erro|aviso|info, source, message, context jsonb) alimentada pelos catch dos jobs (cada job emite app_log inicio/fim/falha) e por um hook global de erro do front (window.onerror + ErrorBoundary). A tela Logs e erros le app_log com paginacao e filtro por nivel/source. Sentry opcional como camada externa.</li><li>Compatibilidade de KPIs: os campos da camada agregada espelham as chaves hoje mockadas em src/data/admin.ts (ADMIN_KPIS.cadastrados=1280, ativos=540, simulacoes=4120, aceitos=1180, pontaAPonta=168, metaValidacao=160, retencaoD7) para que a troca dos imports por hooks TanStack Query nao exija mudar a UI das 11 views.</li></ul></section>
+  <section id="s3"><h2><span class="n">3</span>Stack sugerida</h2><div class="tags"><span>Front: React 18 + TypeScript + Vite (mesmo PWA), montagem condicional do /admin em src/App.tsx (sem React Router aninhado — mantem o padrao atual), Recharts para graficos (ja em uso no USO_SEMANAL), Tailwind (tokens ink/brand/lucro ja definidos), Framer Motion opcional. Estado de servidor via TanStack Query (cache, refetch, stale-while-revalidate, staleTime 60s) substituindo os imports diretos de src/data/admin.ts.</span><span>Auth/identidade: Supabase Auth (mesma identidade RODE). Papel admin|operacao|suporte em tabela admin_user; custom access token hook injeta claim app_role no JWT; sessao propagada para RLS.</span><span>Banco: Postgres (Supabase) com Row Level Security em todas as tabelas; extensoes pg_cron (agendamento), pgcrypto (hash de driverHash) e opcionalmente pg_partman para particionar analytics_event por mes.</span><span>Agregacao/back: Supabase Edge Functions (Deno/TypeScript) para ingest-event, refresh de rollups, RPCs de moderacao e os endpoints de leitura /admin/*; materialized views + tabelas rollup; pg_cron dispara os refreshes (intervalos definidos abaixo).</span><span>Validacao de eventos: JSON Schema (ajv no Edge ingest-event) versionado por (event_name, schema_version), versionado junto ao codigo (src/lib/events/schema.ts) e replicado no Edge.</span><span>Storage: sem bucket novo; reusa storage privado de Documentos/B2B para comprovantes na moderacao via URL assinada de curta duracao (TTL 5 min).</span><span>WhatsApp: metricas vem de wpp_message (webhook Cloud API de outros modulos) -&gt; agregadas em wpp_message_agg; o admin so le, nao envia.</span><span>Observabilidade externa opcional: Sentry para erros de front/Edge alem da tabela app_log.</span><span>Testes: Vitest (unit) ja compativel com o projeto Vite; Testing Library (componentes React: ValidationGate, FunnelChart, guards); Playwright (e2e contra build do /admin); pgTAP ou SQL fixtures via Supabase CLI para testar views/RPCs/RLS.</span></div></section>
+  <section id="s4"><h2><span class="n">4</span>Modelo de dados</h2><div class="entidade">
+        <p class="ent-nome">analytics_event (append-only, particionada por mes)</p>
+        <ul class="campos"><li>id uuid pk default gen_random_uuid()</li><li>event_name text NOT NULL (signup_completed|truck_profile_saved|freight_search|simulation_run|freight_accepted|expense_logged|opportunity_engaged)</li><li>occurred_at timestamptz NOT NULL</li><li>actor_type text NOT NULL (driver|company|system)</li><li>actor_id uuid (NUNCA exposto agregado)</li><li>session_id uuid</li><li>source text NOT NULL (app|portal|whatsapp)</li><li>schema_version int NOT NULL</li><li>props jsonb NOT NULL DEFAULT '{}'</li><li>ingested_at timestamptz NOT NULL default now()</li><li>idempotency_key text NOT NULL. UNIQUE(idempotency_key). Indices: (event_name, occurred_at), (actor_id, occurred_at). RLS: INSERT permitido (anon/service), SELECT bloqueado para todos exceto service role dos jobs.</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">journey_definition (versiona o que conta como jornada completa)</p>
+        <ul class="campos"><li>id serial pk</li><li>version int NOT NULL UNIQUE</li><li>required_events text[] NOT NULL (v1 = {signup_completed, truck_profile_saved, simulation_run, freight_accepted, expense_logged})</li><li>window_days int NOT NULL default 30</li><li>meta int NOT NULL default 160</li><li>active boolean NOT NULL default false (apenas 1 ativa, garantido por unique index parcial WHERE active)</li><li>created_at timestamptz default now()</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">v_journey_completion (view materializada de validacao)</p>
+        <ul class="campos"><li>driver_id uuid</li><li>journey_version int</li><li>first_signup_at timestamptz</li><li>completed_at timestamptz</li><li>is_complete boolean (count distinct event_name IN required_events dentro de [first_signup_at, first_signup_at+window_days] = cardinality(required_events)). Refresh CONCURRENTLY. agg_validation (rollup diario): dia date pk</li><li>completos_cumulativo int</li><li>base_cadastrada int</li><li>meta int default 160</li><li>journey_version int</li><li>validado boolean GENERATED (completos_cumulativo&gt;=meta)</li><li>refreshed_at timestamptz</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">agg_kpi_daily (rollup diario de KPIs gerais)</p>
+        <ul class="campos"><li>dia date pk</li><li>cadastrados int</li><li>ativos_30d int</li><li>novos_7d int</li><li>simulacoes int</li><li>fretes_aceitos int</li><li>pct_aceitas numeric</li><li>retencao_d7 numeric</li><li>ponta_a_ponta int</li><li>refreshed_at timestamptz NOT NULL. Re-derivavel de analytics_event (upsert por dia)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">mv_funnel_daily (funil por evento)</p>
+        <ul class="campos"><li>dia date</li><li>etapa text (cadastro|busca|simulacao|aceite|gasto)</li><li>event_name text</li><li>usuarios int (count distinct actor_id no dia)</li><li>refreshed_at timestamptz. PK (dia, etapa). conv_etapa_anterior e conv_topo calculados na leitura (endpoint) sobre o intervalo, evitando que dependam de granularidade diaria</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">mv_route_demand / mv_region_demand / mv_source_share</p>
+        <ul class="campos"><li>mv_route_demand: rota text (origem_uf-&gt;destino_uf) pk-parte</li><li>buscas int</li><li>periodo daterange</li><li>refreshed_at. mv_region_demand: regiao text</li><li>pct numeric</li><li>refreshed_at. mv_source_share: fonte text (fretebras|rode_direto|manual|whatsapp)</li><li>fretes int</li><li>pct numeric</li><li>ultima_coleta timestamptz</li><li>refreshed_at</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">agg_financeiro_daily (SO agregado, k&gt;=5)</p>
+        <ul class="campos"><li>dia date pk</li><li>frete_analisado_cent bigint</li><li>lucro_medio_cent bigint</li><li>margem_media numeric</li><li>custo_km_medio_cent bigint</li><li>gastos_por_categoria jsonb (diesel|pedagio|manutencao|pneus|alimentacao em centavos inteiros)</li><li>n_amostra int</li><li>refreshed_at timestamptz. Linha SO existe quando n_amostra&gt;=5 (HAVING count(distinct actor_id)&gt;=5). Todos os valores monetarios em centavos inteiros (sem float)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">agg_veredito (distribuicao do veredito de calcularFrete)</p>
+        <ul class="campos"><li>dia date</li><li>veredito text CHECK in (bom|aceitavel|ruim)</li><li>qtd int</li><li>pct numeric</li><li>refreshed_at. PK (dia, veredito). Fonte: props.veredito gravado no evento simulation_run/freight_accepted — NUNCA recalculado no admin</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">agg_embarcador / agg_parceiro_receita / agg_alertas</p>
+        <ul class="campos"><li>agg_embarcador: empresa_id uuid pk</li><li>empresa text</li><li>score numeric</li><li>prazo_medio_dias int</li><li>avaliacoes_pendentes int</li><li>status text(pendente|aprovado|reprovado)</li><li>refreshed_at. agg_parceiro_receita: parceiro text pk</li><li>categoria text</li><li>leads int</li><li>conversoes int</li><li>comissao_cent bigint</li><li>mrr_cent bigint</li><li>refreshed_at. agg_alertas: tipo text pk</li><li>qtd int</li><li>vencendo_7d int</li><li>vencidos int</li><li>refreshed_at</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">admin_user / audit_log / driver_status</p>
+        <ul class="campos"><li>admin_user: user_id uuid pk (FK auth.users)</li><li>role text CHECK in (admin|operacao|suporte)</li><li>ativo boolean default true</li><li>created_at. audit_log: id uuid pk default gen_random_uuid()</li><li>actor_user_id uuid NOT NULL</li><li>role text NOT NULL</li><li>action text CHECK in (suspend_driver|takedown_freight|approve_company|reject_company|view_pii)</li><li>target_type text</li><li>target_id uuid</li><li>reason text NOT NULL</li><li>created_at timestamptz default now()</li><li>ip inet. INSERT-only (sem UPDATE/DELETE policy). driver_status: driver_id uuid pk</li><li>status text(ativo|suspenso)</li><li>suspended_by uuid</li><li>suspended_at timestamptz</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">app_log (observabilidade) / wpp_message_agg</p>
+        <ul class="campos"><li>app_log: id uuid pk default gen_random_uuid()</li><li>nivel text CHECK in (erro|aviso|info)</li><li>source text (scraper|calc|wpp|job|front|ingest)</li><li>message text NOT NULL</li><li>context jsonb</li><li>created_at timestamptz default now(). Indice (nivel, created_at), (source, created_at). wpp_message_agg: dia date pk</li><li>conversas int</li><li>mensagens int</li><li>registros_gasto int</li><li>top_intencoes jsonb</li><li>refreshed_at</li></ul>
+      </div></section>
+  <section id="s5"><h2><span class="n">5</span>Contratos de API</h2><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/ingest-event</code></div>
+        <p class="ep-desc">Ingestao em lote do SDK track(). Body {events:[{event_name, occurred_at(ISO), actor_type(driver|company|system), actor_id?, source(app|portal|whatsapp), session_id, schema_version, props, idempotency_key}]} (max 200 eventos/lote, body &lt;=256KB). Valida cada evento contra o JSON Schema da (event_name, schema_version); upsert por idempotency_key em analytics_event (ON CONFLICT DO NOTHING). Resp 200 {accepted:int, rejected:int, errors:[{idx, idempotency_key, reason}]}. Auth: anon key; RLS permite INSERT mas NUNCA SELECT. Rate limit 60 req/min/IP. Eventos invalidos viram app_log nivel=aviso source=ingest. 413 se body excede limite, 400 se nao for JSON.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/admin/overview</code></div>
+        <p class="ep-desc">KPIs da Visao geral + cartao de validacao. Resp {kpis:{cadastrados, ativos30d, pontaAPonta, simulacoes, fretesAceitos, retencaoD7}, validacao:{pontaAPonta, meta:160, base, validado:boolean, journeyVersion}, usoSemanal:[{dia, simulacoes}], topRotas:[{rota, buscas}], regioes:[{regiao, pct}], refreshedAt}. Le de agg_kpi_daily + agg_validation + mv_route_demand + mv_region_demand. Papel: admin|operacao|suporte. Cache TanStack staleTime 60s.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/admin/funnel?from=&amp;to=</code></div>
+        <p class="ep-desc">Funil instrumentado. Resp {etapas:[{etapa, eventName, usuarios, convEtapaAnterior, convTopo}], periodo:{from,to}, gargalo:{etapa, conv}, refreshedAt}. Ordem fixa cadastro(signup_completed)-&gt;busca(freight_search)-&gt;simulacao(simulation_run)-&gt;aceite(freight_accepted)-&gt;gasto(expense_logged). Le de mv_funnel_daily somando distinct actor_id no intervalo. gargalo = etapa com menor convEtapaAnterior. Papel: admin|operacao. Default from=hoje-30d, to=hoje.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/admin/drivers?status=&amp;caminhao=&amp;page=&amp;pageSize=</code></div>
+        <p class="ep-desc">Lista agregada de motoristas: itens [{driverHash, cidade, caminhao, status(Ativo|Novo|Inativo), nSimulacoes, ultimaAtividade}], distribuicaoTipo:[{tipo,qtd}], novos7d, total, page, pageSize, refreshedAt. driverHash e hash opaco (nao reversivel a actor_id). NUNCA retorna nome real/telefone/CPF. pageSize&lt;=50. Papel: admin|operacao.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/admin/drivers/{id}/suspend</code></div>
+        <p class="ep-desc">RPC SECURITY DEFINER admin_suspend_driver(target uuid, reason text). Checa papel in (admin,operacao) e admin_user.ativo. Valida reason length&gt;=10. Grava audit_log(action=suspend_driver) ANTES de aplicar; marca driver_status=suspenso. Resp 200 {ok:true, auditId, status:'suspenso'}. Idempotente: ja suspenso -&gt; 200 {ok:true, alreadyApplied:true} sem nova linha. 403 se papel insuficiente, 422 se reason invalido.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/admin/freights</code></div>
+        <p class="ep-desc">Resp {totalFeed, analisados, aceitos, topRotas:[{rota,buscas}], shareFonte:[{fonte,pct,fretes}], refreshedAt}. Le de mv_route_demand + mv_source_share + agg_kpi_daily. Papel: admin|operacao.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/admin/simulations</code></div>
+        <p class="ep-desc">Resp {total, pctAceitas, margemMediaPct, custoKmMedioCent, distribuicaoVeredito:[{veredito(bom|aceitavel|ruim),qtd,pct}], refreshedAt}. veredito vem de props.veredito gravado por calcularFrete() no cliente — admin NAO recalcula. Le de agg_kpi_daily + agg_veredito. Papel: admin|operacao.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/admin/financeiro?from=&amp;to=</code></div>
+        <p class="ep-desc">SO agregado k&gt;=5. Resp 200 {freteAnalisadoCent, lucroMedioCent, margemMediaPct, custoKmMedioCent, gastosPorCategoria:{diesel,pedagio,manutencao,pneus,alimentacao}(centavos), nAmostra, refreshedAt} OU 200 {suppressed:true, motivo:'amostra_insuficiente_lgpd', nAmostra:&lt;5}. Le SO de agg_financeiro_daily (HAVING count&gt;=5). Valores sempre centavos inteiros. Papel: SOMENTE admin (operacao/suporte -&gt; 403).</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/admin/companies?status=&amp;page=</code></div>
+        <p class="ep-desc">Resp {fila:[{empresaId, empresa, score, prazoMedioDias, avaliacoesPendentes, status(pendente|aprovado|reprovado)}], avaliadas, pendentes, prazoMedioGeral, refreshedAt}. Le de agg_embarcador. Contato/CNPJ ocultos por default (exigem revelar-&gt;view_pii). Papel: admin|operacao.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/admin/companies/{id}/approve | /admin/companies/{id}/reject</code></div>
+        <p class="ep-desc">RPC SECURITY DEFINER admin_moderate_company(target, decision, reason). Papel: SOMENTE admin. reason obrigatorio (&gt;=10). Grava audit_log(approve_company|reject_company) e atualiza status no modulo B2B (empresa.status). Resp {ok, auditId, status}. Idempotente por (action,target,decision).</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/admin/freights/{id}/takedown</code></div>
+        <p class="ep-desc">RPC SECURITY DEFINER admin_takedown_freight(target, reason). Papel: admin|operacao. reason obrigatorio. Grava audit_log(takedown_freight), remove frete do feed B2B. Resp {ok, auditId}. Idempotente.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/admin/companies/{id}/reveal-contact</code></div>
+        <p class="ep-desc">Revela PII residual (contato/CNPJ do embarcador) na moderacao. Papel: admin|operacao. Grava audit_log(view_pii, reason) ANTES de retornar. Resp {contato, cnpj, revealedAt}. Sempre auditado, mesmo em sucesso. Rate limit 10/min/usuario.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/admin/partners</code></div>
+        <p class="ep-desc">Resp {kpi:{mrrCent, leadsMes, conversaoMediaPct, comissaoMediaCent}, parceiros:[{parceiro, categoria, leads, conversoes, comissaoCent, mrrCent}], refreshedAt}. Le de agg_parceiro_receita (derivado de src/data/ofertas.ts). Papel: admin|operacao.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/admin/alerts</code></div>
+        <p class="ep-desc">Resp {cadastrados, vencendo7d, vencidos, porTipo:[{tipo,qtd}], refreshedAt}. Le de agg_alertas. Papel: admin|operacao|suporte.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/admin/whatsapp?from=&amp;to=</code></div>
+        <p class="ep-desc">Resp {conversas, mensagens, registrosGasto, topIntencoes:[{intencao,qtd}], refreshedAt}. Le SO de wpp_message_agg (admin nao envia mensagem). Papel: admin|operacao|suporte.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/admin/sources</code></div>
+        <p class="ep-desc">Resp {share:[{fonte(fretebras|rode_direto|manual|whatsapp),pct,fretes}], saude:[{fonte,status(ok|degradado|quebrado),ultimaColeta}], refreshedAt}. Le de mv_source_share + heuristica de saude (sem coleta recente -&gt; quebrado). Papel: admin|operacao|suporte.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/admin/logs?nivel=&amp;source=&amp;page=&amp;pageSize=</code></div>
+        <p class="ep-desc">app_log paginado. Resp {itens:[{id, nivel(erro|aviso|info), source, message, context, createdAt}], total, page, pageSize}. Filtro por nivel e source. pageSize&lt;=100, ordenado createdAt desc. Papel: admin|operacao|suporte (suporte leitura).</p>
+      </div></section>
+  <section id="s6"><h2><span class="n">6</span>Frontend / fluxo</h2><ul><li>Shell /admin (ja em src/admin/AdminApp.tsx): topbar + nav horizontal das 11 views (ADMIN_VIEWS) + main com switch por view (manter o padrao de estado local atual, sem React Router aninhado). Trocar o estado que hoje le src/data/admin.ts por hooks useQuery(['overview']), useQuery(['funnel', from, to]), etc. (TanStack Query) apontando para /admin/*. Envolver AdminApp em &lt;AdminGuard&gt;: sem sessao ou admin_user.ativo=false -&gt; redirect /mvp; nav esconde Financeiro (so admin) e botoes de moderacao destrutiva conforme app_role.</li><li>Componentes reutilizaveis ja existentes a manter: Kpis (grid de cartoes), Card, BarList, PctList, StatusPill + BarChart Recharts (USO_SEMANAL). Adicionar FunnelChart (barras decrescentes com % convEtapaAnterior/convTopo entre etapas, destacando o gargalo) e ValidationGate (cartao verde/ambar dirigido por validacao.validado:boolean vindo da API — hoje o calculo validado=pontaAPonta&gt;=metaValidacao esta hardcoded dentro de Geral() linha 82 lendo ADMIN_KPIS; passar a ler do hook useQuery('overview').validacao).</li><li>Estado/UX: cada tela mostra badge 'dados atualizados ate {refreshedAt}'; loading skeleton por Card; empty/guard state quando o financeiro retorna {suppressed:true} exibindo 'amostra insuficiente para LGPD (k&lt;5)'. Filtro de periodo (7d/30d/custom) no Funil, Financeiro, WhatsApp e Simulacoes, propagado como query param from/to.</li><li>Telas de moderacao (Motoristas, Embarcadores, Logs, Fretes): botoes de acao (suspender, aprovar/reprovar, derrubar frete) abrem modal exigindo motivo obrigatorio (&gt;=10 chars, valida antes de habilitar Confirmar); em sucesso dao toast e refetch (invalidateQueries da view afetada); botoes so renderizam se o papel permite. Revelar PII residual (contato embarcador) exige clique 'revelar contato' que chama /admin/companies/{id}/reveal-contact disparando registro view_pii no audit_log antes de mostrar.</li><li>Banner global de papel/sessao na topbar (nome + app_role) e botao Sair (supabase.auth.signOut). O atalho 'Portal' existente (navigate('/mvp'), hoje na topbar) so permanece em ambiente de demo (flag VITE_DEMO).</li><li>Tratamento de erro: ErrorBoundary em volta do main que reporta para app_log/Sentry; estado de erro por tela com botao 'tentar de novo' (refetch); diferenciar 403 (papel) de 5xx (mostrar mensagem distinta).</li></ul></section>
+  <section id="s7"><h2><span class="n">7</span>Lógica de negócio</h2><ul><li>Definicao de jornada completa (gate dos 160): driver_id e is_complete=true quando emitiu TODOS os required_events da journey_definition.active dentro de window_days a partir do primeiro signup_completed. SQL: count(distinct event_name) FILTER (WHERE event_name = ANY(required_events) AND occurred_at &lt;= first_signup_at + (window_days||' days')::interval) = cardinality(required_events). v_journey_completion materializa por driver; agg_validation acumula o distinct e seta validado=(completos_cumulativo&gt;=meta=160). journey_version impede que mudar a definicao reescreva o historico ja contado.</li><li>Funil por evento: ordem fixa [cadastro=signup_completed, busca=freight_search, simulacao=simulation_run, aceite=freight_accepted, gasto=expense_logged]. usuarios[i] = count(distinct actor_id que emitiu o evento da etapa no periodo). convEtapaAnterior[i] = usuarios[i]/usuarios[i-1] (se usuarios[i-1]=0 -&gt; 0, sem divisao por zero); convTopo[i] = usuarios[i]/usuarios[0]. gargalo = etapa com menor convEtapaAnterior. O total de simulacao do funil DEVE bater (&lt;2%) com agg_kpi_daily.simulacoes e com /admin/simulations.total no mesmo periodo (fonte unica).</li><li>Retencao D7: numerador = drivers da coorte que emitiram qualquer evento na janela [signup+7d, signup+7d+window]; denominador = coorte que se cadastrou no periodo. Ativos 30d = count distinct actor_id com qualquer evento nos ultimos 30 dias. Novos 7d = count distinct actor_id com signup_completed nos ultimos 7 dias.</li><li>Distribuicao do veredito: o evento simulation_run/freight_accepted grava em props.veredito o resultado ja calculado por calcularFrete() no cliente (veredito ruim|aceitavel|bom, com regra: lucro&lt;0 -&gt; ruim; margemRealPct&lt;margemDesejadaPct(default 20) -&gt; aceitavel; senao bom). agg_veredito conta por dia direto de props.veredito — o admin NUNCA recalcula nem re-roda calcularFrete, garantindo fonte unica com o app B2C.</li><li>Financeiro agregado com k-anonimato: agg_financeiro_daily so emite linha quando count(distinct actor_id)&gt;=5; lucro_medio_cent/margem/custo_km calculados em centavos inteiros (multiplicar por 100 e round na origem do lancamento, somar como bigint) — proibido float. gastos_por_categoria soma por categoria em centavos. Endpoint /admin/financeiro retorna {suppressed:true, nAmostra} quando amostra&lt;5, independente do papel, garantindo nenhum valor rastreavel a um motorista.</li><li>Idempotencia de ingestao e jobs: analytics_event tem UNIQUE(idempotency_key) com INSERT ... ON CONFLICT DO NOTHING -&gt; reenvio nao duplica nem infla simulacoes. Refresh dos rollups e REFRESH MATERIALIZED VIEW CONCURRENTLY (views) ou upsert por dia (tabelas agg), sempre re-derivavel do append-only -&gt; rodar 2x produz os mesmos numeros. RPCs de moderacao idempotentes: re-suspender driver ja suspenso retorna {alreadyApplied:true} sem nova linha de audit_log nem nova alteracao.</li></ul></section>
+  <section id="s8"><h2><span class="n">8</span>Integrações</h2><ul><li>Supabase Auth (identidade RODE compartilhada) + Postgres/RLS + custom access token hook (claim app_role) + Edge Functions (Deno) + pg_cron para os jobs de agregacao.</li><li>WhatsApp Cloud API (Meta): o admin NAO envia mensagens; consome wpp_message/wpp_message_agg alimentada pelo webhook dos modulos WhatsApp para metricas (conversas, mensagens, intencoes).</li><li>Modulo Encontrar frete / coleta Fretebras: fornece mv_source_share e a saude da coleta; quebra de layout/sem coleta gera app_log nivel=erro source=scraper e marca a fonte como quebrado.</li><li>Portal da Empresa (B2B, /empresa + src/data/empresa.ts/embarcadores.ts): origem das acoes de moderacao (aprovar/reprovar embarcador, derrubar frete) e dos KPIs de embarcadores; storage privado com URL assinada (TTL 5 min) para comprovantes na moderacao.</li><li>Modulo de Parceiros/Ofertas (src/data/ofertas.ts): origem de leads/conversoes/comissao/MRR para agg_parceiro_receita e KPIs da tela Parceiros / Receita.</li><li>Motor compartilhado calcularFrete (src/lib/calc.ts): o veredito (ruim|aceitavel|bom) e gravado no evento simulation_run/freight_accepted pelo app B2C; o admin so agrega, garantindo fonte unica e evitando recalculo divergente.</li><li>Sentry (opcional) para erros de front e Edge Functions alem da tabela app_log.</li></ul></section>
+  <section id="s9"><h2><span class="n">9</span>Segurança & LGPD</h2><ul><li>Autenticacao obrigatoria: /admin so renderiza com sessao Supabase valida E linha admin_user.ativo=true; sem isso -&gt; redirect /mvp (e 403 nos endpoints). O JWT carrega claim app_role (custom access token hook) usado pelas RLS policies.</li><li>Autorizacao por papel (defense in depth — checada no Edge E na RLS, nunca so no front): admin (tudo, inclusive financeiro agregado e moderacao destrutiva/PII), operacao (overview/funnel/drivers/freights/companies + suspend/takedown/approve-reject + reveal-contact, SEM financeiro), suporte (overview/alerts/whatsapp/sources/logs em leitura, SEM moderacao destrutiva, SEM financeiro). RPCs SECURITY DEFINER re-checam papel internamente.</li><li>LGPD minimizacao e anonimizacao: views do admin NUNCA selecionam cpf, telefone, lat/lng ou valor de lancamento individual; financeiro/geo so agregados com k&gt;=5; driverHash exposto e sha256(actor_id||salt) truncado (irreversivel, salt so no banco). analytics_event guarda actor_id mas as views agregadas nunca o projetam.</li><li>Trilha de auditoria imutavel: toda acao sensivel (suspend_driver, takedown_freight, approve_company, reject_company) e todo acesso a PII residual (view_pii ao revelar contato de embarcador) grava audit_log com actor_user_id, role, action, target, reason, created_at e ip. audit_log e INSERT-only (sem policy de UPDATE/DELETE, gravacao sempre ANTES de aplicar o efeito).</li><li>Hardening: rate limit no ingest-event (60/min/IP) e nas RPCs/reveal (10/min/usuario); validacao de tamanho de lote/body (max 200 eventos, 256KB); idempotency_key contra replay; service role key SO em Edge Functions, nunca no bundle front; URLs de comprovante assinadas com TTL 5 min; CSP e cabecalhos de seguranca (X-Frame-Options, HSTS) servidos no /admin; reason validado (&gt;=10 chars) server-side.</li><li>Base legal e retencao: eventos analiticos retidos por 14 meses e entao agregados/expurgados via job pg_cron; direito de exclusao do titular propaga setando actor_id=NULL (anonimizacao) nos eventos do titular sem quebrar rollups ja materializados (que ja somaram); pedido de exclusao tambem registrado em audit_log.</li></ul></section>
+  <section id="s10"><h2><span class="n">10</span>Não-funcionais</h2><ul><li>Performance: cada uma das 11 telas carrega em &lt;2s (p95) lendo SO de views/tabelas pre-agregadas (nunca varrendo analytics_event cru no request); listas paginadas (pageSize&lt;=50) e graficos com dados ja sumarizados; TanStack Query com staleTime 60s evita refetch em troca de aba.</li><li>Confiabilidade da agregacao: jobs idempotentes e re-derivaveis do append-only; falha de um refresh nao corrompe rollup anterior (REFRESH CONCURRENTLY mantem a versao antiga ate concluir); cada tela estampa 'dados atualizados ate &lt;refreshedAt&gt;' deixando claro que e batch, nao tempo real.</li><li>Consistencia (fonte unica de verdade): o mesmo KPI (simulacoes, ponta_a_ponta) bate entre Visao geral, Simulacoes e Funil porque todos leem da mesma camada agregada; discrepancia vs contagem manual sobre analytics_event &lt;2%.</li><li>Frescor dos dados (cadencia de refresh): agg_kpi_daily/mv_funnel_daily/agg_veredito a cada 15 min; agg_validation a cada 30 min; agg_financeiro_daily/mv_source_share/agg_embarcador/agg_parceiro_receita a cada 1h; wpp_message_agg a cada 30 min. Refreshes pesados fora de horario de pico.</li><li>Observabilidade: erros do app/portal/jobs aparecem em Logs e erros em &lt;=5 min; cada job de agregacao emite app_log inicio/fim/falha; alerta (app_log nivel=erro source=scraper) quando a coleta Fretebras nao registra fretes na janela esperada e mv_source_share marca a fonte como quebrado.</li><li>Disponibilidade e custo: ingestao resiliente a pico (buffer cliente + lote + retry com backoff); particionamento mensal de analytics_event mantem custo de query estavel; queda da raspagem Fretebras nao zera o painel (mv_source_share sinaliza saude por fonte e KPIs de uso independem da fonte de frete).</li></ul></section>
+  <section id="s11"><h2><span class="n">11</span>Etapas de implementação</h2><ol><li>1. Schema de eventos: definir e versionar o catalogo (signup_completed, truck_profile_saved, freight_search, simulation_run com props.veredito, freight_accepted, expense_logged, opportunity_engaged) com JSON Schema por (event_name, schema_version) em src/lib/events/schema.ts; criar analytics_event particionada + UNIQUE(idempotency_key) + journey_definition v1 (required_events da meta 160, window_days 30, meta 160).</li><li>2. SDK de instrumentacao: src/lib/track.ts com buffer (memoria+localStorage), flush por lote e retry; Edge Function ingest-event com validacao ajv por schema_version + ON CONFLICT DO NOTHING; instrumentar pontos do app B2C (MvpApp, ProfitCalculator -&gt; simulation_run com veredito de calcularFrete) e do portal B2B (/empresa), incluindo eventos server-side de aceite/aprovacao.</li><li>3. Pipeline de agregacao: criar agg_kpi_daily, mv_funnel_daily, v_journey_completion+agg_validation, mv_route_demand, mv_region_demand, mv_source_share, agg_financeiro_daily (k&gt;=5), agg_veredito, agg_embarcador, agg_parceiro_receita (de src/data/ofertas.ts), agg_alertas, wpp_message_agg; agendar refresh via pg_cron nas cadencias definidas; gravar refreshed_at; emitir app_log inicio/fim/falha.</li><li>4. Auth por papel + auditoria: tabela admin_user + custom access token hook (claim app_role); RLS por papel nas views/tabelas; RPCs SECURITY DEFINER admin_suspend_driver/admin_moderate_company/admin_takedown_freight/admin_reveal_contact gravando audit_log INSERT-only; tabela app_log + hook global de erro do front (window.onerror + ErrorBoundary).</li><li>5. Ligar o frontend: trocar imports de src/data/admin.ts por TanStack Query -&gt; endpoints /admin/*; implementar FunnelChart e ValidationGate dinamico (substituindo o validado hardcoded em Geral() linha 82); AdminGuard de sessao/papel; nav escondendo Financeiro/moderacao por papel; badges 'dados ate', skeletons e guard de financeiro suppressed.</li><li>6. Telas de moderacao: modais de motivo obrigatorio (&gt;=10 chars) para suspend/approve/reject/takedown; 'revelar contato' com registro view_pii; toasts e invalidateQueries pos-acao.</li><li>7. Observabilidade e LGPD: Sentry opcional, alerta de quebra de coleta (scraper), rotina pg_cron de retencao 14 meses/expurgo e anonimizacao (actor_id=NULL) por pedido de exclusao.</li><li>8. Hardening e go-live: rate limit, CSP/headers, revisao de RLS por papel, testes de consistencia KPI vs contagem manual, seed de papeis (1 admin, 1 operacao, 1 suporte de teste); rodar suite unit+integracao+e2e em CI.</li></ol></section>
+  <section id="s12"><h2><span class="n">12</span>Plano de teste</h2><div class="teste"><h4>Unit</h4><ul><li>isJourneyComplete: driver que emitiu os 5 required_events (signup_completed, truck_profile_saved, simulation_run, freight_accepted, expense_logged) dentro de 30 dias do signup -&gt; true; faltando expense_logged -&gt; false; com freight_accepted emitido no dia 31 (fora da janela) -&gt; false; eventos duplicados do mesmo tipo contam como 1 (distinct event_name).</li><li>funnel convEtapaAnterior: dados [cadastro=1000, busca=600, simulacao=300, aceite=87, gasto=40] -&gt; convBusca=0.60, convSimulacao=0.50, convAceite~0.29, convTopo(gasto)=0.04; etapa com usuarios[i-1]=0 retorna 0 (sem divisao por zero) e nao NaN; gargalo identificado = etapa de menor convEtapaAnterior.</li><li>guarda k-anonimato: agg_financeiro com n_amostra=4 -&gt; nenhuma linha emitida / endpoint {suppressed:true}; n_amostra=5 -&gt; linha emitida; lucro_medio_cent calculado em centavos inteiros (ex.: 204000 cents = R$2.040,00) sem float drift na soma.</li><li>ValidationGate: validacao.validado=false (pontaAPonta=159, meta=160) -&gt; render ambar 'MVP em validacao'; validado=true (pontaAPonta=160) -&gt; verde 'MVP validado'; usar o boolean da API, nao recalcular no componente.</li><li>veredito mapping (espelha calcularFrete): input lucro&lt;0 -&gt; 'ruim'; margemRealPct(10)&lt;margemDesejada(20) com lucro&gt;=0 -&gt; 'aceitavel'; margemRealPct(25)&gt;=20 -&gt; 'bom'; agg_veredito apenas conta props.veredito, nao chama calcularFrete.</li><li>validacao de evento no ingest-event: event_name desconhecido -&gt; rejected, nao grava; props sem campo obrigatorio do schema_version -&gt; rejected; lote com 1 valido + 1 invalido -&gt; accepted=1, rejected=1 e o valido persiste.</li><li>reason guard nas RPCs: reason com 9 chars -&gt; 422; reason &gt;=10 chars -&gt; aceito.</li></ul></div><div class="teste"><h4>Integracao</h4><ul><li>ingest-event com idempotency_key repetida em 2 lotes -&gt; 1 unica linha em analytics_event (ON CONFLICT DO NOTHING); o KPI de simulacoes nao incrementa na segunda vez.</li><li>RPC admin_suspend_driver chamada por papel 'suporte' -&gt; 403, driver_status inalterado, nenhuma linha em audit_log; por 'admin' -&gt; driver_status=suspenso + exatamente 1 linha audit_log com action=suspend_driver, reason e ip; segunda chamada para o mesmo driver -&gt; {alreadyApplied:true} sem nova linha.</li><li>GET /admin/financeiro: papel 'operacao' -&gt; 403; papel 'admin' com amostra&gt;=5 -&gt; agregado em centavos; papel 'admin' com amostra&lt;5 -&gt; {suppressed:true} (supressao independe do papel).</li><li>Consistencia fonte unica: para o mesmo periodo, simulacoes em /admin/overview == usuarios da etapa 'simulacao' em /admin/funnel == /admin/simulations.total (discrepancia &lt;2%).</li><li>Refresh idempotente: rodar o job de agg_kpi_daily 2x para o mesmo dia nao altera os valores; reprocessar do append-only reproduz exatamente ponta_a_ponta e simulacoes.</li><li>reveal-contact: chamada de 'operacao' -&gt; retorna contato E grava audit_log action=view_pii antes da resposta; chamada sem sessao -&gt; 403 e nada gravado.</li><li>RLS de leitura: SELECT direto em analytics_event via anon key -&gt; 0 linhas/negado (so INSERT permitido); SELECT em agg_financeiro_daily por papel 'suporte' -&gt; negado.</li><li>RLS de papel propagado: JWT sem claim app_role -&gt; tratado como sem permissao (403) em todos os /admin/*.</li></ul></div><div class="teste"><h4>E2E</h4><ul><li>Login como admin -&gt; Visao geral carrega KPIs reais (cadastrados, ativos30d, pontaAPonta, simulacoes, fretesAceitos, retencaoD7) e badge 'dados atualizados ate &lt;timestamp&gt;'; ValidationGate reflete pontaAPonta vs 160 (verde se &gt;=160).</li><li>Jornada completa de 1 motorista de teste: emitir os 5 required_events via track() -&gt; apos o refresh de agg_validation, pontaAPonta incrementa exatamente em 1; ao cruzar 160 o cartao vira verde 'MVP validado' (idempotente: reemitir os eventos nao incrementa de novo).</li><li>Operacao abre Embarcadores, reprova uma empresa (DEF Logistica) com motivo &gt;=10 chars -&gt; status muda para reprovado no portal B2B, audit_log registra reject_company, a fila de avaliacoes pendentes diminui e a UI da refetch.</li><li>Suporte tenta acessar Financeiro -&gt; item de nav oculto e endpoint 403; acessa WhatsApp, Logs, Alertas e Fontes normalmente em leitura; nao ve botoes de suspender/derrubar.</li><li>Quebra simulada da coleta Fretebras (sem novos fretes na janela) -&gt; share da fonte fretebras cai em /admin/sources e a fonte aparece como 'quebrado'; um app_log nivel=erro source=scraper aparece em Logs e erros em &lt;=5 min.</li><li>Financeiro com recorte de &lt;5 motoristas -&gt; tela exibe 'amostra insuficiente para LGPD (k&lt;5)' e nenhum valor numerico individualizavel.</li><li>Moderacao com motivo vazio -&gt; botao Confirmar permanece desabilitado; com motivo valido -&gt; toast de sucesso e refetch.</li></ul></div></section>
+  <section id="s13"><h2><span class="n">13</span>Critérios de aceite</h2><ul class="check"><li>Dado que ponta_a_ponta&gt;=160 sobre a base (journey_version ativa), quando abro Visao geral, entao o ValidationGate fica verde com 'MVP validado'; dado ponta_a_ponta&lt;160, entao fica ambar 'MVP em validacao' — o estado vem do campo validacao.validado da API, nunca recalculado no front.</li><li>Dado um periodo selecionado, quando abro o Funil, entao vejo as 5 etapas na ordem cadastro-&gt;busca-&gt;simulacao-&gt;aceite-&gt;gasto com usuarios e convEtapaAnterior/convTopo, o gargalo destacado, e o total de simulacao bate com Visao geral e /admin/simulations (&lt;2% de discrepancia).</li><li>Dado um motorista de teste que emitiu todos os required_events na janela de window_days, quando o job de agregacao roda (inclusive 2x), entao ele e contado como exatamente 1 jornada completa (idempotente), sem inflar o gate.</li><li>Dado que sou papel suporte, quando navego no admin, entao nao vejo Financeiro nem botoes de moderacao destrutiva e os respectivos endpoints retornam 403; dado papel admin, vejo tudo; dado papel operacao, vejo moderacao mas nao Financeiro.</li><li>Dado um recorte de financeiro com menos de 5 motoristas, quando abro Financeiro, entao a API retorna {suppressed:true} e a tela mostra 'amostra insuficiente para LGPD (k&lt;5)' sem nenhum valor individualizavel, independente do papel.</li><li>Dado que aprovo/reprovo um embarcador, suspendo um motorista, derrubo um frete ou revelo contato de embarcador, quando confirmo com motivo (&gt;=10 chars), entao e gravada exatamente 1 linha em audit_log com actor_user_id, role, action, target, reason, timestamp e ip ANTES do efeito, e o efeito reflete no modulo de origem (B2B/feed/driver_status).</li><li>Dado que a coleta Fretebras quebra, quando abro Logs e erros, entao um registro nivel=erro source=scraper aparece em &lt;=5 min e em Fontes de frete a fonte fretebras aparece como 'quebrado' com share reduzido.</li><li>Dado qualquer tela do admin, quando ela carrega, entao exibe 'dados atualizados ate &lt;refreshedAt&gt;' e responde em &lt;2s (p95) lendo SO de views pre-agregadas (sem varrer analytics_event cru).</li><li>Dado um evento reenviado com a mesma idempotency_key, quando o ingest-event processa, entao existe apenas 1 linha em analytics_event e nenhum KPI e duplicado.</li><li>Dado um pedido de exclusao LGPD de um titular, quando a rotina roda, entao actor_id dos eventos do titular vira NULL (anonimizado), os rollups ja materializados permanecem integros e o pedido fica registrado em audit_log.</li></ul></section>
+  <section id="s14"><h2><span class="n">14</span>Diagramas</h2><p class="hint">Renderizados com Mermaid — requer internet ao abrir o arquivo.</p><h4>Arquitetura da solução</h4><div class="mermaid-box"><pre class="mermaid">flowchart LR
+  b2c[&quot;App B2C (MvpApp / ProfitCalculator)&quot;] --&gt;|&quot;track(eventName, props)&quot;| sdk[&quot;src/lib/track.ts (buffer + lote)&quot;]
+  b2b[&quot;Portal Empresa (/empresa)&quot;] --&gt;|&quot;track()&quot;| sdk
+  wpp[&quot;WhatsApp Cloud API (webhook)&quot;] --&gt; wppmsg[&quot;wpp_message&quot;]
+  sdk --&gt;|&quot;flush lote&quot;| ingest[&quot;Edge Function ingest-event (ajv + JSON Schema)&quot;]
+  ingest --&gt;|&quot;ON CONFLICT DO NOTHING&quot;| ae[(&quot;analytics_event append-only + RLS&quot;)]
+  cron[&quot;pg_cron jobs + Edge Functions&quot;] --&gt;|&quot;refresh&quot;| rollups[(&quot;Rollups: agg_kpi_daily, mv_funnel_daily, agg_validation, agg_financeiro_daily&quot;)]
+  ae --&gt; cron
+  wppmsg --&gt; cron
+  rollups --&gt;|&quot;/admin/* read&quot;| edgeRead[&quot;Edge Functions /admin/*&quot;]
+  edgeRead --&gt;|&quot;TanStack Query + RLS app_role&quot;| admin[&quot;SPA /admin (AdminApp + AdminGuard)&quot;]
+  admin --&gt;|&quot;RPC SECURITY DEFINER&quot;| audit[(&quot;audit_log INSERT-only&quot;)]</pre></div><h4>Casos de uso</h4><div class="mermaid-box"><pre class="mermaid">flowchart LR
+  motorista[&quot;Motorista (B2C)&quot;]
+  empresa[&quot;Empresa (B2B)&quot;]
+  admin[&quot;Admin&quot;]
+  operacao[&quot;Operacao&quot;]
+  suporte[&quot;Suporte&quot;]
+  subgraph Sistema[&quot;Painel administrativo&quot;]
+    uc1[&quot;Emitir eventos via track()&quot;]
+    uc2[&quot;Ver Visao geral e ValidationGate&quot;]
+    uc3[&quot;Analisar Funil e Simulacoes&quot;]
+    uc4[&quot;Ver Financeiro agregado (k≥5)&quot;]
+    uc5[&quot;Moderar embarcador (aprovar/reprovar)&quot;]
+    uc6[&quot;Suspender motorista / derrubar frete&quot;]
+    uc7[&quot;Revelar contato (view_pii)&quot;]
+    uc8[&quot;Ler Logs, Alertas, WhatsApp, Fontes&quot;]
+  end
+  motorista --&gt; uc1
+  empresa --&gt; uc1
+  admin --&gt; uc2
+  admin --&gt; uc4
+  admin --&gt; uc5
+  admin --&gt; uc7
+  operacao --&gt; uc3
+  operacao --&gt; uc6
+  operacao --&gt; uc7
+  suporte --&gt; uc8</pre></div><h4>Fluxo principal</h4><div class="mermaid-box"><pre class="mermaid">flowchart TD
+  start[&quot;Admin abre tela do /admin&quot;] --&gt; guard{&quot;AdminGuard: sessao + admin_user.ativo?&quot;}
+  guard --&gt;|&quot;nao&quot;| redirect[&quot;Redirect /mvp (403)&quot;]
+  guard --&gt;|&quot;sim&quot;| role{&quot;app_role permite a view?&quot;}
+  role --&gt;|&quot;nao&quot;| forbidden[&quot;403 / nav oculta a view&quot;]
+  role --&gt;|&quot;sim&quot;| query[&quot;useQuery -&gt; GET /admin/* (Edge + RLS)&quot;]
+  query --&gt; readagg[&quot;Le SO de views pre-agregadas&quot;]
+  readagg --&gt; kfin{&quot;Financeiro com nAmostra &lt; 5?&quot;}
+  kfin --&gt;|&quot;sim&quot;| suppressed[&quot;suppressed:true -&gt; amostra insuficiente LGPD (k&lt;5)&quot;]
+  kfin --&gt;|&quot;nao&quot;| render[&quot;Renderiza KPIs + badge dados ate refreshedAt&quot;]
+  render --&gt; moder{&quot;Acao de moderacao com motivo ≥10 chars?&quot;}
+  moder --&gt;|&quot;nao&quot;| fim[&quot;Fim (somente leitura)&quot;]
+  moder --&gt;|&quot;sim&quot;| rpc[&quot;RPC SECURITY DEFINER grava audit_log ANTES + aplica efeito&quot;]
+  rpc --&gt; toast[&quot;Toast + invalidateQueries&quot;]</pre></div><h4>UML — classes/serviços</h4><div class="mermaid-box"><pre class="mermaid">classDiagram
+  class TrackSDK {
+    +track(eventName, props) void
+    -buffer Event[]
+    +flush() void
+  }
+  class IngestEvent {
+    +validate(event, schemaVersion) bool
+    +upsert(events) Result
+  }
+  class AnalyticsEvent {
+    +uuid id
+    +text event_name
+    +uuid actor_id
+    +int schema_version
+    +jsonb props
+    +text idempotency_key
+  }
+  class JourneyDefinition {
+    +int version
+    +text required_events
+    +int window_days
+    +int meta
+    +isComplete(driver) bool
+  }
+  class AggregationJob {
+    +refreshKpiDaily() void
+    +refreshValidation() void
+    +refreshFinanceiro() void
+  }
+  class AdminApi {
+    +getOverview() Overview
+    +getFunnel(from, to) Funnel
+    +getFinanceiro(from, to) Financeiro
+  }
+  class ModerationRPC {
+    +admin_suspend_driver(target, reason) Result
+    +admin_moderate_company(target, decision, reason) Result
+    +admin_takedown_freight(target, reason) Result
+    +admin_reveal_contact(target) Contact
+  }
+  class AuditLog {
+    +uuid actor_user_id
+    +text action
+    +text reason
+    +inet ip
+  }
+  TrackSDK ..&gt; IngestEvent
+  IngestEvent ..&gt; AnalyticsEvent
+  AggregationJob ..&gt; AnalyticsEvent
+  AggregationJob ..&gt; JourneyDefinition
+  AdminApi ..&gt; AggregationJob
+  ModerationRPC ..&gt; AuditLog</pre></div><h4>Banco de dados (ER)</h4><div class="mermaid-box"><pre class="mermaid">erDiagram
+  ANALYTICS_EVENT ||--o{ V_JOURNEY_COMPLETION : &quot;alimenta&quot;
+  JOURNEY_DEFINITION ||--o{ V_JOURNEY_COMPLETION : &quot;versiona&quot;
+  V_JOURNEY_COMPLETION ||--o{ AGG_VALIDATION : &quot;acumula&quot;
+  ANALYTICS_EVENT ||--o{ AGG_KPI_DAILY : &quot;deriva&quot;
+  ANALYTICS_EVENT ||--o{ MV_FUNNEL_DAILY : &quot;deriva&quot;
+  ANALYTICS_EVENT ||--o{ AGG_VEREDITO : &quot;deriva props.veredito&quot;
+  AUTH_USERS ||--|| ADMIN_USER : &quot;papel&quot;
+  ADMIN_USER ||--o{ AUDIT_LOG : &quot;registra&quot;
+  AUDIT_LOG ||--o{ DRIVER_STATUS : &quot;afeta&quot;
+  ANALYTICS_EVENT {
+    uuid id PK
+    text event_name
+    uuid actor_id
+    int schema_version
+    jsonb props
+    text idempotency_key UK
+  }
+  JOURNEY_DEFINITION {
+    int id PK
+    int version UK
+    text required_events
+    int meta
+  }
+  AGG_VALIDATION {
+    date dia PK
+    int completos_cumulativo
+    int meta
+    boolean validado
+  }
+  AGG_KPI_DAILY {
+    date dia PK
+    int cadastrados
+    int simulacoes
+    int ponta_a_ponta
+  }
+  ADMIN_USER {
+    uuid user_id PK
+    text role
+    boolean ativo
+  }
+  AUDIT_LOG {
+    uuid id PK
+    uuid actor_user_id FK
+    text action
+    text reason
+    inet ip
+  }
+  DRIVER_STATUS {
+    uuid driver_id PK
+    text status
+    uuid suspended_by
+  }</pre></div><h4>Lógica do plano de testes</h4><div class="mermaid-box"><pre class="mermaid">flowchart TD
+  subgraph Unit[&quot;Unit (Vitest)&quot;]
+    u1[&quot;isJourneyComplete: 5 eventos em 30d -&gt; true; fora janela -&gt; false&quot;]
+    u2[&quot;funnel convEtapaAnterior sem divisao por zero; gargalo correto&quot;]
+    u3[&quot;k-anonimato: n=4 suppressed; n=5 linha em centavos&quot;]
+    u4[&quot;veredito mapping: lucro&lt;0 ruim, margem&lt;20 aceitavel, senao bom&quot;]
+  end
+  subgraph Integracao[&quot;Integracao (Supabase CLI + pgTAP)&quot;]
+    i1[&quot;ingest-event idempotency_key repetida -&gt; 1 linha&quot;]
+    i2[&quot;RPC suspend por suporte -&gt; 403; por admin -&gt; 1 audit_log&quot;]
+    i3[&quot;/admin/financeiro: operacao 403; admin k≥5 agregado&quot;]
+    i4[&quot;Consistencia: simulacoes overview == funnel == simulations (&lt;2%)&quot;]
+    i5[&quot;RLS: SELECT analytics_event via anon -&gt; negado&quot;]
+  end
+  subgraph E2E[&quot;E2E (Playwright)&quot;]
+    e1[&quot;Login admin -&gt; Visao geral + ValidationGate&quot;]
+    e2[&quot;Jornada completa incrementa pontaAPonta em 1 (idempotente)&quot;]
+    e3[&quot;Operacao reprova embarcador -&gt; reject_company no B2B&quot;]
+    e4[&quot;Suporte sem Financeiro/moderacao; quebra Fretebras -&gt; log erro&quot;]
+  end
+  Unit --&gt; Integracao --&gt; E2E</pre></div></section>
+
+  <p class="disclaimer">Documento gerado para orientar o desenvolvimento. Estimativas de esforço/custo são ordem de grandeza para planejamento (premissa R$ 2.100/dev-dia, equipe enxuta) — não é proposta comercial. O veredito de lucratividade do produto é estimativa; o piso ANTT é referência regulatória.</p>
+</div>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose', flowchart: { useMaxWidth: true }, er: { useMaxWidth: true } });
+</script>
+</body>
+</html>

@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PRD Técnico — Calculadora de frete · WhatsApp · RODE COM LUCRO</title>
+<style>
+  :root{--brand:#2563eb;--brand-d:#1e40af;--ink:#0f172a;--ink-6:#475569;--ink-4:#94a3b8;--line:#e2e8f0;--bg:#f1f5f9;--card:#fff;--lucro:#059669}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.6;-webkit-text-size-adjust:100%}
+  .wrap{max-width:920px;margin:0 auto;padding:40px 20px 90px}
+  header.doc{border-bottom:3px solid var(--brand);padding-bottom:20px;margin-bottom:10px}
+  .kicker{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand)}
+  h1{font-size:30px;line-height:1.15;margin:8px 0 6px;font-weight:800;letter-spacing:-.01em}
+  .sub{color:var(--ink-6);font-size:15px;max-width:64ch}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  .pill{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 14px}
+  .pill b{display:block;font-size:16px;color:var(--ink)}
+  .pill span{color:var(--ink-4);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .toc{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 4px}
+  .toc a{font-size:12px;font-weight:600;color:var(--brand-d);background:#eef4ff;border:1px solid #dbe6ff;border-radius:999px;padding:4px 11px;text-decoration:none}
+  .toc a:hover{background:#dbe6ff}
+  section{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-top:18px;scroll-margin-top:14px}
+  h2{font-size:18px;margin:0 0 14px;display:flex;align-items:center;gap:9px;font-weight:800}
+  h2 .n{display:inline-flex;width:26px;height:26px;align-items:center;justify-content:center;background:var(--brand);color:#fff;border-radius:8px;font-size:13px;font-weight:800;flex:none}
+  h4{margin:18px 0 8px;font-size:14px;color:var(--brand-d);font-weight:700}
+  h4:first-of-type{margin-top:4px}
+  p{margin:0 0 10px;color:var(--ink-6)}
+  .hint{font-size:12px;color:var(--ink-4);margin-top:-4px}
+  ul,ol{margin:0;padding-left:22px}
+  li{margin:6px 0;color:var(--ink-6)}
+  ul.check{list-style:none;padding-left:0}
+  ul.check li{position:relative;padding-left:28px;margin:9px 0}
+  ul.check li::before{content:'';position:absolute;left:0;top:4px;width:16px;height:16px;border:2px solid var(--lucro);border-radius:4px}
+  .badge{display:inline-block;background:#eff6ff;color:var(--brand-d);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:800;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;flex:none}
+  .tags{display:flex;flex-wrap:wrap;gap:7px}
+  .tags span{background:#eff6ff;color:var(--brand-d);border:1px solid #dbeafe;border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600}
+  /* Modelo de dados */
+  .entidade{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 12px;background:#fbfdff}
+  .ent-nome{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px;font-weight:700;color:var(--brand-d);margin:0 0 8px}
+  ul.campos{list-style:none;padding-left:0;margin:0;display:grid;gap:5px}
+  ul.campos li{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--ink-6);background:#fff;border:1px solid var(--line);border-radius:7px;padding:5px 9px;overflow-wrap:anywhere;word-break:break-word;margin:0}
+  /* API */
+  .endpoint{border-left:3px solid var(--brand);background:#fbfdff;border-radius:0 10px 10px 0;padding:10px 14px;margin:0 0 12px}
+  .ep-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .ep-rota{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:var(--ink);overflow-wrap:anywhere;word-break:break-word}
+  .ep-desc{font-size:13px;margin:7px 0 0}
+  .teste{border-left:3px solid var(--brand);padding-left:15px;margin:14px 0}
+  .empty{color:var(--ink-4)}
+  /* Diagramas */
+  .mermaid-box{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px;margin:6px 0 10px;overflow-x:auto;text-align:center}
+  .mermaid{font-size:14px}
+  .disclaimer{margin-top:26px;font-size:12px;color:var(--ink-4);border-top:1px solid var(--line);padding-top:16px}
+  @media print{body{background:#fff}.wrap{padding:0}.toc{display:none}section{break-inside:avoid;border:none;border-bottom:1px solid var(--line);border-radius:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="doc">
+    <div class="kicker">RODE COM LUCRO · PRD Técnico</div>
+    <h1>Calculadora de frete · WhatsApp</h1>
+    <p class="sub">Guia de desenvolvimento para dev full-stack sênior. O protótipo está 100% mockado; este documento orienta a construção real da funcionalidade.</p>
+    <div class="meta">
+      <div class="pill"><span>Esforço</span><b>13–19 dev-dias</b></div>
+      <div class="pill"><span>Prazo</span><b>3 a 4 semanas</b></div>
+      <div class="pill"><span>Custo estimado</span><b>R$ 27k–R$ 40k</b></div>
+      <div class="pill"><span>Premissa</span><b>R$ 2.100/dev-dia</b></div>
+    </div>
+  </header>
+  <nav class="toc"><a href="#s1">Visão técnica</a><a href="#s2">Arquitetura</a><a href="#s3">Stack</a><a href="#s4">Modelo de dados</a><a href="#s5">Contratos de API</a><a href="#s6">Frontend / fluxo</a><a href="#s7">Lógica de negócio</a><a href="#s8">Integrações</a><a href="#s9">Segurança &amp; LGPD</a><a href="#s10">Não-funcionais</a><a href="#s11">Etapas</a><a href="#s12">Plano de teste</a><a href="#s13">Critérios de aceite</a><a href="#s14">Diagramas</a></nav>
+
+  <section id="s1"><h2><span class="n">1</span>Visão técnica</h2><p>Modulo &quot;Calculadora de frete · WhatsApp&quot; (PRD id calc-wpp): copiloto que responde &quot;esse frete vale a pena?&quot; diretamente na conversa do WhatsApp, reutilizando SEM reescrever o motor puro calcularFrete() de src/lib/calc.ts (assinatura FreteInput -&gt; FreteResultado, vereditos ruim/aceitavel/bom). IMPORTANTE/CONTRATO DE UNIDADE: o motor opera em REAIS (R$) — valorFrete, pedagio e alimentacaoDia sao numbers em R$, NAO centavos. As tabelas (wa_freight_query, driver.alimentacao_dia_cents) persistem em CENTAVOS inteiros por precisao/auditoria; existe UMA fronteira explicita de conversao centavos&lt;-&gt;reais (helper centsToReais/reaisToCents em @rode/calc) aplicada imediatamente antes de chamar calcularFrete e imediatamente apos, com teste de roundtrip. O motorista manda origem/destino/valor por TEXTO ou AUDIO; o sistema transcreve PT-BR (sotaque + ruido de cabine), faz NLU de intencao (distinguir &quot;vale a pena?&quot; das demais intencoes do copiloto: registrar gasto, consulta financeira, vencimento de documento, &quot;tem carga perto&quot;), extrai e normaliza entidades (cidade-&gt;UF-&gt;preset/coordenada, valor textual &quot;oito mil&quot;/&quot;R$ 8.000&quot;-&gt;centavos), resolve distancia+pedagio por API de rotas de caminhao com fallback para os presets ROTAS de calc.ts, puxa o perfil do caminhao pelo telefone, roda o motor e devolve veredito + custo + lucro + margem + valor minimo em mensagem curta, mais a mensagem pronta de negociacao (formato NEGOCIACAO_MSG). Guardrail central: quando a confianca de extracao/transcricao for baixa, NUNCA dar o numero direto — confirmar os dados antes (mesma logica do fin-wpp). NOTA DE PARIDADE COM O MOCK: o mock src/data/copiloto.ts diz &quot;Com diesel, pedagio e a volta vazia, seu custo fica ~R$ 9.777&quot;; verificacao numerica mostra que R$ 9.777 corresponde a voltaVazia=FALSE com os FRETE_DEFAULTS (com voltaVazia=true o custo e ~R$ 19.194). O texto do mock e copy de marketing e NAO deve ser tratado como golden numerico; o golden de teste e sempre a saida de calcularFrete() para o FreteInput exato (ver Plano de Teste). Arquiteturalmente: Edge Functions (Deno/TS) atras do webhook da Meta Cloud API, Postgres+RLS (Supabase) para sessao conversacional, idempotencia e auditoria, storage privado para audio (descartado pos-transcricao, retencao minima LGPD), e o motor de calculo compartilhado como pacote TS isomorfo. Toda resposta carrega disclaimer de estimativa. Reaproveita a UI conversacional mockada (CONVERSA/NEGOCIACAO_MSG) como contrato de tom/formato.</p></section>
+  <section id="s2"><h2><span class="n">2</span>Arquitetura</h2><ul><li>Motor de calculo compartilhado: extrair src/lib/calc.ts (calcularFrete, FreteInput, FreteResultado, FRETE_DEFAULTS, ROTAS, RotaPreset, fmtBRL, fmtBRLCent) para um pacote TS isomorfo @rode/calc importavel tanto pelo front Vite quanto pelas Edge Functions Deno. O backend NUNCA reimplementa a formula — fonte unica de verdade auditavel, garantida por teste de paridade no CI. O pacote tambem exporta os helpers de unidade reaisToCents(r)-&gt;int e centsToReais(c)-&gt;number e o normalizador de valor textual-&gt;centavos (compartilhado com fin-wpp). CUIDADO: calcularFrete trabalha em REAIS; nenhum centavo entra nele sem passar por centsToReais.</li><li>Orquestracao por Edge Functions (Deno/TS no Supabase): wa-webhook (valida X-Hub-Signature-256, UPSERT idempotente, responde 200 em &lt;1s e enfileira), wa-worker (processa: STT-&gt;NLU-&gt;extracao-&gt;rota-&gt;montagem FreteInput-&gt;calculo-&gt;resposta), wa-status (callbacks de entrega/leitura atualizam wa_message.delivery_status). Webhook desacoplado do processamento via fila (pgmq/wa_inbound_queue + pg_cron) para nao estourar o timeout da Meta.</li><li>Maquina de estados conversacional persistida em wa_conversation (idle -&gt; aguardando_confirmacao -&gt; respondido -&gt; idle). Transicoes: inbound vale_a_pena com confianca&gt;=limiar e rota resolvida -&gt; respondido; confianca&lt;limiar OU valor ausente OU rota so estimativa de baixa qualidade -&gt; aguardando_confirmacao (grava pending_input); em aguardando_confirmacao, SIM-&gt;calcula-&gt;respondido, correcao de campo-&gt;permanece aguardando_confirmacao com pending_input atualizado, NAO/timeout 30min-&gt;volta a idle descartando pending_input. Guardrail isola o copiloto de emitir veredito financeiro a partir de extracao ruim.</li><li>NLU/extracao via LLM com function calling (JSON Schema estrito) hospedado externamente; o LLM SO preenche um JSON validado (intencao, origem, destino, valorCentavos, voltaVazia, e confianca [0..1] por campo) — nunca decide o veredito nem executa codigo. A saida do LLM e validada server-side contra JSON Schema (zod/ajv) e contra faixas plausiveis antes de uso; o calculo e deterministico em calcularFrete(). Falha de schema = trata como confianca 0 -&gt; confirmacao.</li><li>Resolucao de rota em camadas atras da interface RotaProvider: 1) wa_rota_cache valido (origem+destino normalizados, ttl_expira_at&gt;now); 2) presets ROTAS de calc.ts quando a rota casa apos normalizacao; 3) API externa de roteirizacao de caminhao (distancia+pedagio por eixo) e grava no cache com TTL. Degradacao graciosa: API fora -&gt; usa preset/cache e marca rota_fonte (preset|cache) para disclaimer 'distancia estimada' e metricas de fallback.</li><li>Idempotencia por wa_message_id (a Meta reentrega webhooks ate ~7x): toda mensagem inbound e UPSERT por id unico; o worker so processa se a transicao ainda nao ocorreu (guarda processed_at). Reprocessamento NAO duplica resposta nem wa_freight_query. Janela de 24h da Meta controlada por wa_conversation.last_inbound_at — fora da janela, so template HSM aprovado (trata erro 131047).</li><li>Seguranca de dados por RLS no Postgres: cada conversa/mensagem/query isolada por driver (telefone verificado -&gt; driver_id); Edge Functions usam service role apenas na camada de aplicacao com checagem explicita de dono antes de ler/escrever. Audio em bucket privado wa-audio com URL assinada TTL 5min, apagado imediatamente pos-transcricao. Painel admin com RLS por papel (claim role=admin), sem expor financeiro individual identificavel.</li></ul></section>
+  <section id="s3"><h2><span class="n">3</span>Stack sugerida</h2><div class="tags"><span>Frontend de referencia (tom/contrato, ja mockado): React 18 + TypeScript + Vite (PWA mobile-first), reusando src/data/copiloto.ts (CONVERSA, SUGESTOES) como especificacao de formato das respostas e o componente de chat do AppPrototype. Nenhuma tela nova obrigatoria neste modulo alem do painel de operacao admin.</span><span>Backend: Supabase (Postgres 15 + Row Level Security + Edge Functions Deno/TypeScript). Edge Functions: wa-webhook, wa-worker, wa-status. Fila via pgmq (Supabase Queues) ou tabela wa_inbound_queue + pg_cron a cada 10s, com SKIP LOCKED, retry e backoff exponencial (max 5 tentativas, depois dead-letter).</span><span>Canal: WhatsApp Cloud API (Meta Graph API, versao fixada em env, ex.: v21.0) — numero verificado, webhook com verify token, templates HSM aprovados (boas-vindas/reengajamento), Media API para baixar audio (.ogg/opus).</span><span>Motor de calculo: pacote @rode/calc extraido de src/lib/calc.ts (calcularFrete puro, ROTAS, FRETE_DEFAULTS, helpers de unidade e formatacao), com Vitest para unit + teste de paridade front/back rodando no CI.</span><span>Speech-to-text PT-BR robusto a ruido (Whisper large-v3 via API / Google Speech-to-Text pt-BR / Groq Whisper), selecionavel por env STT_PROVIDER, com timeout (ex.: 8s) e limite de duracao de audio (60s). Retorna transcricao + score de confianca [0..1].</span><span>NLU/extracao: LLM com function calling/JSON mode (GPT-4o-mini ou Claude Haiku), selecionavel por env LLM_PROVIDER, prompt com JSON Schema estrito e few-shots dos exemplos RODE ('Sao Paulo pra Recife, R$ 8.000'). Timeout (ex.: 5s) com fallback para heuristica regex + confirmacao.</span><span>API de rotas de caminhao com distancia + pedagio por eixo (Qualp / Maplink Routing / Google Routes com toll info), atras da interface RotaProvider para troca por env ROTA_PROVIDER sem refatorar.</span><span>Storage: Supabase Storage bucket privado wa-audio (URLs assinadas TTL 5min, lifecycle de exclusao). Observabilidade: logs estruturados JSON nas Edge Functions (com request_id e wa_message_id, SEM PII no log) + tabela wa_event para auditoria/metricas. Testes: Vitest (unit), Deno test + supabase local/mocks (integracao), e2e contra numero de teste/sandbox Meta.</span></div></section>
+  <section id="s4"><h2><span class="n">4</span>Modelo de dados</h2><div class="entidade">
+        <p class="ent-nome">driver (perfil do caminhoneiro, ja existente/compartilhado)</p>
+        <ul class="campos"><li>id uuid pk</li><li>phone_e164 text unique not null (chave de vinculo com WhatsApp, formato +55DDD...)</li><li>phone_verified bool default false (vinculo so apos verificado)</li><li>nome text</li><li>consumo_km_l numeric default 2.5</li><li>manutencao_km numeric default 0.35</li><li>pneus_km numeric default 0.12</li><li>depreciacao_km numeric default 0.25</li><li>alimentacao_dia_cents int default 9000</li><li>margem_desejada_pct numeric default 20</li><li>arla_pct numeric default 5</li><li>preco_diesel numeric default 6.1</li><li>carroceria text</li><li>cidade_base text</li><li>uf_base text</li><li>wa_opt_in bool default false</li><li>wa_opt_in_at timestamptz null</li><li>wa_opt_out_at timestamptz null</li><li>created_at timestamptz default now()</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">wa_conversation (estado da maquina conversacional por motorista)</p>
+        <ul class="campos"><li>id uuid pk</li><li>driver_id uuid fk-&gt;driver null (null = telefone nao cadastrado, usa FRETE_DEFAULTS)</li><li>phone_e164 text not null</li><li>estado text not null default 'idle' check in ('idle','aguardando_confirmacao','respondido')</li><li>pending_input jsonb null (FreteInput parcial + textos brutos origem/destino + confianca por campo, aguardando SIM)</li><li>pending_since timestamptz null (para timeout de 30min)</li><li>last_inbound_at timestamptz null (janela 24h Meta)</li><li>updated_at timestamptz default now()</li><li>unique(phone_e164)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">wa_message (toda mensagem inbound/outbound, idempotente e auditavel)</p>
+        <ul class="campos"><li>id uuid pk</li><li>wa_message_id text unique not null (id da Meta, garante idempotencia)</li><li>conversation_id uuid fk-&gt;wa_conversation</li><li>direction text check in ('in','out')</li><li>tipo text check in ('text','audio','template','interactive')</li><li>texto text null</li><li>audio_path text null (storage privado, apagado pos-transcricao -&gt; vira null)</li><li>transcricao text null</li><li>confianca_transcricao numeric null</li><li>processed_at timestamptz null (worker so processa se null -&gt; trava idempotencia de processamento)</li><li>delivery_status text null check in (null,'sent','delivered','read','failed')</li><li>error_code text null (ex.: '131047')</li><li>created_at timestamptz default now()</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">wa_freight_query (cada consulta 'vale a pena?' com entrada, saida e proveniencia da rota; valores em CENTAVOS)</p>
+        <ul class="campos"><li>id uuid pk</li><li>conversation_id uuid fk</li><li>message_id uuid fk-&gt;wa_message</li><li>driver_id uuid fk null</li><li>origem_texto text</li><li>destino_texto text</li><li>origem_cidade_norm text</li><li>origem_uf text</li><li>destino_cidade_norm text</li><li>destino_uf text</li><li>valor_frete_cents int not null</li><li>volta_vazia bool not null</li><li>distancia_km numeric not null</li><li>pedagio_cents int not null</li><li>dias int not null</li><li>rota_fonte text not null check in ('api','preset','cache')</li><li>confianca_extracao numeric not null</li><li>usou_perfil bool not null</li><li>frete_input jsonb not null (FreteInput exato em REAIS aplicado a calcularFrete, para reproducibilidade)</li><li>resultado jsonb not null (FreteResultado retornado)</li><li>veredito text not null check in ('ruim','aceitavel','bom')</li><li>custo_total_cents int not null</li><li>lucro_cents int not null</li><li>valor_minimo_cents int not null</li><li>calc_version text not null (versao/hash do pacote @rode/calc, para auditar mudancas de formula)</li><li>created_at timestamptz default now()</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">wa_rota_cache (cache de distancia/pedagio por par origem-destino normalizado)</p>
+        <ul class="campos"><li>id uuid pk</li><li>origem_uf text not null</li><li>origem_cidade_norm text not null</li><li>destino_uf text not null</li><li>destino_cidade_norm text not null</li><li>distancia_km numeric not null</li><li>pedagio_cents int not null</li><li>dias int not null</li><li>fonte text not null default 'api'</li><li>ttl_expira_at timestamptz not null</li><li>created_at timestamptz default now()</li><li>unique(origem_cidade_norm,origem_uf,destino_cidade_norm,destino_uf)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">wa_event (telemetria/auditoria de negocio para metricas e admin)</p>
+        <ul class="campos"><li>id uuid pk</li><li>conversation_id uuid fk null</li><li>driver_id uuid fk null</li><li>tipo text not null check in ('intencao_detectada','confirmacao_solicitada','confirmacao_recebida','veredito_entregue','fallback_rota','fallback_stt','fallback_llm','prejuizo_evitado','negociacao_enviada','opt_in','opt_out','rate_limited','erro')</li><li>payload jsonb null (SEM PII crua</li><li>valores agregaveis)</li><li>latencia_ms int null</li><li>created_at timestamptz default now()</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">wa_inbound_queue (fila leve de processamento; alternativa a pgmq)</p>
+        <ul class="campos"><li>id uuid pk</li><li>wa_message_id text not null</li><li>attempts int default 0</li><li>next_attempt_at timestamptz default now()</li><li>locked_at timestamptz null</li><li>dead_letter bool default false</li><li>created_at timestamptz default now()</li></ul>
+      </div></section>
+  <section id="s5"><h2><span class="n">5</span>Contratos de API</h2><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/functions/v1/wa-webhook</code></div>
+        <p class="ep-desc">Verificacao do webhook da Meta. Le hub.mode=subscribe, hub.verify_token e hub.challenge dos query params; se hub.mode=='subscribe' e hub.verify_token==env WHATSAPP_VERIFY_TOKEN, responde 200 com hub.challenge em text/plain; senao 403. Usado uma vez na configuracao do app na Meta.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/wa-webhook</code></div>
+        <p class="ep-desc">Recebe eventos da Cloud API. Valida X-Hub-Signature-256 (HMAC-SHA256 do corpo RAW com APP_SECRET, comparacao constant-time); rejeita 401 se ausente/invalido. Para cada entry.changes.value.messages: resolve/cria wa_conversation por phone_e164, faz UPSERT idempotente em wa_message por wa_message_id (ON CONFLICT DO NOTHING), atualiza last_inbound_at, enfileira em wa_inbound_queue/pgmq e responde 200 em &lt;1s. statuses (sent/delivered/read/failed) atualizam wa_message.delivery_status/error_code. NUNCA processa sincronamente. Sempre responde 200 mesmo em erro interno (apos validar assinatura) para a Meta nao reentregar em loop; erros vao para wa_event/log.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/wa-worker (interno, disparado pela fila/pg_cron, autenticado por service role / segredo interno)</code></div>
+        <p class="ep-desc">Processa uma mensagem inbound. Payload {wa_message_id}. Trava idempotente: SELECT ... FOR UPDATE em wa_message; se processed_at not null -&gt; 200 no-op. Pipeline: resolve driver por phone_e164 (phone_verified=true) -&gt; se audio, gera URL assinada, baixa via Media API, STT (transcricao+confianca), APAGA audio do bucket; NLU de intencao; se intencao!='vale_a_pena' -&gt; emite wa_event intencao_detectada, delega ao handler correto (fin-wpp/doc-wpp/carga) e encerra; extrai entidades (origem,destino,valorCentavos,volta_vazia,confianca por campo); valida contra JSON Schema + faixas plausiveis; resolve rota (cache-&gt;preset-&gt;API) via RotaProvider; monta FreteInput (perfil ou FRETE_DEFAULTS; centsToReais no valor/pedagio/alimentacao); calcula confianca_final; se confianca_final&lt;0.8 OU valor ausente OU rota nao resolvida -&gt; grava pending_input, estado=aguardando_confirmacao, envia confirmacao; senao chama calcularFrete(), grava wa_freight_query, envia veredito+negociacao. Marca processed_at=now(). Resposta 200 vazio (efeito via send API).</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">Meta Graph: POST /{phone_number_id}/messages (saida, consumida pelo worker)</code></div>
+        <p class="ep-desc">Envia type=text (dentro da janela 24h) com a resposta formatada (veredito + custo via fmtBRL + lucro + margem + valor minimo + disclaimer + mensagem de negociacao NEGOCIACAO_MSG) ou type=template (fora da janela / reengajamento). Headers Authorization: Bearer WHATSAPP_TOKEN. Trata erro 131047 (fora da janela 24h) caindo para template HSM aprovado; registra error_code em wa_message. Retry com backoff em 5xx/429.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">-</span><code class="ep-rota">Fluxo de confirmacao (processado dentro de wa-worker, nao endpoint novo)</code></div>
+        <p class="ep-desc">Quando wa_conversation.estado=aguardando_confirmacao e chega inbound: se texto normalizado ∈ {SIM,CONFIRMA,ISSO,PODE} -&gt; recupera pending_input, calcularFrete(), entrega veredito, estado=respondido; se ∈ {NAO,NÃO,CORRIGIR} ou correcao de campo ('era 9 mil','volta vazia sim','na verdade pra Fortaleza') -&gt; reextrai o campo, atualiza pending_input, reconfirma; se ∈ {SAIR,PARAR} -&gt; opt-out; se pending_since&gt;30min -&gt; descarta pending_input, estado=idle e trata como nova consulta. Idempotente por wa_message_id.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/functions/v1/admin-wa-operacao (painel interno, RLS por papel admin)</code></div>
+        <p class="ep-desc">Retorna agregados de wa_event/wa_freight_query/wa_message: contagem de conversas, intencoes detectadas, taxa de fallback de rota/STT/LLM, latencia p50/p95 (texto vs audio), % de respostas marcadas 'prejuizo_evitado' (veredito ruim entregue), volume e custo estimado de mensagens. NAO expoe financeiro individual identificavel (apenas agregados). Requer claim role=admin; 403 caso contrario.</p>
+      </div></section>
+  <section id="s6"><h2><span class="n">6</span>Frontend / fluxo</h2><ul><li>Fluxo conversacional (canal WhatsApp), nao tela de app — contrato de tom/formato ancorado em src/data/copiloto.ts (CONVERSA) e na proposta de transparencia do RODE. 1) Boas-vindas/opt-in: na primeira interacao ou fora da janela 24h, template HSM aprovado no tom 'Oi, {nome}! Sou o copiloto do RODE COM LUCRO. Me manda origem, destino e valor de um frete que eu calculo se vale a pena.'</li><li>2) Entrada por texto OU audio: 'Sao Paulo pra Recife, R$ 8.000' ou audio de ~4s. Ao receber audio, eco curto 'Calculando...' imediato para sinalizar processamento dentro da meta &lt;15s p95.</li><li>3) Resposta de veredito (caminho feliz): mensagem curta com veredito + conta transparente, ex.: 'Esse frete parece apertado. Com diesel, pedagio e os custos do seu caminhao, seu custo fica ~{fmtBRL(custoTotal)} — daria prejuizo de {fmtBRL(|lucro|)}. Para valer a pena com {margemDesejadaPct}% de margem, negocie a partir de {fmtBRL(valorMinimo)}.' SEMPRE com disclaimer 'estimativa, confira distancia/pedagio'. Os numeros exibidos vem de fmtBRL/fmtBRLCent de @rode/calc (mesma formatacao do app, para baterem).</li><li>4) Mensagem pronta de negociacao (acao de valor): logo apos o veredito, oferece o texto copiavel NEGOCIACAO_MSG: 'Ola! Sobre o frete {origem} -&gt; {destino}: pelo meu custo, consigo fechar a partir de {fmtBRL(valorMinimo)}. Conseguimos ajustar?' — valorMinimo sempre &gt; custoTotal, nunca orienta fechar no prejuizo.</li><li>5) Guardrail de confianca baixa: quando origem/destino/valor saem incertos do STT/NLU (confianca_final&lt;0.8) ou valor ausente, NAO dar numero — perguntar 'Entendi: {origem} -&gt; {destino}, {fmtBRL(valor)}, volta vazia. Confirma? (responda SIM)'. So calcula apos SIM; aceita correcao de campo ('era 9 mil').</li><li>6) Degradacao graciosa: API de rotas fora -&gt; usa preset/cache e sinaliza 'distancia estimada'. Telefone nao cadastrado/nao verificado -&gt; usa FRETE_DEFAULTS, entrega veredito e convida 'cadastre seu caminhao para um calculo mais preciso'. Intencao diferente ('quanto fiz esse mes?','quando vence licenciamento?') roteada aos handlers dos outros PRDs WhatsApp, mantendo a mesma thread/numero.</li><li>7) Estado mantido server-side em wa_conversation (estado, pending_input, last_inbound_at) — o 'estado da UI' aqui e a maquina conversacional, nao componentes React. Painel admin /functions/v1/admin-wa-operacao e a unica superficie visual nova (somente leitura de agregados).</li></ul></section>
+  <section id="s7"><h2><span class="n">7</span>Lógica de negócio</h2><ul><li>Reuso do motor puro (REAIS): calculo e exatamente calcularFrete(input:FreteInput):FreteResultado de src/lib/calc.ts. fatorDistancia = voltaVazia?2:1; distanciaTotalKm = distanciaKm*fator; litros = distanciaTotalKm/consumoKmL; custoDiesel = litros*precoDiesel; custoArla = custoDiesel*arlaPct/100; custoManutencao/Pneus/Depreciacao = distanciaTotalKm*respectivo; custoPedagio = pedagio*fator; custoAlimentacao = alimentacaoDia*dias; custoTotal=soma; lucro = valorFrete-custoTotal; margemRealPct = valorFrete&gt;0 ? lucro/valorFrete*100 : 0; valorMinimo = custoTotal*(1+margemDesejadaPct/100).</li><li>Veredito (identico ao motor, ordem importa): se lucro&lt;0 -&gt; 'ruim'; senao se margemRealPct&lt;margemDesejadaPct -&gt; 'aceitavel'; senao 'bom'. ATENCAO: o limite e estrito (&lt;), entao no ponto nominal de margem igual a desejada o resultado de ponto flutuante tende a 'aceitavel' (ex.: 19.9999%). A copy mapeia veredito-&gt;texto: ruim='daria prejuizo'/'apertado', aceitavel='passa, mas sem folga', bom='vale a pena'.</li><li>Fronteira de unidade (centavos&lt;-&gt;reais): entidades persistem em centavos (valor_frete_cents, pedagio_cents, alimentacao_dia_cents); antes de calcularFrete converter com centsToReais; apos, reaisToCents para gravar custo_total_cents/lucro_cents/valor_minimo_cents. frete_input gravado em REAIS (espelho exato do input do motor). Teste de roundtrip garante reaisToCents(centsToReais(x))==x.</li><li>Montagem do FreteInput: distanciaKm, pedagio (R$), dias vem da resolucao de rota; consumoKmL, manutencaoKm, pneusKm, depreciacaoKm, alimentacaoDia (cents-&gt;R$), arlaPct, margemDesejadaPct, precoDiesel vem do perfil driver quando phone_verified, senao de FRETE_DEFAULTS (usou_perfil=false); valorFrete e voltaVazia vem da extracao NLU. voltaVazia: default conforme NLU; se o motorista nao menciona retorno em rota longa Sudeste-&gt;Nordeste, assume true e EXPLICITA isso na confirmacao/resposta (impacta forte o custo — ver discrepancia do mock).</li><li>Resolucao de rota em camadas com normalizacao: normalizar cidade (lower, sem acento/diacritico, trim, alias 'SP'-&gt;'Sao Paulo (SP)','recife'-&gt;'Recife (PE)') e UF; 1) wa_rota_cache valido (ttl); 2) match nos presets ROTAS (ex.: SP-&gt;Recife = distanciaKm 2650, pedagio 720, dias 4); 3) API de rotas de caminhao (distancia+pedagio por eixo) e grava no cache com TTL. Marca rota_fonte (api|preset|cache) para disclaimer e metricas de fallback.</li><li>Score de confianca e guardrail: confianca_final = min(confianca_transcricao se audio (1.0 se texto), confianca_origem, confianca_destino, confianca_valor). Se confianca_final&lt;0.8 OU valor ausente OU rota nao resolvida -&gt; aguardando_confirmacao; nunca emitir veredito sob baixa confianca (mitiga 'numero errado usado para negociar de verdade').</li><li>Normalizacao de valor falado/escrito -&gt; centavos inteiros (pt-BR): 'R$ 8.000'-&gt;800000, '8000'-&gt;800000, 'oito mil'-&gt;800000, 'oito mil e quinhentos'-&gt;850000. Ponto=milhar, virgula=decimal. Reaproveita o normalizador do fin-wpp. Rejeita/sinaliza valores fora de faixa (&lt;R$100 ou &gt;R$200k) como baixa confianca.</li><li>Geracao da mensagem de negociacao: usa valorMinimo (arredondado p/ cima ao multiplo de R$50) e o par origem-&gt;destino no template NEGOCIACAO_MSG, sempre &gt; custoTotal.</li><li>Roteamento de intencao: classificar entre vale_a_pena | registrar_gasto | consulta_financeira | vencimento_doc | carga_perto | saudacao | opt_out. So vale_a_pena entra neste pipeline; o resto delega aos handlers dos outros PRDs WhatsApp mantendo o mesmo numero/conversa/thread.</li></ul></section>
+  <section id="s8"><h2><span class="n">8</span>Integrações</h2><ul><li>WhatsApp Cloud API (Meta Graph API, versao fixada em env): webhook (GET challenge + POST eventos com X-Hub-Signature-256), POST /{phone_number_id}/messages para text/template/interactive, Media API (GET media url + download audio .ogg/opus), templates HSM aprovados, janela 24h (erro 131047), callbacks de status (sent/delivered/read/failed).</li><li>Provedor de STT PT-BR robusto a ruido (Whisper large-v3 via API / Google Speech-to-Text pt-BR / Groq Whisper), selecionavel por env STT_PROVIDER, retornando transcricao + score de confianca, com timeout e limite de duracao.</li><li>Provedor de NLU/LLM com function calling/JSON mode (GPT-4o-mini ou Claude Haiku), selecionavel por env LLM_PROVIDER, para classificacao de intencao e extracao estruturada com JSON Schema estrito validado server-side.</li><li>API de rotas de caminhao com distancia + pedagio por eixo (Qualp / Maplink Routing / Google Routes com toll info) atras da interface RotaProvider (troca por env, sem refatorar).</li><li>Motor de calculo existente @rode/calc (calcularFrete, ROTAS, FRETE_DEFAULTS, fmtBRL/fmtBRLCent) reutilizado sem reimplementacao — fonte unica de verdade compartilhada com o app (src/lib/calc.ts).</li><li>Supabase: Postgres + RLS, Edge Functions (Deno), Storage privado (bucket wa-audio, URLs assinadas TTL 5min), pgmq/pg_cron para a fila de processamento.</li><li>Cadastro/perfil do motorista (driver) vinculado por phone_e164 (apos phone_verified), fornecendo consumo, custos/km, precoDiesel e margem; integra com os demais handlers do copiloto (financeiro/fin-wpp, documentos, oportunidades) que compartilham o mesmo numero e conversa.</li></ul></section>
+  <section id="s9"><h2><span class="n">9</span>Segurança & LGPD</h2><ul><li>LGPD - audio (voz) e dado pessoal: baixar o audio da Media API para bucket privado wa-audio via URL assinada (TTL 5min), transcrever e APAGAR o arquivo imediatamente apos a transcricao (audio_path -&gt; null). Retencao maxima configuravel (default 0; ate 30 dias APENAS se necessario p/ depuracao, com flag). Guardar somente a transcricao textual, nunca o audio cru indefinidamente.</li><li>LGPD - consentimento e direitos do titular: opt-in explicito registrado em driver.wa_opt_in_at com finalidade; opt-out por palavra-chave SAIR/PARAR honrado imediatamente (wa_opt_out_at, wa_opt_in=false, para mensagens proativas); direito de exclusao remove conversas, mensagens, freight_queries e eventos do motorista (cascade). Base legal, finalidade e prazo de retencao documentados; transcricoes e textos contem PII (origem/destino, valores) e ficam sob RLS.</li><li>Validacao de webhook: verificar X-Hub-Signature-256 (HMAC-SHA256 do corpo RAW com APP_SECRET, comparacao constant-time) em todo POST; rejeitar 401 sem assinatura valida. Verify token no GET. Segredos (WHATSAPP_TOKEN, APP_SECRET, WHATSAPP_VERIFY_TOKEN, chaves STT/LLM/rotas) so em env/secret manager do Supabase, nunca no repo nem em log.</li><li>Isolamento por RLS: wa_conversation/wa_message/wa_freight_query/wa_event vinculados ao driver e protegidos por Row Level Security; vinculo telefone-&gt;driver_id so apos phone_verified=true. Edge Functions usam service role somente na camada de aplicacao, com checagem explicita de dono antes de ler/escrever. Painel admin exige claim role=admin e so retorna agregados.</li><li>Defesa contra prompt injection / escrita maliciosa: o LLM NUNCA executa SQL nem decide veredito — apenas preenche JSON validado contra JSON Schema estrito (intencao,origem,destino,valorCentavos,volta_vazia,confianca). Conteudo da mensagem do motorista e tratado como dado, nunca como instrucao; valores fora de faixa plausivel (valorFrete&gt;R$200k, distancia&gt;6000km, dias&gt;15) sao rejeitados e caem em confirmacao. Calculo deterministico em calcularFrete().</li><li>Conformidade Meta e custo: somente templates HSM aprovados fora da janela 24h; tratar erro 131047 sem quebrar a conversa; rate-limit por numero (ex.: max 20 consultas/h) e limite de duracao de audio (60s) para conter custo STT/NLU/mensagens; kill-switch global do canal por flag. URLs de download de audio assinadas/expiraveis (TTL 5min), bucket privado.</li><li>Disclaimer obrigatorio: toda resposta financeira sinaliza que e estimativa (depende de distancia/pedagio reais e dos custos do perfil) — o motorista usa o numero para negociar de verdade, entao a comunicacao deve evitar falsa precisao. Quando rota_fonte!=api ou usou_perfil=false, o disclaimer e reforcado ('distancia estimada'/'usando valores padrao').</li></ul></section>
+  <section id="s10"><h2><span class="n">10</span>Não-funcionais</h2><ul><li>Latencia: resposta de texto &lt;8s p95; resposta de audio &lt;15s p95 (download Media API + STT + NLU + rota + calculo), com eco 'calculando...' imediato para audio. Webhook responde 200 a Meta em &lt;1s (processamento sempre assincrono via fila).</li><li>Precisao de extracao de entidades (origem/destino/valor) &gt;=90% em amostra rotulada de mensagens reais PT-BR; abaixo do limiar de confianca (0.8) sempre confirmar antes de calcular. % de 'vale a pena?' respondidas sem fallback humano &gt;=80%.</li><li>Confiabilidade e idempotencia: reentrega de webhook (mesmo wa_message_id) nao duplica resposta nem wa_freight_query (unique + processed_at). Fila com retry/backoff (max 5, depois dead-letter); falha de STT/NLU/rota nao trava a conversa — degrada para confirmacao ou estimativa por preset.</li><li>Degradacao graciosa: API de rotas indisponivel -&gt; presets ROTAS/cache + 'distancia estimada'; STT indisponivel -&gt; pede envio por texto; LLM indisponivel -&gt; heuristica regex minima + confirmacao obrigatoria.</li><li>Custo controlado: teto de duracao de audio (60s), rate-limit por numero, cache de rota com TTL para evitar chamadas repetidas a API paga, kill-switch global. Custo por mensagem (WhatsApp+STT+NLU+rotas) monitorado em wa_event e no painel.</li><li>Determinismo e auditabilidade: veredito vem de calcularFrete() puro e testavel; cada wa_freight_query guarda frete_input (REAIS), resultado, rota_fonte, confianca_extracao e calc_version para reproduzir/justificar qualquer resposta dada ao motorista.</li><li>Fuso e locale: calculos de dias/datas em America/Sao_Paulo; formatacao monetaria pt-BR via fmtBRL/fmtBRLCent de @rode/calc para o numero no WhatsApp bater exatamente com o numero no app (mesma funcao, sem reimplementacao).</li></ul></section>
+  <section id="s11"><h2><span class="n">11</span>Etapas de implementação</h2><ol><li>1. Extrair src/lib/calc.ts para o pacote isomorfo @rode/calc (calcularFrete, FreteInput/Resultado, FRETE_DEFAULTS, ROTAS, fmtBRL/fmtBRLCent) + helpers reaisToCents/centsToReais + normalizador valor-&gt;centavos. Cobrir com Vitest e teste de paridade front/back. Sem alterar a formula. Exportar calc_version (hash/semver).</li><li>2. Migrations Postgres + RLS: criar/estender driver (campos WhatsApp + phone_verified + preco_diesel), wa_conversation, wa_message (com processed_at), wa_freight_query (campos *_cents + frete_input + calc_version), wa_rota_cache, wa_event, wa_inbound_queue; politicas RLS por driver e papel admin; trigger de cascade para exclusao LGPD.</li><li>3. Configurar Cloud API: numero verificado, app Meta, verify token, webhook (GET challenge + POST com validacao X-Hub-Signature-256). Submeter templates HSM de boas-vindas/reengajamento para aprovacao (iniciar cedo — aprovacao demora).</li><li>4. Edge Function wa-webhook: validacao de assinatura constant-time, UPSERT idempotente em wa_message, enfileiramento e 200 rapido; wa-status para delivery_status/error_code.</li><li>5. Interface RotaProvider + camada de resolucao em 3 niveis (cache -&gt; presets ROTAS -&gt; API externa com pedagio por eixo), normalizacao de cidade/UF (aliases) e gravacao no cache com TTL.</li><li>6. Pipeline NLU/extracao: classificador de intencao (vale_a_pena vs demais) + extracao com JSON Schema estrito, validacao zod/ajv server-side, few-shots RODE; normalizador valor-&gt;centavos compartilhado com fin-wpp.</li><li>7. Integracao STT PT-BR: download via Media API (URL assinada), transcricao+confianca, EXCLUSAO do audio pos-transcricao; timeout e limite de duracao.</li><li>8. wa-worker: orquestrar STT-&gt;NLU-&gt;rota-&gt;montar FreteInput (perfil ou FRETE_DEFAULTS, conversao centavos-&gt;reais)-&gt;calcularFrete; maquina de estados com guardrail (aguardando_confirmacao, pending_since/timeout 30min) e fluxo confirmacao/correcao/opt-out; trava processed_at.</li><li>9. Geracao de resposta: copy por veredito + conta transparente (fmtBRL) + disclaimer + NEGOCIACAO_MSG; envio via Graph messages com fallback texto-&gt;template fora da janela 24h (erro 131047).</li><li>10. Telemetria/auditoria em wa_event + painel admin (latencia p50/p95, fallback, prejuizo evitado, custo). Roteamento das outras intencoes aos handlers existentes.</li><li>11. Hardening LGPD/seguranca (exclusao audio, RLS, rate-limit, kill-switch), suite completa (unit/integracao/e2e), calibracao do limiar de confianca com amostra real, go-live atras de feature flag/kill-switch.</li></ol></section>
+  <section id="s12"><h2><span class="n">12</span>Plano de teste</h2><div class="teste"><h4>Unit (motor @rode/calc e helpers, Vitest) — golden = saida de calcularFrete, NAO copy do mock</h4><ul><li>GOLDEN SP-&gt;Recife sem volta vazia (FRETE_DEFAULTS, distanciaKm=2650, pedagio=720, dias=4, valorFrete=8000, voltaVazia=false): assert custoTotal===9777.3, lucro===-1777.3 (toBeCloseTo 2 casas), valorMinimo===11732.76, veredito==='ruim'. (Este e o cenario que reproduz o ~R$ 9.777 da copy do mock — confirma que o mock corresponde a voltaVazia=false.)</li><li>SP-&gt;Recife COM volta vazia (mesmos params, voltaVazia=true): assert distanciaTotalKm===5300, custoTotal===19194.6, lucro===-11194.6 (close), veredito==='ruim'. Confirma divergencia documentada vs texto do mock.</li><li>Goiania-&gt;SP (distanciaKm=900, pedagio=230, dias=2, valorFrete=6500, voltaVazia=false, defaults): assert custoTotal===3363.8, lucro===3136.2 (close), margemRealPct toBeCloseTo(48.25,2), veredito==='bom'.</li><li>Fronteira de veredito (semantica exata, sem cair na armadilha de float): para input com lucro=0 -&gt; veredito==='aceitavel' (nao 'ruim', pois lucro&lt;0 e estrito); para margemRealPct construida logo abaixo de margemDesejadaPct -&gt; 'aceitavel'; logo acima -&gt; 'bom'. Documentar que no ponto nominal de igualdade o resultado e 'aceitavel' (limite estrito &lt;).</li><li>voltaVazia=true dobra distanciaTotalKm e custoPedagio (fatorDistancia=2) vs voltaVazia=false: assert distanciaTotalKm e custoPedagio dobram, mas custoAlimentacao (alimentacaoDia*dias) NAO dobra.</li><li>margemRealPct com valorFrete=0 retorna 0 (guarda de divisao por zero) e nao NaN.</li><li>Normalizador valor-&gt;centavos: 'R$ 8.000'-&gt;800000, '8000'-&gt;800000, 'oito mil'-&gt;800000, 'oito mil e quinhentos'-&gt;850000, 'R$ 8.000,50'-&gt;800050, 'mil e duzentos'-&gt;120000.</li><li>Roundtrip de unidade: reaisToCents(centsToReais(c))===c para c em [0,100,800050,2000000]; centsToReais(800000)===8000.</li><li>Normalizacao de cidade/UF: 'SP'-&gt;'Sao Paulo (SP)', 'sao paulo'-&gt;match preset, 'recife'-&gt;'Recife (PE)', 'Recife/PE' e 'recife pe' colapsam para a mesma chave; match com preset ROTAS sp-rec.</li><li>Paridade: calcularFrete importado no front (Vite/Node) e no Deno produz FreteResultado byte-identico (JSON.stringify igual) para 5 inputs fixos, incluindo o SP-&gt;Recife acima. Falha do teste quebra o CI.</li></ul></div><div class="teste"><h4>Integracao (Edge Functions com STT/NLU/rota mockados, Postgres local)</h4><ul><li>Webhook POST com X-Hub-Signature-256 valido -&gt; 200 e cria/enfileira wa_message; assinatura ausente ou alterada (1 byte) -&gt; 401 e nada enfileirado.</li><li>Idempotencia de inbound: dois POSTs com o MESMO wa_message_id criam exatamente 1 linha em wa_message (ON CONFLICT DO NOTHING) e 1 item de fila.</li><li>Idempotencia de processamento: rodar wa-worker duas vezes para o mesmo wa_message_id (processed_at ja setado na 2a) cria exatamente 1 wa_freight_query e envia exatamente 1 mensagem outbound (mock de send chamado 1x).</li><li>Texto 'Sao Paulo pra Recife, R$ 8.000' com confianca alta (NLU mock retorna confianca 0.95): resolve rota por preset (rota_fonte='preset'), monta FreteInput, chama calcularFrete, grava wa_freight_query com veredito='ruim', valor_minimo_cents condizente, e envia veredito + NEGOCIACAO_MSG (mock send recebe ambos os blocos e disclaimer).</li><li>Audio: dado audio_path setado, o worker baixa (Media API mock), transcreve (STT mock confianca 0.9) e DEPOIS o objeto em wa-audio NAO existe mais (storage mock confirma delete) e audio_path vira null; transcricao persistida.</li><li>Confianca baixa (NLU mock confianca_valor 0.5): NAO chama calcularFrete, grava pending_input, estado='aguardando_confirmacao', pending_since setado e envia mensagem de confirmacao; inbound seguinte 'SIM' -&gt; calcula, grava wa_freight_query e responde veredito; estado volta a 'respondido'.</li><li>Correcao de campo: em aguardando_confirmacao, inbound 'era 9 mil' atualiza pending_input.valorFrete (R$9.000) e reconfirma SEM calcular; so 'SIM' depois calcula com o valor corrigido.</li><li>Timeout de confirmacao: em aguardando_confirmacao com pending_since &gt; 30min, novo inbound descarta pending_input, volta a idle e e tratado como nova consulta.</li><li>API de rotas fora (RotaProvider mock lanca erro): cai para preset/cache, resposta marca 'distancia estimada' e wa_freight_query.rota_fonte='preset'; se nem preset casa -&gt; aguardando_confirmacao (nao inventa numero).</li><li>Telefone nao cadastrado/nao verificado: driver_id null -&gt; usa FRETE_DEFAULTS, usou_perfil=false, responde veredito + convite para cadastrar; nenhum dado de outro driver e lido (RLS).</li><li>Fora da janela 24h: send de texto retorna 131047 (mock) -&gt; sistema reenvia via template HSM e grava error_code='131047' sem quebrar.</li><li>Intencao 'quanto fiz esse mes?' (NLU mock intencao='consulta_financeira'): NAO cria wa_freight_query, emite wa_event intencao_detectada e delega ao handler financeiro (mock chamado).</li><li>Opt-out: inbound 'PARAR' -&gt; driver.wa_opt_in=false, wa_opt_out_at setado, wa_event opt_out, e nenhuma mensagem proativa subsequente e enviada.</li><li>RLS negativa: query direta com JWT de driver A nao retorna wa_conversation/wa_freight_query de driver B (0 linhas).</li></ul></div><div class="teste"><h4>E2E (numero de teste/sandbox da Meta, ambiente de staging)</h4><ul><li>Fluxo feliz texto: motorista envia 'SP pra Recife R$ 8.000' e recebe, em &lt;8s, mensagem com veredito 'apertado/prejuizo', custo ~R$ 9.777 (fmtBRL), valor minimo e a mensagem de negociacao NEGOCIACAO_MSG separada, com disclaimer de estimativa.</li><li>Fluxo feliz audio: audio de ~4s 'Goiania pra Sao Paulo seis mil e quinhentos' -&gt; eco 'calculando...' imediato e veredito 'bom' (lucro positivo) em &lt;15s; verificar no painel/log que o audio foi apagado.</li><li>Guardrail: audio ruidoso/baixa confianca dispara mensagem de confirmacao em vez de numero; responder 'SIM' entrega o veredito; o numero so chega APOS o SIM (nunca antes).</li><li>Telefone nao cadastrado: novo numero envia consulta, recebe veredito com FRETE_DEFAULTS e o convite para cadastrar o caminhao para precisao.</li><li>Continuidade de conversa: na mesma thread, 'vale a pena?' (handler de frete) e em seguida 'quando vence meu licenciamento?' (handler de documentos) sao respondidos por handlers diferentes sem perder o contexto/numero.</li><li>Reengajamento &gt;24h: apos 24h sem inbound, a primeira mensagem do sistema chega como template HSM aprovado (nao texto livre) e a conversa segue normal apos resposta do motorista.</li></ul></div></section>
+  <section id="s13"><h2><span class="n">13</span>Critérios de aceite</h2><ul class="check"><li>Dado um motorista com perfil cadastrado e verificado (consumo 2,5 km/L, margem 20%, diesel R$ 6,10), quando envia por texto 'Sao Paulo pra Recife, R$ 8.000' (voltaVazia=false, rota por preset 2650 km / pedagio 720 / 4 dias), entao o copiloto responde em &lt;8s p95 com veredito 'ruim', custoTotal igual ao retornado por calcularFrete (R$ 9.777,30 ± arredondamento de fmtBRL), lucro negativo, valor minimo (R$ 11.732,76 ± arredondamento) e a mensagem de negociacao NEGOCIACAO_MSG, com disclaimer de estimativa — e o numero exibido coincide com calcularFrete() (nenhum numero inventado fora do motor).</li><li>Dado o MESMO FreteInput, quando calcularFrete e executado no front (Vite) e no backend (Edge Function Deno), entao ambos produzem FreteResultado identico (teste de paridade verde no CI) e os valores persistidos em centavos satisfazem reaisToCents(centsToReais(x))===x.</li><li>Dado um audio PT-BR de ate 60s com origem/destino/valor claros, quando recebido, entao o audio e transcrito, o veredito e entregue em &lt;15s p95 e o arquivo de audio e apagado do storage apos a transcricao (verificavel: objeto nao existe mais e wa_message.audio_path=null).</li><li>Dado que a confianca combinada de transcricao/extracao fica abaixo de 0.8 OU o valor esta ausente OU a rota nao foi resolvida, quando a mensagem e processada, entao o copiloto NAO emite veredito financeiro, grava estado='aguardando_confirmacao' com pending_input, e pede confirmacao; o veredito so e entregue apos 'SIM' (ou apos correcao de campo seguida de 'SIM').</li><li>Dado que a Meta reentrega o mesmo webhook (mesmo wa_message_id), quando processado novamente, entao nenhuma mensagem outbound duplicada e enviada e nenhum wa_freight_query duplicado e criado (garantido por unique(wa_message_id) e processed_at).</li><li>Dado que a API de rotas esta indisponivel e a rota casa com um preset de ROTAS, quando o motorista pergunta 'vale a pena?', entao o sistema usa distancia/pedagio do preset (rota_fonte='preset'), entrega o veredito e sinaliza explicitamente 'distancia estimada'; se nem preset casa, entra em confirmacao em vez de inventar numero.</li><li>Dado que a ultima mensagem inbound foi ha mais de 24h, quando o sistema precisa responder, entao usa um template HSM aprovado (nao texto livre) e, se receber erro 131047, trata sem falhar a conversa (registra error_code).</li><li>Dado que o motorista envia 'PARAR' ou 'SAIR', quando recebido, entao o opt-out e registrado (wa_opt_out_at, wa_opt_in=false) e honrado imediatamente, e nenhuma nova mensagem proativa e enviada.</li><li>Dado uma amostra rotulada de mensagens reais PT-BR, quando avaliada, entao a precisao de extracao de origem/destino/valor e &gt;=90% e a taxa de 'vale a pena?' respondidas sem fallback humano e &gt;=80%.</li><li>Dado uma mensagem com intencao diferente de 'vale a pena?' (ex.: 'quanto gastei de diesel?'), quando recebida, entao ela NAO aciona o motor de calculo de frete (nenhum wa_freight_query criado) e e roteada ao handler correto do copiloto na mesma thread.</li><li>Dado dois motoristas distintos A e B, quando A consulta seus dados via API/painel, entao por RLS A nunca le conversas, mensagens ou freight_queries de B (isolamento verificado por teste negativo).</li><li>Dado que o motorista (ou suporte por solicitacao LGPD) pede exclusao, quando executada, entao todas as conversas, mensagens, transcricoes, freight_queries e eventos daquele driver sao removidos em cascade e nenhum audio remanesce no bucket.</li></ul></section>
+  <section id="s14"><h2><span class="n">14</span>Diagramas</h2><p class="hint">Renderizados com Mermaid — requer internet ao abrir o arquivo.</p><h4>Arquitetura da solução</h4><div class="mermaid-box"><pre class="mermaid">flowchart LR
+  motorista[&quot;Motorista (WhatsApp texto/audio)&quot;] --&gt; meta[&quot;Meta Cloud API (Graph)&quot;]
+  meta --&gt; webhook[&quot;Edge Fn wa-webhook (valida X-Hub-Signature-256, UPSERT idempotente)&quot;]
+  webhook --&gt; queue[(&quot;wa_inbound_queue / pgmq + pg_cron&quot;)]
+  queue --&gt; worker[&quot;Edge Fn wa-worker (STT-NLU-rota-calculo)&quot;]
+  worker --&gt; stt[&quot;STT PT-BR (Whisper/Google/Groq)&quot;]
+  worker --&gt; llm[&quot;NLU/LLM function calling (GPT-4o-mini/Haiku)&quot;]
+  worker --&gt; rota[&quot;RotaProvider (Qualp/Maplink/Google Routes)&quot;]
+  worker --&gt; calc[&quot;@rode/calc calcularFrete (REAIS)&quot;]
+  worker --&gt; db[(&quot;Postgres + RLS (driver, wa_conversation, wa_freight_query, wa_event)&quot;)]
+  worker --&gt; audio[(&quot;Storage privado wa-audio (TTL 5min)&quot;)]
+  worker --&gt; send[&quot;Meta POST /{phone_number_id}/messages&quot;]
+  send --&gt; meta
+  status[&quot;Edge Fn wa-status (delivery_status)&quot;] --&gt; db
+  meta --&gt; status</pre></div><h4>Casos de uso</h4><div class="mermaid-box"><pre class="mermaid">flowchart LR
+  motorista([&quot;Motorista&quot;])
+  admin([&quot;Admin&quot;])
+  sistema_ator([&quot;Sistema (cron/fila)&quot;])
+  subgraph sis[&quot;Sistema&quot;]
+    uc1[&quot;Consultar vale a pena (frete)&quot;]
+    uc2[&quot;Enviar audio ou texto&quot;]
+    uc3[&quot;Confirmar dados (guardrail)&quot;]
+    uc4[&quot;Receber veredito + NEGOCIACAO_MSG&quot;]
+    uc5[&quot;Opt-in / Opt-out (SAIR/PARAR)&quot;]
+    uc6[&quot;Rotear intencao a outros handlers&quot;]
+    uc7[&quot;Ver painel admin-wa-operacao (agregados)&quot;]
+    uc8[&quot;Processar fila / transcrever / calcular&quot;]
+  end
+  motorista --&gt; uc1
+  motorista --&gt; uc2
+  motorista --&gt; uc3
+  motorista --&gt; uc4
+  motorista --&gt; uc5
+  admin --&gt; uc7
+  sistema_ator --&gt; uc8
+  sistema_ator --&gt; uc6</pre></div><h4>Fluxo principal</h4><div class="mermaid-box"><pre class="mermaid">flowchart TD
+  inbound[&quot;Inbound WhatsApp (texto/audio)&quot;] --&gt; webhook[&quot;wa-webhook valida assinatura + UPSERT wa_message&quot;]
+  webhook --&gt; enfileira[&quot;Enfileira em wa_inbound_queue&quot;]
+  enfileira --&gt; worker[&quot;wa-worker SELECT FOR UPDATE&quot;]
+  worker --&gt; jaProc{&quot;processed_at preenchido?&quot;}
+  jaProc --&gt;|&quot;Sim&quot;| noop[&quot;200 no-op (idempotente)&quot;]
+  jaProc --&gt;|&quot;Nao&quot;| audioQ{&quot;E audio?&quot;}
+  audioQ --&gt;|&quot;Sim&quot;| stt[&quot;STT -&gt; transcricao + apaga audio&quot;]
+  audioQ --&gt;|&quot;Nao&quot;| nlu[&quot;NLU intencao + extracao (JSON Schema)&quot;]
+  stt --&gt; nlu
+  nlu --&gt; intent{&quot;intencao = vale_a_pena?&quot;}
+  intent --&gt;|&quot;Nao&quot;| delega[&quot;Delega a fin-wpp/doc-wpp + wa_event&quot;]
+  intent --&gt;|&quot;Sim&quot;| conf{&quot;confianca_final≥0.8 e valor e rota OK?&quot;}
+  conf --&gt;|&quot;Nao&quot;| confirma[&quot;Grava pending_input, estado=aguardando_confirmacao, pede SIM&quot;]
+  conf --&gt;|&quot;Sim&quot;| calc[&quot;centsToReais -&gt; calcularFrete()&quot;]
+  calc --&gt; grava[&quot;Grava wa_freight_query + envia veredito + NEGOCIACAO_MSG&quot;]
+  grava --&gt; done[&quot;Marca processed_at=now()&quot;]</pre></div><h4>UML — classes/serviços</h4><div class="mermaid-box"><pre class="mermaid">classDiagram
+  class CalcEngine {
+    +calcularFrete(input FreteInput) FreteResultado
+    +reaisToCents(r) int
+    +centsToReais(c) number
+    +fmtBRL(v) string
+    +calc_version string
+  }
+  class FreteInput {
+    +number valorFrete
+    +boolean voltaVazia
+    +number distanciaKm
+    +number pedagio
+    +int dias
+    +number consumoKmL
+    +number precoDiesel
+    +number margemDesejadaPct
+  }
+  class FreteResultado {
+    +number custoTotal
+    +number lucro
+    +number margemRealPct
+    +number valorMinimo
+    +string veredito
+  }
+  class WaWorker {
+    +processar(wa_message_id) void
+    +montarFreteInput() FreteInput
+    +calcularConfiancaFinal() number
+  }
+  class RotaProvider {
+    +resolver(origem, destino) Rota
+    +rota_fonte string
+  }
+  class Driver {
+    +uuid id
+    +text phone_e164
+    +bool phone_verified
+    +int alimentacao_dia_cents
+  }
+  WaWorker ..&gt; CalcEngine
+  WaWorker ..&gt; RotaProvider
+  WaWorker --&gt; Driver
+  CalcEngine ..&gt; FreteInput
+  CalcEngine ..&gt; FreteResultado</pre></div><h4>Banco de dados (ER)</h4><div class="mermaid-box"><pre class="mermaid">erDiagram
+  driver ||--o{ wa_conversation : possui
+  driver ||--o{ wa_freight_query : faz
+  driver ||--o{ wa_event : gera
+  wa_conversation ||--o{ wa_message : contem
+  wa_conversation ||--o{ wa_freight_query : origina
+  wa_message ||--o| wa_freight_query : produz
+  driver {
+    uuid id PK
+    text phone_e164 UK
+    bool phone_verified
+    int alimentacao_dia_cents
+    bool wa_opt_in
+  }
+  wa_conversation {
+    uuid id PK
+    uuid driver_id FK
+    text phone_e164 UK
+    text estado
+    jsonb pending_input
+  }
+  wa_message {
+    uuid id PK
+    text wa_message_id UK
+    uuid conversation_id FK
+    text direction
+    timestamptz processed_at
+  }
+  wa_freight_query {
+    uuid id PK
+    uuid conversation_id FK
+    uuid message_id FK
+    uuid driver_id FK
+    int valor_frete_cents
+    text rota_fonte
+    text veredito
+    text calc_version
+  }
+  wa_rota_cache {
+    uuid id PK
+    text origem_cidade_norm
+    text destino_cidade_norm
+    numeric distancia_km
+    timestamptz ttl_expira_at
+  }
+  wa_event {
+    uuid id PK
+    uuid conversation_id FK
+    uuid driver_id FK
+    text tipo
+  }
+  wa_inbound_queue {
+    uuid id PK
+    text wa_message_id
+    int attempts
+    bool dead_letter
+  }</pre></div><h4>Lógica do plano de testes</h4><div class="mermaid-box"><pre class="mermaid">flowchart TD
+  start[&quot;Plano de teste calc-wpp&quot;] --&gt; unit[&quot;Unit (Vitest @rode/calc)&quot;]
+  unit --&gt; u1[&quot;GOLDEN SP-Recife sem volta: custoTotal 9777.30, veredito ruim&quot;]
+  unit --&gt; u2[&quot;SP-Recife com volta: custoTotal 19194.60, veredito ruim&quot;]
+  unit --&gt; u3[&quot;Goiania-SP: veredito bom, margem ~48.25&quot;]
+  unit --&gt; u4[&quot;Roundtrip reaisToCents(centsToReais(c))===c + paridade front/back&quot;]
+  u1 --&gt; integ[&quot;Integracao (Edge Fns, STT/NLU/rota mock)&quot;]
+  u2 --&gt; integ
+  u3 --&gt; integ
+  u4 --&gt; integ
+  integ --&gt; i1[&quot;Webhook assinatura valida 200 / invalida 401&quot;]
+  integ --&gt; i2[&quot;Idempotencia: 1 wa_message, 1 wa_freight_query, 1 outbound&quot;]
+  integ --&gt; i3[&quot;Confianca baixa -&gt; aguardando_confirmacao -&gt; SIM calcula&quot;]
+  integ --&gt; i4[&quot;Audio apagado pos-STT; rota fora -&gt; preset; opt-out PARAR&quot;]
+  i1 --&gt; e2e[&quot;E2E (sandbox Meta, staging)&quot;]
+  i2 --&gt; e2e
+  i3 --&gt; e2e
+  i4 --&gt; e2e
+  e2e --&gt; x1[&quot;Feliz texto &lt;8s veredito + NEGOCIACAO_MSG&quot;]
+  e2e --&gt; x2[&quot;Feliz audio &lt;15s + audio apagado&quot;]
+  e2e --&gt; x3[&quot;Guardrail: numero so apos SIM; reengajamento &gt;24h via HSM&quot;]</pre></div></section>
+
+  <p class="disclaimer">Documento gerado para orientar o desenvolvimento. Estimativas de esforço/custo são ordem de grandeza para planejamento (premissa R$ 2.100/dev-dia, equipe enxuta) — não é proposta comercial. O veredito de lucratividade do produto é estimativa; o piso ANTT é referência regulatória.</p>
+</div>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose', flowchart: { useMaxWidth: true }, er: { useMaxWidth: true } });
+</script>
+</body>
+</html>

@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PRD Técnico — Calculadora de frete · App · RODE COM LUCRO</title>
+<style>
+  :root{--brand:#2563eb;--brand-d:#1e40af;--ink:#0f172a;--ink-6:#475569;--ink-4:#94a3b8;--line:#e2e8f0;--bg:#f1f5f9;--card:#fff;--lucro:#059669}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.6;-webkit-text-size-adjust:100%}
+  .wrap{max-width:920px;margin:0 auto;padding:40px 20px 90px}
+  header.doc{border-bottom:3px solid var(--brand);padding-bottom:20px;margin-bottom:10px}
+  .kicker{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand)}
+  h1{font-size:30px;line-height:1.15;margin:8px 0 6px;font-weight:800;letter-spacing:-.01em}
+  .sub{color:var(--ink-6);font-size:15px;max-width:64ch}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  .pill{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 14px}
+  .pill b{display:block;font-size:16px;color:var(--ink)}
+  .pill span{color:var(--ink-4);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .toc{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 4px}
+  .toc a{font-size:12px;font-weight:600;color:var(--brand-d);background:#eef4ff;border:1px solid #dbe6ff;border-radius:999px;padding:4px 11px;text-decoration:none}
+  .toc a:hover{background:#dbe6ff}
+  section{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-top:18px;scroll-margin-top:14px}
+  h2{font-size:18px;margin:0 0 14px;display:flex;align-items:center;gap:9px;font-weight:800}
+  h2 .n{display:inline-flex;width:26px;height:26px;align-items:center;justify-content:center;background:var(--brand);color:#fff;border-radius:8px;font-size:13px;font-weight:800;flex:none}
+  h4{margin:18px 0 8px;font-size:14px;color:var(--brand-d);font-weight:700}
+  h4:first-of-type{margin-top:4px}
+  p{margin:0 0 10px;color:var(--ink-6)}
+  .hint{font-size:12px;color:var(--ink-4);margin-top:-4px}
+  ul,ol{margin:0;padding-left:22px}
+  li{margin:6px 0;color:var(--ink-6)}
+  ul.check{list-style:none;padding-left:0}
+  ul.check li{position:relative;padding-left:28px;margin:9px 0}
+  ul.check li::before{content:'';position:absolute;left:0;top:4px;width:16px;height:16px;border:2px solid var(--lucro);border-radius:4px}
+  .badge{display:inline-block;background:#eff6ff;color:var(--brand-d);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:800;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;flex:none}
+  .tags{display:flex;flex-wrap:wrap;gap:7px}
+  .tags span{background:#eff6ff;color:var(--brand-d);border:1px solid #dbeafe;border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600}
+  /* Modelo de dados */
+  .entidade{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 12px;background:#fbfdff}
+  .ent-nome{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px;font-weight:700;color:var(--brand-d);margin:0 0 8px}
+  ul.campos{list-style:none;padding-left:0;margin:0;display:grid;gap:5px}
+  ul.campos li{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--ink-6);background:#fff;border:1px solid var(--line);border-radius:7px;padding:5px 9px;overflow-wrap:anywhere;word-break:break-word;margin:0}
+  /* API */
+  .endpoint{border-left:3px solid var(--brand);background:#fbfdff;border-radius:0 10px 10px 0;padding:10px 14px;margin:0 0 12px}
+  .ep-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .ep-rota{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:var(--ink);overflow-wrap:anywhere;word-break:break-word}
+  .ep-desc{font-size:13px;margin:7px 0 0}
+  .teste{border-left:3px solid var(--brand);padding-left:15px;margin:14px 0}
+  .empty{color:var(--ink-4)}
+  /* Diagramas */
+  .mermaid-box{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px;margin:6px 0 10px;overflow-x:auto;text-align:center}
+  .mermaid{font-size:14px}
+  .disclaimer{margin-top:26px;font-size:12px;color:var(--ink-4);border-top:1px solid var(--line);padding-top:16px}
+  @media print{body{background:#fff}.wrap{padding:0}.toc{display:none}section{break-inside:avoid;border:none;border-bottom:1px solid var(--line);border-radius:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="doc">
+    <div class="kicker">RODE COM LUCRO · PRD Técnico</div>
+    <h1>Calculadora de frete · App</h1>
+    <p class="sub">Guia de desenvolvimento para dev full-stack sênior. O protótipo está 100% mockado; este documento orienta a construção real da funcionalidade.</p>
+    <div class="meta">
+      <div class="pill"><span>Esforço</span><b>14–22 dev-dias</b></div>
+      <div class="pill"><span>Prazo</span><b>3 a 4 semanas</b></div>
+      <div class="pill"><span>Custo estimado</span><b>R$ 29k–R$ 46k</b></div>
+      <div class="pill"><span>Premissa</span><b>R$ 2.100/dev-dia</b></div>
+    </div>
+  </header>
+  <nav class="toc"><a href="#s1">Visão técnica</a><a href="#s2">Arquitetura</a><a href="#s3">Stack</a><a href="#s4">Modelo de dados</a><a href="#s5">Contratos de API</a><a href="#s6">Frontend / fluxo</a><a href="#s7">Lógica de negócio</a><a href="#s8">Integrações</a><a href="#s9">Segurança &amp; LGPD</a><a href="#s10">Não-funcionais</a><a href="#s11">Etapas</a><a href="#s12">Plano de teste</a><a href="#s13">Critérios de aceite</a><a href="#s14">Diagramas</a></nav>
+
+  <section id="s1"><h2><span class="n">1</span>Visão técnica</h2><p>Evoluir o prototipo mockado da Calculadora de frete (canal App) para a killer feature real e offline-first do RODE COM LUCRO. O coracao ja existe e e puro/testavel: src/lib/calc.ts (calcularFrete(FreteInput):FreteResultado, FRETE_DEFAULTS, ROTAS, fmtBRL/fmtPct) e o UI src/components/ProfitCalculator.tsx + src/components/charts/CostBreakdown.tsx (donut de 7 fatias ja implementado, incluindo ARLA 32). O trabalho real NAO e o calculo, e: (1) formalizar a FORMULA DO EMERSON como modulo puro versionado (FORMULA_VERSAO='emerson-v1') e calibrado por casos reais; (2) trocar os presets ROTAS hardcoded por distancia+pedagio reais de uma API de roteirizacao de caminhao com cache (route_cache) e fallback determinista; (3) introduzir a TABELA DE PISO MINIMO ANTT versionada por vigencia e tipo de carga/eixos, derivando o veredito BOM/ACEITAVEL/RUIM por % acima do piso (estendendo a regra atual lucro&lt;0/margem&lt;meta); (4) persistir perfil do caminhao e historico de analises com sync offline-first idempotente (UUID gerado no cliente, upsert merge-duplicates); (5) preco de diesel por regiao como input default editavel. Arquitetura: PWA React+TS (Vite, Workbox) mobile-first com motor de calculo 100% no cliente (deterministico, mesmo bundle compartilhado client/server via @rode/calc), Supabase Postgres com RLS por usuario, Edge Functions (Deno/TS) para roteirizacao, piso ANTT, diesel e exclusao LGPD. O calculo e a fonte de verdade local; o backend so fornece insumos (distancia, pedagio, piso, diesel) e persiste resultado com snapshots e versoes para reprodutibilidade. O veredito financeiro e estimativa com disclaimer obrigatorio (sensibilidade juridica do piso ANTT). Principio: o motorista parado no posto, com 4G ruim ou offline, obtem veredito em &lt;2s usando o ultimo insumo em cache + presets, e o Salvar nunca bloqueia esperando rede.</p></section>
+  <section id="s2"><h2><span class="n">2</span>Arquitetura</h2><ul><li>Motor de calculo puro e isomorfico ja existente em src/lib/calc.ts: calcularFrete(input:FreteInput):FreteResultado sem efeitos colaterais, sem fetch, recebendo TODOS os insumos como argumentos (distanciaKm, valorFrete, pedagio, precoDiesel, consumoKmL, custos/km, dias, voltaVazia, margemDesejadaPct). Extrair para pacote compartilhavel @rode/calc importado pelo PWA, pela Edge Function do feed (find-app) e pelo copiloto WhatsApp (calc-wpp) — uma unica fonte de verdade da formula, nunca reimplementada no backend. Adicionar export const FORMULA_VERSAO = 'emerson-v1' e carimba-lo em cada analise persistida.</li><li>Offline-first como invariante de produto: o calculo roda 100% no cliente (determinismo, &lt;16ms via useMemo). Insumos externos (distancia/pedagio por rota, piso ANTT por vigencia, diesel por regiao) sao buscados via Edge Function mas cacheados em IndexedDB (idb) e no Cache API do Service Worker (Workbox, stale-while-revalidate). Sem rede usa-se o ultimo insumo conhecido + presets ROTAS (ja em calc.ts) por aproximacao de cidade, sinalizando 'estimativa offline'. O resultado NUNCA depende de round-trip de servidor.</li><li>BFF fino em Supabase Edge Functions (Deno/TS) so para o que o cliente nao pode fazer com seguranca/eficiencia: (a) /route-cost proxy+cache da API de roteirizacao truck (esconde API key, normaliza, cacheia por origem-destino+eixos); (b) /antt-piso serve tabela ANTT versionada; (c) /diesel-regiao serve preco de referencia; (d) /apagar-conta para LGPD. Sync de perfil/historico via PostgREST com RLS. O LLM/NLU NAO participa deste modulo (e do canal WhatsApp).</li><li>Persistencia em Supabase Postgres 15 com Row Level Security: cada motorista so le/escreve suas linhas (caminhao_perfil, analise_frete). Escrita offline com id uuid gerado no cliente e fila de sync idempotente (upsert por id, Prefer: resolution=merge-duplicates) para nunca duplicar quando o sinal voltar.</li><li>Versionamento de regras como DADOS, nao codigo: antt_piso_tabela e cost_defaults ficam no banco com colunas de vigencia (valido_de/valido_ate). Cada analise persiste a versao usada (antt_versao, formula_versao) e os snapshots congelados (insumos_snapshot, resultado_snapshot) para que o historico permaneca reproduzivel mesmo apos atualizacao das tabelas de referencia.</li><li>Camada de roteirizacao com adaptador plugavel: interface RouteProvider { resolve(origem,destino,eixos,tipoCarga): Promise&lt;{distanciaKm,pedagioCentavos,provider}&gt; }. Implementacao inicial com 1 provedor (OpenRouteService driving-hgv | Google Routes | HERE) atras de /route-cost. Cascata de fallback determinada e testavel: API -&gt; route_cache do par -&gt; preset ROTAS por match de cidade -&gt; entrada manual do motorista (sempre editavel, marca origem_dado='manual').</li><li>Fronteira de confianca e disclaimer: o veredito financeiro e ESTIMATIVA. O piso ANTT e referencia regulatoria sensivel; toda tela Resultado exibe disclaimer obrigatorio e nao bloqueia o motorista. O backend so fornece insumos e persiste; a fonte de verdade do calculo e local.</li></ul></section>
+  <section id="s3"><h2><span class="n">3</span>Stack sugerida</h2><div class="tags"><span>Front: React 18 + TypeScript + Vite com PWA (vite-plugin-pwa/Workbox), Tailwind (classes ja no mock: card, focus-ring, lucro-*, brand-*, ink-*), framer-motion (transicao do veredito ja implementada), recharts (donut CostBreakdown ja implementado), lucide-react para icones</span><span>Persistencia local offline: IndexedDB via idb para caminhao_perfil, historico de analise_frete, fila de sync e cache de insumos (route, antt, diesel); Cache API/Workbox para shell + respostas das Edge Functions de insumo (stale-while-revalidate)</span><span>Estado: React state local + hook useFreteAnalise(input)-&gt;useMemo(calcularFrete) (padrao atual mantido), hook useRouteCost(origem,destino,eixos) com cache IndexedDB, store leve Zustand useCaminhaoPerfil e fila useSyncQueue</span><span>Back: Supabase (Postgres 15 + PostgREST + Auth + Edge Functions Deno/TS). RLS habilitada em caminhao_perfil e analise_frete. Auth por telefone OTP (decisao MVP: login leve por telefone)</span><span>Roteirizacao de caminhao: 1 provedor externo perfil HGV/truck (OpenRouteService driving-hgv | Google Routes | HERE) com pedagio quando disponivel; chave em secret da Edge Function (nunca no bundle)</span><span>Cron/jobs: Supabase Scheduled Functions (pg_cron) para validar vigencias de antt_piso_tabela e cost_defaults e expirar route_cache; ingestao da tabela ANTT por seed/job versionado a partir da resolucao oficial</span><span>Testes: Vitest (unit do motor puro e dos adaptadores RouteProvider/fallback), @testing-library/react (componentes ProfitCalculator/VeredictoBadge/PisoAnttRow), Playwright (e2e do fluxo Analisar-&gt;Resultado-&gt;Salvar, inclusive offline e sync), supabase CLI local + pgTAP/SQL para testes de RLS</span></div></section>
+  <section id="s4"><h2><span class="n">4</span>Modelo de dados</h2><div class="entidade">
+        <p class="ent-nome">caminhao_perfil</p>
+        <ul class="campos"><li>id uuid PK DEFAULT gen_random_uuid() (pode vir do cliente p/ upsert)</li><li>user_id uuid NOT NULL REFERENCES auth.users (RLS)</li><li>apelido text</li><li>categoria text CHECK in ('truck','carreta_simples','carreta_6_eixos','bitrem','rodotrem')</li><li>eixos int CHECK (eixos BETWEEN 2 AND 9)</li><li>consumo_km_l numeric(4,2) NOT NULL DEFAULT 2.5 CHECK (&gt;0)</li><li>preco_diesel numeric(6,3) CHECK (&gt;=0)</li><li>arla_pct numeric(4,2) NOT NULL DEFAULT 5 CHECK (BETWEEN 0 AND 100)</li><li>manutencao_km numeric(6,3) NOT NULL DEFAULT 0.35</li><li>pneus_km numeric(6,3) NOT NULL DEFAULT 0.12</li><li>depreciacao_km numeric(6,3) NOT NULL DEFAULT 0.25</li><li>alimentacao_dia numeric(8,2) NOT NULL DEFAULT 90</li><li>margem_desejada_pct numeric(4,1) NOT NULL DEFAULT 20 CHECK (BETWEEN 0 AND 100)</li><li>capacidade_tanque_l int CHECK (&gt;0)</li><li>uf_base text CHECK (char_length(uf_base)=2)</li><li>created_at timestamptz DEFAULT now()</li><li>updated_at timestamptz DEFAULT now(). Indice (user_id).</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">analise_frete</p>
+        <ul class="campos"><li>id uuid PK (GERADO NO CLIENTE p/ idempotencia da fila de sync)</li><li>user_id uuid NOT NULL (RLS)</li><li>caminhao_perfil_id uuid REFERENCES caminhao_perfil(id)</li><li>origem_cidade text</li><li>origem_uf text</li><li>destino_cidade text</li><li>destino_uf text</li><li>distancia_km numeric(8,1) CHECK (&gt;=0)</li><li>volta_vazia boolean NOT NULL DEFAULT false</li><li>valor_frete_centavos bigint NOT NULL CHECK (&gt;=0)</li><li>pedagio_centavos bigint NOT NULL DEFAULT 0 CHECK (&gt;=0)</li><li>dias int CHECK (&gt;=0)</li><li>insumos_snapshot jsonb NOT NULL (FreteInput completo congelado)</li><li>resultado_snapshot jsonb NOT NULL (FreteResultado: custoTotal, lucro, margemRealPct, valorMinimo, custoPorKm, receitaPorKm, breakdown)</li><li>veredito text NOT NULL CHECK in ('bom','aceitavel','ruim')</li><li>pct_acima_piso numeric(6,2)</li><li>piso_antt_centavos bigint</li><li>formula_versao text NOT NULL</li><li>antt_versao text</li><li>route_provider text</li><li>origem_dado text NOT NULL CHECK in ('api','cache','preset','manual')</li><li>created_at timestamptz NOT NULL DEFAULT now()</li><li>synced boolean DEFAULT false (so cliente). Indice (user_id, created_at desc).</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">antt_piso_tabela</p>
+        <ul class="campos"><li>id uuid PK</li><li>resolucao text NOT NULL (ex.: 'Resolucao ANTT 6.034/2024')</li><li>antt_versao text NOT NULL (chave estavel carimbada na analise)</li><li>tipo_carga text NOT NULL CHECK in ('granel_solido','granel_liquido','frigorificada','conteinerizada','carga_geral','neogranel','perigosa_geral')</li><li>eixos int NOT NULL</li><li>coef_deslocamento_centavos bigint NOT NULL (R$/km do CCD em centavos)</li><li>coef_carga_descarga_centavos bigint NOT NULL (R$ do CC em centavos)</li><li>valido_de date NOT NULL</li><li>valido_ate date NULL</li><li>fonte_url text</li><li>created_at timestamptz DEFAULT now(). UNIQUE(antt_versao,tipo_carga,eixos)</li><li>indice por (tipo_carga,eixos,valido_de) p/ resolver vigencia.</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">route_cache</p>
+        <ul class="campos"><li>id uuid PK</li><li>origem_norm text NOT NULL (lower,sem acento)</li><li>destino_norm text NOT NULL</li><li>eixos int NOT NULL</li><li>distancia_km numeric(8,1) NOT NULL</li><li>pedagio_centavos bigint NOT NULL DEFAULT 0</li><li>provider text NOT NULL</li><li>coletado_em timestamptz NOT NULL DEFAULT now()</li><li>ttl_dias int NOT NULL DEFAULT 30. UNIQUE(origem_norm,destino_norm,eixos). Read-only p/ usuarios</li><li>escrita so pela Edge Function (service role).</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">diesel_regiao</p>
+        <ul class="campos"><li>id uuid PK</li><li>regiao text NOT NULL (ex.: 'SP-interior','BR-153')</li><li>uf text</li><li>preco_s10_centavos bigint NOT NULL</li><li>preco_s500_centavos bigint</li><li>coletado_em timestamptz NOT NULL DEFAULT now()</li><li>fonte text. Read-only p/ usuarios autenticados.</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">cost_defaults</p>
+        <ul class="campos"><li>id uuid PK</li><li>categoria text NOT NULL</li><li>consumo_km_l numeric(4,2)</li><li>manutencao_km numeric(6,3)</li><li>pneus_km numeric(6,3)</li><li>depreciacao_km numeric(6,3)</li><li>arla_pct numeric(4,2)</li><li>alimentacao_dia numeric(8,2)</li><li>valido_de date NOT NULL</li><li>valido_ate date NULL. Calibracao de defaults por categoria, versionada por vigencia</li><li>read-only p/ usuarios.</li></ul>
+      </div></section>
+  <section id="s5"><h2><span class="n">5</span>Contratos de API</h2><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/functions/v1/route-cost?origem={cidade-uf}&amp;destino={cidade-uf}&amp;eixos={n}&amp;tipoCarga={t}</code></div>
+        <p class="ep-desc">Edge Function (Deno). Resolve distancia (km, so ida) e pedagio (centavos) por rota de caminhao. Cascata: route_cache (fresco por ttl_dias) -&gt; provedor externo perfil HGV/truck -&gt; resposta com fallback=true. 200 {distanciaKm:number, pedagioCentavos:number, provider:string, fonte:'cache'|'api', coletadoEm:ISO8601, eixos:number}. Quando provedor falha ou origem/destino nao geocodificam: 200 {fallback:true, motivo:'provider_down'|'geocode_miss'|'rate_limit'} (NUNCA 5xx que quebre o cliente) para o cliente cair em presets ROTAS. Esconde API key (secret da function). Rate-limit 30 req/min/usuario via token bucket; ao estourar retorna {fallback:true, motivo:'rate_limit'}. Normaliza origem/destino (lower, sem acento, trim) antes do cache lookup.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/functions/v1/antt-piso?tipoCarga={t}&amp;eixos={n}&amp;data={yyyy-mm-dd}</code></div>
+        <p class="ep-desc">Retorna o coeficiente do piso minimo ANTT vigente na data informada (default hoje) para tipoCarga e eixos. 200 {coefDeslocamentoCentavos:number, coefCargaDescargaCentavos:number, resolucao:string, anttVersao:string, validoDe:date, validoAte:date|null, fonteUrl:string}. 404 {erro:'sem_vigencia'} quando nao ha linha vigente para a combinacao. O cliente calcula piso=coefDeslocamento*distanciaKm(ida)+coefCargaDescarga e cacheia a tabela inteira (todas as combinacoes vigentes) em IndexedDB para uso offline. Resposta com Cache-Control para stale-while-revalidate no SW.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/functions/v1/diesel-regiao?uf={uf}&amp;rodovia={br}</code></div>
+        <p class="ep-desc">Retorna preco de diesel de referencia por regiao para pre-preencher precoDiesel (sempre editavel). 200 {precoS10Centavos:number, precoS500Centavos:number, uf:string, regiao:string, coletadoEm:ISO8601, fonte:string}. Fallback para media nacional quando nao ha dado regional. Cacheavel offline (SW stale-while-revalidate, TTL 24h).</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/rest/v1/caminhao_perfil?user_id=eq.{uid}</code></div>
+        <p class="ep-desc">PostgREST com RLS (user_id=auth.uid()). Le perfil(is) do caminhao do motorista (consumo, custos/km, margem, diesel, tanque). Usado para preencher defaults da analise. Sem JWT valido retorna 401; perfil de outro usuario retorna [] (RLS).</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST/PATCH</span><code class="ep-rota">/rest/v1/caminhao_perfil (Prefer: resolution=merge-duplicates)</code></div>
+        <p class="ep-desc">Cria/atualiza perfil do caminhao (upsert por id uuid gerado no cliente). Body: apelido, categoria, eixos, consumo_km_l, preco_diesel, arla_pct, manutencao_km, pneus_km, depreciacao_km, alimentacao_dia, margem_desejada_pct, capacidade_tanque_l, uf_base. RLS forca user_id=auth.uid() via policy WITH CHECK; tentativa de gravar com user_id de terceiro e rejeitada (403).</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/rest/v1/analise_frete (Prefer: resolution=merge-duplicates,return=minimal)</code></div>
+        <p class="ep-desc">Persiste analise com id uuid gerado no cliente (idempotente). Body: caminhao_perfil_id, origem_cidade/uf, destino_cidade/uf, distancia_km, volta_vazia, valor_frete_centavos, pedagio_centavos, dias, insumos_snapshot(jsonb), resultado_snapshot(jsonb), veredito, pct_acima_piso, piso_antt_centavos, formula_versao, antt_versao, route_provider, origem_dado. Reenvio com mesmo id faz upsert (merge-duplicates) sem duplicar. Usado pela fila de sync offline. RLS WITH CHECK user_id=auth.uid().</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/rest/v1/analise_frete?user_id=eq.{uid}&amp;order=created_at.desc&amp;limit=50&amp;offset={n}</code></div>
+        <p class="ep-desc">Lista historico de analises do motorista (paginado, 50/pagina) para a tela Historico. RLS restringe ao proprio usuario. Suporta filtro select= para trazer so colunas da lista (origem/destino/valor/veredito/created_at) e adiar os snapshots jsonb.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/apagar-conta</code></div>
+        <p class="ep-desc">Edge Function autenticada. Direito de exclusao LGPD: apaga analise_frete e caminhao_perfil do auth.uid() (cascade) e remove o usuario do Auth. 200 {removidos:{analises:n, perfis:n}}. Idempotente. Registra evento de auditoria sem PII (apenas user_id hash + timestamp).</p>
+      </div></section>
+  <section id="s6"><h2><span class="n">6</span>Frontend / fluxo</h2><ul><li>Telas mobile-first reusando o mock: (1) Analisar — OrigemDestinoInput com autocomplete cidade+UF (substitui o select de ROTAS hardcoded em ProfitCalculator.tsx), valor do frete, toggle volta-vazia, slider margem 5-40% (ja existe), accordion 'Parametros do caminhao e custos' com consumo/diesel/pedagio/dias/alimentacao/manutencao-km/pneus-km/depreciacao-km todos editaveis (ja existe). (2) Resultado/Veredito — card com chip BOM/ACEITAVEL/RUIM (VEREDITO_UI ja existe), KPIs (Custo estimado, Lucro/Prejuizo provavel, Margem real, Negocie a partir de), nova faixa PisoAnttRow '% acima/abaixo do piso ANTT', explicacao via explicar() (ja existe, estender para citar o piso) e disclaimer obrigatorio. (3) Para onde vai o dinheiro — donut CostBreakdown (Diesel, ARLA 32, Manutencao, Pneus, Depreciacao, Pedagio, Alimentacao) ja implementado, sem mudanca funcional. (4) Historico — lista de analises persistidas com badge de pendente-sync. (5) Perfil/config do caminhao.</li><li>Componentes: evoluir ProfitCalculator.tsx (trocar select ROTAS por OrigemDestinoInput + chamada /route-cost, mantendo ROTAS como fallback); novos RotaSelector/OrigemDestinoInput (autocomplete cidades, debounce 400ms), VeredictoBadge (extraido do VEREDITO_UI), PisoAnttRow (% acima do piso + tooltip da resolucao ANTT), OfflineBanner ('Resultado estimado offline'), DisclaimerAntt.</li><li>Estado: useFreteAnalise(input)-&gt;useMemo(calcularFrete) (recalculo reativo on-change &lt;16ms, ja e o padrao). useRouteCost(origem,destino,eixos) com cache IndexedDB e estado {loading, distanciaKm, pedagioCentavos, fonte:'api'|'cache'|'preset'|'manual'}. Store Zustand useCaminhaoPerfil (carrega do IndexedDB, sincroniza). Fila useSyncQueue para POST de analise_frete quando online.</li><li>Offline/PWA: Service Worker (Workbox) precache do shell e runtime-cache (stale-while-revalidate) das Edge Functions de insumo. OfflineBanner quando distancia/pedagio vier de cache/preset/manual. Botao Salvar grava no IndexedDB na hora e enfileira o sync — nunca bloqueia a UI esperando rede.</li><li>Comportamento-chave: ao mudar QUALQUER campo o veredito recalcula instantaneamente no cliente (sem ida ao servidor); SO origem/destino dispara fetch de rota (debounce 400ms) usando defaults do perfil do caminhao; o motorista pode sobrescrever distancia/pedagio manualmente e o app marca origem_dado='manual'; campos numericos com inputmode='decimal' para teclado mobile; valores monetarios formatados via fmtBRL/fmtBRLCent (Intl pt-BR, ja existem).</li></ul></section>
+  <section id="s7"><h2><span class="n">7</span>Lógica de negócio</h2><ul><li>FORMULA DO EMERSON (custo por viagem) ja em calcularFrete() — pura: fatorDistancia = voltaVazia ? 2 : 1; distanciaTotalKm = distanciaKm*fatorDistancia; litros = distanciaTotalKm/consumoKmL; custoDiesel = litros*precoDiesel; custoArla = custoDiesel*(arlaPct/100); custoManutencao = distanciaTotalKm*manutencaoKm; custoPneus = distanciaTotalKm*pneusKm; custoDepreciacao = distanciaTotalKm*depreciacaoKm; custoPedagio = pedagio*fatorDistancia; custoAlimentacao = alimentacaoDia*dias; custoTotal = soma. lucro = valorFrete-custoTotal; margemRealPct = valorFrete&gt;0 ? lucro/valorFrete*100 : 0; valorMinimo = custoTotal*(1+margemDesejadaPct/100); custoPorKm = distanciaTotalKm&gt;0 ? custoTotal/distanciaTotalKm : 0; receitaPorKm = distanciaKm&gt;0 ? valorFrete/distanciaKm : 0. Carimbar FORMULA_VERSAO='emerson-v1'; calibrar coeficientes com 3-5 casos reais do Emerson antes do go-live.</li><li>PISO MINIMO ANTT (calculado no cliente com insumo de /antt-piso): piso = coefDeslocamento(tipoCarga,eixos)*distanciaKm(ida) + coefCargaDescarga(tipoCarga,eixos). pctAcimaPiso = piso&gt;0 ? (valorFrete-piso)/piso*100 : 0. Insumo versionado por vigencia (valido_de/valido_ate); congelar antt_versao na analise. Em centavos no transporte; conversao a reais so na UI.</li><li>VEREDITO (estende a regra atual lucro&lt;0-&gt;ruim; margem&lt;meta-&gt;aceitavel; else bom com a checagem de piso): SE lucro&lt;0 OU valorFrete&lt;piso -&gt; 'ruim'; SENAO SE margemRealPct&lt;margemDesejadaPct OU pctAcimaPiso&lt;LIMIAR_VERDE (parametrizavel, ex.: 15%) -&gt; 'aceitavel'; SENAO -&gt; 'bom'. LIMIAR_VERDE/amarelo calibrados empiricamente com o Emerson. Quando o piso nao esta disponivel (offline sem cache) o veredito cai na regra base sem piso e a UI sinaliza 'piso indisponivel'.</li><li>RESOLUCAO DE ROTA: normalizar origem/destino (cidade+UF, minusculas, sem acento, trim) -&gt; route_cache (se fresco por ttl_dias) -&gt; API truck (perfil HGV) -&gt; preset ROTAS por match de cidade -&gt; entrada manual. Pedagio na volta: se voltaVazia, custoPedagio = pedagio*2 (caminhao volta dirigindo) — ja em calc.ts. Dias estimados default por faixa de km (&lt;=600:1; &lt;=1200:2; &lt;=2000:3; &lt;=3000:4; &gt;3000:5) e editavel; presets ROTAS ja trazem dias por rota.</li><li>SYNC/IDEMPOTENCIA: id da analise e UUID gerado no cliente; persistencia local imediata em IndexedDB (synced=false); POST com Prefer resolution=merge-duplicates faz upsert por id; ao 2xx marca synced=true. Retry da fila com backoff exponencial nao duplica (upsert por id). Campos monetarios em centavos inteiros no banco; conversao a reais so na UI (fmtBRL/fmtBRLCent ja existem).</li><li>FORMATACAO/UX: fmtBRL, fmtBRLCent, fmtPct, fmtNum ja implementados (Intl pt-BR). Explicacao textual do veredito por explicar(resultado,margem) (ja existe) — estender para mencionar o piso ANTT quando valorFrete&lt;piso ('abaixo do piso minimo da ANTT em X%'). Tratamento de divisao por zero ja coberto em calc.ts (valorFrete=0 e distanciaKm=0).</li></ul></section>
+  <section id="s8"><h2><span class="n">8</span>Integrações</h2><ul><li>API de roteirizacao de caminhao perfil HGV/truck para distancia e pedagio por rota (OpenRouteService driving-hgv | Google Routes API | HERE); chamada atras da Edge Function /route-cost com cache (route_cache) e fallback em cascata para presets ROTAS</li><li>Tabela do piso minimo ANTT (resolucao vigente, ex.: 6.034/2024) ingerida e versionada por vigencia (antt_versao, valido_de/valido_ate); fonte oficial ANTT (PDF/planilha) processada em seed/job</li><li>Feed de preco do diesel por regiao (S10/S500) para pre-preencher precoDiesel — coleta propria (modulo Diesel: OCR/crowdsourcing) ou referencia regional; consumido via /diesel-regiao</li><li>Supabase Auth (OTP por telefone) para identidade leve do motorista; sessao/JWT exigida por PostgREST e pelas Edge Functions de usuario</li><li>Reuso do motor calcularFrete()/@rode/calc pelo modulo Encontrar frete (find-app) para o veredito do feed e pelo canal WhatsApp (calc-wpp) — fonte unica da formula, sem reimplementacao no backend</li></ul></section>
+  <section id="s9"><h2><span class="n">9</span>Segurança & LGPD</h2><ul><li>RLS no Postgres: policies em caminhao_perfil e analise_frete com USING (user_id=auth.uid()) para SELECT/UPDATE/DELETE e WITH CHECK (user_id=auth.uid()) para INSERT/UPDATE. Nenhum motorista acessa ou grava dados de outro. Tabelas de referencia (antt_piso_tabela, cost_defaults, route_cache, diesel_regiao) sao read-only para 'authenticated'; escrita so via service role (Edge Functions/jobs).</li><li>LGPD minimizacao: a analise guarda origem/destino e valores que o proprio motorista digitou — sem dado sensivel de terceiros. Consentimento explicito no onboarding para salvar historico e perfil; sem consentimento o app funciona em modo so-calculo (nao persiste). Direito de exclusao via Edge Function /apagar-conta (remove analise_frete e caminhao_perfil em cascade + usuario do Auth, idempotente).</li><li>LGPD agregacao anonimizada: qualquer uso analitico (admin/B2B) das analises e AGREGADO (media de margem por rota, distribuicao de veredito) sem expor o individuo, alinhado ao Painel administrativo. Rota/financeiro individual nunca e exposto a B2B ou admin identificavel.</li><li>Disclaimer juridico obrigatorio no Resultado (DisclaimerAntt): 'Estimativa com base em modelo de custo transparente; o piso ANTT e referencia regulatoria e o veredito nao e aconselhamento.' Mitiga a sensibilidade do piso (risco listado no PRD); o disclaimer e renderizado sempre que houver linha de piso.</li><li>Segredos e abuso: API key do provedor de roteirizacao em secret da Edge Function, nunca no bundle do PWA. /route-cost com rate-limit 30 req/min/usuario (token bucket) para conter custo/abuso; ao estourar retorna fallback (presets) em vez de erro. Diesel e piso sao publicos (nao sensiveis). Validacao de input nas Edge Functions (origem/destino sanitizados, eixos 2-9, tipoCarga em enum) para prevenir injection no provedor.</li><li>Auth por telefone OTP (Supabase Auth) com sessao; tokens em storage do PWA gerido pelo supabase-js. PostgREST so aceita requests autenticados (JWT) para tabelas de usuario; /apagar-conta exige JWT valido e opera sobre auth.uid() (nunca aceita user_id no body).</li></ul></section>
+  <section id="s10"><h2><span class="n">10</span>Não-funcionais</h2><ul><li>Performance: veredito recalculado no cliente em &lt;16ms (puro, sem rede, validado por benchmark Vitest); tela Resultado renderiza em &lt;2s mesmo em 3G; resolucao de rota com debounce 400ms e cache para nunca bloquear o calculo. LCP do shell &lt;2.5s em rede 4G de posto.</li><li>Offline-first: calculo 100% local; sem rede usa ultimo insumo em cache + presets ROTAS com aviso 'estimativa offline'. Salvar funciona offline (IndexedDB) e sincroniza sem duplicar (upsert por id) quando o sinal voltar.</li><li>Confiabilidade/determinismo: calcularFrete() puro e coberto por testes unitarios; mesmos inputs -&gt; mesmo output. A analise persiste insumos_snapshot e resultado_snapshot + versoes (formula_versao, antt_versao) para reprodutibilidade do historico mesmo apos atualizacao das tabelas de referencia.</li><li>Versionamento sem quebrar historico: atualizar antt_piso_tabela ou cost_defaults cria nova vigencia (valido_de/valido_ate); analises antigas mantem a versao que usaram. Migracoes de schema reversiveis (up/down).</li><li>Precisao/calibracao: erro do veredito controlado calibrando defaults por categoria com casos reais do Emerson; aviso explicito de que rota/pedagio sao estimados e editaveis; meta de erro &lt;10% entre distancia estimada e ajuste manual medido em producao.</li><li>Acessibilidade e moeda: valores em centavos inteiros no banco, conversao a reais so na UI (locale pt-BR); inputmode='decimal' nos campos numericos; toggle volta-vazia com role=switch e aria-checked (ja no mock); contraste AA nos chips de veredito.</li></ul></section>
+  <section id="s11"><h2><span class="n">11</span>Etapas de implementação</h2><ol><li>1. Formalizar a formula do Emerson: manter calcularFrete() puro em src/lib/calc.ts, adicionar export FORMULA_VERSAO='emerson-v1', cobrir com testes unitarios Vitest e calibrar coeficientes com 3-5 casos reais. Extrair o motor para pacote compartilhavel @rode/calc (client/server).</li><li>2. Modelo de dados + RLS no Supabase: migrations para caminhao_perfil, analise_frete, antt_piso_tabela, cost_defaults, route_cache, diesel_regiao; policies RLS; seed da tabela ANTT vigente (versionada por antt_versao) e dos cost_defaults por categoria. Testes de RLS (motorista A nao le B).</li><li>3. Edge Function /antt-piso (serve piso por tipoCarga+eixos+data) + calculo de pctAcimaPiso no cliente; estender o veredito para considerar o piso; adicionar PisoAnttRow e DisclaimerAntt no Resultado.</li><li>4. Edge Function /route-cost com adaptador RouteProvider (1 provedor truck), route_cache e cascata de fallback (api-&gt;cache-&gt;preset-&gt;manual); substituir o select hardcoded por OrigemDestinoInput com autocomplete e debounce 400ms; marcar origem_dado.</li><li>5. Diesel por regiao: Edge Function /diesel-regiao para pre-preencher precoDiesel editavel (cache offline 24h).</li><li>6. Persistencia e offline-first: IndexedDB (idb) para perfil/historico/cache; Service Worker (Workbox) stale-while-revalidate dos insumos; fila de sync idempotente (upsert por id); telas Historico e Perfil do caminhao; Edge Function /apagar-conta (LGPD).</li><li>7. Polimento de UX: OfflineBanner, disclaimer LGPD/ANTT, explicacao textual mencionando o piso, animacao do veredito (ja existe).</li><li>8. Testes (unit/integracao/e2e) e calibracao final com o Emerson; pg_cron para validar vigencias de ANTT/cost_defaults e expirar route_cache; QA de regressao do motor.</li></ol></section>
+  <section id="s12"><h2><span class="n">12</span>Plano de teste</h2><div class="teste"><h4>Unit (Vitest) — motor de calculo puro src/lib/calc.ts</h4><ul><li>calcularFrete com FRETE_DEFAULTS + rota SP-&gt;Recife (distanciaKm=2650, valorFrete=8000, pedagio=720, voltaVazia=false): litros=2650/2.5=1060; custoDiesel=1060*6.1=6466.00; custoArla=6466*0.05=323.30; custoManutencao=2650*0.35=927.50; custoPneus=2650*0.12=318.00; custoDepreciacao=2650*0.25=662.50; custoPedagio=720; custoAlimentacao=90*4=360; custoTotal soma=9777.30; lucro=8000-9777.30=-1777.30; veredito='ruim'. Asserir cada componente com tolerancia 0.01.</li><li>voltaVazia=true dobra distanciaTotalKm e custoPedagio: distanciaTotalKm=distanciaKm*2 e custoPedagio=pedagio*2; custoAlimentacao NAO dobra (depende de dias, nao de distancia); receitaPorKm continua sobre distanciaKm (ida) e nao sobre o total.</li><li>veredito de fronteira: lucro&lt;0 -&gt; 'ruim'; 0&lt;=margemRealPct&lt;margemDesejadaPct -&gt; 'aceitavel'; margemRealPct&gt;=margemDesejadaPct -&gt; 'bom'. Caso exato margemRealPct==margemDesejadaPct deve ser 'bom' (&gt;=).</li><li>piso ANTT: dado coefDeslocamento e coefCargaDescarga p/ carga_geral/eixos, piso=coef*distanciaKm(ida)+cargaDescarga; quando valorFrete&lt;piso o veredito e forcado a 'ruim' mesmo com lucro&gt;0; pctAcimaPiso=(valorFrete-piso)/piso*100 com sinal negativo quando abaixo.</li><li>bordas numericas: valorFrete=0 -&gt; margemRealPct=0 e receitaPorKm=0 sem divisao por zero; distanciaKm=0 -&gt; custoPorKm=0 e receitaPorKm=0; consumoKmL&gt;0 sempre (input validado).</li><li>arlaPct aplicado SO sobre custoDiesel (custoArla=custoDiesel*arlaPct/100); alterar arlaPct nao afeta manutencao/pneus/depreciacao.</li><li>determinismo/benchmark: 10.000 execucoes de calcularFrete com inputs identicos retornam exatamente o mesmo FreteResultado; tempo medio por chamada &lt;0.1ms (garante o orcamento &lt;16ms da UI).</li></ul></div><div class="teste"><h4>Unit (Vitest) — adaptador de rota e cascata de fallback</h4><ul><li>normalizacao: 'Sao Paulo (SP)' e 'sao paulo, sp' produzem o mesmo origem_norm ('sao paulo|sp'); acentos e maiusculas removidos.</li><li>cascata: provider resolve -&gt; usa API; provider lanca -&gt; usa route_cache se fresco; cache expirado por ttl_dias -&gt; tenta API de novo; tudo indisponivel -&gt; retorna preset ROTAS por match de cidade; sem preset -&gt; origem_dado='manual' aguardando input.</li><li>faixa de dias por km: 600-&gt;1, 601-&gt;2, 1200-&gt;2, 1201-&gt;3, 2000-&gt;3, 3000-&gt;4, 3001-&gt;5.</li></ul></div><div class="teste"><h4>Integracao (Vitest + Supabase local / mocks das Edge Functions)</h4><ul><li>GET /route-cost retorna fonte='cache' quando ha linha fresca em route_cache e NAO chama o provedor externo (spy no provider nao invocado); quando coletado_em+ttl_dias expirou, chama o provedor e faz upsert no cache.</li><li>GET /route-cost com provedor indisponivel retorna 200 {fallback:true,motivo:'provider_down'} (nunca 5xx) e o cliente cai nos presets ROTAS; ao estourar rate-limit retorna {fallback:true,motivo:'rate_limit'}.</li><li>GET /antt-piso?data=2024-06-01 vs ?data=2025-06-01 retorna a vigencia correta quando ha duas versoes (valido_de/valido_ate diferentes); data sem vigencia retorna 404 {erro:'sem_vigencia'}.</li><li>POST analise_frete com o MESMO id duas vezes (Prefer merge-duplicates) resulta em 1 linha (count=1) — idempotencia da fila de sync; segundo POST nao altera created_at original.</li><li>POST analise_frete persiste insumos_snapshot, resultado_snapshot, veredito, pct_acima_piso, piso_antt_centavos, formula_versao e antt_versao exatamente como enviados; valores monetarios em centavos inteiros.</li><li>/apagar-conta remove todas as analise_frete e caminhao_perfil do auth.uid() e e idempotente (2a chamada retorna removidos:0 sem erro).</li></ul></div><div class="teste"><h4>Integracao — RLS (Supabase local, pgTAP/SQL com 2 JWTs)</h4><ul><li>motorista A (jwt A) faz SELECT em analise_frete do motorista B -&gt; retorna 0 linhas; SELECT em caminhao_perfil de B -&gt; 0 linhas.</li><li>motorista A tenta INSERT em analise_frete com user_id=B no body -&gt; rejeitado pela policy WITH CHECK (403/erro), nenhuma linha criada.</li><li>motorista A tenta UPDATE/DELETE de linha de B -&gt; 0 linhas afetadas.</li><li>usuario anonimo (sem JWT) faz GET /rest/v1/caminhao_perfil -&gt; 401; tabelas de referencia (antt_piso_tabela, diesel_regiao) sao legiveis por authenticated mas nao graváveis por authenticated (INSERT negado).</li></ul></div><div class="teste"><h4>Componente (Testing Library)</h4><ul><li>ProfitCalculator: alterar o slider de margem de 20% para 35% atualiza o KPI 'Negocie a partir de' e pode mudar o chip de veredito sem nova chamada de rede (fetch nao e invocado).</li><li>PisoAnttRow exibe '% abaixo do piso' com tom de alerta quando valorFrete&lt;piso e o tooltip mostra a resolucao (ex.: 'Resolucao ANTT 6.034/2024'); some quando o piso esta indisponivel, mostrando 'piso indisponivel'.</li><li>OfflineBanner aparece quando fonte do insumo e 'cache'|'preset'|'manual' e some quando e 'api'.</li><li>editar o campo Pedagio manualmente marca origem_dado='manual' e recalcula o veredito; DisclaimerAntt sempre presente no Resultado quando ha linha de piso.</li></ul></div><div class="teste"><h4>E2E (Playwright)</h4><ul><li>Fluxo feliz: autocomplete origem 'São Paulo (SP)' / destino 'Belo Horizonte (MG)' -&gt; rota resolve via /route-cost -&gt; digitar valor R$ 4.500 -&gt; veredito aparece em &lt;2s -&gt; abrir 'para onde vai o dinheiro' (donut renderiza 7 fatias) -&gt; Salvar -&gt; a analise aparece no topo do Historico.</li><li>Recalculo reativo: mudar a margem no slider de 20% para 35% muda o veredito de BOM para ACEITAVEL e recalcula 'Negocie a partir de' sem reload e sem request de rede (assert via route interception que nenhum fetch foi disparado).</li><li>Offline (context.setOffline(true)): app calcula com preset/cache, mostra OfflineBanner 'estimativa offline', Salvar grava local e mostra badge 'pendente'; ao voltar online (setOffline(false)) a analise sincroniza (POST), o badge some e ela permanece unica no Historico (sem duplicata).</li><li>Frete abaixo do piso: rota e valor que ficam abaixo do piso ANTT vigente -&gt; veredito RUIM, PisoAnttRow mostra '% abaixo do piso' e DisclaimerAntt visivel.</li><li>Reprodutibilidade do historico: salvar uma analise, simular atualizacao da antt_piso_tabela (nova vigencia via seed), reabrir a analise no Historico -&gt; mantem antt_versao e valores originais (nao recalcula com a tabela nova).</li><li>Override manual: editar distancia e pedagio manualmente marca a analise como origem_dado='manual', o veredito recalcula e o registro salvo reflete os valores manuais.</li></ul></div></section>
+  <section id="s13"><h2><span class="n">13</span>Critérios de aceite</h2><ul class="check"><li>DADO um frete SP-&gt;Recife de R$ 8.000 com os defaults do Emerson (consumo 2,5 km/L, diesel R$ 6,10, distancia 2650 km, pedagio R$ 720, 4 dias, volta-vazia=nao), QUANDO o motorista abre o Resultado, ENTAO o app exibe custo estimado de R$ 9.777,30, prejuizo provavel de R$ 1.777,30, margem real negativa, 'Negocie a partir de' (custoTotal*1,20) e o veredito RUIM em ate 2s.</li><li>DADO que o motorista mexe em qualquer campo (margem, valor, volta-vazia, diesel, custos/km), QUANDO altera o valor, ENTAO o veredito e os KPIs recalculam no cliente em &lt;16ms, sem qualquer chamada ao servidor (verificavel por ausencia de request de rede).</li><li>DADO um frete cujo valor esta abaixo do piso minimo ANTT vigente para o tipo de carga e numero de eixos, QUANDO o Resultado e exibido, ENTAO o veredito e RUIM, a PisoAnttRow mostra o '% abaixo do piso' e o DisclaimerAntt ('o piso ANTT e referencia regulatoria; o veredito nao e aconselhamento') esta visivel.</li><li>DADO um frete com lucro positivo cuja margemRealPct e maior ou igual a margemDesejadaPct E acima do piso ANTT, QUANDO o Resultado e exibido, ENTAO o veredito e BOM; SE margemRealPct &lt; margemDesejadaPct (com lucro&gt;=0 e acima do piso) ENTAO o veredito e ACEITAVEL.</li><li>DADO que o app esta offline, QUANDO o motorista analisa um frete, ENTAO o calculo roda local usando o ultimo insumo em cache ou preset ROTAS, exibe o OfflineBanner 'estimativa offline' e permite Salvar; ao reconectar, a analise sincroniza (upsert por id) sem duplicar e o badge 'pendente' some.</li><li>DADO que o motorista salva uma analise, QUANDO ela e persistida, ENTAO o registro guarda insumos_snapshot, resultado_snapshot, veredito, pct_acima_piso, piso_antt_centavos, formula_versao='emerson-v1' e antt_versao, com valores monetarios em centavos, e aparece na tela Historico ordenado por created_at desc.</li><li>DADO que a tabela antt_piso_tabela e atualizada com uma nova vigencia, QUANDO o motorista reabre uma analise antiga no Historico, ENTAO ela mantem os valores e a antt_versao usados na epoca, sem recalcular com a tabela nova.</li><li>DADO um par origem-destino+eixos ja consultado dentro do TTL (ttl_dias), QUANDO o motorista repete a rota, ENTAO a distancia/pedagio vem do route_cache (fonte='cache') sem nova chamada paga ao provedor externo.</li><li>DADO que o motorista A esta autenticado, QUANDO tenta ler ou gravar analise_frete ou caminhao_perfil do motorista B, ENTAO a RLS impede (0 linhas no SELECT, 403 no INSERT com user_id de terceiro) e nenhum dado de B e retornado.</li><li>DADO que o motorista solicita 'apagar minha conta', QUANDO a Edge Function /apagar-conta executa, ENTAO todas as suas analise_frete e caminhao_perfil sao removidas em cascade e a operacao e idempotente (2a chamada nao falha).</li></ul></section>
+  <section id="s14"><h2><span class="n">14</span>Diagramas</h2><p class="hint">Renderizados com Mermaid — requer internet ao abrir o arquivo.</p><h4>Arquitetura da solução</h4><div class="mermaid-box"><pre class="mermaid">flowchart LR
+  subgraph cliente[&quot;Cliente PWA&quot;]
+    pwa[&quot;PWA React TS Vite Workbox&quot;]
+    calc[&quot;@rode/calc calcularFrete emerson-v1&quot;]
+    idb[(&quot;IndexedDB idb cache + fila sync&quot;)]
+    pwa --&gt; calc
+    pwa --&gt; idb
+  end
+  wpp[&quot;Canal WhatsApp calc-wpp&quot;]
+  find[&quot;Modulo find-app feed&quot;]
+  subgraph bff[&quot;Supabase Edge Functions Deno&quot;]
+    routeFn[&quot;/route-cost&quot;]
+    anttFn[&quot;/antt-piso&quot;]
+    dieselFn[&quot;/diesel-regiao&quot;]
+    apagarFn[&quot;/apagar-conta&quot;]
+  end
+  db[(&quot;Postgres 15 + RLS - caminhao_perfil, analise_frete, antt_piso_tabela, route_cache, diesel_regiao, cost_defaults&quot;)]
+  cron[&quot;pg_cron valida vigencias e expira route_cache&quot;]
+  ext[&quot;API roteirizacao HGV (ORS/Google/HERE)&quot;]
+  pwa --&gt;|&quot;insumos&quot;| routeFn
+  pwa --&gt; anttFn
+  pwa --&gt; dieselFn
+  pwa --&gt;|&quot;PostgREST upsert merge-duplicates&quot;| db
+  routeFn --&gt; ext
+  routeFn --&gt; db
+  anttFn --&gt; db
+  dieselFn --&gt; db
+  apagarFn --&gt; db
+  cron --&gt; db
+  calc -.-&gt;|&quot;fonte unica&quot;| wpp
+  calc -.-&gt;|&quot;fonte unica&quot;| find</pre></div><h4>Casos de uso</h4><div class="mermaid-box"><pre class="mermaid">flowchart LR
+  motorista([&quot;Motorista&quot;])
+  admin([&quot;Admin B2B&quot;])
+  provider([&quot;Provedor roteirizacao HGV&quot;])
+  subgraph sistema[&quot;Sistema&quot;]
+    uc1[&quot;Analisar frete origem destino valor&quot;]
+    uc2[&quot;Ver veredito BOM ACEITAVEL RUIM&quot;]
+    uc3[&quot;Ver piso ANTT e disclaimer&quot;]
+    uc4[&quot;Salvar analise offline-first&quot;]
+    uc5[&quot;Consultar historico&quot;]
+    uc6[&quot;Editar perfil do caminhao&quot;]
+    uc7[&quot;Apagar conta LGPD&quot;]
+    uc8[&quot;Resolver rota e cache&quot;]
+    uc9[&quot;Sync idempotente upsert por id&quot;]
+    uc10[&quot;Painel agregado anonimizado&quot;]
+  end
+  motorista --&gt; uc1
+  motorista --&gt; uc2
+  motorista --&gt; uc3
+  motorista --&gt; uc4
+  motorista --&gt; uc5
+  motorista --&gt; uc6
+  motorista --&gt; uc7
+  uc1 --&gt; uc8
+  uc4 --&gt; uc9
+  provider --&gt; uc8
+  admin --&gt; uc10</pre></div><h4>Fluxo principal</h4><div class="mermaid-box"><pre class="mermaid">flowchart TD
+  start([&quot;Motorista informa origem destino e valor&quot;])
+  perfil[&quot;Carrega defaults do caminhao_perfil&quot;]
+  fetchRota[&quot;Fetch /route-cost debounce 400ms&quot;]
+  decRota{&quot;Provedor ou cache disponivel?&quot;}
+  usaApi[&quot;origem_dado = api ou cache&quot;]
+  decPreset{&quot;Existe preset ROTAS por cidade?&quot;}
+  usaPreset[&quot;origem_dado = preset estimativa offline&quot;]
+  manual[&quot;origem_dado = manual editavel&quot;]
+  piso[&quot;Busca /antt-piso e calcula pctAcimaPiso&quot;]
+  calc[&quot;calcularFrete cliente (menor que 16ms) emerson-v1&quot;]
+  decVer{&quot;lucro menor que 0 OU valorFrete menor que piso?&quot;}
+  ruim[&quot;Veredito RUIM&quot;]
+  decMargem{&quot;margemReal menor que desejada OU pctAcimaPiso menor que LIMIAR_VERDE?&quot;}
+  aceitavel[&quot;Veredito ACEITAVEL&quot;]
+  bom[&quot;Veredito BOM&quot;]
+  resultado[&quot;Exibe Resultado KPIs PisoAnttRow DisclaimerAntt&quot;]
+  salvar[&quot;Salvar grava IndexedDB e enfileira sync&quot;]
+  start --&gt; perfil --&gt; fetchRota --&gt; decRota
+  decRota --&gt;|&quot;sim&quot;| usaApi --&gt; piso
+  decRota --&gt;|&quot;nao&quot;| decPreset
+  decPreset --&gt;|&quot;sim&quot;| usaPreset --&gt; piso
+  decPreset --&gt;|&quot;nao&quot;| manual --&gt; piso
+  piso --&gt; calc --&gt; decVer
+  decVer --&gt;|&quot;sim&quot;| ruim --&gt; resultado
+  decVer --&gt;|&quot;nao&quot;| decMargem
+  decMargem --&gt;|&quot;sim&quot;| aceitavel --&gt; resultado
+  decMargem --&gt;|&quot;nao&quot;| bom --&gt; resultado
+  resultado --&gt; salvar</pre></div><h4>UML — classes/serviços</h4><div class="mermaid-box"><pre class="mermaid">classDiagram
+  class CalcEngine {
+    +String FORMULA_VERSAO
+    +calcularFrete(input) FreteResultado
+    +explicar(resultado, margem) string
+    +fmtBRL(v) string
+    +fmtPct(v) string
+  }
+  class FreteInput {
+    +number distanciaKm
+    +number valorFrete
+    +number pedagio
+    +number precoDiesel
+    +number consumoKmL
+    +boolean voltaVazia
+    +number margemDesejadaPct
+  }
+  class FreteResultado {
+    +number custoTotal
+    +number lucro
+    +number margemRealPct
+    +number valorMinimo
+    +number custoPorKm
+    +breakdown breakdown
+  }
+  class RouteProvider {
+    &lt;&lt;interface&gt;&gt;
+    +resolve(origem, destino, eixos, tipoCarga) RouteResult
+  }
+  class PisoAnttService {
+    +getPiso(tipoCarga, eixos, data) Coef
+    +calcPctAcimaPiso(valorFrete, piso) number
+  }
+  class SyncQueue {
+    +uuid id
+    +enqueue(analise)
+    +flush() void
+  }
+  class AnaliseFrete {
+    +uuid id
+    +string veredito
+    +jsonb insumos_snapshot
+    +jsonb resultado_snapshot
+    +string formula_versao
+    +string antt_versao
+    +string origem_dado
+  }
+  CalcEngine ..&gt; FreteInput
+  CalcEngine ..&gt; FreteResultado
+  RouteProvider ..&gt; FreteInput
+  PisoAnttService ..&gt; AnaliseFrete
+  SyncQueue ..&gt; AnaliseFrete
+  AnaliseFrete ..&gt; FreteResultado</pre></div><h4>Banco de dados (ER)</h4><div class="mermaid-box"><pre class="mermaid">erDiagram
+  AUTH_USERS ||--o{ CAMINHAO_PERFIL : possui
+  AUTH_USERS ||--o{ ANALISE_FRETE : possui
+  CAMINHAO_PERFIL ||--o{ ANALISE_FRETE : &quot;usado em&quot;
+  ANTT_PISO_TABELA ||--o{ ANALISE_FRETE : &quot;antt_versao&quot;
+  COST_DEFAULTS ||--o{ CAMINHAO_PERFIL : &quot;calibra categoria&quot;
+  AUTH_USERS {
+    uuid id PK
+  }
+  CAMINHAO_PERFIL {
+    uuid id PK
+    uuid user_id FK
+    text categoria
+    int eixos
+    numeric consumo_km_l
+    numeric margem_desejada_pct
+  }
+  ANALISE_FRETE {
+    uuid id PK
+    uuid user_id FK
+    uuid caminhao_perfil_id FK
+    bigint valor_frete_centavos
+    text veredito
+    jsonb insumos_snapshot
+    jsonb resultado_snapshot
+    text formula_versao
+    text antt_versao
+    text origem_dado
+  }
+  ANTT_PISO_TABELA {
+    uuid id PK
+    text antt_versao
+    text tipo_carga
+    int eixos
+    bigint coef_deslocamento_centavos
+    date valido_de
+    date valido_ate
+  }
+  ROUTE_CACHE {
+    uuid id PK
+    text origem_norm
+    text destino_norm
+    int eixos
+    numeric distancia_km
+    bigint pedagio_centavos
+    int ttl_dias
+  }
+  DIESEL_REGIAO {
+    uuid id PK
+    text regiao
+    bigint preco_s10_centavos
+  }
+  COST_DEFAULTS {
+    uuid id PK
+    text categoria
+    date valido_de
+    date valido_ate
+  }</pre></div><h4>Lógica do plano de testes</h4><div class="mermaid-box"><pre class="mermaid">flowchart TD
+  subgraph unit[&quot;Unit Vitest&quot;]
+    u1[&quot;calcularFrete SP-Recife custoTotal 9777.30 veredito ruim&quot;]
+    u2[&quot;voltaVazia dobra distancia e pedagio nao alimentacao&quot;]
+    u3[&quot;fronteira veredito margem igual desejada vira bom&quot;]
+    u4[&quot;piso ANTT valorFrete menor que piso vira ruim&quot;]
+    u5[&quot;bordas valorFrete=0 e distanciaKm=0 sem div zero&quot;]
+    u6[&quot;normalizacao e cascata api cache preset manual&quot;]
+    u7[&quot;determinismo 10000 execucoes menor que 0.1ms&quot;]
+  end
+  subgraph integ[&quot;Integracao Supabase local + mocks&quot;]
+    i1[&quot;/route-cost fonte=cache nao chama provedor&quot;]
+    i2[&quot;/route-cost provider_down fallback 200&quot;]
+    i3[&quot;/antt-piso vigencia correta por data e 404 sem_vigencia&quot;]
+    i4[&quot;POST analise_frete mesmo id resulta 1 linha idempotente&quot;]
+    i5[&quot;RLS motorista A nao le nem grava de B&quot;]
+    i6[&quot;/apagar-conta cascade e idempotente&quot;]
+  end
+  subgraph e2e[&quot;E2E Playwright&quot;]
+    e1[&quot;Fluxo feliz autocomplete rota veredito menor que 2s donut salvar&quot;]
+    e2[&quot;Recalculo reativo slider sem request de rede&quot;]
+    e3[&quot;Offline preset banner salvar e sync sem duplicar&quot;]
+    e4[&quot;Frete abaixo do piso veredito RUIM e disclaimer&quot;]
+    e5[&quot;Reprodutibilidade historico mantem antt_versao&quot;]
+  end
+  unit --&gt; integ --&gt; e2e
+  e2e --&gt; done([&quot;Calibracao final com Emerson&quot;])</pre></div></section>
+
+  <p class="disclaimer">Documento gerado para orientar o desenvolvimento. Estimativas de esforço/custo são ordem de grandeza para planejamento (premissa R$ 2.100/dev-dia, equipe enxuta) — não é proposta comercial. O veredito de lucratividade do produto é estimativa; o piso ANTT é referência regulatória.</p>
+</div>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose', flowchart: { useMaxWidth: true }, er: { useMaxWidth: true } });
+</script>
+</body>
+</html>

@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PRD Técnico — Documentos · WhatsApp · RODE COM LUCRO</title>
+<style>
+  :root{--brand:#2563eb;--brand-d:#1e40af;--ink:#0f172a;--ink-6:#475569;--ink-4:#94a3b8;--line:#e2e8f0;--bg:#f1f5f9;--card:#fff;--lucro:#059669}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.6;-webkit-text-size-adjust:100%}
+  .wrap{max-width:920px;margin:0 auto;padding:40px 20px 90px}
+  header.doc{border-bottom:3px solid var(--brand);padding-bottom:20px;margin-bottom:10px}
+  .kicker{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand)}
+  h1{font-size:30px;line-height:1.15;margin:8px 0 6px;font-weight:800;letter-spacing:-.01em}
+  .sub{color:var(--ink-6);font-size:15px;max-width:64ch}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  .pill{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 14px}
+  .pill b{display:block;font-size:16px;color:var(--ink)}
+  .pill span{color:var(--ink-4);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .toc{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 4px}
+  .toc a{font-size:12px;font-weight:600;color:var(--brand-d);background:#eef4ff;border:1px solid #dbe6ff;border-radius:999px;padding:4px 11px;text-decoration:none}
+  .toc a:hover{background:#dbe6ff}
+  section{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-top:18px;scroll-margin-top:14px}
+  h2{font-size:18px;margin:0 0 14px;display:flex;align-items:center;gap:9px;font-weight:800}
+  h2 .n{display:inline-flex;width:26px;height:26px;align-items:center;justify-content:center;background:var(--brand);color:#fff;border-radius:8px;font-size:13px;font-weight:800;flex:none}
+  h4{margin:18px 0 8px;font-size:14px;color:var(--brand-d);font-weight:700}
+  h4:first-of-type{margin-top:4px}
+  p{margin:0 0 10px;color:var(--ink-6)}
+  .hint{font-size:12px;color:var(--ink-4);margin-top:-4px}
+  ul,ol{margin:0;padding-left:22px}
+  li{margin:6px 0;color:var(--ink-6)}
+  ul.check{list-style:none;padding-left:0}
+  ul.check li{position:relative;padding-left:28px;margin:9px 0}
+  ul.check li::before{content:'';position:absolute;left:0;top:4px;width:16px;height:16px;border:2px solid var(--lucro);border-radius:4px}
+  .badge{display:inline-block;background:#eff6ff;color:var(--brand-d);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:800;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;flex:none}
+  .tags{display:flex;flex-wrap:wrap;gap:7px}
+  .tags span{background:#eff6ff;color:var(--brand-d);border:1px solid #dbeafe;border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600}
+  /* Modelo de dados */
+  .entidade{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 12px;background:#fbfdff}
+  .ent-nome{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px;font-weight:700;color:var(--brand-d);margin:0 0 8px}
+  ul.campos{list-style:none;padding-left:0;margin:0;display:grid;gap:5px}
+  ul.campos li{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--ink-6);background:#fff;border:1px solid var(--line);border-radius:7px;padding:5px 9px;overflow-wrap:anywhere;word-break:break-word;margin:0}
+  /* API */
+  .endpoint{border-left:3px solid var(--brand);background:#fbfdff;border-radius:0 10px 10px 0;padding:10px 14px;margin:0 0 12px}
+  .ep-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .ep-rota{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:var(--ink);overflow-wrap:anywhere;word-break:break-word}
+  .ep-desc{font-size:13px;margin:7px 0 0}
+  .teste{border-left:3px solid var(--brand);padding-left:15px;margin:14px 0}
+  .empty{color:var(--ink-4)}
+  /* Diagramas */
+  .mermaid-box{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px;margin:6px 0 10px;overflow-x:auto;text-align:center}
+  .mermaid{font-size:14px}
+  .disclaimer{margin-top:26px;font-size:12px;color:var(--ink-4);border-top:1px solid var(--line);padding-top:16px}
+  @media print{body{background:#fff}.wrap{padding:0}.toc{display:none}section{break-inside:avoid;border:none;border-bottom:1px solid var(--line);border-radius:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="doc">
+    <div class="kicker">RODE COM LUCRO · PRD Técnico</div>
+    <h1>Documentos · WhatsApp</h1>
+    <p class="sub">Guia de desenvolvimento para dev full-stack sênior. O protótipo está 100% mockado; este documento orienta a construção real da funcionalidade.</p>
+    <div class="meta">
+      <div class="pill"><span>Esforço</span><b>6–10 dev-dias</b></div>
+      <div class="pill"><span>Prazo</span><b>2 a 3 semanas</b></div>
+      <div class="pill"><span>Custo estimado</span><b>R$ 13k–R$ 21k</b></div>
+      <div class="pill"><span>Premissa</span><b>R$ 2.100/dev-dia</b></div>
+    </div>
+  </header>
+  <nav class="toc"><a href="#s1">Visão técnica</a><a href="#s2">Arquitetura</a><a href="#s3">Stack</a><a href="#s4">Modelo de dados</a><a href="#s5">Contratos de API</a><a href="#s6">Frontend / fluxo</a><a href="#s7">Lógica de negócio</a><a href="#s8">Integrações</a><a href="#s9">Segurança &amp; LGPD</a><a href="#s10">Não-funcionais</a><a href="#s11">Etapas</a><a href="#s12">Plano de teste</a><a href="#s13">Critérios de aceite</a><a href="#s14">Diagramas</a></nav>
+
+  <section id="s1"><h2><span class="n">1</span>Visão técnica</h2><p>Modulo &quot;Documentos · WhatsApp&quot; do RODE COM LUCRO: servico de lembretes de vencimento documental e consulta conversacional (&quot;quando vence meu licenciamento?&quot;) sobre a WhatsApp Cloud API (Meta Graph API v21.0). O motorista cadastra/atualiza datas de vencimento (CNH, CRLV/RENAVAM, RNTRC/ANTT, tacografo, licenciamento, seguro obrigatorio) no app (modulo doc-app, hoje mock em src/data/documentos.ts e src/data/pendencias.ts) e este modulo materializa lembretes agendados em janelas fixas (30, 7, 2 dias antes e no dia D) disparados via templates HSM aprovados, alem de responder em linguagem natural &quot;quando vence X&quot;. Coluna vertebral: (1) agendador pull-based (cron a cada 5 min via pg_cron) que le reminder_jobs em status 'scheduled' com run_at&lt;=now() e os envia, com idempotencia por chave deterministica sha256(driver_id|document_id|due_date|window_offset|template_name); (2) webhook wa-webhook (Cloud API) que recebe mensagens entrantes (intencao + STOP/SAIR/PARAR/CANCELAR para opt-out, SIM para opt-in/agendar, VOLTAR para reativar) e callbacks de status (sent/delivered/read/failed); (3) reagendamento automatico quando a due_date muda (cancela jobs futuros nao enviados e recria a grade); (4) opt-in/opt-out auditavel com double opt-in (wa_optin_events append-only); (5) painel admin (aba 'WhatsApp · Documentos' em src/admin/AdminApp.tsx, somando-se a ADMIN_VIEWS) para gerir templates HSM, janelas padrao, entregabilidade, fila e dead-letter. Todo calculo de dias-para-vencer e horarios usa America/Sao_Paulo; disparos clampeados a 08:00-20:00 BRT (nunca de madrugada). O modulo NAO faz OCR, NAO renova documento, NAO consulta orgao oficial e NAO usa SMS/email/push. Reutiliza o cadastro de datas do doc-app (entidade documents evolui de PENDENCIAS/StatusDoc) e o mapeamento phone_e164-&gt;driver. Meta de negocio: &gt;=95% de lembretes entregues e ~0% de documentos que vencem sem que o motorista tenha recebido ao menos um aviso. Estimativa: 6-10 dev-dias (absorvendo lead time de aprovacao de templates pela Meta, iniciado cedo).</p></section>
+  <section id="s2"><h2><span class="n">2</span>Arquitetura</h2><ul><li>Event-driven + cron pull: ao cadastrar/atualizar a due_date de um documento (doc-app), um trigger AFTER INSERT/UPDATE OF due_date em documents (ou o endpoint reschedule) chama build_reminder_jobs(document_id) que materializa N reminder_jobs (1 por janela 30/7/2/0d) com run_at calculado em America/Sao_Paulo; um cron pg_cron a cada 5 min chama a Edge Function reminders-dispatch, que seleciona jobs 'scheduled' com run_at&lt;=now(). Pull-based evita perda de lembrete se o worker cair: o job permanece na fila ate concluir.</li><li>Idempotencia por chave deterministica: cada reminder_job tem idempotency_key UNIQUE = encode(digest(driver_id||document_id||due_date::text||window_offset::text||template_name,'sha256'),'hex'). INSERT ... ON CONFLICT (idempotency_key) DO NOTHING. O dispatch faz claim atomico: UPDATE reminder_jobs SET status='sending', attempts=attempts+1, claimed_at=now() WHERE id=$1 AND status='scheduled' RETURNING * (precedido de SELECT ... FOR UPDATE SKIP LOCKED no batch), garantindo que dois workers concorrentes nunca enviem o mesmo lembrete.</li><li>Reagendamento por diffing: reschedule_document_reminders(document_id, new_due_date, windows) numa transacao: UPDATE reminder_jobs SET status='canceled', canceled_reason='due_date_changed' WHERE document_id=$1 AND status='scheduled'; recria a grade para a nova data com INSERT ON CONFLICT DO NOTHING. Jobs em 'sent'/'delivered'/'read'/'failed' nunca sao tocados (preservam historico). Janelas ja vencidas na nova data entram como 'skipped'.</li><li>Separacao por Edge Functions (Deno/TypeScript no Supabase): (a) wa-webhook recebe POST da Meta (messages[] + statuses[]), valida HMAC-SHA256 (X-Hub-Signature-256) em tempo constante, responde 200 em &lt;5s e processa async via insert numa tabela de eventos + worker; (b) reminders-dispatch (cron) envia lembretes via Graph API; (c) wa-intent processa 'quando vence X' (NLU keyword + fuzzy/pg_trgm, sem LLM) e responde dentro da janela 24h; (d) admin-api (gestao de templates/janelas/overview). Edge Functions usam service_role; nunca exposto ao cliente.</li><li>Postgres 15 com Row Level Security: drivers, documents, document_reminders, reminder_jobs, wa_messages, wa_templates, wa_optin_events, admin_settings, wa_inbound_events (buffer de webhook). RLS por driver_id=auth.uid() no acesso via app; admin-api gated por papel (admin/operacao). Datas de documentos = dado pessoal -&gt; acesso restrito e auditado.</li><li>Conformidade Meta como camada transversal: fora da janela de 24h apenas template HSM APPROVED categoria UTILITY; dentro da janela 24h (apos inbound do motorista) responde texto livre. Guard verifica drivers.last_inbound_at (atualizado a cada inbound) para escolher template vs free-form. Janela de 24h calculada por contato.</li><li>Resiliencia: retry exponencial (max 3 tentativas, backoff 1/5/25 min) para falhas transitorias da Graph API (429/5xx/timeout/rede); jobs 'failed' apos esgotar retry entram em dead-letter visivel no admin. Kill-switch global (admin_settings.wa_reminders_enabled) pausa todos os disparos instantaneamente. Webhook idempotente por wa_message_id (statuses) e por message id (inbound) para tolerar reentrega da Meta.</li><li>Observabilidade: wa_messages como trilha de auditoria de envios/recebimentos; Supabase Logs por funcao; job de agregacao materializa KPIs de entregabilidade (delivered/read/failed por janela) para o overview, com indicador 'dados ate &lt;timestamp&gt;'.</li></ul></section>
+  <section id="s3"><h2><span class="n">3</span>Stack sugerida</h2><div class="tags"><span>Frontend admin: React 18 + TypeScript + Vite (PWA mobile-first ja no repo), reaproveitando src/components/ui.tsx e o shell src/admin/AdminApp.tsx (componentes Kpis/Card/BarList/PctList/StatusPill ja existentes); nova aba 'WhatsApp · Documentos' adicionada a ADMIN_VIEWS em src/data/admin.ts. Estado via React Query/SWR; sem estado global novo.</span><span>Backend: Supabase (Postgres 15 + Edge Functions Deno/TypeScript). Funcoes: wa-webhook, reminders-dispatch, wa-intent, admin-api. Funcoes SQL: build_reminder_jobs, reschedule_document_reminders, materialize_reminder_grid.</span><span>Banco: PostgreSQL com RLS; extensoes pg_cron (cron.schedule), pgcrypto (digest/sha256 para idempotency_key), pg_trgm (similaridade no parser de intencao); funcoes de calculo usando timezone 'America/Sao_Paulo'.</span><span>Mensageria: WhatsApp Cloud API (Meta Graph API v21.0), numero verificado + WABA + templates HSM categoria UTILITY (doc_vencimento_30d/7d/2d/dia, language pt_BR) aprovados; webhook assinado HMAC-SHA256 (app secret).</span><span>Agendamento: pg_cron SELECT cron.schedule('reminders-dispatch','*/5 * * * *', ...) chamando a Edge Function via http; fila persistida em reminder_jobs (sem broker externo no MVP).</span><span>Storage: nao requer storage de arquivos (anexos ficam no doc-app); apenas referencia logica document_id.</span><span>Observabilidade: Supabase Logs + wa_messages (auditoria) + tabela/materialized view de agregacao para o painel admin.</span><span>Testes: Vitest (unit/integracao de calculo de janelas BRT, idempotency_key, parser de intencao, reschedule via Postgres em container) ; Deno test para handlers das Edge Functions (HMAC, claim atomico, retry/backoff) ; Playwright (ja presente no projeto) para e2e do painel admin; ambiente de teste contra Cloud API em modo sandbox/stub HTTP da Graph API.</span></div></section>
+  <section id="s4"><h2><span class="n">4</span>Modelo de dados</h2><div class="entidade">
+        <p class="ent-nome">drivers</p>
+        <ul class="campos"><li>id uuid PK</li><li>full_name text</li><li>phone_e164 text UNIQUE NOT NULL CHECK (phone_e164 ~ '^\+[1-9][0-9]{7,14}$') (ex.: +5511999998888)</li><li>wa_opt_in boolean NOT NULL DEFAULT false</li><li>wa_opt_in_at timestamptz</li><li>wa_opt_out_at timestamptz</li><li>last_inbound_at timestamptz NULL (marca janela de 24h)</li><li>locale text DEFAULT 'pt_BR'</li><li>timezone text DEFAULT 'America/Sao_Paulo'</li><li>deleted_at timestamptz NULL (soft-delete LGPD)</li><li>created_at timestamptz DEFAULT now()</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">documents</p>
+        <ul class="campos"><li>id uuid PK</li><li>driver_id uuid NOT NULL FK-&gt;drivers ON DELETE CASCADE</li><li>doc_type text NOT NULL CHECK (doc_type IN ('cnh','crlv_renavam','rntrc_antt','tacografo','licenciamento','seguro_obrigatorio'))</li><li>label text</li><li>due_date date NOT NULL</li><li>status text GENERATED ALWAYS AS (CASE WHEN due_date &lt; (now() AT TIME ZONE 'America/Sao_Paulo')::date THEN 'vencido' WHEN due_date - (now() AT TIME ZONE 'America/Sao_Paulo')::date &lt;= 30 THEN 'proximo' ELSE 'ok' END) STORED</li><li>updated_at timestamptz DEFAULT now()</li><li>UNIQUE(driver_id, doc_type)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">document_reminders</p>
+        <ul class="campos"><li>id uuid PK</li><li>driver_id uuid NOT NULL FK</li><li>document_id uuid NOT NULL FK-&gt;documents ON DELETE CASCADE</li><li>channel text NOT NULL DEFAULT 'whatsapp'</li><li>enabled boolean NOT NULL DEFAULT true</li><li>windows int[] NOT NULL DEFAULT '{30,7,2,0}'</li><li>created_at timestamptz DEFAULT now()</li><li>UNIQUE(document_id, channel)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">reminder_jobs</p>
+        <ul class="campos"><li>id uuid PK</li><li>driver_id uuid NOT NULL FK</li><li>document_id uuid NOT NULL FK ON DELETE CASCADE</li><li>doc_type text NOT NULL</li><li>due_date date NOT NULL</li><li>window_offset int NOT NULL CHECK (window_offset IN (30,7,2,0))</li><li>run_at timestamptz NOT NULL (due_date - offset as HH:MM America/Sao_Paulo, clampeado 08:00-20:00)</li><li>template_name text NOT NULL</li><li>status text NOT NULL CHECK (status IN ('scheduled','sending','sent','delivered','read','failed','canceled','skipped')) DEFAULT 'scheduled'</li><li>attempts int NOT NULL DEFAULT 0</li><li>idempotency_key text UNIQUE NOT NULL</li><li>wa_message_id text NULL</li><li>claimed_at timestamptz NULL</li><li>canceled_reason text NULL</li><li>skipped_reason text NULL</li><li>last_error text NULL</li><li>created_at timestamptz DEFAULT now()</li><li>sent_at timestamptz NULL</li><li>INDEX (status, run_at) WHERE status='scheduled'</li><li>INDEX (document_id)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">wa_messages</p>
+        <ul class="campos"><li>id uuid PK</li><li>driver_id uuid NULL FK</li><li>direction text NOT NULL CHECK (direction IN ('outbound','inbound'))</li><li>wa_message_id text UNIQUE</li><li>phone_e164 text NOT NULL</li><li>type text NOT NULL CHECK (type IN ('template','text'))</li><li>template_name text NULL</li><li>intent text NULL (ex.: 'consulta_vencimento'|'opt_in_confirm'|'opt_out'|'reactivate')</li><li>body text NULL (texto entrante minimizado, retencao 90d)</li><li>status text NULL CHECK (status IN ('sent','delivered','read','failed'))</li><li>error_code text NULL</li><li>reminder_job_id uuid NULL FK</li><li>created_at timestamptz DEFAULT now()</li><li>status_updated_at timestamptz</li><li>INDEX (phone_e164, created_at)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">wa_templates</p>
+        <ul class="campos"><li>id uuid PK</li><li>name text UNIQUE NOT NULL (ex.: 'doc_vencimento_30d')</li><li>language text NOT NULL DEFAULT 'pt_BR'</li><li>category text NOT NULL DEFAULT 'UTILITY'</li><li>status text NOT NULL CHECK (status IN ('PENDING','APPROVED','REJECTED','PAUSED')) (espelha Meta)</li><li>body_text text NOT NULL (placeholders {{1}} documento, {{2}} data, {{3}} dias)</li><li>window_offset int NULL (30|7|2|0)</li><li>active boolean NOT NULL DEFAULT false</li><li>meta_template_id text NULL</li><li>updated_at timestamptz DEFAULT now()</li><li>UNIQUE(window_offset) WHERE active=true</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">wa_optin_events</p>
+        <ul class="campos"><li>id uuid PK</li><li>driver_id uuid FK</li><li>phone_e164 text NOT NULL</li><li>event text NOT NULL CHECK (event IN ('opt_in_request','opt_in_confirmed','opt_out','reactivate'))</li><li>source text NOT NULL CHECK (source IN ('app','whatsapp','admin'))</li><li>raw_text text NULL (ex.: 'PARAR')</li><li>created_at timestamptz NOT NULL DEFAULT now() — append-only (sem UPDATE/DELETE, garantido por trigger/REVOKE)</li><li>trilha de auditoria LGPD imutavel</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">admin_settings</p>
+        <ul class="campos"><li>key text PK (ex.: 'wa_reminders_enabled','default_windows','send_window_start','send_window_end','body_retention_days')</li><li>value jsonb NOT NULL</li><li>updated_by uuid NULL</li><li>updated_at timestamptz DEFAULT now()</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">wa_inbound_events</p>
+        <ul class="campos"><li>id uuid PK</li><li>meta_event_id text UNIQUE (dedupe de reentrega da Meta)</li><li>raw_payload jsonb NOT NULL</li><li>processed boolean NOT NULL DEFAULT false</li><li>error text NULL</li><li>received_at timestamptz DEFAULT now()</li><li>processed_at timestamptz NULL — buffer que permite ao webhook responder 200 rapido e processar async</li></ul>
+      </div></section>
+  <section id="s5"><h2><span class="n">5</span>Contratos de API</h2><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/functions/v1/wa-webhook</code></div>
+        <p class="ep-desc">Handshake de verificacao da Cloud API. Valida hub.mode=subscribe e hub.verify_token contra VERIFY_TOKEN (env). Se valido, responde 200 com hub.challenge em texto puro; senao 403. Sem efeito colateral.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/wa-webhook</code></div>
+        <p class="ep-desc">Webhook unico da Cloud API. Valida X-Hub-Signature-256 = HMAC-SHA256(raw_body, APP_SECRET) em tempo constante; payload sem assinatura valida -&gt; 401 e nada gravado. Insere o payload em wa_inbound_events (dedupe por meta_event_id) e responde 200 em &lt;5s. Processamento async: statuses[] atualiza wa_messages.status e reminder_jobs.status (sent/delivered/read/failed) por wa_message_id; messages[] roteia texto para wa-intent (consulta) ou para opt-out (STOP/SAIR/PARAR/CANCELAR), opt-in (SIM) e reativacao (VOLTAR), sempre atualizando drivers.last_inbound_at.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/reminders-dispatch</code></div>
+        <p class="ep-desc">Disparado por cron (5 min). Body opcional {dry_run?:boolean, limit?:int}. Seleciona reminder_jobs status='scheduled' AND run_at&lt;=now() AND hora BRT em [send_window_start,send_window_end] com SELECT ... FOR UPDATE SKIP LOCKED; verifica admin_settings.wa_reminders_enabled=true e driver.wa_opt_in=true e driver.deleted_at IS NULL; faz claim atomico, envia template HSM APPROVED+active da janela via POST Graph API /{phone_number_id}/messages, grava wa_message_id e marca 'sent'; em 429/5xx incrementa attempts e reagenda backoff, em erro permanente marca 'failed'. Se opt-out/kill-switch/sem template -&gt; 'skipped'/'canceled'. Responde {processed,sent,skipped,failed,canceled}.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/wa-intent</code></div>
+        <p class="ep-desc">Processa intencao entrante (chamado internamente pelo wa-webhook). Body {driver_id,phone_e164,text}. So responde texto livre se now()-driver.last_inbound_at&lt;=24h; senao usa template. Detecta 'quando vence X' (keyword + fuzzy/pg_trgm sobre 6 doc_types), resolve o documento do driver, calcula dias restantes em BRT e responde data+dias+oferta de agendar (quick reply SIM). Se ambiguo, lista os tipos; se sem data cadastrada, orienta cadastro no app. Responde {intent,doc_type|null,reply_sent:boolean,ambiguous:boolean}.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/api/documents/:id/reminders/reschedule</code></div>
+        <p class="ep-desc">Chamado pelo doc-app quando due_date muda (ou via trigger). Body {due_date:date, windows?:int[]}. Numa transacao cancela reminder_jobs futuros 'scheduled' do documento e recria a grade idempotente para a nova data (jobs 'sent'+ intactos). Responde {canceled:int,created:int,skipped:int,jobs:[{window_offset,run_at,status}]}. 404 se documento inexistente; 422 se due_date invalida.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/api/drivers/:id/wa-optin</code></div>
+        <p class="ep-desc">Registra opt-in (double opt-in). Body {source:'app'|'whatsapp'|'admin'}. Cria wa_optin_events('opt_in_request') e dispara template de boas-vindas/confirmacao; ao receber 'SIM' no webhook, marca driver.wa_opt_in=true, wa_opt_in_at=now() e wa_optin_events('opt_in_confirmed'). Idempotente (se ja confirmado, no-op). Responde {status:'pending'|'confirmed'}.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/api/admin/wa/overview</code></div>
+        <p class="ep-desc">Painel admin (gated por papel admin/operacao). Query ?from=&amp;to=. Retorna KPIs: enviados/entregues/lidos/falhos no periodo, taxa de entrega (%), taxa de leitura (%), opt_in/opt_out_7d count, fila por status (scheduled/failed/dead-letter), status dos templates HSM, flag wa_reminders_enabled e data_atualizada (timestamp do agregado). 403 se sem papel.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">PUT</span><code class="ep-rota">/api/admin/wa/templates/:name</code></div>
+        <p class="ep-desc">Gestao de template HSM (admin). Body {body_text?,window_offset?,active?}. Atualiza wa_templates e opcionalmente sincroniza/cria na Meta (Message Templates API), refletindo status. Regra: active=true so se status='APPROVED'; tentar ativar nao-APPROVED -&gt; 409. Auditoria updated_by. Responde o template atualizado.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">PUT</span><code class="ep-rota">/api/admin/wa/settings</code></div>
+        <p class="ep-desc">Atualiza configuracoes (admin). Body {default_windows?:int[], send_window_start?:'HH:MM', send_window_end?:'HH:MM', wa_reminders_enabled?:boolean, body_retention_days?:int}. Valida start&lt;end e windows subset de offsets validos. Persiste em admin_settings com updated_by/updated_at. Responde settings atualizadas. Kill-switch (wa_reminders_enabled=false) tem efeito na proxima rodada do cron.</p>
+      </div></section>
+  <section id="s6"><h2><span class="n">6</span>Frontend / fluxo</h2><ul><li>Lembrete proativo (outbound HSM): no marco da janela o motorista recebe template aprovado. Ex. doc_vencimento_7d: 'RODE COM LUCRO: seu {{1}} vence em {{2}} ({{3}} dias). Renove a tempo para nao perder frete nem levar multa. Responda PARAR para nao receber mais.' Variaveis {{1}}=Licenciamento, {{2}}=03/07/2026, {{3}}=7. Quick-reply opcionais: 'Ja renovei' e 'Lembrar de novo em 2 dias'.</li><li>Consulta inbound (dentro da janela 24h): motorista envia 'quando vence meu licenciamento?' (ou CNH/RNTRC/tacografo/CRLV/seguro). Bot responde texto livre: 'Seu Licenciamento vence em 03/07/2026 — faltam 7 dias. Quer que eu te lembre? Responda SIM para ativar os lembretes (30, 7 e 2 dias antes).' Ambiguidade ('quando vence meu documento?') -&gt; lista os tipos. Sem data cadastrada -&gt; orienta cadastrar no app.</li><li>Opt-in (double opt-in): apos cadastro no app, primeiro contato envia template de boas-vindas pedindo confirmacao; so apos 'SIM' driver.wa_opt_in=true. Opt-out: qualquer STOP/SAIR/PARAR/CANCELAR marca opt-out imediato, confirma 'Pronto, voce nao recebera mais lembretes. Envie VOLTAR para reativar.' e cancela jobs futuros. VOLTAR reativa e rematerializa a grade futura.</li><li>Tela admin (React, aba 'WhatsApp · Documentos' no AdminApp, reaproveitando Kpis/Card/BarList): cartoes (enviados, entregues %, lidos %, falhos, opt-out 7d), grafico de envios por janela (30/7/2/0d via recharts BarChart ja usado), tabela da fila (jobs scheduled/failed/dead-letter com run_at, attempts e ultimo erro), botao kill-switch (wa_reminders_enabled) com confirmacao, e badge 'dados ate &lt;timestamp&gt;'. Estado via React Query consumindo /api/admin/wa/overview.</li><li>Tela admin de templates: lista wa_templates com badge de status Meta (APPROVED/PENDING/REJECTED reusando o padrao de StatusDoc/StatusPill), editor do body_text com preview das variaveis substituidas por exemplo (Licenciamento / 03/07/2026 / 7), toggle active bloqueado se status!=APPROVED, e form de settings (default_windows + send_window_start/end 08:00-20:00 BRT + kill-switch). Reaproveita componentes de status/badge de ui.tsx.</li></ul></section>
+  <section id="s7"><h2><span class="n">7</span>Lógica de negócio</h2><ul><li>Calculo da grade (build_reminder_jobs): para cada offset em windows (default {30,7,2,0}), run_at = ((due_date - offset) + send_window_start) interpretado em America/Sao_Paulo, clampeado a [send_window_start,send_window_end] (08:00-20:00). Se (due_date - offset) ja passou em BRT, o job e criado com status='skipped', skipped_reason='window_in_past' (sem envio retroativo), mas janelas ainda uteis seguem 'scheduled'. dias_para_vencer = (due_date - (now() AT TIME ZONE 'America/Sao_Paulo')::date) — coerente com diasParaVencer do modelo PENDENCIAS existente.</li><li>Idempotencia e dedupe: idempotency_key = encode(digest(driver_id||document_id||due_date::text||window_offset::text||template_name,'sha256'),'hex'). INSERT ON CONFLICT (idempotency_key) DO NOTHING torna build/reschedule/retry/redeploy seguros. No dispatch o claim UPDATE ... SET status='sending', attempts=attempts+1 WHERE id=$1 AND status='scheduled' RETURNING * — 0 linhas =&gt; outro worker pegou =&gt; pula. Webhook idempotente por wa_message_id (statuses) e meta_event_id (inbound).</li><li>Reagendamento (reschedule_document_reminders): BEGIN; UPDATE reminder_jobs SET status='canceled', canceled_reason='due_date_changed' WHERE document_id=$1 AND status='scheduled'; recalcula a grade para a nova due_date e INSERT ON CONFLICT DO NOTHING; COMMIT. Jobs 'sent'/'delivered'/'read'/'failed' permanecem. Data mais distante ou mais proxima: janelas ja vencidas na nova data entram 'skipped'.</li><li>Selecao de template e conformidade: o dispatch escolhe template_name por window_offset (doc_vencimento_30d/7d/2d/dia) entre APPROVED+active (UNIQUE por window_offset ativo). Antes de enviar verifica driver.wa_opt_in=true, admin_settings.wa_reminders_enabled=true, hora BRT na janela, driver.deleted_at IS NULL. Lembrete e proativo (fora da janela 24h) =&gt; SEMPRE template HSM. Consulta inbound (dentro da janela 24h por last_inbound_at) =&gt; texto livre.</li><li>Parser de intencao 'quando vence X': normaliza (lowercase, remove acentos), busca gatilhos {'quando vence','quando vibre','validade','quando vou ter que renovar','qnd vence'} + sinonimos por doc_type ({'licenciamento'-&gt;licenciamento; 'cnh'/'carteira'/'habilitacao'-&gt;cnh; 'rntrc'/'antt'-&gt;rntrc_antt; 'tacografo'/'afericao'-&gt;tacografo; 'documento do carro'/'crlv'/'renavam'-&gt;crlv_renavam; 'seguro'-&gt;seguro_obrigatorio}); usa similaridade (pg_trgm/Levenshtein) com limiar (ex.: &gt;=0.4) para tolerar typo; score&lt;limiar ou multiplos matches =&gt; intencao ambigua e pergunta qual. Determinismo total, sem LLM no MVP.</li><li>Retry e dead-letter: falha transitoria (429/500/502/503/timeout/rede) =&gt; status volta a 'scheduled' com run_at=now()+backoff(attempts) (1/5/25 min) ate attempts=3; falha permanente (template nao aprovado, numero invalido, opt-out, 4xx exceto 429) =&gt; status='failed' com last_error, sem reenfileirar. Jobs 'failed' por esgotar retry aparecem no dead-letter do admin.</li><li>Opt-out prioritario: STOP/SAIR/PARAR/CANCELAR processado mesmo fora da janela horaria e com prioridade sobre qualquer envio; seta wa_opt_in=false, wa_opt_out_at=now(), grava wa_optin_events('opt_out') e cancela todos reminder_jobs 'scheduled' do driver. VOLTAR reativa (wa_opt_in=true, evento 'reactivate') e rematerializa a grade futura.</li></ul></section>
+  <section id="s8"><h2><span class="n">8</span>Integrações</h2><ul><li>WhatsApp Cloud API (Meta Graph API v21.0): envio de templates HSM (POST /{phone_number_id}/messages), recebimento de mensagens e status via webhook assinado HMAC-SHA256, gestao de templates (Message Templates API) refletindo status APPROVED/PENDING/REJECTED/PAUSED.</li><li>Modulo doc-app (Documentos · App): fonte das datas de vencimento (entidade documents, evolucao de PENDENCIAS/StatusDoc em src/data); chama /api/documents/:id/reminders/reschedule ao criar/editar due_date. Sem acoplamento de UI, apenas contrato de API.</li><li>Supabase pg_cron / Scheduled Functions: gatilho do reminders-dispatch a cada 5 min e jobs de agregacao de KPIs e expurgo de body por retencao.</li><li>Painel admin RODE (modulo admin, ADMIN_VIEWS em src/data/admin.ts e shell src/admin/AdminApp.tsx): consome admin-api para entregabilidade, templates e settings; reutiliza auth/papeis e auditoria existentes.</li><li>(Opcional, fase posterior) Provedor de NLU/LLM: nao requerido no MVP (parser keyword+fuzzy/pg_trgm cobre os 6 doc_types); fica como evolucao se a variedade de perguntas crescer.</li></ul></section>
+  <section id="s9"><h2><span class="n">9</span>Segurança & LGPD</h2><ul><li>LGPD base legal e finalidade: datas de vencimento de documentos sao dado pessoal; tratamento justificado por consentimento (opt-in) com finalidade unica e explicita (lembretes de vencimento). wa_optin_events registra request/confirmed/opt_out/reactivate com timestamp, source e raw_text, formando trilha auditavel imutavel (append-only, garantida por REVOKE UPDATE/DELETE + trigger).</li><li>Double opt-in e opt-out imediato: nenhum lembrete enviado antes de wa_opt_in=true confirmado. STOP/SAIR/PARAR/CANCELAR marca opt-out, cancela todos reminder_jobs futuros e nunca dispara ate VOLTAR. Opt-out processado mesmo fora de horario comercial e com prioridade sobre envios.</li><li>Validacao de webhook: todo POST da Meta valida X-Hub-Signature-256 = HMAC-SHA256(raw_body, APP_SECRET) com comparacao em tempo constante; payload sem assinatura valida -&gt; 401, nada gravado. Handshake GET valida hub.verify_token; mismatch -&gt; 403.</li><li>Row Level Security: documents/document_reminders/reminder_jobs/wa_messages isolados por driver_id=auth.uid() no acesso via app; Edge Functions usam service_role apenas server-side, nunca exposto ao cliente. admin-api gated por papel (admin/operacao) reutilizando o controle de acesso do modulo admin; alteracoes de template/settings auditadas (updated_by).</li><li>Minimizacao e retencao: wa_messages.body (texto entrante) retido so o necessario para auditoria/depuracao, com politica de retencao (admin_settings.body_retention_days, default 90) e expurgo por job agendado. Nao armazena conteudo sensivel alem de data+tipo de documento; este modulo nao guarda arquivos (ficam no doc-app com storage privado/URLs assinadas).</li><li>Segredos e direito de exclusao: WHATSAPP_TOKEN, APP_SECRET, VERIFY_TOKEN e service_role fora do repo (env/secrets do Supabase). Exclusao a pedido: ao apagar o driver (soft-delete deleted_at + cascata), removem-se documents/reminders/jobs e anonimiza-se wa_messages (phone/body), preservando apenas os wa_optin_events de opt-out como prova de cumprimento legal.</li></ul></section>
+  <section id="s10"><h2><span class="n">10</span>Não-funcionais</h2><ul><li>Entregabilidade: &gt;=95% dos lembretes com status delivered; taxa de falha monitorada por janela e alerta no painel se cair abaixo do alvo. Cobertura: ~0% de documentos que vencem sem que o motorista tenha recebido ao menos um lembrete.</li><li>Confiabilidade do agendador: nenhum lembrete perdido nem duplicado. Fila persistida + idempotency_key UNIQUE + claim atomico (FOR UPDATE SKIP LOCKED) garantem exactly-once efetivo mesmo com redeploy, retry de cron ou dois workers concorrentes. Cron 5 min =&gt; atraso maximo de disparo de 5 min apos run_at.</li><li>Latencia da consulta 'quando vence X': resposta em &lt;=3s p95 dentro da janela de 24h (webhook -&gt; wa-intent -&gt; resposta).</li><li>Fuso e horario humano: todo run_at e dias-para-vencer em America/Sao_Paulo; disparos clampeados a 08:00-20:00 BRT (nunca de madrugada), configuravel no admin; opt-out ignora o clamp.</li><li>Conformidade Meta: apenas templates HSM categoria UTILITY APPROVED para outbound proativo; respeito a janela 24h; monitoramento de qualidade/tier do numero. Kill-switch global (wa_reminders_enabled) pausa disparos na proxima rodada.</li><li>Custo controlado: 1 lembrete por janela por documento (dedupe garante nao reenviar); volume por janela e por motorista controlado; custo por conversa visivel no painel.</li><li>Resiliencia a falhas externas: falha transitoria da Graph API com retry exponencial (3 tentativas, 1/5/25 min) sem perder o job; dead-letter para falhas permanentes. Webhook responde 200 em &lt;5s e processa async (via wa_inbound_events) para nao perder eventos da Meta.</li></ul></section>
+  <section id="s11"><h2><span class="n">11</span>Etapas de implementação</h2><ol><li>1. Modelagem e migracoes: criar tabelas (drivers com campos WA, documents, document_reminders, reminder_jobs, wa_messages, wa_templates, wa_optin_events, admin_settings, wa_inbound_events); habilitar pg_cron/pgcrypto/pg_trgm; definir RLS por driver_id e gating admin; trigger append-only em wa_optin_events.</li><li>2. Funcoes SQL build_reminder_jobs e materialize_reminder_grid com calculo BRT, clamp 08:00-20:00, status 'skipped' para janelas passadas e idempotency_key; testes unitarios de run_at e dedupe.</li><li>3. Provisionar WhatsApp Cloud API: WABA + numero verificado, APP_SECRET/VERIFY_TOKEN; submeter templates HSM (doc_vencimento_30d/7d/2d/dia) UTILITY a aprovacao da Meta (iniciar cedo pelo lead time).</li><li>4. Edge Function wa-webhook: HMAC + handshake GET, buffer wa_inbound_events (200 rapido), parsing async de statuses[] (atualiza wa_messages/reminder_jobs) e messages[] (intent, opt-in SIM, opt-out STOP/SAIR/PARAR/CANCELAR, VOLTAR), atualizacao de last_inbound_at; dedupe por meta_event_id/wa_message_id.</li><li>5. Edge Function reminders-dispatch + cron pg_cron (5 min): claim atomico, checagem opt-in/kill-switch/janela horaria/deleted_at, envio do template via Graph API, gravacao de wa_message_id, retry/backoff e dead-letter.</li><li>6. Opt-in (double opt-in) e opt-out: template de confirmacao, deteccao SIM/STOP/PARAR/VOLTAR no webhook, registro em wa_optin_events, cancelamento/rematerializacao de jobs.</li><li>7. Endpoint reschedule (reschedule_document_reminders) acionado pelo doc-app/trigger na mudanca de due_date; testes de cancelar+recriar idempotente.</li><li>8. Edge Function wa-intent: parser keyword+fuzzy/pg_trgm dos 6 doc_types, resposta com data/dias/oferta de agendar, ambiguidade e data nao cadastrada (texto livre na janela 24h).</li><li>9. Painel admin (React): aba 'WhatsApp · Documentos' com overview de entregabilidade, fila/dead-letter, gestao de templates HSM e settings (janelas + horario + kill-switch); consome admin-api.</li><li>10. Job de agregacao para KPIs (enviados/entregues/lidos/falhos, opt-in/opt-out) e indicador 'dados ate &lt;timestamp&gt;'; job de expurgo de body por retencao.</li><li>11. Testes (unit/integracao/e2e) e hardening de seguranca/LGPD; ambiente sandbox/stub da Cloud API para e2e sem custo; go-live atras do kill-switch com rollout gradual.</li></ol></section>
+  <section id="s12"><h2><span class="n">12</span>Plano de teste</h2><div class="teste"><h4>Unit</h4><ul><li>build_reminder_jobs com due_date=2026-07-31, windows {30,7,2,0} e send_window_start=09:00 gera run_at em 2026-07-01, 2026-07-24, 2026-07-29 e 2026-07-31, todos as 09:00 America/Sao_Paulo, dentro de [08:00,20:00].</li><li>Clamp de horario: com send_window_start=07:30 (antes do limite), run_at e ajustado para 08:00 BRT; com hora apos 20:00, ajustado para 20:00.</li><li>Documento cadastrado em 2026-06-21 com due_date faltando 5 dias: janelas 30d e 7d viram status='skipped' (skipped_reason='window_in_past'); janelas 2d e 0d ficam 'scheduled'.</li><li>idempotency_key e identica para o mesmo (driver,document,due_date,offset,template) e muda quando due_date muda; INSERT ON CONFLICT DO NOTHING aplicado duas vezes nao duplica (count permanece 4).</li><li>Parser de intencao: 'quando vence meu licenciamento' -&gt; doc_type=licenciamento; 'qnd vence minha carteira' (typo) -&gt; doc_type=cnh via fuzzy; 'quando vence meu CRLV?' -&gt; crlv_renavam; 'quando vence meu RNTRC' -&gt; rntrc_antt; 'quando vence meu documento' -&gt; ambiguous=true (pede para escolher); texto sem gatilho -&gt; intent=null.</li><li>dias_para_vencer respeita BRT na virada do dia: as 23:30 BRT (02:30 UTC do dia seguinte) de 2026-06-20 um documento com due_date=2026-06-21 conta como faltando 1 dia, nao vencido.</li><li>Selecao de template por janela: window_offset=7 escolhe doc_vencimento_7d; offset=0 escolhe doc_vencimento_dia; se nao ha template APPROVED+active para a janela, retorna null e job nao e enviado.</li><li>Backoff: backoff(1)=1min, backoff(2)=5min, backoff(3)=25min; attempts&gt;3 nao reagenda.</li></ul></div><div class="teste"><h4>Integracao</h4><ul><li>reschedule_document_reminders ao mudar due_date de 2026-07-31 para 2026-08-15: cancela os 4 jobs 'scheduled' antigos (canceled_reason='due_date_changed'), cria a nova grade e nao toca jobs ja 'sent'.</li><li>Reschedule chamado duas vezes seguidas com a mesma nova data e idempotente: segundo call cria 0 novos jobs (ON CONFLICT DO NOTHING) e cancela 0 (ja cancelados).</li><li>Dois workers reminders-dispatch concorrentes sobre o mesmo job: apenas um claim retorna 1 linha e envia; o outro retorna 0 linhas e pula; nenhum wa_message duplicado criado.</li><li>Webhook recebe status 'failed' com error_code de template nao aprovado: reminder_job -&gt; 'failed' (sem retry), last_error preenchido, aparece no dead-letter.</li><li>Webhook recebe 'PARAR' de um motorista com 3 jobs 'scheduled': wa_opt_in=false, wa_opt_out_at preenchido, wa_optin_events('opt_out') gravado, os 3 jobs viram 'canceled' (canceled_reason='opt_out'), e a confirmacao 'Pronto...' e enviada.</li><li>Opt-out fora da janela horaria (ex.: 03:00 BRT) ainda e processado imediatamente (clamp nao se aplica a opt-out).</li><li>Falha transitoria 429 da Graph API: job volta a 'scheduled' com run_at futuro (backoff), attempts incrementado, e e reenviado na proxima rodada; apos 3 falhas vira 'failed'.</li><li>Webhook com X-Hub-Signature-256 invalido -&gt; 401, nenhum registro em wa_inbound_events nem wa_messages.</li><li>Reentrega do mesmo evento da Meta (mesmo meta_event_id) -&gt; wa_inbound_events dedupe, status nao aplicado duas vezes.</li><li>Kill-switch wa_reminders_enabled=false: dispatch da proxima rodada processa 0 envios (jobs permanecem 'scheduled'); reativar retoma sem perder jobs.</li><li>Driver soft-deleted (deleted_at NOT NULL): dispatch nao envia e marca o job 'skipped' (skipped_reason='driver_deleted').</li></ul></div><div class="teste"><h4>E2E</h4><ul><li>Fluxo completo no sandbox/stub da Cloud API: cadastrar documento (due_date) -&gt; /api/drivers/:id/wa-optin -&gt; webhook 'SIM' confirma opt-in -&gt; avancar relogio para a janela de 7 dias -&gt; reminders-dispatch envia doc_vencimento_7d -&gt; webhook 'delivered' atualiza status -&gt; painel admin mostra +1 enviado e +1 entregue.</li><li>Consulta inbound: motorista envia 'quando vence meu RNTRC?' dentro da janela 24h -&gt; bot responde data, dias restantes e oferta de agendar -&gt; motorista responde 'SIM' -&gt; reminders criados e visiveis na fila do admin.</li><li>Opt-out e reativacao: 'PARAR' bloqueia disparos e confirma; tentativa de dispatch nao envia; 'VOLTAR' reativa, rematerializa a grade futura e o proximo lembrete e enviado.</li><li>Painel admin kill-switch: operador abre 'WhatsApp · Documentos', alterna wa_reminders_enabled=false (com confirmacao) -&gt; proxima rodada nao envia nada; reativar retoma; o badge 'dados ate &lt;timestamp&gt;' reflete o agregado.</li><li>Painel admin templates: tentar ativar (toggle active) um template com status=PENDING -&gt; bloqueado com mensagem 409; ativar um APPROVED -&gt; toggle persiste e o template passa a ser usado no proximo disparo.</li><li>Painel admin overview: apos um ciclo de envios, os cartoes mostram enviados/entregues %/lidos %/falhos e o grafico por janela (30/7/2/0d) coerentes com a fila.</li></ul></div></section>
+  <section id="s13"><h2><span class="n">13</span>Critérios de aceite</h2><ul class="check"><li>Dado um documento com due_date e o motorista com opt-in confirmado, quando build_reminder_jobs roda, entao sao criados reminder_jobs nas janelas {30,7,2,0} com run_at em America/Sao_Paulo dentro de 08:00-20:00 e cada um com idempotency_key unica.</li><li>Dado que build/reschedule e chamado mais de uma vez para o mesmo documento e data, quando os jobs sao inseridos, entao nenhum lembrete duplicado e criado (ON CONFLICT DO NOTHING) e nenhum duplicado e enviado.</li><li>Dado um documento cadastrado faltando 5 dias para vencer, quando build_reminder_jobs roda, entao as janelas 30d e 7d ficam status='skipped' (skipped_reason='window_in_past') e as janelas 2d e 0d ficam 'scheduled'.</li><li>Dado um reminder_job 'scheduled' com run_at&lt;=now() na janela horaria, motorista com opt-in e kill-switch ligado, quando reminders-dispatch roda, entao o template HSM correto da janela e enviado, status passa a 'sent', wa_message_id e gravado, em no maximo 5 min apos run_at.</li><li>Dado dois workers reminders-dispatch concorrentes sobre o mesmo job, quando ambos tentam o claim, entao exatamente um envia (claim retorna 1 linha) e o outro pula (0 linhas), sem envio duplicado.</li><li>Dado que a due_date de um documento muda, quando o doc-app chama reschedule, entao os jobs futuros 'scheduled' viram 'canceled', a grade e recriada para a nova data e jobs ja 'sent'/'delivered'/'read' permanecem intactos.</li><li>Dado um motorista que envia 'quando vence meu licenciamento?' dentro da janela de 24h, quando wa-intent processa, entao a resposta contem a data correta, os dias restantes (em BRT) e a oferta de agendar, em &lt;=3s.</li><li>Dado uma consulta ambigua ('quando vence meu documento?'), quando wa-intent processa, entao responde listando os tipos e pede para o motorista escolher, sem enviar uma data.</li><li>Dado um motorista que envia PARAR/SAIR/STOP/CANCELAR, quando o webhook processa, entao wa_opt_in=false imediatamente (mesmo fora da janela horaria), o evento e auditado em wa_optin_events, todos os reminder_jobs 'scheduled' dele viram 'canceled', e nenhum lembrete e enviado depois disso.</li><li>Dado um motorista que enviou VOLTAR apos opt-out, quando o webhook processa, entao wa_opt_in=true, evento 'reactivate' e auditado e a grade futura e rematerializada.</li><li>Dado um webhook POST com assinatura X-Hub-Signature-256 invalida, quando recebido, entao e rejeitado com 401 e nenhum efeito colateral e gravado (sem wa_inbound_events nem wa_messages).</li><li>Dado a reentrega do mesmo evento da Meta (mesmo meta_event_id/wa_message_id), quando o webhook processa, entao o efeito e aplicado uma unica vez (idempotente).</li><li>Dado uma falha transitoria (429/5xx/timeout) da Graph API no envio, quando o dispatch falha, entao o job e reenfileirado com backoff (1/5/25 min, ate 3 tentativas) e, esgotadas, marcado 'failed' visivel no dead-letter do painel.</li><li>Dado o painel admin no periodo selecionado, quando o operador abre 'WhatsApp · Documentos', entao ve taxa de entrega, taxa de leitura, contagem de opt-in/opt-out, fila por status e status dos templates HSM, com indicador 'dados ate &lt;timestamp&gt;'.</li><li>Dado um template HSM que nao esta APPROVED na Meta, quando o admin tenta ativa-lo, entao a ativacao e bloqueada (409) e o template nao e usado em nenhum disparo.</li><li>Dado o kill-switch wa_reminders_enabled=false, quando reminders-dispatch roda, entao nenhum lembrete e enviado e os jobs permanecem 'scheduled'; ao reativar, os disparos retomam sem perda.</li></ul></section>
+  <section id="s14"><h2><span class="n">14</span>Diagramas</h2><p class="hint">Renderizados com Mermaid — requer internet ao abrir o arquivo.</p><h4>Arquitetura da solução</h4><div class="mermaid-box"><pre class="mermaid">flowchart LR
+  driver[&quot;Motorista (WhatsApp)&quot;] --&gt;|&quot;mensagens + statuses&quot;| waWebhook[&quot;Edge Fn wa-webhook (HMAC-SHA256)&quot;]
+  docApp[&quot;doc-app (cadastro due_date)&quot;] --&gt;|&quot;POST reschedule&quot;| reschedule[&quot;reschedule_document_reminders&quot;]
+  admin[&quot;Painel Admin React (WhatsApp Documentos)&quot;] --&gt;|&quot;overview/templates/settings&quot;| adminApi[&quot;Edge Fn admin-api&quot;]
+  waWebhook --&gt;|&quot;buffer async&quot;| db[(&quot;Postgres 15 + RLS&quot;)]
+  reschedule --&gt; db
+  adminApi --&gt; db
+  cron[&quot;pg_cron (a cada 5 min)&quot;] --&gt;|&quot;jobs scheduled&quot;| dispatch[&quot;Edge Fn reminders-dispatch&quot;]
+  dispatch --&gt; db
+  waWebhook --&gt;|&quot;intent quando vence X&quot;| waIntent[&quot;Edge Fn wa-intent&quot;]
+  waIntent --&gt; db
+  dispatch --&gt;|&quot;POST template HSM&quot;| gnode[&quot;Meta Graph API v21.0&quot;]
+  gnode --&gt;|&quot;sent/delivered/read/failed&quot;| waWebhook</pre></div><h4>Casos de uso</h4><div class="mermaid-box"><pre class="mermaid">flowchart LR
+  motorista[&quot;Motorista&quot;]
+  operador[&quot;Admin / Operacao&quot;]
+  sistema_ext[&quot;Meta Cloud API&quot;]
+  subgraph Sistema[&quot;Sistema - Documentos WhatsApp&quot;]
+    uc1[&quot;Receber lembrete de vencimento&quot;]
+    uc2[&quot;Consultar quando vence X&quot;]
+    uc3[&quot;Opt-in (SIM) / Opt-out (PARAR) / VOLTAR&quot;]
+    uc4[&quot;Despachar jobs via cron&quot;]
+    uc5[&quot;Gerir templates HSM e settings&quot;]
+    uc6[&quot;Ver entregabilidade e dead-letter&quot;]
+    uc7[&quot;Acionar kill-switch&quot;]
+  end
+  motorista --&gt; uc1
+  motorista --&gt; uc2
+  motorista --&gt; uc3
+  operador --&gt; uc5
+  operador --&gt; uc6
+  operador --&gt; uc7
+  sistema_ext --&gt; uc4
+  uc4 --&gt; uc1</pre></div><h4>Fluxo principal</h4><div class="mermaid-box"><pre class="mermaid">flowchart TD
+  start[&quot;due_date cadastrada/alterada&quot;] --&gt; build[&quot;build_reminder_jobs (janelas 30/7/2/0d)&quot;]
+  build --&gt; past{&quot;janela ja passou em BRT?&quot;}
+  past --&gt;|&quot;sim&quot;| skip[&quot;status = skipped (window_in_past)&quot;]
+  past --&gt;|&quot;nao&quot;| sched[&quot;status = scheduled (idempotency_key)&quot;]
+  sched --&gt; cron[&quot;cron 5 min -&gt; reminders-dispatch&quot;]
+  cron --&gt; guard{&quot;opt_in + kill-switch + janela 08:00-20:00 + deleted_at null?&quot;}
+  guard --&gt;|&quot;nao&quot;| skip2[&quot;skipped / canceled&quot;]
+  guard --&gt;|&quot;sim&quot;| claim[&quot;claim atomico FOR UPDATE SKIP LOCKED&quot;]
+  claim --&gt; send[&quot;POST template HSM Graph API&quot;]
+  send --&gt; ok{&quot;resposta OK?&quot;}
+  ok --&gt;|&quot;sim&quot;| sent[&quot;status = sent, grava wa_message_id&quot;]
+  ok --&gt;|&quot;429/5xx&quot;| retry{&quot;attempts &lt; 3?&quot;}
+  retry --&gt;|&quot;sim&quot;| backoff[&quot;reagenda backoff 1/5/25 min&quot;]
+  retry --&gt;|&quot;nao&quot;| failed[&quot;status = failed (dead-letter)&quot;]
+  backoff --&gt; sched</pre></div><h4>UML — classes/serviços</h4><div class="mermaid-box"><pre class="mermaid">classDiagram
+  class RemindersDispatch {
+    +claimJob(jobId) ReminderJob
+    +sendTemplate(job) wa_message_id
+    +handleRetry(job, error) void
+  }
+  class WaWebhook {
+    +verifyHandshake(token) challenge
+    +validateSignature(rawBody) bool
+    +processStatuses(statuses) void
+    +routeInbound(message) void
+  }
+  class WaIntent {
+    +parseIntent(text) DocType
+    +resolveDocument(driverId, docType) Document
+    +replyVencimento(doc) bool
+  }
+  class BuildReminderJobs {
+    +materializeGrid(documentId) ReminderJob
+    +rescheduleDocumentReminders(documentId, newDueDate, windows) void
+  }
+  class Driver {
+    +uuid id
+    +text phone_e164
+    +bool wa_opt_in
+    +timestamptz last_inbound_at
+  }
+  class Document {
+    +uuid id
+    +text doc_type
+    +date due_date
+    +text status
+  }
+  class ReminderJob {
+    +int window_offset
+    +timestamptz run_at
+    +text template_name
+    +text status
+    +text idempotency_key
+  }
+  Driver &quot;1&quot; --&gt; &quot;*&quot; Document
+  Document &quot;1&quot; --&gt; &quot;*&quot; ReminderJob
+  RemindersDispatch ..&gt; ReminderJob
+  BuildReminderJobs ..&gt; ReminderJob
+  WaIntent ..&gt; Document
+  WaWebhook ..&gt; Driver</pre></div><h4>Banco de dados (ER)</h4><div class="mermaid-box"><pre class="mermaid">erDiagram
+  drivers ||--o{ documents : possui
+  drivers ||--o{ reminder_jobs : alvo
+  drivers ||--o{ wa_messages : envolve
+  drivers ||--o{ wa_optin_events : audita
+  documents ||--o{ document_reminders : configura
+  documents ||--o{ reminder_jobs : gera
+  reminder_jobs ||--o{ wa_messages : registra
+  drivers {
+    uuid id PK
+    text phone_e164 UK
+    bool wa_opt_in
+    timestamptz last_inbound_at
+  }
+  documents {
+    uuid id PK
+    uuid driver_id FK
+    text doc_type
+    date due_date
+  }
+  document_reminders {
+    uuid id PK
+    uuid document_id FK
+    int_array windows
+  }
+  reminder_jobs {
+    uuid id PK
+    uuid document_id FK
+    int window_offset
+    timestamptz run_at
+    text status
+    text idempotency_key UK
+  }
+  wa_messages {
+    uuid id PK
+    uuid driver_id FK
+    text wa_message_id UK
+    text direction
+  }
+  wa_templates {
+    uuid id PK
+    text name UK
+    text status
+    int window_offset
+  }
+  wa_optin_events {
+    uuid id PK
+    uuid driver_id FK
+    text event
+  }
+  admin_settings {
+    text key PK
+    jsonb value
+  }
+  wa_inbound_events {
+    uuid id PK
+    text meta_event_id UK
+    bool processed
+  }</pre></div><h4>Lógica do plano de testes</h4><div class="mermaid-box"><pre class="mermaid">flowchart TD
+  subgraph Unit[&quot;Unit (Vitest)&quot;]
+    u1[&quot;build_reminder_jobs gera run_at BRT 08:00-20:00&quot;]
+    u2[&quot;clamp horario + janelas passadas = skipped&quot;]
+    u3[&quot;idempotency_key estavel + ON CONFLICT nao duplica&quot;]
+    u4[&quot;parser intent (licenciamento/cnh fuzzy/ambiguo)&quot;]
+    u5[&quot;selecao template + backoff 1/5/25 min&quot;]
+  end
+  subgraph Integracao[&quot;Integracao (Deno + Postgres)&quot;]
+    i1[&quot;reschedule cancela e recria idempotente&quot;]
+    i2[&quot;claim concorrente: 1 envia, outro pula&quot;]
+    i3[&quot;webhook PARAR -&gt; opt-out + cancela jobs&quot;]
+    i4[&quot;HMAC invalido -&gt; 401, nada gravado&quot;]
+    i5[&quot;429 -&gt; retry; kill-switch pausa&quot;]
+  end
+  subgraph E2E[&quot;E2E (Playwright + stub Cloud API)&quot;]
+    e1[&quot;opt-in SIM -&gt; dispatch 7d -&gt; delivered -&gt; admin&quot;]
+    e2[&quot;consulta RNTRC -&gt; resposta -&gt; agendar&quot;]
+    e3[&quot;kill-switch e templates 409 no painel&quot;]
+  end
+  Unit --&gt; Integracao --&gt; E2E</pre></div></section>
+
+  <p class="disclaimer">Documento gerado para orientar o desenvolvimento. Estimativas de esforço/custo são ordem de grandeza para planejamento (premissa R$ 2.100/dev-dia, equipe enxuta) — não é proposta comercial. O veredito de lucratividade do produto é estimativa; o piso ANTT é referência regulatória.</p>
+</div>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose', flowchart: { useMaxWidth: true }, er: { useMaxWidth: true } });
+</script>
+</body>
+</html>

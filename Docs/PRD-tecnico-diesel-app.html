@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PRD Técnico — Diesel na rota · App · RODE COM LUCRO</title>
+<style>
+  :root{--brand:#2563eb;--brand-d:#1e40af;--ink:#0f172a;--ink-6:#475569;--ink-4:#94a3b8;--line:#e2e8f0;--bg:#f1f5f9;--card:#fff;--lucro:#059669}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.6;-webkit-text-size-adjust:100%}
+  .wrap{max-width:920px;margin:0 auto;padding:40px 20px 90px}
+  header.doc{border-bottom:3px solid var(--brand);padding-bottom:20px;margin-bottom:10px}
+  .kicker{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand)}
+  h1{font-size:30px;line-height:1.15;margin:8px 0 6px;font-weight:800;letter-spacing:-.01em}
+  .sub{color:var(--ink-6);font-size:15px;max-width:64ch}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  .pill{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 14px}
+  .pill b{display:block;font-size:16px;color:var(--ink)}
+  .pill span{color:var(--ink-4);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .toc{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 4px}
+  .toc a{font-size:12px;font-weight:600;color:var(--brand-d);background:#eef4ff;border:1px solid #dbe6ff;border-radius:999px;padding:4px 11px;text-decoration:none}
+  .toc a:hover{background:#dbe6ff}
+  section{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-top:18px;scroll-margin-top:14px}
+  h2{font-size:18px;margin:0 0 14px;display:flex;align-items:center;gap:9px;font-weight:800}
+  h2 .n{display:inline-flex;width:26px;height:26px;align-items:center;justify-content:center;background:var(--brand);color:#fff;border-radius:8px;font-size:13px;font-weight:800;flex:none}
+  h4{margin:18px 0 8px;font-size:14px;color:var(--brand-d);font-weight:700}
+  h4:first-of-type{margin-top:4px}
+  p{margin:0 0 10px;color:var(--ink-6)}
+  .hint{font-size:12px;color:var(--ink-4);margin-top:-4px}
+  ul,ol{margin:0;padding-left:22px}
+  li{margin:6px 0;color:var(--ink-6)}
+  ul.check{list-style:none;padding-left:0}
+  ul.check li{position:relative;padding-left:28px;margin:9px 0}
+  ul.check li::before{content:'';position:absolute;left:0;top:4px;width:16px;height:16px;border:2px solid var(--lucro);border-radius:4px}
+  .badge{display:inline-block;background:#eff6ff;color:var(--brand-d);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:800;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;flex:none}
+  .tags{display:flex;flex-wrap:wrap;gap:7px}
+  .tags span{background:#eff6ff;color:var(--brand-d);border:1px solid #dbeafe;border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600}
+  /* Modelo de dados */
+  .entidade{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 12px;background:#fbfdff}
+  .ent-nome{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px;font-weight:700;color:var(--brand-d);margin:0 0 8px}
+  ul.campos{list-style:none;padding-left:0;margin:0;display:grid;gap:5px}
+  ul.campos li{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--ink-6);background:#fff;border:1px solid var(--line);border-radius:7px;padding:5px 9px;overflow-wrap:anywhere;word-break:break-word;margin:0}
+  /* API */
+  .endpoint{border-left:3px solid var(--brand);background:#fbfdff;border-radius:0 10px 10px 0;padding:10px 14px;margin:0 0 12px}
+  .ep-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .ep-rota{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:var(--ink);overflow-wrap:anywhere;word-break:break-word}
+  .ep-desc{font-size:13px;margin:7px 0 0}
+  .teste{border-left:3px solid var(--brand);padding-left:15px;margin:14px 0}
+  .empty{color:var(--ink-4)}
+  /* Diagramas */
+  .mermaid-box{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px;margin:6px 0 10px;overflow-x:auto;text-align:center}
+  .mermaid{font-size:14px}
+  .disclaimer{margin-top:26px;font-size:12px;color:var(--ink-4);border-top:1px solid var(--line);padding-top:16px}
+  @media print{body{background:#fff}.wrap{padding:0}.toc{display:none}section{break-inside:avoid;border:none;border-bottom:1px solid var(--line);border-radius:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="doc">
+    <div class="kicker">RODE COM LUCRO · PRD Técnico</div>
+    <h1>Diesel na rota · App</h1>
+    <p class="sub">Guia de desenvolvimento para dev full-stack sênior. O protótipo está 100% mockado; este documento orienta a construção real da funcionalidade.</p>
+    <div class="meta">
+      <div class="pill"><span>Esforço</span><b>26–36 dev-dias</b></div>
+      <div class="pill"><span>Prazo</span><b>6 a 7 semanas</b></div>
+      <div class="pill"><span>Custo estimado</span><b>R$ 55k–R$ 76k</b></div>
+      <div class="pill"><span>Premissa</span><b>R$ 2.100/dev-dia</b></div>
+    </div>
+  </header>
+  <nav class="toc"><a href="#s1">Visão técnica</a><a href="#s2">Arquitetura</a><a href="#s3">Stack</a><a href="#s4">Modelo de dados</a><a href="#s5">Contratos de API</a><a href="#s6">Frontend / fluxo</a><a href="#s7">Lógica de negócio</a><a href="#s8">Integrações</a><a href="#s9">Segurança &amp; LGPD</a><a href="#s10">Não-funcionais</a><a href="#s11">Etapas</a><a href="#s12">Plano de teste</a><a href="#s13">Critérios de aceite</a><a href="#s14">Diagramas</a></nav>
+
+  <section id="s1"><h2><span class="n">1</span>Visão técnica</h2><p>Modulo &quot;Diesel na rota&quot; (canal App) do RODE COM LUCRO: copiloto que mostra postos rodoviarios com diesel mais barato na rota ativa e no entorno, dispara ALERTA geolocalizado proativo ao se aproximar de um posto abaixo da media (&quot;passando por Ourinhos - Posto X a R$ 5,89/L, R$ 0,27/L mais barato, ~R$ 190 no tanque de 700 L, 6 km a frente&quot;), e calcula economia por tanque (capacidade do caminhao x delta R$/L). O preco e abastecido por crowdsourcing (informar/confirmar/contestar com timestamp+geo) e por OCR de foto da placa de precos (extrai S10/S500, motorista confirma antes de publicar). Sobre isso roda antifraude (faixa de plausibilidade por regiao, variacao maxima, consenso, reputacao) e gamificacao (pontos/badges/ranking integrados a comunidade existente, COMUNIDADE_PONTOS=240). O coracao tecnico sao tres frentes nao-triviais alem do CRUD: (1) geolocalizacao em background eficiente em bateria + map matching da posicao sobre a polilinha da rota ativa, (2) pipeline de OCR de placa com confirmacao humana, (3) base de POIs de postos rodoviarios (km/sentido) + motor de consenso/antifraude/TTL de frescor. O mock atual (src/data/diesel.ts: LOCALIZACAO_ATUAL, ALERTA_DIESEL, CALCULO_ECONOMIA, POSTOS_REGIAO; e src/data/produto.ts: interface PostoRota {nome,local,preco,economia,melhor?}, POSTOS_ROTA, DIESEL_RESUMO) entrega toda a UI com precos como string formatada ('R$ 5,89/L'); este PRD transforma os dados estaticos em backend real georreferenciado, migrando precos de string para price_cents (int) e expondo um adaptador toPostoRota() para nao quebrar os componentes existentes. E modulo de Evolucao (nao-core do MVP), o maior do carrinho de evolucao do app (26-36 dev-dias, 6-7 semanas). Principio inegociavel: alerta com antecedencia util e SEM spam (1 por posto por janela, silencio fora de viagem), localizacao sempre opt-in com finalidade clara e botao de desligar; nenhum preco publicado sem confirmacao humana; nenhum preco escrito direto pelo cliente.</p></section>
+  <section id="s2"><h2><span class="n">2</span>Arquitetura</h2><ul><li>PWA mobile-first React 18+TS (Vite) consome backend Supabase (Postgres 15 + PostGIS 3) com Edge Functions (Deno) e Row Level Security para isolamento por usuario, alinhado a stack dos demais modulos RODE.</li><li>Geometria espacial 100% no Postgres via PostGIS: postos como geometry(Point,4326), rota ativa como LineString; consultas de proximidade (ST_DWithin geography) e snap-to-route (ST_LineLocatePoint/ST_ClosestPoint) com indice GIST em fuel_station.geom.</li><li>Map matching no CLIENTE (leve): o app baixa a polilinha da rota ativa uma vez, faz o snap da posicao localmente (Turf.js nearestPointOnLine) e so chama o backend para o alerta quando entra na geofence de um posto candidato pre-carregado - economiza bateria e rede na estrada. O servidor reconfirma a regra (fonte unica da verdade) antes de aprovar o disparo.</li><li>Preco como evento append-only: tabela price_report (cada informe/confirmacao/contestacao e uma linha imutavel com geo+timestamp+autor); o preco vigente de cada posto e materializado por um job de consenso em station_price_current, nunca sobrescrito a mao. Edits sao novos reports, nunca UPDATE em price_report.</li><li>OCR assincrono: foto vai para Storage privado (bucket price-photos), Edge Function ocr-extract chama provider de Vision, devolve S10/S500 com bounding boxes para o motorista CONFIRMAR; so apos confirmacao explicita vira price_report. Nunca publica automatico.</li><li>Alerta proativo desacoplado: cliente detecta geofence -&gt; chama Edge Function decide-alerta (aplica limiar, dedup por posto/janela, TTL do preco, sentido de viagem, quiet hours) -&gt; se aprovado, grava fuel_alert_log e envia push via FCM + card no app. Servidor e a fonte unica da regra de disparo, reusada pelo modulo diesel-wpp.</li><li>Offline-first na estrada: rota + postos do corredor + precos vigentes ficam em cache (IndexedDB); informes feitos sem sinal entram em fila local idempotente (uuid gerado no cliente) e sincronizam ao voltar a conexao com retry exponencial; o uuid e a chave de idempotencia no ingest-price.</li><li>Antifraude como camada de servico chamada na ingestao de cada price_report (nunca no cliente): valida faixa regional [p5,p95], delta vs vigente, e distancia ao posto; marca estado pendente/confirmado/suspeito antes de afetar o consenso.</li><li>Observabilidade: cada Edge Function loga request_id, user_id, latencia e decisao; metricas de cobertura/frescor e taxa de alerta expostas em view para dashboard; kill-switch global de alertas e teto de Vision por usuario/dia configuraveis em tabela feature_flags.</li></ul></section>
+  <section id="s3"><h2><span class="n">3</span>Stack sugerida</h2><div class="tags"><span>Frontend: React 18 + TypeScript + Vite (PWA), Tailwind e Framer Motion (ja no repo); mapa com MapLibre GL JS + tiles MapTiler/Protomaps (sem custo de Google Maps); Turf.js para snap/geofence no cliente; Geolocation API + Background/Periodic Sync do Service Worker para captura em background; Zustand para estado (useDieselStore).</span><span>Backend: Supabase (Postgres 15 + PostGIS 3) com RLS; Edge Functions em Deno/TypeScript (station-search, ingest-price, ocr-extract, decide-alerta, economia-tanque, alert-feedback).</span><span>Geo/roteirizacao: PostGIS para proximidade e map matching server-side; polilinha da rota vem do modulo Calculadora/Encontrar frete (API de rotas de caminhao ja contratada la); OSRM/Valhalla self-host opcional para snap-to-road de POIs no seed.</span><span>OCR/Vision: Google Cloud Vision API ou AWS Textract (DOCUMENT_TEXT_DETECTION) para ler placa de precos; fallback de digitacao manual sempre disponivel.</span><span>Push: Firebase Cloud Messaging (Web Push/FCM) para o alerta proativo; integra com o servico de push ja previsto no modulo Documentos.</span><span>Jobs/cron: pg_cron (ou Supabase Scheduled Functions) para consenso periodico (a cada 5 min), expiracao de precos por TTL, refresh de region_price_stats (diario) e materialized views.</span><span>Storage: Supabase Storage bucket privado 'price-photos' com URLs assinadas e expiraveis (TTL 5 min para leitura) para as fotos de placa; retencao 90 dias.</span><span>Testes: Vitest (unit), Supabase local + Deno test (integracao de Edge Functions e SQL), Playwright (e2e PWA com mock de geolocalizacao via CDP Emulation.setGeolocationOverride).</span></div></section>
+  <section id="s4"><h2><span class="n">4</span>Modelo de dados</h2><div class="entidade">
+        <p class="ent-nome">fuel_station (POI de posto rodoviario)</p>
+        <ul class="campos"><li>id uuid pk default gen_random_uuid()</li><li>name text not null</li><li>brand text null</li><li>geom geometry(Point,4326) not null (GIST index idx_fuel_station_geom)</li><li>address text</li><li>city text</li><li>uf char(2)</li><li>highway text (ex BR-153)</li><li>km numeric null</li><li>sentido text check in (crescente,decrescente,ambos) null</li><li>has_patio boolean default false</li><li>lat numeric</li><li>lng numeric</li><li>source text check in (osm,curadoria,crowd)</li><li>active boolean default true</li><li>created_at timestamptz default now()</li><li>updated_at timestamptz default now()</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">price_report (informe append-only de preco)</p>
+        <ul class="campos"><li>id uuid pk (gerado no cliente p/ idempotencia, ON CONFLICT DO NOTHING)</li><li>station_id uuid fk fuel_station</li><li>user_id uuid fk auth.users</li><li>fuel_type text check in (s10,s500)</li><li>price_cents int not null check (price_cents between 100 and 2000)</li><li>report_kind text check in (informe,confirma,contesta)</li><li>reported_geom geometry(Point,4326) (onde o usuario estava)</li><li>distance_from_station_m numeric (computado no ingest)</li><li>ocr_photo_path text null (Storage)</li><li>ocr_confidence numeric null</li><li>status text check in (pendente,confirmado,suspeito) default pendente</li><li>reject_reason text null</li><li>reported_at timestamptz not null</li><li>created_at timestamptz default now()</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">station_price_current (preco vigente materializado por consenso)</p>
+        <ul class="campos"><li>station_id uuid</li><li>fuel_type text</li><li>price_cents int</li><li>confidence_score numeric check (between 0 and 1)</li><li>reports_count int</li><li>last_confirmed_at timestamptz</li><li>freshness text (derivado em leitura: fresco&lt;6h/recente&lt;24h/velho&lt;48h/expirado&gt;=48h)</li><li>region_avg_cents int (media da regiao p/ delta)</li><li>is_below_avg boolean</li><li>updated_at timestamptz</li><li>pk (station_id, fuel_type)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">region_price_stats (faixas de plausibilidade p/ antifraude)</p>
+        <ul class="campos"><li>id uuid pk</li><li>uf char(2)</li><li>highway text null</li><li>fuel_type text</li><li>avg_cents int</li><li>p5_cents int</li><li>p95_cents int</li><li>max_daily_delta_cents int</li><li>sample_size int</li><li>window_start date</li><li>window_end date</li><li>computed_at timestamptz</li><li>unique (uf, coalesce(highway,''), fuel_type, window_end)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">driver_fuel_prefs (consentimento + preferencias de alerta)</p>
+        <ul class="campos"><li>user_id uuid pk fk auth.users</li><li>tank_liters int default 700 check (between 100 and 2000)</li><li>alerts_enabled boolean default false</li><li>geo_mode text check in (off,foreground,background) default off</li><li>geo_consent_at timestamptz null (LGPD)</li><li>geo_consent_revoked_at timestamptz null</li><li>geo_consent_version text (versao do texto aceito)</li><li>alert_radius_m int default 8000</li><li>min_delta_cents int default 15</li><li>min_pct_below numeric default 3</li><li>quiet_hours_start time null</li><li>quiet_hours_end time null</li><li>updated_at timestamptz</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">fuel_alert_log (auditoria/dedup/feedback do alerta)</p>
+        <ul class="campos"><li>id uuid pk</li><li>user_id uuid</li><li>station_id uuid</li><li>fuel_type text</li><li>price_cents int</li><li>delta_cents int</li><li>estimated_saving_cents int</li><li>sent_at timestamptz</li><li>channel text check in (app_push,wpp)</li><li>opened_at timestamptz null</li><li>clicked_at timestamptz null</li><li>resulted_fueling boolean null (feedback loop)</li><li>dedup_key text not null</li><li>unique (dedup_key)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">fuel_gamification (pontos/reputacao integrados a comunidade)</p>
+        <ul class="campos"><li>user_id uuid pk</li><li>points int default 0</li><li>reports_validated int default 0</li><li>reports_rejected int default 0</li><li>reputation numeric default 1.0 check (between 0.1 and 5.0) (peso no consenso)</li><li>badges jsonb default '[]'</li><li>updated_at timestamptz</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">feature_flags (kill-switch e tetos operacionais)</p>
+        <ul class="campos"><li>key text pk (ex alerts_enabled_global, vision_daily_cap_per_user, ingest_rate_per_min)</li><li>value jsonb</li><li>updated_at timestamptz</li><li>updated_by uuid</li></ul>
+      </div></section>
+  <section id="s5"><h2><span class="n">5</span>Contratos de API</h2><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/functions/v1/station-search?lat&amp;lng&amp;radius_m&amp;route_id?&amp;fuel_type</code></div>
+        <p class="ep-desc">Lista postos no raio (ST_DWithin geography) ou ao longo da rota ativa (buffer 500m), com preco vigente, freshness, delta vs media e flag melhor. Resposta: array no shape de PostoRota estendido { id, nome, local (highway+km), preco_cents, preco_fmt, fuel_type, distancia_m, lado_pista, freshness, delta_cents, economia_tanque_cents, reports_count, last_confirmed_at, melhor }. Erros: 400 (lat/lng ausentes ou radius_m&gt;50000), 401. Usado pela tela mapa/lista; adaptador toPostoRota() converte para o shape do mock.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/ingest-price</code></div>
+        <p class="ep-desc">Recebe price_report { id (uuid idempotente), station_id, fuel_type, price_cents, report_kind, reported_geom, ocr_photo_path? }. Computa distance_from_station_m, roda antifraude (faixa regional + delta vs vigente + distancia), grava com status pendente/confirmado/suspeito (ON CONFLICT(id) DO NOTHING), agenda re-consenso. Resposta: { report_id, status, requires_second_confirmation, points_awarded, reject_reason? }. Erros: 400 (price_cents fora de [100,2000]), 401, 422 (station_id inexistente), 429 (rate-limit).</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/ocr-extract</code></div>
+        <p class="ep-desc">Recebe { ocr_photo_path (apos upload ao Storage), station_id }. Verifica teto diario de Vision do usuario; chama provider; retorna candidatos { s10_cents?, s500_cents?, confidence, bounding_boxes } para o motorista CONFIRMAR. Nao publica. Em falha/baixa confianca (confidence&lt;0.6) retorna { fallback_manual: true }. Erros: 401, 429 (teto Vision/dia atingido), 502 (provider indisponivel -&gt; fallback_manual=true).</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/decide-alerta</code></div>
+        <p class="ep-desc">Chamado pelo cliente ao entrar na geofence de um posto candidato. Body { station_id, fuel_type, current_geom, route_id }. Aplica limiar (&gt;=min_pct_below% OU &gt;=min_delta_cents/L abaixo da media), TTL do preco, sentido de viagem vs posicao (ST_LineLocatePoint posicao &lt; posto), dedup por dedup_key, alert_radius_m e quiet hours; checa feature_flag alerts_enabled_global. Resposta: { should_alert, reason?, station, price_cents, delta_cents, saving_cents, message }. Se should_alert, grava fuel_alert_log e dispara FCM. Mesma regra reusada por diesel-wpp.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/functions/v1/economia-tanque?station_id&amp;fuel_type</code></div>
+        <p class="ep-desc">Calcula economia por tanque para o motorista logado: tank_liters x (region_avg_cents - station_price_cents) em centavos, com a conta transparente. Resposta: { litros, delta_cents_litro, conta_texto ('700 L x R$ 0,27 = ~R$ 190'), economia_cents }. Se preco&gt;media, economia_cents&lt;=0 e conta_texto indica 'acima da media'. Erros: 401, 404 (sem preco vigente).</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">PATCH</span><code class="ep-rota">/rest/v1/driver_fuel_prefs (Supabase REST, RLS auth.uid()=user_id)</code></div>
+        <p class="ep-desc">Atualiza consentimento de localizacao (geo_mode, geo_consent_at, geo_consent_version), alerts_enabled, raio, limiar, tank_liters e quiet hours. Revogacao seta geo_consent_revoked_at=now() e geo_mode=off. Registra timestamps de consentimento/revogacao para LGPD. RLS impede ler/editar prefs de outro usuario.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/alert-feedback</code></div>
+        <p class="ep-desc">Registra abertura/clique/abastecimento no fuel_alert_log { alert_id, event (opened/clicked/fueled) } -&gt; opened_at/clicked_at/resulted_fueling, para o feedback loop que calibra o limiar e mede economia gerada. RLS: so o dono do alerta. Erros: 401, 404 (alert_id de outro usuario).</p>
+      </div></section>
+  <section id="s6"><h2><span class="n">6</span>Frontend / fluxo</h2><ul><li>Tela DieselNaRota (evolui o mock src/data/diesel.ts): header com LOCALIZACAO_ATUAL (cidade/uf/rodovia/km/preco medio regiao), card de alerta proativo (AlertaDieselCard reusando o shape de ALERTA_DIESEL), toggle mapa&lt;-&gt;lista. Estado: useDieselStore (Zustand) com { posicao, rotaAtiva (polyline), postosCorredor[], alertaPendente, prefs }. Adaptador toPostoRota(stationSearchItem) converte price_cents-&gt;'R$ 5,89/L' e economia_tanque_cents-&gt;'-R$ 190' mantendo a interface PostoRota existente.</li><li>MapaPostos: MapLibre com pins de posto coloridos por delta/freshness (verde=barato+fresco / cinza=referencia / amarelo=velho / sem cor=expirado), pin do melhor destacado, polilinha da rota; clique no pin abre PostoSheet.</li><li>ListaPostos: reusa o componente do mock que renderiza PostoRota (nome, local, preco, economia, melhor), ordenado por delta; badge de freshness ('confirmado ha 2h por 3 motoristas') e estado (pendente/suspeito oculto da lista publica).</li><li>PostoSheet (bottom sheet): preco S10/S500, economia por tanque com a conta (700 L x R$ 0,27 = ~R$ 190), botoes Confirmar preco / Contestar / Informar outro / Tirar foto (OCR), indicador de confiabilidade (confidence_score) e botao 'ver no mapa'.</li><li>FotoPlacaFlow: camera -&gt; upload ao Storage -&gt; ocr-extract -&gt; tela de confirmacao com os valores extraidos editaveis (S10/S500) e bounding boxes destacadas -&gt; publica via ingest-price. Fallback de digitacao manual sempre visivel; nunca publica sem toque explicito do motorista.</li><li>ConsentimentoGeo: modal LGPD de primeiro uso explicando finalidade unica (alerta de diesel na rota), opcoes foreground-only ou background, versao do texto registrada; link permanente em Ajustes para desligar e revogar; gamificacao mostrada na aba Comunidade existente (pontos/badges, COMUNIDADE_PONTOS).</li><li>Service Worker: geofencing leve (postos do corredor pre-carregados como circulos), captura de posicao de baixa frequencia, fila offline de informes (IndexedDB, idempotente) e recepcao de push do alerta; respeita geo_mode (off=nenhuma captura).</li></ul></section>
+  <section id="s7"><h2><span class="n">7</span>Lógica de negócio</h2><ul><li>Economia por tanque (formula central): economia_cents = tank_liters x (region_avg_cents - station_price_cents). Ex: 700 L x (616 - 589) = 700 x 27 = 18.900 centavos = R$ 189 (~R$ 190 arredondado para multiplo de 10 na exibicao), exatamente como CALCULO_ECONOMIA do mock. Sempre exibir a conta literal '700 L x R$ 0,27 = ~R$ 190'. Se region_avg&lt;=price, economia_cents&lt;=0 e a UI mostra 'sem economia / acima da media'.</li><li>Regra de disparo do alerta (ordem de avaliacao, primeira reprovacao para): dispara SE (a) feature_flag alerts_enabled_global=true, E (b) prefs.alerts_enabled=true e geo_mode!=off, E (c) (region_avg-price) &gt;= min_delta_cents (default 15) OU pct_below &gt;= min_pct_below (default 3%), E (d) posto a frente no sentido de viagem (ST_LineLocatePoint da posicao &lt; do posto na polilinha), E (e) dentro de alert_radius_m, E (f) preco nao expirado (freshness in fresco/recente), E (g) fora de quiet hours, E (h) dedup_key inexistente em fuel_alert_log. Caso contrario, silencio com reason explicito.</li><li>dedup_key = user_id + ':' + station_id + ':' + fuel_type + ':' + janela (date_trunc('day', now()) ou janela rolante de 6h). Unique constraint em fuel_alert_log garante 1 alerta por chave mesmo sob corrida (insert ON CONFLICT DO NOTHING decide o disparo).</li><li>Map matching: snap da posicao a polilinha da rota (Turf nearestPointOnLine no cliente, ST_ClosestPoint no servidor); so considera postos cujo ponto projetado esta a frente do motorista e dentro de um buffer lateral (500 m) da rota - evita alertar posto no sentido contrario ou de outra estrada.</li><li>Consenso de preco (job a cada 5 min): para cada (station, fuel_type) com price_reports nas ultimas 48h e status!=suspeito, ponderar por reputacao do autor e recencia (decay exponencial half-life 12h), tomar a mediana ponderada -&gt; price_cents vigente; confidence_score = f(numero de autores distintos, concordancia/desvio, recencia). Atualiza station_price_current; job idempotente.</li><li>Antifraude na ingestao: marca status=suspeito se price fora de [p5,p95] da region_price_stats OU delta vs vigente &gt; max_daily_delta_cents; rejeita (status=suspeito, reject_reason='distancia') se distance_from_station_m &gt; 300. Preco suspeito NAO entra no consenso ate 2a confirmacao independente (outro user_id) dentro da faixa.</li><li>Reputacao/gamificacao: informe que vira consenso =&gt; +10 pontos e +reputacao (cap 5.0); informe rejeitado por antifraude/contestacao vencedora =&gt; -reputacao (floor 0.1); reputacao alta da mais peso no consenso. Badges por preco validado, integrando COMUNIDADE_PONTOS existente (240 base).</li><li>Freshness/TTL: preco classificado fresco(&lt;6h)/recente(&lt;24h)/velho(&lt;48h)/expirado(&gt;=48h) derivado de last_confirmed_at em leitura; alerta so usa fresco/recente; lista mostra o rotulo; job de expiracao recalcula region_avg ignorando expirados.</li></ul></section>
+  <section id="s8"><h2><span class="n">8</span>Integrações</h2><ul><li>Google Cloud Vision API ou AWS Textract (DOCUMENT_TEXT_DETECTION) para OCR da placa de precos (S10/S500), com teto diario por usuario e fallback manual.</li><li>Firebase Cloud Messaging (FCM/Web Push) para o alerta proativo de diesel.</li><li>MapTiler/Protomaps tiles + MapLibre GL JS para o mapa (sem custo de Google Maps), com degradacao para lista se tiles indisponiveis.</li><li>OpenStreetMap (amenity=fuel) como fonte de seed dos POIs de postos rodoviarios, complementada por curadoria RODE.</li><li>API de rotas de caminhao do modulo Calculadora/Encontrar frete (origem da polilinha da rota ativa usada no map matching cliente e servidor).</li><li>Modulo Comunidade (gamificacao: pontos/badges, COMUNIDADE_PONTOS=240), modulo Financeiro (importar custo de diesel abastecido) e perfil/veiculo (tank_liters default 700).</li><li>Modulo diesel-wpp (canal WhatsApp) reusa a Edge Function decide-alerta como fonte unica da regra de disparo (channel=wpp em fuel_alert_log).</li></ul></section>
+  <section id="s9"><h2><span class="n">9</span>Segurança & LGPD</h2><ul><li>RLS por usuario: price_report e driver_fuel_prefs e fuel_alert_log isolados por user_id (auth.uid()); fuel_station e station_price_current sao leitura publica autenticada; escrita de preco so via Edge Function ingest-price (service role) que valida dono e antifraude - cliente NUNCA escreve preco direto (sem policy de INSERT em price_report para role authenticated).</li><li>LGPD - localizacao e dado sensivel: consentimento explicito e granular (foreground/background) registrado com timestamp e versao do texto em driver_fuel_prefs (geo_consent_at, geo_consent_version); finalidade unica e declarada (alerta de diesel na rota); botao de desligar/revogar sempre acessivel em Ajustes; revogacao (geo_consent_revoked_at, geo_mode=off) para captura imediatamente no Service Worker.</li><li>Minimizacao geo: armazenar apenas reported_geom do informe (necessario p/ antifraude de distancia), NAO a trilha continua de localizacao do motorista; posicao de background fica no cliente, so o evento de geofence (1 ponto) vai ao servidor em decide-alerta.</li><li>Retencao: fotos de placa (price-photos) com expiracao automatica (90 dias) e URLs assinadas curtas (TTL 5 min); price_report com geo anonimizavel (drop reported_geom) apos consolidacao do consenso; job de purge agendado.</li><li>Antifraude de manipulacao: faixa de plausibilidade [p5,p95] + consenso multi-fonte (autores distintos) + reputacao + exigencia de 2a confirmacao para variacao grande impedem posto/rival inflar ou rebaixar preco; trilha de auditoria imutavel por price_report (autor, geo, timestamp).</li><li>Politica de takedown: endpoint/processo para um posto contestar preco exibido; preco contestado entra em revisao (status do vigente=em_revisao) e some do alerta ate reconfirmacao - mitiga risco juridico/imagem; SLA de revisao documentado.</li><li>Custo/abuso: rate-limit por usuario em ingest-price (feature_flag ingest_rate_per_min) e ocr-extract (vision_daily_cap_per_user); kill-switch global de alertas (feature_flag alerts_enabled_global); validacao de price_cents em [100,2000] no banco e na funcao; URLs de Storage nunca publicas.</li></ul></section>
+  <section id="s10"><h2><span class="n">10</span>Não-funcionais</h2><ul><li>Bateria: captura de localizacao em background de baixa frequencia (geofencing por circulos pre-carregados, nao polling continuo); map matching no cliente sem round-trip por posicao; meta de consumo aceitavel (&lt;8% de bateria) em viagem de 8h em dispositivo Android de referencia.</li><li>Alerta com antecedencia util e anti-spam: 1 alerta por posto por janela (dedup com unique constraint), silencio fora de viagem e em quiet hours; latencia da geofence ao card/push p95 &lt; 5s.</li><li>OCR responde em poucos segundos (p95 &lt; 8s) e SEMPRE degrada para digitacao manual em falha/baixa confianca (&lt;0.6) ou teto atingido.</li><li>Conectividade ruim: rota + postos do corredor + precos em cache (IndexedDB); informes em fila offline idempotente que sincroniza ao reconectar com retry exponencial, sem duplicar (uuid cliente).</li><li>Frescor/cobertura: % de postos com preco confirmado nas ultimas 24-48h monitorado em view; cada preco com origem rastreavel (source) e estado (pendente/confirmado/suspeito); meta corredor piloto &gt;=60% de cobertura fresca.</li><li>station-search p95 &lt; 2s em 4G; consultas espaciais com indice GIST; region_price_stats/consenso calculados por job, nunca em request.</li><li>Confiabilidade: ingest e disparo idempotentes; jobs de consenso/expiracao idempotentes (re-rodar nao muda resultado); falha de OCR/Vision nao bloqueia o crowdsourcing manual; degradacao graciosa de mapa para lista se tiles indisponiveis.</li></ul></section>
+  <section id="s11"><h2><span class="n">11</span>Etapas de implementação</h2><ol><li>1. Habilitar PostGIS no Supabase; criar schema (fuel_station, price_report, station_price_current, region_price_stats, driver_fuel_prefs, fuel_alert_log, fuel_gamification, feature_flags) com indices GIST, constraints e politicas RLS; gerar types TS.</li><li>2. Seed da base de postos rodoviarios (POIs): importar OSM (amenity=fuel ao longo das BRs) + curadoria, geocodificar, atribuir highway/km/sentido. Cobrir primeiro 1-2 corredores piloto (BR-153 Ourinhos e BR-116).</li><li>3. station-search + tela Mapa/Lista lendo dados reais (substitui POSTOS_REGIAO/POSTOS_ROTA do mock) via adaptador toPostoRota; economia-tanque com a formula e a conta transparente.</li><li>4. Crowdsourcing: ingest-price (informar/confirmar/contestar) + PostoSheet com botoes; gamificacao basica (+pontos) integrada a Comunidade (COMUNIDADE_PONTOS).</li><li>5. Antifraude + consenso: region_price_stats, job de consenso ponderado por reputacao/recencia, estados pendente/confirmado/suspeito, freshness/TTL, exigencia de 2a confirmacao.</li><li>6. OCR de placa: upload ao Storage privado, ocr-extract (Vision) + tela de confirmacao editavel com bounding boxes; fallback manual e teto diario.</li><li>7. Geolocalizacao em background + map matching no cliente (Turf), geofences dos postos do corredor, fila offline; consentimento LGPD granular (modal + Ajustes).</li><li>8. Alerta proativo: decide-alerta (regra de disparo no servidor com dedup), push FCM, AlertaDieselCard, quiet hours, alert-feedback (feedback loop).</li><li>9. Hardening: rate-limit, kill-switch, takedown, retencao de fotos/geo, observabilidade de cobertura/frescor; testes (unit/integracao/e2e) e calibracao do limiar no corredor piloto.</li></ol></section>
+  <section id="s12"><h2><span class="n">12</span>Plano de teste</h2><div class="teste"><h4>unit</h4><ul><li>economiaTanque(tankL=700, avgC=616, priceC=589) === 18900 (centavos, R$ 189) e formatConta() === '700 L x R$ 0,27 = ~R$ 190' (arredonda exibicao para multiplo de 10)</li><li>economiaTanque com price&gt;=avg (700,600,620) retorna &lt;=0 e formatConta() indica 'acima da media' (nao gera economia negativa enganosa)</li><li>deveAlertar: delta 27c &gt;= min 15c E pct 4% &gt;= 3% E posto a frente E fresco E sem dedup =&gt; {should_alert:true}; mesmo posto/janela (dedup_key existente) =&gt; {should_alert:false, reason:'dedup'}; em quiet hours =&gt; {false,'quiet_hours'}; preco expirado &gt;=48h =&gt; {false,'expirado'}; posto atras na rota (LineLocatePoint posicao&gt;posto) =&gt; {false,'sentido'}; alerts_enabled_global=false =&gt; {false,'kill_switch'}</li><li>consenso: 3 informes (589,589,591) de autores distintos com reputacao [1.0,1.0,2.0] retornam mediana ponderada ~589 e confidence alto (&gt;0.7); 1 informe isolado reputacao 0.3 retorna confidence baixo (&lt;0.4)</li><li>antifraude: price 450 com p5=560 =&gt; status suspeito (reject_reason 'fora_faixa'); delta diario 80c &gt; max_daily_delta 50c =&gt; suspeito; distance_from_station_m 1200 (&gt;300) =&gt; suspeito reject_reason 'distancia'</li><li>freshness: last_confirmed_at de 3h =&gt; 'fresco'; 30h =&gt; 'recente'; 50h =&gt; 'expirado' e excluido do calculo de region_avg e do alerta</li><li>dedupKey(userA, stationX, s10, janela) e estavel e != dedupKey de userB ou stationY ou outra janela</li><li>toPostoRota({price_cents:589, economia_tanque_cents:-19000, melhor:true}) =&gt; {preco:'R$ 5,89/L', economia:'-R$ 190', melhor:true} compativel com a interface PostoRota existente</li></ul></div><div class="teste"><h4>integracao</h4><ul><li>POST ingest-price com mesmo id (reenvio offline) duas vezes =&gt; 1 unica linha em price_report (ON CONFLICT(id) DO NOTHING), resposta idempotente</li><li>ingest-price de preco fora da faixa [p5,p95] =&gt; grava status=suspeito, resposta requires_second_confirmation=true; station_price_current inalterado ate 2a confirmacao de outro user dentro da faixa</li><li>2a confirmacao independente (outro user_id, dentro da faixa) de preco suspeito =&gt; job de consenso promove a confirmado e atualiza station_price_current</li><li>station-search?lat&amp;lng&amp;radius_m=8000 retorna apenas postos dentro do ST_DWithin, ordenados por delta desc, com freshness, reports_count e melhor=true no mais barato; postos suspeitos/expirados nao marcam melhor</li><li>ocr-extract com foto valida retorna s10/s500 e bounding_boxes; com foto ruim retorna fallback_manual=true e NAO cria price_report; com teto Vision atingido =&gt; 429 e fallback_manual=true</li><li>decide-alerta respeita driver_fuel_prefs (alert_radius_m, min_delta_cents, quiet_hours) e grava fuel_alert_log uma vez; segunda chamada na mesma janela nao insere (unique dedup_key)</li><li>RLS: usuario A faz GET/PATCH em driver_fuel_prefs de B =&gt; 0 linhas / 403; A chama alert-feedback com alert_id de B =&gt; 404</li><li>PATCH driver_fuel_prefs revogando consentimento (geo_mode=off, geo_consent_revoked_at) =&gt; decide-alerta subsequente retorna should_alert=false reason='no_consent'</li><li>rate-limit: N+1 chamadas de ingest-price acima de ingest_rate_per_min no mesmo minuto =&gt; 429 na excedente</li><li>economia-tanque?station_id sem preco vigente =&gt; 404; com preco =&gt; conta_texto e economia_cents coerentes com a formula</li></ul></div><div class="teste"><h4>e2e</h4><ul><li>Motorista da consentimento de localizacao (modal LGPD, background), entra na rota BR-153, ao se aproximar do Posto X (~6 km) recebe push + AlertaDieselCard 'Posto X - R$ 5,89/L, R$ 0,27/L mais barato, ~R$ 190 no tanque de 700 L'; abre e ve a conta literal; geolocalizacao mockada via Playwright CDP</li><li>Motorista fotografa placa, ocr-extract retorna S10=5,89 editavel, confirma; preco vira informe pendente; um segundo motorista confirma; apos job de consenso entra em station_price_current e aparece na lista com '+10 pontos' na Comunidade</li><li>Motorista contesta um preco desatualizado (report_kind=contesta); preco entra em revisao e some do alerta e do destaque 'melhor' ate reconfirmacao</li><li>Sem sinal (offline no SW): motorista informa preco -&gt; fila IndexedDB; ao reconectar o informe sincroniza exatamente uma vez (mesmo uuid) sem duplicar e o motorista recebe os pontos</li><li>Motorista desliga alertas em Ajustes (alerts_enabled=false); ao passar por posto barato NAO recebe push e NAO ha nova linha em fuel_alert_log</li><li>Fallback OCR: foto ilegivel -&gt; tela oferece digitacao manual -&gt; motorista digita 6,05 -&gt; publica via ingest-price; nenhum preco foi publicado automaticamente</li><li>Quiet hours configurado (22h-06h): alerta passando por posto barato as 23h nao dispara; mesmo posto as 10h dispara</li></ul></div></section>
+  <section id="s13"><h2><span class="n">13</span>Critérios de aceite</h2><ul class="check"><li>Dado um motorista com tank_liters=700 e media regional R$6,16/L (616c), quando o Posto X informa R$5,89/L (589c), entao economia-tanque retorna economia_cents=18900 e o app exibe '700 L x R$ 0,27 = ~R$ 190' (formula = tank_liters x (region_avg_cents - price_cents)).</li><li>Dado geo_mode!=off, alerts_enabled=true e feature_flag alerts_enabled_global=true, quando o motorista esta a &lt;= alert_radius_m de um posto a frente no sentido de viagem com preco &gt;=min_pct_below% OU &gt;=min_delta_cents/L abaixo da media e freshness in {fresco,recente}, entao decide-alerta dispara exatamente 1 alerta (push+card) com cidade, rodovia/km, delta R$/L, distancia e economia no tanque, e grava 1 linha em fuel_alert_log.</li><li>Dado que ja existe linha em fuel_alert_log com o dedup_key (user+station+fuel_type+janela), quando o motorista permanece no raio e decide-alerta e chamado de novo, entao NENHUM novo alerta e disparado e nenhuma nova linha e inserida (unique constraint).</li><li>Dado um preco com last_confirmed_at &gt;= 48h, quando o motorista passa pelo posto, entao freshness='expirado', o preco NAO gera alerta e aparece na lista marcado como expirado/velho, e e excluido do calculo de region_avg.</li><li>Dado um informe de preco fora de [p5,p95] da regiao OU com delta diario &gt; max_daily_delta_cents OU distance_from_station_m&gt;300, quando enviado a ingest-price, entao e gravado com status='suspeito', resposta requires_second_confirmation=true (ou reject_reason='distancia'), e NAO altera station_price_current ate confirmacao independente de outro user_id dentro da faixa.</li><li>Dado um informe enviado offline com uuid U, quando o sinal volta e a fila sincroniza (eventualmente mais de uma vez), entao existe exatamente 1 linha em price_report com id=U e o motorista recebe os pontos uma unica vez.</li><li>Dado o fluxo de OCR, quando a leitura falha, tem confidence&lt;0.6 ou o teto diario de Vision e atingido, entao o app oferece digitacao manual, retorna fallback_manual=true e NUNCA publica preco sem confirmacao explicita do motorista (nenhum price_report criado por ocr-extract).</li><li>Dado que o motorista revoga o consentimento (geo_consent_revoked_at setado, geo_mode=off) ou desliga alertas, quando passa por um posto barato, entao o Service Worker para a captura de posicao e decide-alerta retorna should_alert=false (reason no_consent/disabled), comprovado por ausencia de novos registros em fuel_alert_log.</li><li>Dado um usuario A autenticado, quando tenta ler ou editar driver_fuel_prefs/price_report/fuel_alert_log de outro usuario B, entao a RLS retorna 0 linhas ou 403 e nenhuma escrita ocorre.</li><li>Dado que o cliente nao possui policy de INSERT em price_report, quando tenta gravar preco direto via REST, entao a operacao falha; precos so entram via Edge Function ingest-price (service role) apos antifraude.</li></ul></section>
+  <section id="s14"><h2><span class="n">14</span>Diagramas</h2><p class="hint">Renderizados com Mermaid — requer internet ao abrir o arquivo.</p><h4>Arquitetura da solução</h4><div class="mermaid-box"><pre class="mermaid">flowchart LR
+  subgraph cliente[&quot;Cliente&quot;]
+    pwa[&quot;PWA React + MapLibre + Turf.js&quot;]
+    sw[&quot;Service Worker (geofence + fila offline IndexedDB)&quot;]
+    wpp[&quot;Modulo diesel-wpp (WhatsApp)&quot;]
+  end
+  subgraph edge[&quot;Edge Functions (Deno)&quot;]
+    search[&quot;station-search&quot;]
+    ingest[&quot;ingest-price&quot;]
+    ocr[&quot;ocr-extract&quot;]
+    decide[&quot;decide-alerta&quot;]
+  end
+  db[(&quot;Postgres 15 + PostGIS + RLS&quot;)]
+  cron[&quot;pg_cron (consenso 5min, TTL, region_price_stats)&quot;]
+  storage[(&quot;Storage bucket price-photos&quot;)]
+  vision[&quot;Google Vision / AWS Textract&quot;]
+  fcm[&quot;Firebase Cloud Messaging&quot;]
+  pwa --&gt; search
+  pwa --&gt; ingest
+  pwa --&gt; ocr
+  sw --&gt; decide
+  wpp --&gt; decide
+  search --&gt; db
+  ingest --&gt; db
+  ocr --&gt; storage
+  ocr --&gt; vision
+  decide --&gt; db
+  decide --&gt; fcm
+  cron --&gt; db</pre></div><h4>Casos de uso</h4><div class="mermaid-box"><pre class="mermaid">flowchart LR
+  motorista((&quot;Motorista&quot;))
+  admin((&quot;Admin / Curadoria RODE&quot;))
+  sistema_ator((&quot;Sistema / Jobs&quot;))
+  subgraph Sistema[&quot;Sistema&quot;]
+    uc1[&quot;Ver postos na rota (station-search)&quot;]
+    uc2[&quot;Calcular economia por tanque&quot;]
+    uc3[&quot;Informar / Confirmar / Contestar preco (ingest-price)&quot;]
+    uc4[&quot;Fotografar placa (ocr-extract)&quot;]
+    uc5[&quot;Receber alerta proativo (decide-alerta)&quot;]
+    uc6[&quot;Gerenciar consentimento LGPD (driver_fuel_prefs)&quot;]
+    uc7[&quot;Rodar consenso e expiracao (TTL)&quot;]
+    uc8[&quot;Kill-switch e seed de POIs (feature_flags)&quot;]
+  end
+  motorista --&gt; uc1
+  motorista --&gt; uc2
+  motorista --&gt; uc3
+  motorista --&gt; uc4
+  motorista --&gt; uc5
+  motorista --&gt; uc6
+  sistema_ator --&gt; uc7
+  admin --&gt; uc8</pre></div><h4>Fluxo principal</h4><div class="mermaid-box"><pre class="mermaid">flowchart TD
+  start[&quot;Cliente entra na geofence de posto candidato&quot;]
+  chamada[&quot;Chama decide-alerta (station_id, fuel_type, current_geom, route_id)&quot;]
+  flag{&quot;alerts_enabled_global = true?&quot;}
+  consent{&quot;alerts_enabled e geo_mode ≠ off?&quot;}
+  limiar{&quot;delta ≥ min_delta_cents OU pct ≥ min_pct_below?&quot;}
+  sentido{&quot;posto a frente no sentido e dentro do raio?&quot;}
+  fresco{&quot;freshness in fresco/recente E fora de quiet hours?&quot;}
+  dedup{&quot;dedup_key inexistente em fuel_alert_log?&quot;}
+  grava[&quot;Grava fuel_alert_log + dispara FCM + AlertaDieselCard&quot;]
+  silencio[&quot;Silencio com reason explicito (kill_switch / no_consent / dedup / sentido / expirado / quiet_hours)&quot;]
+  start --&gt; chamada --&gt; flag
+  flag --&gt;|sim| consent
+  flag --&gt;|nao| silencio
+  consent --&gt;|sim| limiar
+  consent --&gt;|nao| silencio
+  limiar --&gt;|sim| sentido
+  limiar --&gt;|nao| silencio
+  sentido --&gt;|sim| fresco
+  sentido --&gt;|nao| silencio
+  fresco --&gt;|sim| dedup
+  fresco --&gt;|nao| silencio
+  dedup --&gt;|sim| grava
+  dedup --&gt;|nao| silencio</pre></div><h4>UML — classes/serviços</h4><div class="mermaid-box"><pre class="mermaid">classDiagram
+  class StationSearch {
+    +buscar(lat, lng, radius_m, route_id, fuel_type) PostoRota
+  }
+  class IngestPrice {
+    +ingest(report) Resultado
+    -computarDistancia(reported_geom) number
+    -rodarAntifraude(price_cents) status
+  }
+  class OcrExtract {
+    +extrair(ocr_photo_path, station_id) Candidatos
+    +verificarTetoVision(user_id) boolean
+  }
+  class DecideAlerta {
+    +decidir(station_id, fuel_type, current_geom, route_id) Decisao
+    -checarDedup(dedup_key) boolean
+  }
+  class EconomiaTanque {
+    +calcular(station_id, fuel_type) Economia
+  }
+  class ConsensoJob {
+    +recalcular() void
+    -medianaPonderada(reports) int
+  }
+  class FuelStation {
+    +uuid id
+    +geometry geom
+    +text highway
+    +numeric km
+  }
+  class PriceReport {
+    +uuid id
+    +int price_cents
+    +text report_kind
+    +text status
+  }
+  class StationPriceCurrent {
+    +int price_cents
+    +numeric confidence_score
+    +text freshness
+  }
+  StationSearch ..&gt; FuelStation
+  StationSearch ..&gt; StationPriceCurrent
+  IngestPrice ..&gt; PriceReport
+  OcrExtract ..&gt; PriceReport
+  DecideAlerta ..&gt; StationPriceCurrent
+  EconomiaTanque ..&gt; StationPriceCurrent
+  ConsensoJob ..&gt; PriceReport
+  ConsensoJob ..&gt; StationPriceCurrent
+  FuelStation &quot;1&quot; --o &quot;many&quot; PriceReport
+  FuelStation &quot;1&quot; --o &quot;many&quot; StationPriceCurrent</pre></div><h4>Banco de dados (ER)</h4><div class="mermaid-box"><pre class="mermaid">erDiagram
+  fuel_station ||--o{ price_report : recebe
+  fuel_station ||--o{ station_price_current : materializa
+  fuel_station ||--o{ fuel_alert_log : refere
+  driver_fuel_prefs ||--o{ fuel_alert_log : dispara
+  fuel_gamification ||--o{ price_report : pondera
+  region_price_stats ||--o{ price_report : valida
+  fuel_station {
+    uuid id PK
+    geometry geom
+    text highway
+    numeric km
+    text sentido
+    text source
+  }
+  price_report {
+    uuid id PK
+    uuid station_id FK
+    uuid user_id FK
+    text fuel_type
+    int price_cents
+    text report_kind
+    text status
+  }
+  station_price_current {
+    uuid station_id PK
+    text fuel_type PK
+    int price_cents
+    numeric confidence_score
+    timestamptz last_confirmed_at
+  }
+  region_price_stats {
+    uuid id PK
+    char uf
+    text fuel_type
+    int p5_cents
+    int p95_cents
+    int max_daily_delta_cents
+  }
+  driver_fuel_prefs {
+    uuid user_id PK
+    int tank_liters
+    boolean alerts_enabled
+    text geo_mode
+    int min_delta_cents
+  }
+  fuel_alert_log {
+    uuid id PK
+    uuid user_id FK
+    uuid station_id FK
+    int estimated_saving_cents
+    text dedup_key
+  }
+  fuel_gamification {
+    uuid user_id PK
+    int points
+    numeric reputation
+    jsonb badges
+  }</pre></div><h4>Lógica do plano de testes</h4><div class="mermaid-box"><pre class="mermaid">flowchart TD
+  subgraph unit[&quot;Unit (Vitest)&quot;]
+    u1[&quot;economiaTanque(700,616,589)=18900 e formatConta '700 L x R$ 0,27 = ~R$ 190'&quot;]
+    u2[&quot;deveAlertar: dedup / quiet_hours / expirado / sentido / kill_switch&quot;]
+    u3[&quot;consenso mediana ponderada + confidence; antifraude fora_faixa/distancia&quot;]
+    u4[&quot;freshness fresco/recente/expirado; toPostoRota price_cents para 'R$ 5,89/L'&quot;]
+  end
+  subgraph integ[&quot;Integracao (Supabase local + Deno test)&quot;]
+    i1[&quot;ingest-price reenvio mesmo id =&gt; 1 linha (ON CONFLICT DO NOTHING)&quot;]
+    i2[&quot;preco fora faixa =&gt; suspeito + requires_second_confirmation&quot;]
+    i3[&quot;station-search ST_DWithin ordenado por delta, melhor no mais barato&quot;]
+    i4[&quot;RLS isola driver_fuel_prefs/alert-feedback; rate-limit 429&quot;]
+  end
+  subgraph e2e[&quot;E2E (Playwright + CDP geolocation)&quot;]
+    e1[&quot;Geofence BR-153 =&gt; push + AlertaDieselCard com a conta literal&quot;]
+    e2[&quot;Foto placa -&gt; ocr-extract -&gt; confirma -&gt; 2o motorista -&gt; consenso -&gt; lista&quot;]
+    e3[&quot;Offline SW informa preco -&gt; fila -&gt; sincroniza 1x sem duplicar&quot;]
+    e4[&quot;Revoga consentimento / quiet hours =&gt; sem novo fuel_alert_log&quot;]
+  end
+  unit --&gt; integ --&gt; e2e</pre></div></section>
+
+  <p class="disclaimer">Documento gerado para orientar o desenvolvimento. Estimativas de esforço/custo são ordem de grandeza para planejamento (premissa R$ 2.100/dev-dia, equipe enxuta) — não é proposta comercial. O veredito de lucratividade do produto é estimativa; o piso ANTT é referência regulatória.</p>
+</div>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose', flowchart: { useMaxWidth: true }, er: { useMaxWidth: true } });
+</script>
+</body>
+</html>

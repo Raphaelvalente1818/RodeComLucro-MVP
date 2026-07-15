@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PRD Técnico — Portal de empresas · Web · RODE COM LUCRO</title>
+<style>
+  :root{--brand:#2563eb;--brand-d:#1e40af;--ink:#0f172a;--ink-6:#475569;--ink-4:#94a3b8;--line:#e2e8f0;--bg:#f1f5f9;--card:#fff;--lucro:#059669}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.6;-webkit-text-size-adjust:100%}
+  .wrap{max-width:920px;margin:0 auto;padding:40px 20px 90px}
+  header.doc{border-bottom:3px solid var(--brand);padding-bottom:20px;margin-bottom:10px}
+  .kicker{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand)}
+  h1{font-size:30px;line-height:1.15;margin:8px 0 6px;font-weight:800;letter-spacing:-.01em}
+  .sub{color:var(--ink-6);font-size:15px;max-width:64ch}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  .pill{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 14px}
+  .pill b{display:block;font-size:16px;color:var(--ink)}
+  .pill span{color:var(--ink-4);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .toc{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 4px}
+  .toc a{font-size:12px;font-weight:600;color:var(--brand-d);background:#eef4ff;border:1px solid #dbe6ff;border-radius:999px;padding:4px 11px;text-decoration:none}
+  .toc a:hover{background:#dbe6ff}
+  section{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-top:18px;scroll-margin-top:14px}
+  h2{font-size:18px;margin:0 0 14px;display:flex;align-items:center;gap:9px;font-weight:800}
+  h2 .n{display:inline-flex;width:26px;height:26px;align-items:center;justify-content:center;background:var(--brand);color:#fff;border-radius:8px;font-size:13px;font-weight:800;flex:none}
+  h4{margin:18px 0 8px;font-size:14px;color:var(--brand-d);font-weight:700}
+  h4:first-of-type{margin-top:4px}
+  p{margin:0 0 10px;color:var(--ink-6)}
+  .hint{font-size:12px;color:var(--ink-4);margin-top:-4px}
+  ul,ol{margin:0;padding-left:22px}
+  li{margin:6px 0;color:var(--ink-6)}
+  ul.check{list-style:none;padding-left:0}
+  ul.check li{position:relative;padding-left:28px;margin:9px 0}
+  ul.check li::before{content:'';position:absolute;left:0;top:4px;width:16px;height:16px;border:2px solid var(--lucro);border-radius:4px}
+  .badge{display:inline-block;background:#eff6ff;color:var(--brand-d);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:800;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;flex:none}
+  .tags{display:flex;flex-wrap:wrap;gap:7px}
+  .tags span{background:#eff6ff;color:var(--brand-d);border:1px solid #dbeafe;border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600}
+  /* Modelo de dados */
+  .entidade{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 12px;background:#fbfdff}
+  .ent-nome{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px;font-weight:700;color:var(--brand-d);margin:0 0 8px}
+  ul.campos{list-style:none;padding-left:0;margin:0;display:grid;gap:5px}
+  ul.campos li{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--ink-6);background:#fff;border:1px solid var(--line);border-radius:7px;padding:5px 9px;overflow-wrap:anywhere;word-break:break-word;margin:0}
+  /* API */
+  .endpoint{border-left:3px solid var(--brand);background:#fbfdff;border-radius:0 10px 10px 0;padding:10px 14px;margin:0 0 12px}
+  .ep-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .ep-rota{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:var(--ink);overflow-wrap:anywhere;word-break:break-word}
+  .ep-desc{font-size:13px;margin:7px 0 0}
+  .teste{border-left:3px solid var(--brand);padding-left:15px;margin:14px 0}
+  .empty{color:var(--ink-4)}
+  /* Diagramas */
+  .mermaid-box{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px;margin:6px 0 10px;overflow-x:auto;text-align:center}
+  .mermaid{font-size:14px}
+  .disclaimer{margin-top:26px;font-size:12px;color:var(--ink-4);border-top:1px solid var(--line);padding-top:16px}
+  @media print{body{background:#fff}.wrap{padding:0}.toc{display:none}section{break-inside:avoid;border:none;border-bottom:1px solid var(--line);border-radius:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="doc">
+    <div class="kicker">RODE COM LUCRO · PRD Técnico</div>
+    <h1>Portal de empresas · Web</h1>
+    <p class="sub">Guia de desenvolvimento para dev full-stack sênior. O protótipo está 100% mockado; este documento orienta a construção real da funcionalidade.</p>
+    <div class="meta">
+      <div class="pill"><span>Esforço</span><b>34–48 dev-dias</b></div>
+      <div class="pill"><span>Prazo</span><b>7 a 9 semanas</b></div>
+      <div class="pill"><span>Custo estimado</span><b>R$ 71k–R$ 101k</b></div>
+      <div class="pill"><span>Premissa</span><b>R$ 2.100/dev-dia</b></div>
+    </div>
+  </header>
+  <nav class="toc"><a href="#s1">Visão técnica</a><a href="#s2">Arquitetura</a><a href="#s3">Stack</a><a href="#s4">Modelo de dados</a><a href="#s5">Contratos de API</a><a href="#s6">Frontend / fluxo</a><a href="#s7">Lógica de negócio</a><a href="#s8">Integrações</a><a href="#s9">Segurança &amp; LGPD</a><a href="#s10">Não-funcionais</a><a href="#s11">Etapas</a><a href="#s12">Plano de teste</a><a href="#s13">Critérios de aceite</a><a href="#s14">Diagramas</a></nav>
+
+  <section id="s1"><h2><span class="n">1</span>Visão técnica</h2><p>Portal B2B 'RODE Empresas' (canal Web, app separado do PWA do motorista em src/mvp/MvpApp.tsx, mesma base Supabase) onde embarcadores/transportadoras se cadastram, passam por KYC PJ (validacao de CNPJ na Receita via BrasilAPI), sao aprovados por moderacao interna (admin) e publicam oportunidades de frete (opportunities) que entram no MESMO feed B2C do motorista como itens direto=true (sem raspagem). Cada oportunidade publicada dispara o motor de MATCHING que, para os motoristas elegiveis (perfil de caminhao/carroceria/regiao + disponibilidade), calcula um match_pct (compatibilidade carroceria/rota/janela/exigencias, gravado so se &gt;=50) e um score (qualidade da oferta vs custo do motorista, reaproveitando calcularFrete de src/lib/calc.ts e o scoreRode do MVP, Math.max(20,Math.min(98,Math.round(60+pctTabela)))). O motorista, no app, ve o frete e clica 'Tenho interesse' (hoje estado mockado setInteresse em MvpApp.tsx:1234); isso cria um registro opportunity_interests que aparece na tela Interessados do portal, ordenado por match_pct desc, com botao WhatsApp e 'Escolher'. A integracao e bidirecional: status Ativa/Pausada/Encerrada controla a visibilidade no feed; interesse e escolha refletem de volta no portal; encerrar/escolher remove a oferta do feed. Isolamento total por empresa via Row Level Security no Postgres (cada linha de companies/opportunities/interests filtrada por company_id derivado do JWT). LGPD: telefone do motorista so e revelado a empresa apos o interesse, via Edge Function auditada. O alvo de producao substitui os mocks de src/data/empresa.ts (EMPRESA, EMPRESA_DOCS, APROVACAO_STEPS, OPORTUNIDADES_EMPRESA, INTERESSADOS, EMPRESA_KPIS) por dados reais; o objetivo e levar o prototipo mockado a um portal funcional com auth e-mail+senha, KYC PJ, CRUD de oportunidades, matching e moderacao admin.</p></section>
+  <section id="s2"><h2><span class="n">2</span>Arquitetura</h2><ul><li>Frontend separado: app web React+TS (Vite) 'RODE Empresas' (rota /empresa, hoje src/empresa/EmpresaApp.tsx 100% mockado), desktop/tablet-first (vs PWA mobile-first do motorista em src/mvp/MvpApp.tsx), compartilhando design tokens (brand-700/lucro-600/ink-*) e tipos (FreteFeed, CARROCERIAS, TIPOS_CARGA de src/data/produto.ts; TIPOS_EMPRESA de src/data/empresa.ts). Deploy independente possivel em subdominio empresas.rode.app.</li><li>Backend unico Supabase/Postgres compartilhado entre app do motorista e portal: separacao de publico LOGICA (RLS + claims app_role in (driver|company|admin) e company_id no JWT), nao fisica. Permite que a oportunidade publicada apareca no feed do motorista sem ETL entre bancos.</li><li>Auth: Supabase Auth e-mail+senha para empresas (provider email, verificacao de e-mail obrigatoria antes de publicar), separado do OTP/WhatsApp do motorista. Custom claims app_role e company_id injetados via Auth Hook (Postgres function before-token) a partir de companies.auth_user_id, consumidos pelas policies RLS.</li><li>Camada de dados protegida por RLS em TODAS as tabelas de negocio (companies, company_documents, company_kyc_checks, approval_events, opportunities, opportunity_matches, opportunity_interests). Escrita de campos sensiveis (companies.status, opportunity_matches.score/match_pct, company_documents.status='Validado') so via Edge Functions com service_role; cliente nunca os grava (WITH CHECK bloqueia).</li><li>KYC PJ como Edge Function kyc-cnpj que consulta situacao cadastral na Receita (BrasilAPI primaria, CNPJa fallback), grava company_kyc_checks; resultado parcial automatico (aprovado_auto) + aprovacao final SEMPRE humana (admin) para evitar falso-positivo.</li><li>Storage privado (bucket company-docs) para cartao CNPJ, contrato social, comprovante de endereco e foto da fachada; acesso exclusivo por URL assinada TTL 120s emitida por sign-doc-url apos checagem RLS; nada publico; path com uuid sem PII.</li><li>Motor de matching como Edge Function match-opportunity acionada (a) na publicacao/edicao de oportunidade (trigger via pg_net, nao bloqueia o INSERT) e (b) por cron noturno de re-calculo; grava opportunity_matches (driver_id, opportunity_id, match_pct, score, fatores). Reusa calcularFrete de src/lib/calc.ts e scoreRode (Math.max(20,Math.min(98,round(60+pctTabela)))) portados para Deno.</li><li>Integracao bidirecional com feed B2C: endpoint/VIEW feed-fretes une fretes raspados (Fretebras) + oportunidades direto=true (tipo FreteFeed ja existente); mudanca de status da oportunidade reflete na visibilidade do feed em &lt;5s via realtime/revalidacao.</li><li>Moderacao admin reusa o painel interno src/admin acrescentando aba 'Empresas' (fila de aprovacao com resultado do KYC + docs, e moderacao de oportunidades suspeitas), seguindo EMBARCADORES_ADMIN/ADMIN_VIEWS de src/data/admin.ts.</li><li>Jobs/cron (pg_cron + pg_net + Edge Functions): re-calculo de matches, expiracao de oportunidades com data_coleta vencida (Ativa-&gt;Encerrada motivo 'coleta expirada'), revalidacao periodica de CNPJ (INAPTA/BAIXADA -&gt; companies.status='suspensa' e oportunidades ativas pausadas).</li><li>Observabilidade: tabela audit_log (LGPD/seguranca) + Supabase logs; Sentry no front do portal; alertas em falha de KYC, falha de matching e divergencia de contagem de interessados.</li></ul></section>
+  <section id="s3"><h2><span class="n">3</span>Stack sugerida</h2><div class="tags"><span>Frontend: React 18 + TypeScript + Vite (mesmo toolchain do repo), TailwindCSS com tokens existentes (brand-700, lucro-600, ink-*), react-router-dom, lucide-react (icones ja usados: Building2, ShieldCheck, Users, MapPin, CheckCircle2), react-hook-form + zod para formularios de cadastro/oportunidade, @tanstack/react-query para data-fetching/cache contra o Supabase, supabase realtime channel para contagem de interessados e status de aprovacao ao vivo.</span><span>Auth/SDK: @supabase/supabase-js v2 (e-mail+senha, sessao, signed URLs, RPC, realtime). Validacao de CNPJ no cliente (digitos verificadores mod 11 + mascara) e autoritativa no servidor; forca de senha com zxcvbn no front.</span><span>Backend: Supabase (Postgres 15 + Row Level Security), Edge Functions Deno/TypeScript (kyc-cnpj, match-opportunity, sign-doc-url, admin-approve-company, reveal-driver-contact, company-signup), Supabase Storage (bucket privado company-docs), pg_cron + pg_net para jobs e disparo assincrono, extensao pg_trgm para similaridade de razao social.</span><span>KYC PJ: BrasilAPI (gratuito, GET /cnpj/v1/{cnpj}) primaria e CNPJa/ReceitaWS fallback pago; resultado normalizado e persistido em company_kyc_checks. WhatsApp Cloud API (Meta) NAO e canal primario (portal e Web) mas notifica empresa/motorista de match/escolha e gera link wa.me na tela Interessados.</span><span>Observabilidade: Supabase logs + audit_log; Sentry no front do portal.</span><span>Testes: Vitest (unit de matching/score/validacao CNPJ/expiracao), Testing Library (telas Cadastro/Documentos/Status/Interessados), Playwright (e2e cadastro-&gt;KYC-&gt;aprovacao-&gt;publicar-&gt;match-&gt;interessado-&gt;escolher), pgTAP ou integracao via supabase-js contra banco efemero (supabase start) para RLS e triggers.</span></div></section>
+  <section id="s4"><h2><span class="n">4</span>Modelo de dados</h2><div class="entidade">
+        <p class="ent-nome">companies</p>
+        <ul class="campos"><li>id uuid PK</li><li>auth_user_id uuid FK-&gt;auth.users UNIQUE</li><li>cnpj varchar(14) UNIQUE NOT NULL (so digitos)</li><li>razao_social text NOT NULL</li><li>nome_fantasia text</li><li>tipo_empresa text CHECK in ('Transportadora','Embarcador','Industria','Agente de cargas') [TIPOS_EMPRESA]</li><li>responsavel_nome text</li><li>email_corporativo citext</li><li>telefone varchar</li><li>cidade text</li><li>uf char(2)</li><li>status text CHECK in ('cadastro_enviado','em_analise','aprovada','reprovada','suspensa') NOT NULL default 'cadastro_enviado'</li><li>aprovada_em timestamptz</li><li>reprovada_motivo text</li><li>created_at timestamptz default now()</li><li>updated_at timestamptz</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">company_documents</p>
+        <ul class="campos"><li>id uuid PK</li><li>company_id uuid FK-&gt;companies ON DELETE CASCADE</li><li>tipo text CHECK in ('cartao_cnpj','contrato_social','comprovante_endereco','foto_fachada')</li><li>storage_path text</li><li>status text CHECK in ('Pendente','Enviado','Validado','Rejeitado') default 'Pendente'</li><li>detalhe text</li><li>uploaded_at timestamptz</li><li>validado_por uuid (admin)</li><li>validado_em timestamptz</li><li>UNIQUE(company_id,tipo)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">company_kyc_checks</p>
+        <ul class="campos"><li>id uuid PK</li><li>company_id uuid FK</li><li>cnpj varchar(14)</li><li>provider text CHECK in ('brasilapi','cnpja','receitaws')</li><li>situacao_cadastral text CHECK in ('ATIVA','BAIXADA','INAPTA','SUSPENSA','NULA')</li><li>razao_social_receita text</li><li>data_situacao date</li><li>cnae_principal text</li><li>uf char(2)</li><li>raw_response jsonb</li><li>match_razao_social boolean</li><li>aprovado_auto boolean</li><li>checked_at timestamptz default now()</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">approval_events</p>
+        <ul class="campos"><li>id uuid PK</li><li>company_id uuid FK ON DELETE CASCADE</li><li>step text CHECK in ('cadastro_enviado','em_analise','aprovada','reprovada')</li><li>descricao text</li><li>ator text CHECK in ('sistema','admin')</li><li>ator_id uuid</li><li>created_at timestamptz default now() — alimenta a timeline da tela Status (substitui APROVACAO_STEPS mock)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">opportunities</p>
+        <ul class="campos"><li>id uuid PK</li><li>company_id uuid FK</li><li>origem_cidade text</li><li>origem_uf char(2)</li><li>destino_cidade text</li><li>destino_uf char(2)</li><li>distancia_km int</li><li>tipo_carga text [TIPOS_CARGA]</li><li>peso_t numeric(6,2)</li><li>carroceria text [CARROCERIAS]</li><li>valor_centavos int CHECK (&gt;0)</li><li>data_coleta timestamptz</li><li>exige_rastreador boolean default false</li><li>exige_seguro boolean default false</li><li>exige_gerenciadora boolean default false</li><li>observacoes text</li><li>status text CHECK in ('Ativa','Pausada','Encerrada') default 'Ativa'</li><li>published_at timestamptz</li><li>encerrada_motivo text</li><li>created_at timestamptz default now()</li><li>updated_at timestamptz</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">opportunity_matches</p>
+        <ul class="campos"><li>id uuid PK</li><li>opportunity_id uuid FK ON DELETE CASCADE</li><li>driver_id uuid FK-&gt;driver_profiles</li><li>match_pct smallint CHECK (0-100)</li><li>score smallint CHECK (0-100, reaproveita scoreRode)</li><li>fatores jsonb (carroceria_ok bool, rota_ok bool, janela_ok bool, exigencias_ok bool, lucro_estimado_centavos int, margem_real_pct numeric)</li><li>calculado_em timestamptz default now()</li><li>UNIQUE(opportunity_id, driver_id)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">opportunity_interests</p>
+        <ul class="campos"><li>id uuid PK</li><li>opportunity_id uuid FK</li><li>driver_id uuid FK</li><li>match_pct smallint (snapshot)</li><li>score smallint (snapshot)</li><li>status text CHECK in ('interessado','escolhido','recusado','retirado') default 'interessado'</li><li>mensagem text</li><li>created_at timestamptz default now() (-&gt;'quando' da tela Interessados)</li><li>UNIQUE(opportunity_id, driver_id)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">driver_profiles</p>
+        <ul class="campos"><li>id uuid PK</li><li>auth_user_id uuid</li><li>nome text</li><li>telefone varchar (so revelado via reveal-driver-contact pos-interesse)</li><li>cidade_atual text</li><li>uf char(2)</li><li>tipo_caminhao text</li><li>carrocerias text[]</li><li>regioes text[]</li><li>consumo_km_l numeric</li><li>margem_desejada_pct int</li><li>disponivel boolean default true</li><li>janela_retorno_dias int</li><li>score_motorista smallint</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">audit_log</p>
+        <ul class="campos"><li>id uuid PK</li><li>ator_id uuid</li><li>ator_role text</li><li>acao text ('signup','kyc_check','approve','reprove','sign_url','reveal_contact','publish','choose')</li><li>entidade text</li><li>entidade_id uuid</li><li>payload jsonb</li><li>ip inet</li><li>created_at timestamptz default now()</li></ul>
+      </div></section>
+  <section id="s5"><h2><span class="n">5</span>Contratos de API</h2><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/auth/company/signup</code></div>
+        <p class="ep-desc">Cria conta da empresa via Edge Function (transação atômica). Payload validado por zod no servidor: {email, senha (&gt;=8), cnpj (14 dig), razao_social, nome_fantasia, tipo_empresa in TIPOS_EMPRESA, responsavel_nome, telefone, cidade, uf (char2 maiusculo)}. Efeitos: cria auth.users (email_confirm=false) + 1 linha companies (status='cadastro_enviado') + 4 linhas company_documents ('Pendente': cartao_cnpj/contrato_social/comprovante_endereco/foto_fachada) + 1 approval_events ('cadastro_enviado', ator='sistema'), tudo em uma transacao. Enfileira kyc-cnpj assincrono via pg_net. Erros: 409 se cnpj ja existe (UNIQUE), 422 se CNPJ reprova digito verificador, 429 se rate limit de signup por IP estourado. Resposta 201: {company_id, status:'cadastro_enviado', kyc_pending:true}.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/auth/company/login</code></div>
+        <p class="ep-desc">Login e-mail+senha (supabase.auth.signInWithPassword). Bloqueia se email nao confirmado (403 email_not_confirmed). Resposta 200: {access_token, refresh_token, company:{id,status}}. O JWT ja carrega claims app_role e company_id injetados pelo Auth Hook. Front roteia por status: cadastro_enviado/em_analise/reprovada/suspensa -&gt; telas de pre-publicacao; aprovada -&gt; shell com abas. Erro 400 invalid_credentials sem revelar se o email existe.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/kyc-cnpj</code></div>
+        <p class="ep-desc">Edge Function (service_role). Payload: {company_id}. Consulta BrasilAPI GET /cnpj/v1/{cnpj} (timeout 5s, 2 retries backoff); fallback CNPJa em timeout/5xx. Normaliza e grava 1 linha company_kyc_checks (provider, situacao_cadastral, razao_social_receita, data_situacao, cnae_principal, raw_response, match_razao_social via trigram &gt;=0.85, aprovado_auto). NAO aprova: transiciona companies.status cadastro_enviado-&gt;em_analise (ainda que reprove no auto, vai para fila manual). Grava approval_events('em_analise','sistema') e audit_log. Resposta: {situacao_cadastral, match_razao_social, aprovado_auto}. Idempotente por company_id+dia.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/sign-doc-url</code></div>
+        <p class="ep-desc">Edge Function. Payload: {company_id, tipo in (cartao_cnpj|contrato_social|comprovante_endereco|foto_fachada), op:'upload'|'download'}. Verifica que o caller (JWT company_id ou app_role='admin') e dono; senao 403. Gera signed URL TTL 120s no bucket privado company-docs, path company-docs/{company_id}/{tipo}/{uuid}.{ext} (sem PII). Grava audit_log(acao='sign_url'). Resposta: {signed_url, storage_path, expires_at}.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/rest/v1/companies?select=*,company_documents(*),approval_events(*)</code></div>
+        <p class="ep-desc">PostgREST + RLS: retorna SOMENTE a empresa do JWT (company_id). Alimenta Cadastro/Documentos/Status (timeline ordenada por approval_events.created_at, substitui APROVACAO_STEPS mock) e badge 'empresa aprovada' do Painel. Campos sensiveis (status) read-only via policy.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/rest/v1/opportunities</code></div>
+        <p class="ep-desc">Cria oportunidade. RLS WITH CHECK exige company_id=jwt e EXISTS(companies aprovada); trigger before-insert rejeita se status!='aprovada'. Payload: {origem_cidade,origem_uf,destino_cidade,destino_uf,tipo_carga in TIPOS_CARGA,peso_t,carroceria in CARROCERIAS,valor_centavos,data_coleta,exige_rastreador,exige_seguro,exige_gerenciadora,observacoes}. Trigger after-insert preenche distancia_km (servico de rota com fallback ROTAS de calc.ts) e enfileira match-opportunity via pg_net. Resposta 201: {id, status:'Ativa', published_at}.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">PATCH</span><code class="ep-rota">/rest/v1/opportunities?id=eq.{id}</code></div>
+        <p class="ep-desc">Edita campos ou muda status (Ativa&lt;-&gt;Pausada, -&gt;Encerrada). RLS exige company_id dono. Pausar/Encerrar remove do feed B2C; reativar re-insere; Encerrar exige encerrada_motivo. Mudanca em valor/carroceria/origem/data_coleta re-dispara match-opportunity. Resposta: linha atualizada. 403 se nao-dono, 422 se transicao invalida (ex.: Encerrada-&gt;Ativa).</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/rest/v1/opportunities?company_id=eq.{me}&amp;select=*,interests:opportunity_interests(count)</code></div>
+        <p class="ep-desc">Lista 'Minhas oportunidades' com contagem de candidatos (substitui campo candidatos do mock). Filtro status (Todas/Ativa/Pausada/Encerrada) e order=published_at.desc. Paginacao por cursor (range). Alimenta Lista e KPIs do Painel.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/rest/v1/opportunity_interests?opportunity_id=eq.{id}&amp;select=*,driver:driver_profiles(nome,tipo_caminhao,cidade_atual,uf)&amp;order=match_pct.desc</code></div>
+        <p class="ep-desc">Tela Interessados. Retorna nome, caminhao, cidade/uf, score, match_pct, created_at ('quando'). RLS: so o dono da oportunidade ve. Telefone do motorista NAO vem por padrao; e revelado por endpoint separado so apos interesse (LGPD).</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/rest/v1/opportunity_interests</code></div>
+        <p class="ep-desc">Chamado pelo APP DO MOTORISTA ('Tenho interesse', hoje setInteresse em MvpApp.tsx:1234). Payload: {opportunity_id}. driver_id derivado do JWT (app_role='driver'). Trigger snapshota match_pct/score do opportunity_matches correspondente; se nao houver match, calcula on-the-fly. RLS exige oportunidade status='Ativa'. UNIQUE(opportunity_id,driver_id) -&gt; 409 em duplicata. Resposta 201: {id, status:'interessado', match_pct, score}.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">PATCH</span><code class="ep-rota">/rest/v1/opportunity_interests?id=eq.{id}</code></div>
+        <p class="ep-desc">Empresa escolhe motorista (status='escolhido'). Trigger: demais interests da mesma oportunidade -&gt; 'recusado'; oportunidade -&gt; 'Encerrada' (encerrada_motivo='motorista escolhido'). RLS exige company_id dono da oportunidade. Enfileira notificacao WhatsApp ao escolhido (link wa.me) e aos recusados ('vaga preenchida'). Resposta: linha atualizada.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/admin-approve-company</code></div>
+        <p class="ep-desc">Edge Function (app_role='admin', service_role). Payload: {company_id, decisao:'aprovada'|'reprovada', motivo?}. Atualiza companies.status; se reprovada grava reprovada_motivo. Grava approval_events(decisao,'admin',ator_id) e audit_log(ip,ator). Ao aprovar libera CRUD de opportunities. 403 se caller nao for admin. Resposta: {status}.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/reveal-driver-contact</code></div>
+        <p class="ep-desc">Edge Function LGPD. Payload: {interest_id}. RLS/check: caller e a empresa dona da oportunidade E o interest existe com status in (interessado|escolhido). Retorna telefone do driver_profiles e grava audit_log(acao='reveal_contact', ator, ip). 403 se sem interesse registrado. Garante que telefone so e exposto apos opt-in do motorista.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/functions/v1/feed-fretes?driver_id={me}</code></div>
+        <p class="ep-desc">Feed B2C unificado (tipo FreteFeed): fretes raspados (Fretebras) + opportunities status='Ativa' com direto=true e interessados=count(opportunity_interests). Para o motorista inclui match_pct/score do opportunity_matches. Pausada/Encerrada nunca aparece. Integracao bidirecional empresa-&gt;feed em &lt;5s.</p>
+      </div></section>
+  <section id="s6"><h2><span class="n">6</span>Frontend / fluxo</h2><ul><li>App 'RODE Empresas' (src/empresa/EmpresaApp.tsx evoluido de mock para real). Roteamento por companies.status: nao-aprovada ve Login-&gt;Cadastro-&gt;Documentos-&gt;Status; aprovada ve shell com abas Painel/Oportunidades/Nova (TABS ja existente).</li><li>Tela Login: react-hook-form com e-mail corporativo+senha, supabase.auth.signInWithPassword; link 'Criar conta da empresa'. Remover defaults mockados (operacao@transgoias.com.br/123456). Bloqueia login se e-mail nao confirmado.</li><li>Tela Cadastro: formulario zod (CNPJ com mascara e digito verificador no cliente; razao_social; nome_fantasia; tipo_empresa de TIPOS_EMPRESA; responsavel; e-mail; telefone; cidade; UF). Submit-&gt;/auth/company/signup. Aviso 'so empresas aprovadas cadastram fretes'. Erros 409 (CNPJ ja cadastrado) e 422 exibidos inline.</li><li>Tela Documentos: 4 cards (Cartao CNPJ, Contrato social, Comprovante de endereco, Foto da fachada/patio) com upload via sign-doc-url (input file-&gt;PUT signed URL-&gt;PATCH status='Enviado'). Badge por doc reusando DOC_CLS (Validado/Enviado/Pendente/Rejeitado). Camera para a foto da fachada.</li><li>Tela Status: timeline lendo approval_events (substitui APROVACAO_STEPS mock), banner 'em analise ate 1 dia util'. react-query + realtime para virar 'aprovada' sem reload. Remover botao 'Simular aprovacao (demo)'.</li><li>Tela Painel: badge 'empresa aprovada' (ShieldCheck), 4 KPIs (ativas/candidatos/emAnalise/fechadas via VIEW agregada com RLS, substituindo EMPRESA_KPIS mockado), atalhos Nova/Lista, lista 'Ativas agora'.</li><li>Tela Lista (Minhas oportunidades): filtros Todas/Ativa/Pausada/Encerrada, cards com contagem real de candidatos e data_coleta, botao Nova.</li><li>Tela Nova: formulario origem/destino/tipo_carga(TIPOS_CARGA)/peso/carroceria(CARROCERIAS)/valor/data_coleta + toggles exige_rastreador/seguro/gerenciadora + observacoes. Submit-&gt;POST /opportunities-&gt;estado de sucesso 'ja aparece para os motoristas compativeis'.</li><li>Tela Detalhe: dados + acoes Editar/Pausar/Reativar/Encerrar (PATCH com confirm para Encerrar), card 'N motoristas demonstraram interesse'-&gt;Interessados.</li><li>Tela Interessados: lista ordenada por match_pct desc, cada card com nome, caminhao, cidade/uf, badge 'X% match', 'score N · interesse ha 5 min', botoes WhatsApp (link wa.me via reveal-driver-contact) e Escolher (PATCH status='escolhido', trava demais). Estado: useState selecionado + react-query mutation; banner 'Frete fechado com {nome}'.</li></ul></section>
+  <section id="s7"><h2><span class="n">7</span>Lógica de negócio</h2><ul><li>KYC PJ (aprovado_auto): aprovado_auto = (situacao_cadastral=='ATIVA') AND (similarity(normalizar(razao_social_receita), normalizar(razao_social_informada)) &gt;= 0.85 via pg_trgm). Se true, companies.status-&gt;'em_analise' com flag verde para o admin; se false, vai igualmente para 'em_analise' mas marcado para analise manual reforcada. Aprovacao FINAL sempre humana (admin-approve-company).</li><li>Validacao de CNPJ (cliente+servidor): exatamente 14 digitos, calculo dos 2 digitos verificadores mod 11, rejeita sequenciais (ex.: 11111111111111). UNIQUE(cnpj) impede empresa duplicada.</li><li>MATCH% (compatibilidade oferta&lt;-&gt;motorista), 0-100, soma de fatores: carroceria compativel 40pts (opportunity.carroceria in driver.carrocerias); rota/regiao compativel 25pts (origem_uf in driver.regioes OU origem_cidade==driver.cidade_atual); janela de coleta compativel 20pts (data_coleta dentro de janela_retorno_dias E disponivel=true); exigencias atendidas 15pts (cada exige_* requerida que o motorista atende soma; faltando penaliza proporcionalmente). Clamp 0-100. So grava linha em opportunity_matches se match_pct&gt;=50.</li><li>SCORE (qualidade economica da oferta para AQUELE motorista), 0-100: reusa calcularFrete(src/lib/calc.ts) com consumo_km_l/margem do driver_profile e valor_centavos/distancia_km da oportunidade -&gt; lucro e margemRealPct; aplica scoreRode = Math.max(20, Math.min(98, Math.round(60 + pctTabela))) onde pctTabela = (valor - tabelaANTT)/tabelaANTT*100. Score alto = oferta acima do piso ANTT e lucrativa para o custo do motorista. fatores.lucro_estimado_centavos persiste o lucro calculado.</li><li>Disparo do matching: trigger AFTER INSERT/UPDATE(valor_centavos,carroceria,origem_uf,data_coleta) em opportunities chama match-opportunity via pg_net (assincrono, nao bloqueia o INSERT); itera driver_profiles elegiveis (disponivel=true, carroceria intersecta, regiao intersecta); upsert em batch por UNIQUE(opportunity_id,driver_id). Idempotente e reprocessavel pelo cron.</li><li>Integracao bidirecional com feed B2C: feed-fretes inclui oportunidade so quando status='Ativa'; Pausada/Encerrada some em &lt;5s; interessados=count(opportunity_interests). Quando empresa escolhe motorista-&gt;oportunidade Encerrada-&gt;sai do feed; demais interessados (status='recusado') notificados que a vaga foi preenchida.</li><li>Snapshot de interesse: ao criar opportunity_interests, trigger copia match_pct/score do opportunity_matches (opportunity_id,driver_id); se nao houver match (motorista achou a oferta por busca livre), calcula on-the-fly. O snapshot congela o valor mostrado na tela Interessados mesmo que o match seja recalculado depois.</li><li>Expiracao automatica (cron diario pg_cron): opportunities 'Ativa' com data_coleta &lt; now() -&gt; status='Encerrada', encerrada_motivo='coleta expirada'. Revalidacao periodica de CNPJ: se situacao virar 'INAPTA'/'BAIXADA', companies.status-&gt;'suspensa' e oportunidades 'Ativa'-&gt;'Pausada'.</li><li>KPIs do Painel via VIEW agregada filtrada por RLS: ativas=count(opportunities status='Ativa'); candidatos=count(DISTINCT driver_id em opportunity_interests das oportunidades ativas); emAnalise=count(opportunities ... )=0 por padrao; fechadas=count(opportunities Encerrada com algum interest 'escolhido'). Substitui EMPRESA_KPIS mockado.</li></ul></section>
+  <section id="s8"><h2><span class="n">8</span>Integrações</h2><ul><li>Receita Federal (situacao cadastral de CNPJ) via BrasilAPI (GET /cnpj/v1/{cnpj}) primaria e CNPJa/ReceitaWS fallback pago — usada no KYC PJ (Edge Function kyc-cnpj), com timeout 5s, 2 retries/backoff e cache do raw_response em company_kyc_checks.</li><li>WhatsApp Cloud API (Meta) para notificacoes transacionais: novo match relevante para o motorista, aviso de 'foi escolhido'/'vaga preenchida'; e link wa.me (click-to-chat) na tela Interessados (apos reveal-driver-contact) para a empresa contatar o motorista sem expor numero cru no historico.</li><li>Supabase Storage (bucket privado company-docs) para documentos de KYC com URLs assinadas de curta duracao (120s).</li><li>Servico de roteamento/distancia (ex.: OSRM/Google Distance Matrix) para preencher opportunities.distancia_km e alimentar o calculo de custo do matching (reusa os presets ROTAS de src/lib/calc.ts como fallback offline).</li><li>Feed B2C interno (tipo FreteFeed / endpoint feed-fretes) — integracao bidirecional empresa&lt;-&gt;motorista; nao e servico externo mas e a integracao-chave do modulo.</li><li>Sentry (monitoramento de erros do portal) e provedor de e-mail transacional do Supabase (verificacao de e-mail e aviso de aprovacao).</li></ul></section>
+  <section id="s9"><h2><span class="n">9</span>Segurança & LGPD</h2><ul><li>Isolamento por empresa via RLS em companies/company_documents/company_kyc_checks/approval_events/opportunities/opportunity_interests: policy USING (company_id = (auth.jwt()-&gt;&gt;'company_id')::uuid) e, para opportunity_interests do lado da empresa, via EXISTS na opportunity dona. company_id injetado pelo Auth Hook a partir de companies.auth_user_id. Nenhuma empresa le dado de outra mesmo manipulando o request.</li><li>Campos sensiveis (companies.status, companies.aprovada_em, opportunity_matches.score/match_pct, company_documents.status='Validado') NAO sao gravaveis pelo cliente: policies WITH CHECK bloqueiam e a escrita ocorre so via Edge Functions service_role (admin-approve-company, kyc-cnpj, match-opportunity).</li><li>Documentos em bucket PRIVADO company-docs; acesso exclusivamente por URL assinada de 120s emitida por sign-doc-url apos checagem RLS; nada publico; nomes de arquivo com uuid (sem PII no path); bloqueio de listagem publica do bucket.</li><li>LGPD: telefone do motorista NAO e exposto a empresa por padrao (nao vem no SELECT de driver_profiles); so apos o motorista demonstrar interesse (opt-in implicito ao tocar 'Tenho interesse') e via Edge Function reveal-driver-contact que audita o acesso; contato preferencial por link wa.me sem revelar historico. Base legal: execucao de contrato/legitimo interesse para o matching; consentimento para compartilhar contato.</li><li>Dados de KYC (raw_response da Receita) tratados como dado cadastral de PJ, armazenados com retencao limitada e acesso so admin; audit_log registra toda consulta de CNPJ, aprovacao/reprovacao, emissao de signed URL e revelacao de contato (ator, ip, timestamp).</li><li>Direitos do titular (motorista e responsavel PJ): endpoints de exportacao e exclusao de conta; ao excluir empresa, anonimizar oportunidades historicas (manter agregados, remover PII e razao_social). Rate limiting na Edge Function kyc-cnpj (custo por consulta) e em signup (anti-abuso/CNPJ scraping) por IP e por auth_user.</li><li>Senha: politica minima (&gt;=8, zxcvbn no front), hashing pelo Supabase Auth; e-mail corporativo confirmado por verificacao de e-mail antes de liberar publicacao; login nao revela se o e-mail existe (mensagem generica).</li></ul></section>
+  <section id="s10"><h2><span class="n">10</span>Não-funcionais</h2><ul><li>Performance: feed e listas com paginacao por cursor; indices em opportunities(status,company_id), opportunities(origem_uf,carroceria,status), opportunity_matches(driver_id,match_pct desc), opportunity_interests(opportunity_id,status). Matching de 1 oportunidade contra base de ~1.000 motoristas (escala atual, ADMIN_KPIS.cadastrados=1280) conclui &lt; 3s; em escala maior, particionar por regiao e usar fila.</li><li>Latencia de telas do portal (Painel/Lista/Interessados) &lt; 1s P95 com react-query cache; signed URL emitida &lt; 300ms.</li><li>KYC: consulta Receita com timeout 5s, 2 retries com backoff e fallback de provedor; resultado assincrono (nao bloqueia o cadastro). Indisponibilidade do KYC nao bloqueia signup, so atrasa a transicao para em_analise.</li><li>Confiabilidade: matching idempotente (upsert por UNIQUE), reprocessavel pelo cron; trigger de publicacao enfileira via pg_net (assincrono) em vez de bloquear o INSERT, para nao travar a publicacao se a Edge Function falhar.</li><li>Consistencia do feed: mudanca de status da oportunidade reflete no feed B2C em &lt; 5s (realtime ou revalidacao). Sem oportunidade fantasma (Encerrada/Pausada nunca aparece).</li><li>Observabilidade: audit_log + Sentry; alertas em falha de KYC, falha de matching e divergencia de contagem de interessados (Painel vs aggregate).</li><li>Escalabilidade futura: separar driver_profiles em read-model; mover matching para fila (pg_cron + tabela de jobs) quando base &gt; 10k motoristas.</li></ul></section>
+  <section id="s11"><h2><span class="n">11</span>Etapas de implementação</h2><ol><li>1. Schema + RLS: criar companies, company_documents, company_kyc_checks, approval_events, opportunities, opportunity_matches, opportunity_interests, driver_profiles, audit_log; CHECK enums; indices; policies RLS por company_id/role; Auth Hook que injeta company_id e app_role no JWT; habilitar pg_trgm/pg_cron/pg_net.</li><li>2. Auth empresa: company-signup (transacao), login e-mail+senha, verificacao de e-mail, roteamento do front por companies.status. Substituir Login/Cadastro mockados em EmpresaApp.tsx por chamadas reais.</li><li>3. Upload de documentos + storage privado: bucket company-docs, Edge Function sign-doc-url, tela Documentos com upload real e atualizacao de status.</li><li>4. KYC PJ: Edge Function kyc-cnpj (BrasilAPI + fallback CNPJa), persistencia em company_kyc_checks, regra aprovado_auto, transicao cadastro_enviado-&gt;em_analise, timeline approval_events na tela Status.</li><li>5. Moderacao admin: aba 'Empresas' no painel src/admin (fila com resultado do KYC e docs), Edge Function admin-approve-company, geracao de approval_events e audit_log; libera CRUD ao aprovar.</li><li>6. CRUD de oportunidades: POST/PATCH/GET opportunities com RLS (so aprovada), calculo de distancia_km por rota (fallback ROTAS de calc.ts), telas Nova/Lista/Detalhe reais, status Ativa/Pausada/Encerrada.</li><li>7. Motor de matching: portar calcularFrete/scoreRode para Deno, Edge Function match-opportunity, trigger de publicacao (pg_net), gravacao em opportunity_matches; formulas de match% e score.</li><li>8. Integracao bidirecional com feed B2C: endpoint/VIEW feed-fretes unindo raspados + diretos; botao 'Tenho interesse' do app do motorista cria opportunity_interests (substituir setInteresse em MvpApp.tsx:1234); tela Interessados real ordenada por match; 'Escolher' encerra, recusa demais e notifica; reveal-driver-contact para liberar telefone.</li><li>9. Jobs/cron: expiracao de oportunidades vencidas, revalidacao periodica de CNPJ, re-calculo noturno de matches; notificacoes WhatsApp (Cloud API) de novo match e de escolha.</li><li>10. Endurecimento: LGPD (export/exclusao, retencao KYC, anonimizacao), rate limiting, auditoria completa, testes e2e e carga do matching.</li></ol></section>
+  <section id="s12"><h2><span class="n">12</span>Plano de teste</h2><div class="teste"><h4>unit</h4><ul><li>calcularMatchPct: carroceria 'Graneleiro' in driver.carrocerias + origem_uf 'GO' in driver.regioes + data_coleta dentro de janela_retorno_dias + todas exigencias atendidas -&gt; 100; carroceria 'Tanque' fora de driver.carrocerias -&gt; &lt;60 (perde os 40pts); data_coleta fora da janela ou disponivel=false -&gt; desconta 20pts; clamp nunca passa de 100 nem abaixo de 0</li><li>calcularScore (portado de scoreRode): oferta Goiania-&gt;SP R$6.500 com pctTabela=+28 -&gt; Math.round(60+28)=88, dentro de [20,98] -&gt; score=88 (&gt;=80); oferta com pctTabela=+50 -&gt; clamp em 98; oferta com pctTabela=-18 (ANALISE_EXEMPLO) -&gt; Math.round(60-18)=42 -&gt; score=42 (&lt;60); oferta extrema pctTabela=-60 -&gt; clamp em 20</li><li>validarCNPJ: '12345678000190' valido (digitos verificadores corretos, replica EMPRESA.cnpj do mock); ultimo digito trocado para 91 -&gt; invalido; '11111111111111' sequencial -&gt; invalido; string com 13 ou 15 digitos -&gt; invalido</li><li>aprovado_auto: situacao_cadastral='ATIVA' + similarity('TRANSPORTES GOIAS LTDA','Transportes Goias Ltda')&gt;=0.85 -&gt; true; situacao='BAIXADA' com razao identica -&gt; false; situacao='ATIVA' mas razao_social_receita='OUTRA EMPRESA SA' (similarity&lt;0.85) -&gt; false</li><li>expiracao (cron): opportunity status='Ativa' com data_coleta = now()-1h -&gt; vira 'Encerrada' com encerrada_motivo='coleta expirada'; opportunity status='Ativa' com data_coleta = now()+2dias -&gt; permanece 'Ativa'</li><li>snapshot de interesse: ao inserir opportunity_interests existindo match (match_pct=96,score=86 como INTERESSADOS[0] João S.), o registro copia match_pct=96/score=86 mesmo que o match seja recalculado para 80 depois</li></ul></div><div class="teste"><h4>integracao</h4><ul><li>RLS leitura: empresa A (JWT company_id=A) faz SELECT em opportunities de B -&gt; retorna 0 linhas; empresa A faz SELECT em opportunity_interests de oportunidade de B -&gt; 0 linhas</li><li>RLS escrita: cliente tenta UPDATE companies SET status='aprovada' -&gt; bloqueado por WITH CHECK; somente admin-approve-company (service_role) altera; cliente tenta INSERT opportunity_matches -&gt; negado</li><li>sign-doc-url: empresa A pede URL para doc proprio (op='upload') -&gt; 200 com signed_url TTL 120s; empresa A pede URL de doc da empresa B -&gt; 403; admin pede qualquer -&gt; 200</li><li>Gate de publicacao: POST /opportunities por empresa status='em_analise' -&gt; rejeitado (0 linhas em opportunities); apos admin-approve-company aprovar, mesmo POST -&gt; 201 e dispara match-opportunity gravando opportunity_matches para drivers elegiveis com match_pct&gt;=50</li><li>kyc-cnpj: grava company_kyc_checks e transiciona companies.status para 'em_analise'; simulando timeout de BrasilAPI (mock 5s) -&gt; fallback CNPJa responde e o provider gravado='cnpja'; reexecucao no mesmo dia e idempotente (nao duplica em_analise)</li><li>Fluxo de interesse: POST opportunity_interests pelo motorista (JWT driver) cria candidato visivel na tela Interessados do dono e incrementa candidatos no Painel; segundo POST do mesmo driver na mesma oportunidade -&gt; 409 (UNIQUE)</li><li>reveal-driver-contact: empresa dona com interest existente -&gt; retorna telefone e grava audit_log(acao='reveal_contact'); empresa sem interest daquele motorista -&gt; 403</li></ul></div><div class="teste"><h4>e2e</h4><ul><li>Fluxo feliz Goiania-&gt;SP: criar conta Transportes Goias (CNPJ 12.345.678/0001-90) -&gt; upload dos 4 documentos -&gt; KYC retorna ATIVA + razao compativel -&gt; admin aprova -&gt; publicar oportunidade Graneleiro Goiania-&gt;SP R$6.500 -&gt; motorista João (Carreta 6 eixos, GO) ve no feed com badge 96% match -&gt; João clica 'Tenho interesse' -&gt; empresa ve João no topo da tela Interessados (ordenado por match desc, acima de Carlos 90% e Ana 72%) -&gt; empresa clica 'Escolher' em João -&gt; oportunidade vira Encerrada e some do feed -&gt; João recebe WhatsApp e Carlos/Ana viram 'recusado'</li><li>Pausar/Reativar: oportunidade Ativa visivel no feed B2C -&gt; empresa Pausa -&gt; desaparece do feed em &lt;5s -&gt; empresa Reativa -&gt; reaparece no feed</li><li>KYC reprovado: empresa com CNPJ situacao 'BAIXADA' -&gt; aprovado_auto=false -&gt; admin reprova com motivo -&gt; tela Status mostra step 'reprovada' com o motivo -&gt; tentar acessar aba Nova -&gt; bloqueado (nao consegue publicar)</li><li>Isolamento: logada como empresa A, abrir URL direta /empresa/oportunidade/{id de B} -&gt; acesso negado (0 linhas, tela 'oportunidade nao encontrada')</li><li>Documento expirado: obter signed URL de download, aguardar &gt;120s, tentar baixar -&gt; 403 (URL expirada)</li></ul></div><div class="teste"><h4>carga</h4><ul><li>Publicar 1 oportunidade com 1.000 driver_profiles elegiveis -&gt; match-opportunity conclui &lt; 3s e grava apenas matches com match_pct&gt;=50, valores corretos</li><li>100 empresas publicando simultaneamente -&gt; sem deadlock no upsert de opportunity_matches; contagem de interessados/KPIs permanece consistente (sem perda nem duplicacao)</li></ul></div></section>
+  <section id="s13"><h2><span class="n">13</span>Critérios de aceite</h2><ul class="check"><li>Dado um visitante no portal, quando informa CNPJ valido (14 digitos, verificadores ok, nao sequencial) e dados cadastrais e envia, entao e criada 1 empresa com status 'cadastro_enviado', 4 company_documents 'Pendente', 1 approval_events 'cadastro_enviado' e a consulta de CNPJ a Receita e disparada automaticamente; se o CNPJ ja existir, recebe erro 409 sem criar empresa.</li><li>Dado um CNPJ com situacao cadastral 'ATIVA' e razao social com similaridade &gt;=0.85, quando o KYC roda, entao company_kyc_checks registra aprovado_auto=true e companies.status vai para 'em_analise' com sinal verde na fila do admin; com situacao 'BAIXADA'/'INAPTA' ou razao divergente, aprovado_auto=false e a empresa cai em analise manual.</li><li>Dado que a empresa NAO esta 'aprovada' (status in cadastro_enviado/em_analise/reprovada/suspensa), quando tenta POST /opportunities, entao a operacao e rejeitada por RLS/trigger e nenhuma linha em opportunities e criada.</li><li>Dado um admin que aprova a empresa via admin-approve-company, quando confirma, entao companies.status='aprovada', aprovada_em e preenchido, 1 approval_events 'aprovada' (ator='admin') e gravado, audit_log registra o ato com ip e o CRUD de oportunidades passa a ser aceito para aquela empresa.</li><li>Dado que a empresa aprovada publica uma oportunidade 'Ativa', quando ela e salva, entao aparece no feed B2C do motorista com direto=true e match-opportunity grava opportunity_matches (match_pct e score) somente para motoristas elegiveis com match_pct&gt;=50.</li><li>Dado uma oportunidade com match para o motorista João, quando ele toca 'Tenho interesse', entao e criado opportunity_interests com snapshot de match_pct/score e ele passa a aparecer na tela Interessados da empresa ordenado por match_pct desc; um segundo toque do mesmo motorista nao cria duplicata (UNIQUE).</li><li>Dado a tela Interessados, quando a empresa toca 'Escolher' em um motorista, entao aquele interesse vira 'escolhido', os demais viram 'recusado', a oportunidade vira 'Encerrada', some do feed em &lt;5s e o motorista escolhido recebe notificacao WhatsApp.</li><li>Dado uma oportunidade 'Ativa', quando a empresa a Pausa, entao ela some do feed B2C em ate 5s; quando Reativa, ela reaparece; uma oportunidade 'Encerrada' nunca pode voltar para 'Ativa'.</li><li>Dado a empresa A autenticada, quando tenta ler ou editar companies/opportunities/opportunity_interests da empresa B, entao recebe acesso negado (0 linhas) por RLS, mesmo manipulando o request.</li><li>Dado um documento privado, quando alguem tenta acessa-lo sem URL assinada valida ou com URL expirada (&gt;120s), entao o acesso e negado; e o telefone do motorista so e exibido a empresa via reveal-driver-contact apos o motorista ter demonstrado interesse, com o acesso registrado em audit_log.</li><li>Dado uma oportunidade 'Ativa' cuja data_coleta passou, quando o cron diario roda, entao ela e movida para 'Encerrada' com encerrada_motivo='coleta expirada' e removida do feed.</li><li>Dado o Painel da empresa, quando ha 2 oportunidades Ativas e 10 interessados distintos, entao os KPIs exibem ativas=2 e candidatos=10 coerentes com a VIEW agregada filtrada por RLS, substituindo o EMPRESA_KPIS mockado.</li></ul></section>
+  <section id="s14"><h2><span class="n">14</span>Diagramas</h2><p class="hint">Renderizados com Mermaid — requer internet ao abrir o arquivo.</p><h4>Arquitetura da solução</h4><div class="mermaid-box"><pre class="mermaid">flowchart LR
+  emp[&quot;Empresa Web (RODE Empresas)&quot;] --&gt; bff[&quot;Edge Functions (company-signup / kyc-cnpj / sign-doc-url / match-opportunity / admin-approve-company / reveal-driver-contact)&quot;]
+  drv[&quot;App Motorista PWA (MvpApp)&quot;] --&gt; bff
+  emp --&gt; rest[&quot;PostgREST + RLS&quot;]
+  bff --&gt; db[(&quot;Postgres 15 + RLS&quot;)]
+  rest --&gt; db
+  db --&gt; storage[(&quot;Storage privado company-docs&quot;)]
+  bff --&gt; brasil[&quot;BrasilAPI / CNPJa (Receita)&quot;]
+  bff --&gt; wa[&quot;WhatsApp Cloud API&quot;]
+  cron[&quot;pg_cron + pg_net (expiracao / revalida CNPJ / re-match)&quot;] --&gt; bff
+  db --&gt; feed[&quot;feed-fretes (raspados + diretos)&quot;]
+  feed --&gt; drv</pre></div><h4>Casos de uso</h4><div class="mermaid-box"><pre class="mermaid">flowchart TD
+  motorista[&quot;Motorista&quot;]
+  empresa[&quot;Empresa&quot;]
+  admin[&quot;Admin&quot;]
+  sistema_ator[&quot;Sistema (cron/triggers)&quot;]
+  subgraph Sistema[&quot;Sistema&quot;]
+    uc_cad[&quot;Cadastrar empresa + CNPJ&quot;]
+    uc_doc[&quot;Enviar documentos KYC&quot;]
+    uc_pub[&quot;Publicar oportunidade&quot;]
+    uc_int[&quot;Ver interessados e Escolher&quot;]
+    uc_kyc[&quot;Rodar KYC PJ&quot;]
+    uc_aprov[&quot;Aprovar/Reprovar empresa&quot;]
+    uc_interesse[&quot;Tenho interesse&quot;]
+    uc_match[&quot;Calcular match_pct e score&quot;]
+    uc_exp[&quot;Expirar oportunidade vencida&quot;]
+  end
+  empresa --&gt; uc_cad
+  empresa --&gt; uc_doc
+  empresa --&gt; uc_pub
+  empresa --&gt; uc_int
+  admin --&gt; uc_aprov
+  motorista --&gt; uc_interesse
+  sistema_ator --&gt; uc_kyc
+  sistema_ator --&gt; uc_match
+  sistema_ator --&gt; uc_exp</pre></div><h4>Fluxo principal</h4><div class="mermaid-box"><pre class="mermaid">flowchart TD
+  signup[&quot;company-signup (status cadastro_enviado)&quot;] --&gt; docs[&quot;Upload 4 docs via sign-doc-url&quot;]
+  docs --&gt; kyc[&quot;kyc-cnpj consulta Receita&quot;]
+  kyc --&gt; dec_auto{&quot;aprovado_auto?&quot;}
+  dec_auto --&gt;|&quot;ATIVA + razao ≥0.85&quot;| analise[&quot;status em_analise (sinal verde)&quot;]
+  dec_auto --&gt;|&quot;BAIXADA/INAPTA ou razao divergente&quot;| analise_man[&quot;em_analise (analise manual)&quot;]
+  analise --&gt; dec_admin{&quot;admin aprova?&quot;}
+  analise_man --&gt; dec_admin
+  dec_admin --&gt;|&quot;reprovada&quot;| fim_rep[&quot;status reprovada (bloqueia publicar)&quot;]
+  dec_admin --&gt;|&quot;aprovada&quot;| pub[&quot;POST /opportunities (Ativa)&quot;]
+  pub --&gt; match[&quot;match-opportunity grava opportunity_matches ≥50&quot;]
+  match --&gt; feed[&quot;Aparece no feed B2C (direto=true)&quot;]
+  feed --&gt; interesse[&quot;Motorista: Tenho interesse&quot;]
+  interesse --&gt; escolher[&quot;Empresa Escolhe -&gt; Encerrada, demais recusados&quot;]</pre></div><h4>UML — classes/serviços</h4><div class="mermaid-box"><pre class="mermaid">classDiagram
+  class CompanySignup {
+    +signup(payload) Company
+  }
+  class KycCnpj {
+    +check(company_id) KycResult
+    +aprovadoAuto(situacao, razao) bool
+  }
+  class MatchOpportunity {
+    +calcularMatchPct(opp, driver) int
+    +calcularScore(opp, driver) int
+  }
+  class AdminApproveCompany {
+    +decidir(company_id, decisao, motivo) Status
+  }
+  class RevealDriverContact {
+    +reveal(interest_id) telefone
+  }
+  class Company {
+    +uuid id
+    +string cnpj
+    +string status
+  }
+  class Opportunity {
+    +uuid id
+    +int valor_centavos
+    +string status
+  }
+  class OpportunityInterest {
+    +smallint match_pct
+    +string status
+  }
+  CompanySignup ..&gt; Company
+  KycCnpj ..&gt; Company
+  AdminApproveCompany ..&gt; Company
+  Company &quot;1&quot; --o &quot;*&quot; Opportunity
+  MatchOpportunity ..&gt; Opportunity
+  Opportunity &quot;1&quot; --o &quot;*&quot; OpportunityInterest
+  RevealDriverContact ..&gt; OpportunityInterest</pre></div><h4>Banco de dados (ER)</h4><div class="mermaid-box"><pre class="mermaid">erDiagram
+  COMPANIES ||--o{ COMPANY_DOCUMENTS : possui
+  COMPANIES ||--o{ COMPANY_KYC_CHECKS : verifica
+  COMPANIES ||--o{ APPROVAL_EVENTS : registra
+  COMPANIES ||--o{ OPPORTUNITIES : publica
+  OPPORTUNITIES ||--o{ OPPORTUNITY_MATCHES : gera
+  OPPORTUNITIES ||--o{ OPPORTUNITY_INTERESTS : recebe
+  DRIVER_PROFILES ||--o{ OPPORTUNITY_MATCHES : compatibiliza
+  DRIVER_PROFILES ||--o{ OPPORTUNITY_INTERESTS : demonstra
+  COMPANIES {
+    uuid id PK
+    uuid auth_user_id FK
+    varchar cnpj
+    text status
+  }
+  COMPANY_DOCUMENTS {
+    uuid id PK
+    uuid company_id FK
+    text tipo
+    text status
+  }
+  COMPANY_KYC_CHECKS {
+    uuid id PK
+    uuid company_id FK
+    text situacao_cadastral
+    boolean aprovado_auto
+  }
+  APPROVAL_EVENTS {
+    uuid id PK
+    uuid company_id FK
+    text step
+  }
+  OPPORTUNITIES {
+    uuid id PK
+    uuid company_id FK
+    int valor_centavos
+    text status
+  }
+  OPPORTUNITY_MATCHES {
+    uuid id PK
+    uuid opportunity_id FK
+    uuid driver_id FK
+    smallint match_pct
+    smallint score
+  }
+  OPPORTUNITY_INTERESTS {
+    uuid id PK
+    uuid opportunity_id FK
+    uuid driver_id FK
+    text status
+  }
+  DRIVER_PROFILES {
+    uuid id PK
+    uuid auth_user_id
+    text carrocerias
+  }</pre></div><h4>Lógica do plano de testes</h4><div class="mermaid-box"><pre class="mermaid">flowchart TD
+  unit[&quot;UNIT (Vitest)&quot;] --&gt; u1[&quot;calcularMatchPct: clamp 0-100, ≥50 grava&quot;]
+  unit --&gt; u2[&quot;calcularScore: scoreRode clamp [20,98]&quot;]
+  unit --&gt; u3[&quot;validarCNPJ: 14 dig, mod11, rejeita sequencial&quot;]
+  unit --&gt; u4[&quot;aprovado_auto: ATIVA + similarity ≥0.85&quot;]
+  unit --&gt; u5[&quot;expiracao cron + snapshot interesse&quot;]
+  u5 --&gt; integ[&quot;INTEGRACAO (supabase-js / pgTAP)&quot;]
+  integ --&gt; i1[&quot;RLS leitura/escrita: empresa A nao ve B&quot;]
+  integ --&gt; i2[&quot;sign-doc-url 200/403 + gate publicacao&quot;]
+  integ --&gt; i3[&quot;kyc-cnpj fallback CNPJa + reveal-driver-contact&quot;]
+  i3 --&gt; e2e[&quot;E2E (Playwright)&quot;]
+  e2e --&gt; e1[&quot;Fluxo feliz Goiania-&gt;SP: cadastro-&gt;KYC-&gt;aprova-&gt;publica-&gt;match 96%-&gt;interesse-&gt;Escolher&quot;]
+  e2e --&gt; e2[&quot;Pausar/Reativar feed &lt;5s&quot;]
+  e2e --&gt; e3[&quot;KYC reprovado bloqueia Nova + isolamento + URL expirada 403&quot;]</pre></div></section>
+
+  <p class="disclaimer">Documento gerado para orientar o desenvolvimento. Estimativas de esforço/custo são ordem de grandeza para planejamento (premissa R$ 2.100/dev-dia, equipe enxuta) — não é proposta comercial. O veredito de lucratividade do produto é estimativa; o piso ANTT é referência regulatória.</p>
+</div>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose', flowchart: { useMaxWidth: true }, er: { useMaxWidth: true } });
+</script>
+</body>
+</html>

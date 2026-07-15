@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PRD Técnico — Diesel na rota · WhatsApp · RODE COM LUCRO</title>
+<style>
+  :root{--brand:#2563eb;--brand-d:#1e40af;--ink:#0f172a;--ink-6:#475569;--ink-4:#94a3b8;--line:#e2e8f0;--bg:#f1f5f9;--card:#fff;--lucro:#059669}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.6;-webkit-text-size-adjust:100%}
+  .wrap{max-width:920px;margin:0 auto;padding:40px 20px 90px}
+  header.doc{border-bottom:3px solid var(--brand);padding-bottom:20px;margin-bottom:10px}
+  .kicker{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand)}
+  h1{font-size:30px;line-height:1.15;margin:8px 0 6px;font-weight:800;letter-spacing:-.01em}
+  .sub{color:var(--ink-6);font-size:15px;max-width:64ch}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  .pill{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 14px}
+  .pill b{display:block;font-size:16px;color:var(--ink)}
+  .pill span{color:var(--ink-4);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .toc{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 4px}
+  .toc a{font-size:12px;font-weight:600;color:var(--brand-d);background:#eef4ff;border:1px solid #dbe6ff;border-radius:999px;padding:4px 11px;text-decoration:none}
+  .toc a:hover{background:#dbe6ff}
+  section{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-top:18px;scroll-margin-top:14px}
+  h2{font-size:18px;margin:0 0 14px;display:flex;align-items:center;gap:9px;font-weight:800}
+  h2 .n{display:inline-flex;width:26px;height:26px;align-items:center;justify-content:center;background:var(--brand);color:#fff;border-radius:8px;font-size:13px;font-weight:800;flex:none}
+  h4{margin:18px 0 8px;font-size:14px;color:var(--brand-d);font-weight:700}
+  h4:first-of-type{margin-top:4px}
+  p{margin:0 0 10px;color:var(--ink-6)}
+  .hint{font-size:12px;color:var(--ink-4);margin-top:-4px}
+  ul,ol{margin:0;padding-left:22px}
+  li{margin:6px 0;color:var(--ink-6)}
+  ul.check{list-style:none;padding-left:0}
+  ul.check li{position:relative;padding-left:28px;margin:9px 0}
+  ul.check li::before{content:'';position:absolute;left:0;top:4px;width:16px;height:16px;border:2px solid var(--lucro);border-radius:4px}
+  .badge{display:inline-block;background:#eff6ff;color:var(--brand-d);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:800;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;flex:none}
+  .tags{display:flex;flex-wrap:wrap;gap:7px}
+  .tags span{background:#eff6ff;color:var(--brand-d);border:1px solid #dbeafe;border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600}
+  /* Modelo de dados */
+  .entidade{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 12px;background:#fbfdff}
+  .ent-nome{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px;font-weight:700;color:var(--brand-d);margin:0 0 8px}
+  ul.campos{list-style:none;padding-left:0;margin:0;display:grid;gap:5px}
+  ul.campos li{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--ink-6);background:#fff;border:1px solid var(--line);border-radius:7px;padding:5px 9px;overflow-wrap:anywhere;word-break:break-word;margin:0}
+  /* API */
+  .endpoint{border-left:3px solid var(--brand);background:#fbfdff;border-radius:0 10px 10px 0;padding:10px 14px;margin:0 0 12px}
+  .ep-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .ep-rota{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:var(--ink);overflow-wrap:anywhere;word-break:break-word}
+  .ep-desc{font-size:13px;margin:7px 0 0}
+  .teste{border-left:3px solid var(--brand);padding-left:15px;margin:14px 0}
+  .empty{color:var(--ink-4)}
+  /* Diagramas */
+  .mermaid-box{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px;margin:6px 0 10px;overflow-x:auto;text-align:center}
+  .mermaid{font-size:14px}
+  .disclaimer{margin-top:26px;font-size:12px;color:var(--ink-4);border-top:1px solid var(--line);padding-top:16px}
+  @media print{body{background:#fff}.wrap{padding:0}.toc{display:none}section{break-inside:avoid;border:none;border-bottom:1px solid var(--line);border-radius:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="doc">
+    <div class="kicker">RODE COM LUCRO · PRD Técnico</div>
+    <h1>Diesel na rota · WhatsApp</h1>
+    <p class="sub">Guia de desenvolvimento para dev full-stack sênior. O protótipo está 100% mockado; este documento orienta a construção real da funcionalidade.</p>
+    <div class="meta">
+      <div class="pill"><span>Esforço</span><b>7–12 dev-dias</b></div>
+      <div class="pill"><span>Prazo</span><b>2 a 3 semanas</b></div>
+      <div class="pill"><span>Custo estimado</span><b>R$ 15k–R$ 25k</b></div>
+      <div class="pill"><span>Premissa</span><b>R$ 2.100/dev-dia</b></div>
+    </div>
+  </header>
+  <nav class="toc"><a href="#s1">Visão técnica</a><a href="#s2">Arquitetura</a><a href="#s3">Stack</a><a href="#s4">Modelo de dados</a><a href="#s5">Contratos de API</a><a href="#s6">Frontend / fluxo</a><a href="#s7">Lógica de negócio</a><a href="#s8">Integrações</a><a href="#s9">Segurança &amp; LGPD</a><a href="#s10">Não-funcionais</a><a href="#s11">Etapas</a><a href="#s12">Plano de teste</a><a href="#s13">Critérios de aceite</a><a href="#s14">Diagramas</a></nav>
+
+  <section id="s1"><h2><span class="n">1</span>Visão técnica</h2><p>Módulo 'Diesel na rota' no canal WhatsApp do RODE COM LUCRO: serviço proativo, event-driven e serverless (Supabase Edge Functions + Postgres/PostGIS) que infere a posição aproximada do caminhoneiro (compartilhamento de localização via WhatsApp, última cidade/rota conhecida do app ou check-in manual), cruza com base de postos georreferenciada cujos preços vêm do módulo de coleta (OCR/crowdsourcing — dependência de dados, não de runtime) e, quando um posto À FRENTE está abaixo da média da rota por um limiar relevante (&gt;=3% OU &gt;=R$0,15/L), dentro de raio configurável (default 8 km) e do TTL do preço (default 12 h), dispara um template HSM aprovado pela Meta com a economia personalizada pela capacidade do tanque (ex.: 700 L × R$0,27/L = ~R$190). Três preocupações inegociáveis governam o design: (1) CONFIANÇA — nunca alertar com preço velho nem posto no sentido contrário; (2) CUSTO — dedupe, teto diário, janela de silêncio (America/Sao_Paulo) e kill-switch global ANTES de gastar uma conversa HSM paga; (3) LGPD — geolocalização é dado pessoal: opt-in explícito com base legal, retenção mínima (driver_location expira em 6 h), opt-out via PARAR honrado em &lt;5 s, RLS por driver_id. O módulo NÃO coleta preço e NÃO faz navegação turn-by-turn (apenas link 'ver no mapa'). Reaproveita os parâmetros do mock em src/data/diesel.ts (Ourinhos/BR-153 km318, média R$6,16, Posto X R$5,89, delta R$0,27, 700 L, ~R$190, 6 km à frente, posição atual km312) como UI e fixtures de teste, e fecha o ciclo com feedback loop (entrega/leitura/clique/abastecimento) para calibrar o limiar e medir economia real e custo por alerta útil. Estimativa de referência (PRD de produto diesel-wpp): 7–12 dev-dias, 2–3 semanas, assumindo base de preços georreferenciada e canal WhatsApp já existentes.</p></section>
+  <section id="s2"><h2><span class="n">2</span>Arquitetura</h2><ul><li>Pipeline event-driven serverless: ingestão de posição (diesel-location-ingest) -&gt; avaliação de gatilho (diesel-alert-evaluate) -&gt; outbox (dispatch_queue) -&gt; worker de envio (wpp-send-hsm) -&gt; webhook de status (wpp-webhook) -&gt; feedback loop (alert_feedback). Cada etapa é uma Edge Function isolada, idempotente e reexecutável; um pico de posições não derruba o canal WhatsApp porque o envio é desacoplado por fila com SKIP LOCKED.</li><li>Geoespacial no Postgres com PostGIS: postos e localização como geometry(Point,4326); candidatos por ST_DWithin(geom_motorista, geom_posto, raio_km*1000); filtro de direção pelo ângulo entre heading do motorista e o bearing motorista-&gt;posto via ST_Azimuth (aprova se diferença angular normalizada &lt;=90°). Evita sugerir posto no sentido contrário — risco crítico citado no PRD de produto. Coordenadas em SRID 4326; distâncias calculadas com geography (ST_DistanceSphere/ST_DWithin sobre ::geography) para precisão em metros.</li><li>Separação de responsabilidades: este módulo NÃO coleta preço (OCR/crowdsourcing é o módulo diesel-app) — apenas consome a view preco_vigente já validada. Acoplamento por dados (tabela preco_posto + TTL), nunca por chamada síncrona; se o módulo de coleta cair, o gatilho degrada para 'sem dado fresco' e fica silencioso.</li><li>Controle de custo de primeira classe: ANTES de gastar uma conversa HSM paga, todo disparo passa por dedupe (driver_id+posto_id+janela de hora), teto diário por motorista (default 4), frequência mínima entre alertas (default 60 min), janela de silêncio (22:00–06:00 America/Sao_Paulo) e kill-switch global + teto de custo agregado do dia.</li><li>WhatsApp Cloud API (Meta Graph API v20+) como canal único: templates HSM pré-aprovados para mensagem proativa fora da janela de 24 h; webhook único para status (sent/delivered/read/failed) e respostas de botão (PARAR/AJUSTAR/VER NO MAPA). BSP (Twilio/Gupshup/Zenvia) como fallback de portabilidade atrás da interface WppGateway, para não acoplar o domínio ao provedor.</li><li>RLS (Row Level Security) por driver_id em todas as tabelas com PII (driver_location, diesel_alert_pref, diesel_alert, consent_log, alert_feedback). Edge Functions usam service_role apenas na camada de aplicação após resolver o dono; o exterior nunca recebe SQL livre. O painel admin lê apenas agregados (materialized view), sem lat/lng identificável.</li><li>Observabilidade ponta-a-ponta: alert_id propaga por evaluate -&gt; dispatch_queue -&gt; wpp-send-hsm -&gt; wpp_message_log -&gt; alert_feedback, permitindo medir latência (p95), CTR, economia gerada e custo por alerta útil. Todo skip carrega skip_reason tipado para diagnóstico do funil.</li><li>Resiliência: falha do provedor de map-matching degrada para PostGIS local (bearing/distância) sem derrubar o gatilho; falha da Cloud API mantém itens em 'queued' sem perda; reentrega de webhook é idempotente por messages[].id / statuses[].id.</li></ul></section>
+  <section id="s3"><h2><span class="n">3</span>Stack sugerida</h2><div class="tags"><span>Frontend: React 18 + TypeScript + Vite (PWA mobile-first, reaproveitando o app RODE existente em C:\dev\rode_com_lucro\src) — tela de opt-in/preferências do motorista e painel de operação admin</span><span>Backend: Supabase Edge Functions (Deno + TypeScript) para wpp-webhook, diesel-location-ingest, diesel-alert-evaluate, wpp-send-hsm e diesel-ops-dashboard</span><span>Banco: Postgres (Supabase) com extensão PostGIS habilitada (CREATE EXTENSION postgis) para busca geoespacial e RLS por driver_id</span><span>Fila/agendamento: pg_cron + tabela outbox dispatch_queue consumida com FOR UPDATE SKIP LOCKED (idempotente); pgmq como alternativa avaliada</span><span>Canal: WhatsApp Cloud API (Meta Graph API v20+) com templates HSM aprovados; verificação de webhook por verify_token (GET) e assinatura X-Hub-Signature-256 HMAC-SHA256 (POST)</span><span>Geo: PostGIS para distância/bearing local (ST_DWithin, ST_Azimuth, ::geography); provedor externo de map-matching (Mapbox/Google) acionado só para projetar posição sobre a rodovia quando o local não basta</span><span>Segredos: variáveis de ambiente do Supabase (WHATSAPP_TOKEN, PHONE_NUMBER_ID, APP_SECRET, VERIFY_TOKEN, META_GRAPH_VERSION) — nunca no repo; rotação periódica do token</span><span>Observabilidade: Supabase Logs + tabela wpp_message_log + materialized view mv_diesel_metrics (refresh por pg_cron) para o painel admin</span><span>Testes: Vitest (unit do frontend e da lógica pura portada), Deno test (Edge Functions), pgTAP (RLS, constraints e RPC PostGIS), Playwright (e2e do PWA) e k6 (carga geoespacial/fila); MSW para mockar a Graph API</span></div></section>
+  <section id="s4"><h2><span class="n">4</span>Modelo de dados</h2><div class="entidade">
+        <p class="ent-nome">diesel_alert_pref</p>
+        <ul class="campos"><li>driver_id uuid PK FK-&gt;driver, opt_in boolean NOT NULL default false, opt_in_at timestamptz null, opt_out_at timestamptz null, raio_km int NOT NULL default 8 CHECK (raio_km BETWEEN 5 AND 50), teto_dia int NOT NULL default 4 CHECK (teto_dia BETWEEN 1 AND 20), frequencia_min int NOT NULL default 60 CHECK (frequencia_min BETWEEN 15 AND 240), janela_silencio_inicio time NOT NULL default '22:00', janela_silencio_fim time NOT NULL default '06:00', limiar_pct numeric(4,2) NOT NULL default 3.0, limiar_litro_centavos int NOT NULL default 15, consent_location boolean NOT NULL default false, updated_at timestamptz NOT NULL default now() — RLS: dono apenas</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">driver_location</p>
+        <ul class="campos"><li>id uuid PK default gen_random_uuid(), driver_id uuid NOT NULL FK-&gt;driver, geom geometry(Point,4326) NOT NULL, heading_deg numeric(5,2) null, speed_kmh numeric(5,1) null, accuracy_m numeric(7,1) null, source text NOT NULL CHECK (source IN ('live_share','last_route','checkin')), created_at timestamptz NOT NULL default now(), expires_at timestamptz NOT NULL default now()+interval '6 hours' — índice GiST(geom)</li><li>índice (driver_id, created_at desc)</li><li>job de purga por expires_at</li><li>RLS por driver_id</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">posto</p>
+        <ul class="campos"><li>id uuid PK default gen_random_uuid(), nome text NOT NULL, rodovia text, km int, cidade text, uf char(2), geom geometry(Point,4326) NOT NULL, lado_pista text CHECK (lado_pista IN ('crescente','decrescente','ambos')) default 'ambos', ativo boolean NOT NULL default true — índice GiST(geom)</li><li>seed: Posto X (BR-153 km318 Ourinhos/SP)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">preco_posto</p>
+        <ul class="campos"><li>id uuid PK default gen_random_uuid(), posto_id uuid NOT NULL FK-&gt;posto, tipo text NOT NULL CHECK (tipo IN ('S10','S500')), preco_centavos int NOT NULL CHECK (preco_centavos &gt; 0), fonte text, confirmacoes int NOT NULL default 1, coletado_at timestamptz NOT NULL default now(), ttl_min int NOT NULL default 720, estado text NOT NULL CHECK (estado IN ('pendente','confirmado','suspeito')) default 'pendente' — view preco_vigente = registros onde estado='confirmado' AND now() &lt; coletado_at + (ttl_min||' min')::interval</li><li>índice (posto_id, tipo, coletado_at desc)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">media_rota</p>
+        <ul class="campos"><li>id uuid PK default gen_random_uuid(), rodovia text NOT NULL, cidade text, uf char(2), tipo text NOT NULL CHECK (tipo IN ('S10','S500')), media_centavos int NOT NULL, n_postos int NOT NULL CHECK (n_postos &gt;= 1), calculado_at timestamptz NOT NULL default now() — agregada por pg_cron a partir de preco_vigente</li><li>usada como referência do limiar</li><li>índice (rodovia, cidade, tipo)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">diesel_alert</p>
+        <ul class="campos"><li>id uuid PK default gen_random_uuid(), driver_id uuid NOT NULL FK, posto_id uuid FK null, tipo text CHECK (tipo IN ('S10','S500')), preco_centavos int null, media_centavos int null, delta_litro_centavos int null, pct_abaixo numeric(5,2) null, litros_tanque int null, economia_centavos int null, distancia_km numeric(6,2) null, decision text NOT NULL CHECK (decision IN ('fired','skipped')), skip_reason text null CHECK (skip_reason IN ('preco_velho','sem_candidato','sentido_contrario','abaixo_limiar','dedupe','teto_dia','frequencia','janela_silencio','opt_out','kill_switch','custo_teto')), dedupe_key text UNIQUE, created_at timestamptz NOT NULL default now() — RLS por driver_id</li><li>índice (driver_id, created_at desc)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">dispatch_queue</p>
+        <ul class="campos"><li>id uuid PK default gen_random_uuid(), alert_id uuid NOT NULL UNIQUE FK-&gt;diesel_alert, driver_id uuid NOT NULL, driver_phone text NOT NULL, template text NOT NULL, vars jsonb NOT NULL, buttons jsonb, status text NOT NULL CHECK (status IN ('queued','sending','sent','delivered','read','failed','canceled')) default 'queued', wamid text null, attempts int NOT NULL default 0, next_attempt_at timestamptz null, locked_at timestamptz null, custo_centavos int null, last_error text null, created_at timestamptz NOT NULL default now(), updated_at timestamptz NOT NULL default now() — outbox SKIP LOCKED</li><li>UNIQUE(alert_id) garante envio único</li><li>índice parcial (status,next_attempt_at) WHERE status IN ('queued','sending')</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">wpp_message_log</p>
+        <ul class="campos"><li>id uuid PK default gen_random_uuid(), wamid text, provider_msg_id text, direction text NOT NULL CHECK (direction IN ('out','in')), payload jsonb NOT NULL, status text, error_code text null, driver_id uuid null, created_at timestamptz NOT NULL default now() — trilha completa Meta</li><li>UNIQUE(direction, provider_msg_id) para idempotência de webhook</li><li>índice (wamid), (driver_id, created_at desc)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">consent_log</p>
+        <ul class="campos"><li>id uuid PK default gen_random_uuid(), driver_id uuid NOT NULL FK, finalidade text NOT NULL CHECK (finalidade IN ('location','wpp_alert')), acao text NOT NULL CHECK (acao IN ('opt_in','opt_out')), canal text NOT NULL CHECK (canal IN ('app','whatsapp','admin')), base_legal text NOT NULL default 'consentimento', texto_versao text, created_at timestamptz NOT NULL default now() — LGPD auditável, APPEND-ONLY (trigger bloqueia UPDATE/DELETE)</li><li>índice (driver_id, finalidade, created_at desc)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">alert_feedback</p>
+        <ul class="campos"><li>id uuid PK default gen_random_uuid(), alert_id uuid NOT NULL FK-&gt;diesel_alert, evento text NOT NULL CHECK (evento IN ('delivered','read','clicked','abastecido')), valor_centavos int null, created_at timestamptz NOT NULL default now() — UNIQUE(alert_id, evento) para idempotência</li><li>calibra limiar e mede economia/CTR</li><li>índice (alert_id)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">system_flag</p>
+        <ul class="campos"><li>key text PK, bool_value boolean, int_value int, updated_by text, updated_at timestamptz NOT NULL default now() — guarda kill_switch_global (bool) e custo_teto_dia_centavos (int)</li><li>lido antes de cada envio</li></ul>
+      </div></section>
+  <section id="s5"><h2><span class="n">5</span>Contratos de API</h2><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET/POST</span><code class="ep-rota">/functions/v1/wpp-webhook</code></div>
+        <p class="ep-desc">Webhook único da Meta Cloud API. GET (verificação): valida hub.mode=subscribe e hub.verify_token==VERIFY_TOKEN -&gt; responde hub.challenge com 200; token errado -&gt; 403. POST: valida assinatura X-Hub-Signature-256 (HMAC-SHA256 do corpo cru com APP_SECRET) ANTES de qualquer parse -&gt; assinatura inválida = 401 sem processamento. Recebe statuses[] (sent/delivered/read/failed) e messages[] (texto livre e quick-reply PARAR/AJUSTAR/VOLTAR/VER NO MAPA). Idempotente por statuses[].id e messages[].id (UNIQUE em wpp_message_log). Responde SEMPRE 200 em &lt;5 s; o processamento real é enfileirado. Roteamento: PARAR-&gt;opt-out imediato + cancela dispatch_queue 'queued' do driver; VOLTAR-&gt;opt-in; AJUSTAR-&gt;envia deep link de preferências; VER NO MAPA-&gt;registra alert_feedback('clicked') + responde link de mapa; statuses[]-&gt;atualiza dispatch_queue e grava alert_feedback(delivered/read). driver_id é resolvido pelo telefone verificado, nunca confiado do payload.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/diesel-location-ingest</code></div>
+        <p class="ep-desc">Recebe posição inferida. Body: {driver_id, lat, lng, heading_deg?, speed_kmh?, accuracy_m?, source:'live_share'|'last_route'|'checkin'}. Exige consent_location=true em diesel_alert_pref do driver, senão 403 e nada é gravado. Valida lat/lng (-90..90 / -180..180) -&gt; 422 se inválido. Grava driver_location (expires_at curto) e dispara diesel-alert-evaluate de forma assíncrona (fire-and-forget; o 202 não espera a decisão). Retorna 202 {accepted:true, location_id}. Rate-limit por driver (default 1 ingest/30 s) -&gt; 429.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/diesel-alert-evaluate</code></div>
+        <p class="ep-desc">Núcleo de avaliação. Body: {driver_id, lat, lng, heading_deg?, speed_kmh?, source}. Resolve candidatos via ST_DWithin (raio do pref), filtra por preco_vigente (TTL+estado='confirmado'), direção de viagem (ST_Azimuth vs heading, exceção speed&lt;10 km/h) e limiar (delta&gt;=limiar_litro_centavos OU pct_abaixo&gt;=limiar_pct). Ordena por economia desc, escolhe 1. Aplica dedupe (dedupe_key UNIQUE), teto_dia, frequencia_min, janela_silencio (America/Sao_Paulo), kill-switch e custo_teto. Se aprovado, INSERT diesel_alert(decision='fired') e dispatch_queue. Sempre grava diesel_alert (mesmo skip) para o funil. Retorna {decision:'fire'|'skip', skip_reason?, posto_id?, delta_litro_centavos?, economia_centavos?, alert_id}. Idempotente por dedupe_key.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/wpp-send-hsm</code></div>
+        <p class="ep-desc">Worker chamado pela fila (pg_cron a cada 30 s) ou invocado pós-enqueue. Seleciona itens dispatch_queue com FOR UPDATE SKIP LOCKED WHERE status='queued' AND (next_attempt_at IS NULL OR next_attempt_at&lt;=now()). Checa system_flag.kill_switch_global e custo_dia&lt;custo_teto_dia_centavos ANTES de enviar; se bloqueado, mantém 'queued' sem incrementar custo. Chama Graph API POST /{PHONE_NUMBER_ID}/messages com template 'diesel_barato_rota'. Sucesso -&gt; status='sending', wamid, custo_centavos; falha transitória -&gt; attempts++, next_attempt_at = now()+backoff exponencial (1m,5m,25m), max 3; falha permanente -&gt; 'failed'. Idempotente por alert_id (UNIQUE) — nunca reenvia.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">PATCH</span><code class="ep-rota">/rest/v1/diesel_alert_pref?driver_id=eq.{id}</code></div>
+        <p class="ep-desc">Atualiza preferências (opt_in, consent_location, raio_km, teto_dia, frequencia_min, janela_silencio_inicio/fim, limiar_pct, limiar_litro_centavos). Protegido por RLS (dono apenas). CHECK constraints rejeitam fora de faixa (raio 5..50 -&gt; 400). Toda mudança de opt_in/consent_location grava consent_log (timestamp, finalidade, canal, base_legal, texto_versao) via trigger. opt_in=false -&gt; honra opt-out imediato e cancela dispatch_queue 'queued' do driver.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/rest/v1/rpc/postos_proximos</code></div>
+        <p class="ep-desc">RPC PostGIS para painel/debug. Params {lat,lng,raio_km,heading?,tipo?}. Retorna por posto: nome, preco_s10, preco_s500, media_rota, delta_litro_centavos, pct_abaixo, distancia_km, lado_pista, ttl_ok(bool), sentido_ok(bool). SECURITY DEFINER mas restrito a papel operação; não expõe driver_location. Usado para validar o gatilho manualmente.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/functions/v1/diesel-ops-dashboard</code></div>
+        <p class="ep-desc">Painel admin (papel operação, exige JWT com role='operacao'). Retorna agregados: fila de disparos por status, taxa de entrega/leitura, CTR de VER NO MAPA, taxa de opt-out, custo HSM do dia vs teto, estado do kill-switch, % de cobertura de rota com preço vigente. APENAS agregados da mv_diesel_metrics; NUNCA lat/lng nem telefone identificável. PUT /functions/v1/diesel-ops-dashboard/kill-switch {on:bool} alterna system_flag (audita updated_by).</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/diesel-lgpd-erase</code></div>
+        <p class="ep-desc">Direito de exclusão (LGPD art. 18). Body: {driver_id}. Exige JWT do próprio driver ou papel operação com justificativa. Remove diesel_alert_pref, driver_location, alert_feedback do driver e desvincula o telefone; anonimiza diesel_alert/wpp_message_log (driver_id-&gt;null, payload com PII removida). Mantém consent_log mínimo anonimizado (hash do driver) como prova legal. Retorna {erased:true, tables:[...], at}.</p>
+      </div></section>
+  <section id="s6"><h2><span class="n">6</span>Frontend / fluxo</h2><ul><li>Tela 'Alertas de diesel' (PWA, dentro do app RODE): toggle de opt-in com texto de consentimento LGPD EXPLÍCITO (finalidade declarada: 'usar sua localização aproximada para avisar de posto barato na sua rota'; base legal: consentimento), slider de raio (5–50 km), seletor de teto diário (1–20), janela de silêncio (default 22:00–06:00). Estado via React com persistência otimista no PATCH /diesel_alert_pref e rollback em erro de validação. Exibe sempre 'Para parar a qualquer momento, responda PARAR no WhatsApp'. O toggle de localização é separado do de alertas (consent granular).</li><li>Componente de status do canal: mostra se o número WhatsApp está verificado/vinculado, data do último alerta recebido e economia acumulada no mês (soma de alert_feedback.valor_centavos). Reusa o card de economia do mock (src/data/diesel.ts: 700 L × R$0,27 = ~R$190). Quando sem dado fresco, exibe estado vazio explícito.</li><li>Mensagem proativa HSM 'diesel_barato_rota': corpo = 'Você está passando por {{cidade}} na {{rodovia}}. O {{posto}} está {{delta}}/L mais barato (R$ {{preco}}/L). No seu tanque dá pra economizar ~{{economia}}. {{distancia}} à frente.' Botões quick-reply: [VER NO MAPA] [AJUSTAR] [PARAR]. Exemplo renderizado com o mock: Ourinhos / BR-153 / Posto X / −R$0,27 / R$5,89 / ~R$190 / 6 km.</li><li>Fluxo conversacional de resposta: PARAR -&gt; opt-out imediato + 'Alertas de diesel desligados. Responda VOLTAR pra religar.'; VOLTAR -&gt; opt-in + confirmação; AJUSTAR -&gt; deep link para a tela de preferências; VER NO MAPA -&gt; registra alert_feedback('clicked') + responde link de mapa do posto (sem navegação própria).</li><li>Painel de operação admin (web, papel operação): fila de disparos do dia, status entrega/leitura por alerta, CTR de VER NO MAPA, taxa de opt-out, custo HSM acumulado vs teto com barra de progresso (alerta visual em 80%), botão kill-switch global com confirmação. Tabelas paginadas, somente agregados, rótulo 'atualizado até &lt;timestamp&gt;'. Sem exibir localização individual.</li><li>Tratamento de degradação: quando não há posição válida ou preço dentro do TTL, a tela mostra 'Sem dados frescos na sua rota agora' em vez de alerta velho; o gatilho não dispara (silencioso). Erros de rede no PATCH não perdem o estado local.</li></ul></section>
+  <section id="s7"><h2><span class="n">7</span>Lógica de negócio</h2><ul><li>Regra de disparo (limiar): aprova se (media_centavos - preco_centavos) &gt;= limiar_litro_centavos (default 15) OU pct_abaixo &gt;= limiar_pct (default 3.0), onde pct_abaixo = (media_centavos - preco_centavos)/media_centavos*100. Caso RODE: média 616, posto 589 -&gt; delta 27 (&gt;=15) e 4,38% (&gt;=3) -&gt; dispara.</li><li>Economia por tanque (personalizada): economia_centavos = litros_tanque (perfil do veículo; mock 700) × delta_litro_centavos. Ex.: 700 × 27 = 18900 centavos -&gt; formata 'R$ 190' (arredonda para a dezena de real mais próxima). Nunca usa valor genérico; sem litros_tanque no perfil, usa default conservador e marca economia como estimativa.</li><li>Filtro de direção: bearing = ST_Azimuth(geom_motorista, geom_posto) em graus; diff = menor ângulo entre heading_motorista e bearing (0..180). Aprova se diff &lt;= 90 (posto à frente) OU speed_kmh &lt; 10 (parado, ignora direção). Sem heading válido, exige distancia &lt;= raio_km e usa o lado_pista compatível com a última rota; se nem isso, skip_reason='sentido_contrario'.</li><li>Filtro de candidatos: ST_DWithin(geom_motorista::geography, geom_posto::geography, raio_km*1000) AND posto.ativo AND existe preco_vigente (estado='confirmado' AND now()&lt;coletado_at+ttl). Ordena por economia_centavos desc; escolhe o melhor 1. Sem candidato -&gt; skip_reason='sem_candidato'.</li><li>Dedupe e teto: dedupe_key = md5(driver_id || posto_id || date_trunc('hour', now() AT TIME ZONE 'America/Sao_Paulo')). INSERT em diesel_alert com UNIQUE(dedupe_key) -&gt; conflito = skip_reason='dedupe'. Recusa também se count(fired hoje) &gt;= teto_dia ('teto_dia'), se now() &lt; último_fired + frequencia_min ('frequencia'), ou se hora local dentro de [janela_silencio_inicio, janela_silencio_fim) ('janela_silencio', tratando intervalo que cruza meia-noite).</li><li>TTL do dado: sem preço vigente -&gt; decision='skipped', skip_reason='preco_velho'. Nunca alerta com dado expirado — protege a confiança (risco crítico do PRD de produto).</li><li>Idempotência de envio: dispatch_queue.alert_id UNIQUE; worker consome com FOR UPDATE SKIP LOCKED; reentrega de webhook não duplica status (UNIQUE em wpp_message_log e alert_feedback). Retry com backoff exponencial (1m,5m,25m), max 3 tentativas, depois 'failed'.</li><li>Opt-out e cancelamento: PARAR/opt_in=false -&gt; UPDATE diesel_alert_pref + consent_log(opt_out) + UPDATE dispatch_queue SET status='canceled' WHERE driver_id=$1 AND status='queued', tudo na mesma transação, em &lt;5 s.</li><li>Kill-switch e teto de custo global: antes de wpp-send-hsm chamar a Graph API, lê system_flag.kill_switch_global e soma custo_centavos do dia; se kill_switch ON ou custo&gt;=custo_teto_dia_centavos, deixa item 'queued' sem incrementar custo (skip_reason='kill_switch'/'custo_teto' no log de tentativa).</li><li>Feedback loop / calibração: alert_feedback (delivered/read/clicked/abastecido) alimenta CTR e economia realizada por motorista; se CTR persistentemente baixo, sugere subir limiar_pct/limiar_litro do motorista (ajuste, não automático sem revisão).</li></ul></section>
+  <section id="s8"><h2><span class="n">8</span>Integrações</h2><ul><li>WhatsApp Cloud API (Meta Graph API v20+): envio do template HSM 'diesel_barato_rota', recebimento de status (sent/delivered/read/failed) e respostas de botão via webhook; verificação por VERIFY_TOKEN (GET) e assinatura HMAC-SHA256 (POST).</li><li>BSP alternativo (Twilio/Gupshup/Zenvia) atrás da interface WppGateway para portabilidade e fallback de número.</li><li>Provedor de map-matching/geocoding (Mapbox ou Google) para projetar a posição sobre a rodovia e refinar direção, acionado apenas quando o PostGIS local não basta.</li><li>Fonte de posição: compartilhamento de localização via mensagem do WhatsApp (location message), última cidade/rota conhecida do app RODE, ou check-in manual.</li><li>Módulo diesel-app (mesma plataforma RODE): consome preco_posto e a base de postos georreferenciada coletada por OCR/crowdsourcing — dependência de dados, não de runtime.</li><li>Perfil do veículo (módulo Calculadora/Cadastro): fornece litros_tanque para a economia personalizada.</li><li>pg_cron (Supabase): agendamento da purga de driver_location, agregação de media_rota, refresh da mv_diesel_metrics e tick do worker wpp-send-hsm.</li></ul></section>
+  <section id="s9"><h2><span class="n">9</span>Segurança & LGPD</h2><ul><li>LGPD - geolocalização é dado pessoal: opt-in explícito com finalidade declarada e base legal (consentimento) registrado em consent_log com timestamp e versão do texto; consent_location separado de opt_in de alertas (granularidade). Sem consent_location=true, diesel-location-ingest retorna 403 e nada é persistido.</li><li>Minimização e retenção: driver_location.expires_at default now()+6h e job pg_cron de purga; guarda-se a posição só pelo tempo de avaliar o gatilho. NÃO se constrói histórico de trajeto persistente.</li><li>Opt-out imediato: PARAR honrado em &lt;5 s, cancelando dispatch_queue 'queued' do driver e gravando consent_log(opt_out); nenhum alerta posterior até VOLTAR.</li><li>RLS por driver_id em diesel_alert_pref, driver_location, diesel_alert, consent_log e alert_feedback (políticas pgTAP-testadas). Motorista só lê/escreve o próprio dado; admin acessa apenas mv_diesel_metrics (agregados), sem lat/lng nem telefone identificável.</li><li>Verificação do webhook: GET valida VERIFY_TOKEN; POST valida X-Hub-Signature-256 (HMAC-SHA256 do corpo cru com APP_SECRET) ANTES de parsear — payload forjado é rejeitado com 401. driver_id resolvido pelo telefone verificado, nunca do payload.</li><li>Segredos fora do repo: WHATSAPP_TOKEN, PHONE_NUMBER_ID, APP_SECRET, VERIFY_TOKEN em variáveis de ambiente do Supabase; rotação periódica do token; .env no .gitignore.</li><li>Conformidade Meta: somente templates HSM aprovados para mensagem proativa fora da janela de 24 h; respeito ao tier/qualidade do número; opt-out reduz reclamações e protege o número de bloqueio.</li><li>Direito de exclusão (LGPD art. 18): diesel-lgpd-erase remove preferências, localizações, feedback e desvincula o telefone, anonimiza alertas e logs Meta, mantendo apenas consent_log mínimo anonimizado como prova legal. Toda escrita passa por Edge Function com checagem de dono; sem SQL livre exposto.</li></ul></section>
+  <section id="s10"><h2><span class="n">10</span>Não-funcionais</h2><ul><li>Latência: &lt; 60 s do recebimento da posição ao disparo do HSM (p95), medido por created_at(driver_location) -&gt; created_at(dispatch_queue) com status&gt;='sending'; webhook responde 200 em &lt; 5 s (p99).</li><li>Custo controlado: teto diário de HSM por motorista (default 4) + teto de custo agregado global (system_flag) + kill-switch; custo por alerta em dispatch_queue.custo_centavos; alerta de operação quando custo_dia atinge 80% do teto.</li><li>Confiabilidade de entrega: outbox com retry exponencial (1m/5m/25m, max 3) e idempotência por alert_id; webhooks de status reconciliam o estado real (delivered/read/failed).</li><li>Frescor do dado: nunca disparar com preço fora do TTL (default 12 h); cobertura monitorada por % de rota com preço vigente no painel.</li><li>Disponibilidade: falha do map-matching degrada para PostGIS local sem derrubar o gatilho; falha da Cloud API mantém itens 'queued' sem perda.</li><li>Anti-spam: 1 alerta por posto por janela de hora (dedupe), janela de silêncio (America/Sao_Paulo) e frequência mínima entre alertas.</li><li>Escalabilidade geoespacial: índices GiST em posto.geom e driver_location.geom; postos_proximos p95 &lt; 100 ms para base de 10k postos e raio 50 km.</li><li>Observabilidade: alert_id rastreável ponta-a-ponta; skip_reason tipado permite diagnosticar o funil; mv_diesel_metrics com refresh por pg_cron.</li></ul></section>
+  <section id="s11"><h2><span class="n">11</span>Etapas de implementação</h2><ol><li>1. Provisionar PostGIS; criar schema (posto, preco_posto, media_rota, driver_location, diesel_alert_pref, diesel_alert, dispatch_queue, wpp_message_log, consent_log, alert_feedback, system_flag) com CHECKs, índices GiST, view preco_vigente, trigger append-only de consent_log e políticas RLS (validadas por pgTAP).</li><li>2. Seed da base de postos a partir do mock (Posto X / BR-153 km318 Ourinhos/SP; Posto Avenida km305; média R$6,16) e RPC postos_proximos; validar ST_DWithin/ST_Azimuth com os casos conhecidos do mock.</li><li>3. Configurar app WhatsApp na Meta, número verificado e submeter o template HSM 'diesel_barato_rota' (variáveis + 3 botões) para aprovação — CAMINHO CRÍTICO, começar cedo.</li><li>4. Implementar wpp-webhook (GET verify + validação HMAC + roteamento status/botões/opt-out) e wpp_message_log idempotente.</li><li>5. Implementar diesel-location-ingest (checagem de consent_location, validação lat/lng, rate-limit) + driver_location + job pg_cron de purga.</li><li>6. Implementar diesel-alert-evaluate (candidatos PostGIS, TTL, direção, limiar, economia por tanque, dedupe/teto/frequencia/silencio) -&gt; grava diesel_alert e enfileira dispatch_queue.</li><li>7. Implementar wpp-send-hsm (SKIP LOCKED, kill-switch + teto de custo, Graph API, backoff/retry) e reconciliação de status via webhook.</li><li>8. Tela de opt-in/preferências no PWA (PATCH + consent_log) + fluxo de botões PARAR/VOLTAR/AJUSTAR/VER NO MAPA.</li><li>9. Job de agregação media_rota + mv_diesel_metrics; painel de operação admin (fila, status, CTR, opt-out, custo, kill-switch).</li><li>10. Feedback loop (alert_feedback) e calibração de limiar; diesel-lgpd-erase; testes de carga (k6) geoespacial e de fila; hardening LGPD (purga, exclusão, RLS).</li></ol></section>
+  <section id="s12"><h2><span class="n">12</span>Plano de teste</h2><div class="teste"><h4>unit</h4><ul><li>limiar - caso RODE: media=616, posto=589 -&gt; delta=27, pct=4,38% -&gt; avalia('fire') (&gt;=15c E &gt;=3%)</li><li>limiar borda inferior: media=616, posto=605 -&gt; delta=11, pct=1,79% -&gt; 'skip' skip_reason='abaixo_limiar'</li><li>limiar borda OR: media=616, posto=601 -&gt; delta=15 (==15) E pct=2,44% (&lt;3) -&gt; 'fire' (regra OR satisfeita pelo delta)</li><li>economia - tanque 700, delta 27 -&gt; 18900c -&gt; formata 'R$ 190' (arredonda dezena de real)</li><li>economia - tanque 400, delta 15 -&gt; 6000c -&gt; 'R$ 60' (personalização por tanque, não genérico)</li><li>direção à frente: heading=10°, bearing=20° -&gt; diff=10 &lt;=90 -&gt; aprova; heading=10°, bearing=350° -&gt; diff=20 &lt;=90 -&gt; aprova (normalização circular)</li><li>direção contrária: heading=10°, bearing=190° -&gt; diff=180 &gt;90 -&gt; reprova ('sentido_contrario')</li><li>direção parado: heading=10°, bearing=190°, speed=5 km/h -&gt; ignora direção -&gt; não reprova por sentido</li><li>TTL expirado: coletado_at=now()-13h, ttl=720min -&gt; não vigente -&gt; 'preco_velho'</li><li>TTL no limite: coletado_at=now()-11h59m, ttl=720min -&gt; vigente -&gt; não bloqueia por TTL</li><li>dedupe_key: mesmo driver+posto+hora gera a mesma key (md5 estável)</li><li>janela de silêncio normal: hora local 23:30, janela 22:00-06:00 -&gt; 'janela_silencio'</li><li>janela de silêncio cruzando meia-noite: hora local 05:30, janela 22:00-06:00 -&gt; 'janela_silencio'; 06:30 -&gt; fora da janela</li><li>frequência: último fired há 40 min, frequencia_min=60 -&gt; 'frequencia'; há 70 min -&gt; não bloqueia</li><li>assinatura webhook: HMAC-SHA256(corpo, APP_SECRET) calculado bate -&gt; válido; corpo alterado em 1 byte -&gt; inválido</li><li>formatação de centavos: 589 -&gt; 'R$ 5,89'; 616 -&gt; 'R$ 6,16'; 27 -&gt; '−R$ 0,27'</li></ul></div><div class="teste"><h4>integracao</h4><ul><li>ingest sem consent_location -&gt; 403 e zero linhas em driver_location</li><li>ingest com consent_location e lat/lng inválidos (lat=120) -&gt; 422, nada gravado</li><li>ingest válido -&gt; grava driver_location e dispara evaluate; Posto X a 6 km à frente com preço vigente -&gt; 1 linha em dispatch_queue('queued')</li><li>evaluate com teto_dia=4 já atingido hoje -&gt; diesel_alert(decision='skipped', skip_reason='teto_dia'), sem dispatch_queue</li><li>evaluate sem candidato no raio -&gt; skip_reason='sem_candidato'</li><li>wpp-send-hsm com kill_switch_global ON -&gt; item permanece 'queued', Graph API não chamada (MSW), custo_dia não incrementa</li><li>wpp-send-hsm com custo_dia &gt;= teto -&gt; item 'queued', sem envio</li><li>wpp-send-hsm sucesso (MSW 200 com wamid) -&gt; status='sending', wamid e custo_centavos preenchidos</li><li>wpp-send-hsm falha transitória (MSW 503) -&gt; attempts=1, next_attempt_at futuro, status volta a 'queued'</li><li>webhook GET verify_token correto -&gt; 200 com challenge; token errado -&gt; 403</li><li>webhook POST assinatura inválida -&gt; 401, nenhum efeito colateral</li><li>webhook status 'delivered' depois 'read' -&gt; dispatch_queue atualizado e alert_feedback('delivered'),('read') sem duplicar</li><li>webhook reentrega do mesmo statuses[].id -&gt; idempotente (UNIQUE), 1 só linha de log</li><li>PATCH diesel_alert_pref raio_km=4 -&gt; 400 (CHECK 5..50); raio_km=8 -&gt; 200 e updated_at muda</li><li>PATCH opt_in=false -&gt; dispatch_queue 'queued' do driver vira 'canceled' e consent_log(opt_out) gravado</li><li>RLS: driver A tenta PATCH pref de driver B -&gt; negado (0 linhas)</li></ul></div><div class="teste"><h4>e2e</h4><ul><li>Jornada feliz: motorista dá opt-in + consent na tela -&gt; compartilha localização (Ourinhos/BR-153 km312) -&gt; recebe HSM 'diesel_barato_rota' com Posto X, R$5,89, −R$0,27/L, ~R$190, 6 km à frente, em &lt;60 s (validado com Graph API mockada)</li><li>Opt-out: motorista responde PARAR -&gt; recebe 'Alertas de diesel desligados...', opt_in=false em &lt;5 s, próximo gatilho não dispara, consent_log registra opt_out; responde VOLTAR -&gt; religa</li><li>VER NO MAPA: clique no botão -&gt; alert_feedback('clicked') gravado, responde link de mapa, CTR sobe no painel admin</li><li>Dado velho: posição válida mas todos os preços do trecho fora do TTL -&gt; nenhum alerta enviado (silencioso); painel mostra cobertura baixa naquela rota</li><li>Spam guard: dois postos baratos no mesmo trecho na mesma hora -&gt; apenas 1 alerta (o de maior economia, Posto X), dedupe ativo no segundo</li><li>Janela de silêncio: posição válida às 23:30 local -&gt; gatilho avaliado mas não dispara; mesma situação às 07:00 -&gt; dispara</li></ul></div><div class="teste"><h4>carga</h4><ul><li>postos_proximos com 10k postos e raio 50 km -&gt; p95 &lt; 100 ms com índice GiST</li><li>1.000 ingests simultâneos -&gt; fila absorve sem perder disparos e sem exceder teto de custo agregado (kill-switch/custo respeitados sob concorrência)</li><li>reconciliação de 5k webhooks de status -&gt; sem duplicação (UNIQUE), log consistente</li><li>SKIP LOCKED: 5 workers concorrentes na dispatch_queue -&gt; cada item processado por 1 único worker, zero envio duplicado</li></ul></div></section>
+  <section id="s13"><h2><span class="n">13</span>Critérios de aceite</h2><ul class="check"><li>Dado um motorista com opt-in e consent_location ativos, tanque 700 L e posição em Ourinhos/BR-153, quando um posto a &lt;=8 km à frente tem diesel &gt;=R$0,15/L OU &gt;=3% abaixo da média da rota com preço dentro do TTL, então ele recebe em &lt;60 s (p95) o HSM 'diesel_barato_rota' com cidade, posto, preço (R$5,89), delta (−R$0,27/L), economia personalizada (~R$190) e distância (6 km).</li><li>Dado um motorista sem consent_location ativo, quando uma posição é enviada a diesel-location-ingest, então a resposta é 403, nenhuma linha é persistida em driver_location e nenhum alerta é gerado.</li><li>Dado um motorista que responde PARAR no WhatsApp, quando a mensagem é recebida, então opt_in vira false em &lt;5 s, todos os itens 'queued' do driver em dispatch_queue viram 'canceled', consent_log registra opt_out e nenhum alerta é enviado até ele responder VOLTAR.</li><li>Dado que todos os preços do trecho estão fora do TTL (default 12 h), quando o gatilho é avaliado, então diesel_alert é gravado com decision='skipped' e skip_reason='preco_velho' e nenhuma mensagem é enviada.</li><li>Dado que o motorista já recebeu o teto diário de alertas (default 4), quando um novo posto barato é detectado, então o disparo é recusado com skip_reason='teto_dia' e custo_dia de HSM não aumenta.</li><li>Dado um posto barato no sentido contrário ao heading do motorista (diferença angular &gt;90°), quando o gatilho é avaliado, então não dispara (skip_reason='sentido_contrario'), exceto se speed_kmh&lt;10 (motorista parado), caso em que a direção é ignorada.</li><li>Dado o mesmo posto, mesmo motorista e mesma janela de hora (America/Sao_Paulo), quando dois gatilhos ocorrem, então apenas um alerta é enviado porque o segundo INSERT viola dedupe_key UNIQUE (skip_reason='dedupe').</li><li>Dado o webhook da Meta, quando chega POST com X-Hub-Signature-256 inválida, então a resposta é 401 e nenhum efeito colateral ocorre; e quando o mesmo statuses[].id/messages[].id chega duas vezes, então o processamento é idempotente (1 só linha de log e de feedback).</li><li>Dado o kill_switch_global ativado (ou custo_dia &gt;= teto), quando há itens 'queued' na fila, então a Graph API não é chamada, os itens permanecem 'queued' e custo_dia não incrementa.</li><li>Dado um alerta entregue e clicado em VER NO MAPA, quando os webhooks/clique chegam, então alert_feedback registra delivered/read/clicked sem duplicar e o painel de operação reflete CTR e economia estimada (litros × delta).</li><li>Dado o PATCH /diesel_alert_pref com raio_km fora de [5,50], quando enviado, então a API responde 400 (violação de CHECK) e nenhuma preferência é alterada.</li><li>Dado postos_proximos com base de 10k postos e raio 50 km, quando consultado, então o p95 de resposta é &lt; 100 ms (índice GiST).</li></ul></section>
+  <section id="s14"><h2><span class="n">14</span>Diagramas</h2><p class="hint">Renderizados com Mermaid — requer internet ao abrir o arquivo.</p><h4>Arquitetura da solução</h4><div class="mermaid-box"><pre class="mermaid">flowchart LR
+  motorista[&quot;Motorista (WhatsApp / PWA RODE)&quot;] --&gt;|&quot;posicao / opt-in&quot;| ingest[&quot;diesel-location-ingest (Edge Fn)&quot;]
+  ingest --&gt; driverloc[(&quot;driver_location (PostGIS, expira 6h)&quot;)]
+  ingest --&gt;|&quot;fire-and-forget&quot;| evaluate[&quot;diesel-alert-evaluate (Edge Fn)&quot;]
+  evaluate --&gt;|&quot;ST_DWithin / ST_Azimuth&quot;| pg[(&quot;Postgres + PostGIS + RLS&quot;)]
+  evaluate --&gt;|&quot;INSERT fired&quot;| outbox[(&quot;dispatch_queue (outbox SKIP LOCKED)&quot;)]
+  cron[&quot;pg_cron (tick 30s)&quot;] --&gt; sender[&quot;wpp-send-hsm (worker)&quot;]
+  outbox --&gt; sender
+  flag[(&quot;system_flag: kill_switch / custo_teto&quot;)] --&gt; sender
+  sender --&gt;|&quot;template diesel_barato_rota&quot;| meta[&quot;WhatsApp Cloud API (Meta Graph v20+)&quot;]
+  meta --&gt;|&quot;statuses / botoes&quot;| webhook[&quot;wpp-webhook (HMAC-SHA256)&quot;]
+  webhook --&gt; log[(&quot;wpp_message_log / alert_feedback&quot;)]
+  webhook --&gt; motorista
+  admin[&quot;Painel Ops admin&quot;] --&gt; dash[&quot;diesel-ops-dashboard&quot;]
+  dash --&gt; mv[(&quot;mv_diesel_metrics (agregados)&quot;)]</pre></div><h4>Casos de uso</h4><div class="mermaid-box"><pre class="mermaid">flowchart LR
+  motorista((&quot;Motorista&quot;))
+  admin((&quot;Admin Operacao&quot;))
+  meta((&quot;Meta Cloud API&quot;))
+  subgraph Sistema[&quot;Sistema · Diesel na rota WhatsApp&quot;]
+    optin[&quot;Dar opt-in e consentimento (LGPD)&quot;]
+    ajustar[&quot;Ajustar preferencias (raio/teto/silencio)&quot;]
+    receber[&quot;Receber alerta HSM diesel_barato_rota&quot;]
+    parar[&quot;Responder PARAR / VOLTAR (opt-out)&quot;]
+    vermapa[&quot;Clicar VER NO MAPA&quot;]
+    avaliar[&quot;Avaliar gatilho e enfileirar&quot;]
+    enviar[&quot;Enviar HSM e reconciliar status&quot;]
+    painel[&quot;Monitorar fila/CTR/custo e kill-switch&quot;]
+    erase[&quot;Solicitar exclusao (LGPD art.18)&quot;]
+  end
+  motorista --&gt; optin
+  motorista --&gt; ajustar
+  motorista --&gt; receber
+  motorista --&gt; parar
+  motorista --&gt; vermapa
+  motorista --&gt; erase
+  admin --&gt; painel
+  admin --&gt; erase
+  meta --&gt; avaliar
+  meta --&gt; enviar</pre></div><h4>Fluxo principal</h4><div class="mermaid-box"><pre class="mermaid">flowchart TD
+  start[&quot;Posicao recebida em diesel-location-ingest&quot;] --&gt; consent{&quot;consent_location = true?&quot;}
+  consent --&gt;|&quot;nao&quot;| e403[&quot;403 · nada gravado&quot;]
+  consent --&gt;|&quot;sim&quot;| grava[&quot;Grava driver_location · dispara evaluate&quot;]
+  grava --&gt; cand{&quot;Candidato em ST_DWithin (raio)?&quot;}
+  cand --&gt;|&quot;nao&quot;| skipcand[&quot;skip: sem_candidato&quot;]
+  cand --&gt;|&quot;sim&quot;| ttl{&quot;preco_vigente dentro do TTL?&quot;}
+  ttl --&gt;|&quot;nao&quot;| skipttl[&quot;skip: preco_velho&quot;]
+  ttl --&gt;|&quot;sim&quot;| dir{&quot;Posto a frente (diff menor igual 90 ou speed menor 10)?&quot;}
+  dir --&gt;|&quot;nao&quot;| skipdir[&quot;skip: sentido_contrario&quot;]
+  dir --&gt;|&quot;sim&quot;| lim{&quot;delta maior igual 15c OU pct maior igual 3 por cento?&quot;}
+  lim --&gt;|&quot;nao&quot;| skiplim[&quot;skip: abaixo_limiar&quot;]
+  lim --&gt;|&quot;sim&quot;| guard{&quot;dedupe / teto_dia / frequencia / janela_silencio OK?&quot;}
+  guard --&gt;|&quot;nao&quot;| skipguard[&quot;skip: dedupe ou teto_dia ou frequencia ou janela_silencio&quot;]
+  guard --&gt;|&quot;sim&quot;| ks{&quot;kill_switch off e custo menor que teto?&quot;}
+  ks --&gt;|&quot;nao&quot;| queued[&quot;mantem queued · skip kill_switch/custo_teto&quot;]
+  ks --&gt;|&quot;sim&quot;| fire[&quot;fired · dispatch_queue · envia HSM (menos de 60s)&quot;]</pre></div><h4>UML — classes/serviços</h4><div class="mermaid-box"><pre class="mermaid">classDiagram
+  class DieselAlertEvaluate {
+    +avaliar(driver_id, lat, lng, heading, speed) Decision
+    -candidatosDWithin(raio_km) PostoList
+    -filtroDirecao(heading, bearing, speed) bool
+    -checaLimiar(media, preco) bool
+    -calcEconomia(litros, delta) int
+    -aplicaGuards(dedupe, teto, freq, silencio) string
+  }
+  class WppSendHsm {
+    +tick() void
+    -selecionaSkipLocked() DispatchItemList
+    -checaKillSwitchECusto() bool
+    -enviarTemplate(item) wamid
+    -backoff(attempts) timestamptz
+  }
+  class WppWebhook {
+    +verifyGet(mode, token) challenge
+    +postEvento(sig, body) void
+    -validaHmac(body, APP_SECRET) bool
+    -roteiaBotao(acao) void
+  }
+  class DieselAlertPref {
+    +driver_id uuid
+    +opt_in bool
+    +consent_location bool
+    +raio_km int
+    +teto_dia int
+    +limiar_pct numeric
+  }
+  class DieselAlert {
+    +id uuid
+    +decision text
+    +skip_reason text
+    +economia_centavos int
+    +dedupe_key text
+  }
+  class DispatchQueue {
+    +alert_id uuid
+    +status text
+    +wamid text
+    +custo_centavos int
+  }
+  DieselAlertEvaluate ..&gt; DieselAlertPref
+  DieselAlertEvaluate ..&gt; DieselAlert
+  DieselAlertEvaluate --&gt; DispatchQueue
+  WppSendHsm --&gt; DispatchQueue
+  WppWebhook ..&gt; DispatchQueue</pre></div><h4>Banco de dados (ER)</h4><div class="mermaid-box"><pre class="mermaid">erDiagram
+  driver ||--|| diesel_alert_pref : &quot;configura&quot;
+  driver ||--o{ driver_location : &quot;reporta&quot;
+  driver ||--o{ diesel_alert : &quot;recebe&quot;
+  driver ||--o{ consent_log : &quot;registra&quot;
+  posto ||--o{ preco_posto : &quot;tem&quot;
+  posto ||--o{ diesel_alert : &quot;referencia&quot;
+  diesel_alert ||--|| dispatch_queue : &quot;enfileira&quot;
+  diesel_alert ||--o{ alert_feedback : &quot;gera&quot;
+  diesel_alert_pref {
+    uuid driver_id PK
+    bool opt_in
+    bool consent_location
+    int raio_km
+    int teto_dia
+  }
+  driver_location {
+    uuid id PK
+    uuid driver_id FK
+    timestamptz expires_at
+  }
+  posto {
+    uuid id PK
+    text rodovia
+    int km
+  }
+  preco_posto {
+    uuid id PK
+    uuid posto_id FK
+    int preco_centavos
+    int ttl_min
+  }
+  diesel_alert {
+    uuid id PK
+    uuid driver_id FK
+    uuid posto_id FK
+    text decision
+    text dedupe_key
+  }
+  dispatch_queue {
+    uuid id PK
+    uuid alert_id FK
+    text status
+    text wamid
+  }
+  alert_feedback {
+    uuid id PK
+    uuid alert_id FK
+    text evento
+  }
+  consent_log {
+    uuid id PK
+    uuid driver_id FK
+    text acao
+  }</pre></div><h4>Lógica do plano de testes</h4><div class="mermaid-box"><pre class="mermaid">flowchart TD
+  subgraph unit[&quot;Unit (Vitest / Deno test)&quot;]
+    u1[&quot;limiar caso RODE: 616/589 fire&quot;]
+    u2[&quot;economia 700 x 27 -&gt; R$190&quot;]
+    u3[&quot;direcao: diff menor igual 90 aprova / 180 reprova&quot;]
+    u4[&quot;TTL 13h -&gt; preco_velho&quot;]
+    u5[&quot;dedupe_key md5 estavel + silencio meia-noite&quot;]
+    u6[&quot;HMAC-SHA256 valido vs 1 byte alterado&quot;]
+  end
+  subgraph integ[&quot;Integracao (pgTAP / MSW)&quot;]
+    i1[&quot;ingest sem consent -&gt; 403&quot;]
+    i2[&quot;ingest valido -&gt; 1 queued&quot;]
+    i3[&quot;kill_switch ON -&gt; permanece queued&quot;]
+    i4[&quot;webhook assinatura invalida -&gt; 401&quot;]
+    i5[&quot;PATCH opt_in=false -&gt; cancela queued&quot;]
+    i6[&quot;RLS: driver A nega pref driver B&quot;]
+  end
+  subgraph e2e[&quot;E2E (Playwright) + Carga (k6)&quot;]
+    e1[&quot;Jornada feliz: HSM Posto X menos de 60s&quot;]
+    e2[&quot;PARAR -&gt; opt-out menos de 5s -&gt; VOLTAR&quot;]
+    e3[&quot;Spam guard: 2 postos -&gt; 1 alerta&quot;]
+    e4[&quot;postos_proximos 10k -&gt; p95 menor 100ms&quot;]
+  end
+  unit --&gt; integ --&gt; e2e</pre></div></section>
+
+  <p class="disclaimer">Documento gerado para orientar o desenvolvimento. Estimativas de esforço/custo são ordem de grandeza para planejamento (premissa R$ 2.100/dev-dia, equipe enxuta) — não é proposta comercial. O veredito de lucratividade do produto é estimativa; o piso ANTT é referência regulatória.</p>
+</div>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose', flowchart: { useMaxWidth: true }, er: { useMaxWidth: true } });
+</script>
+</body>
+</html>

@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PRD Técnico — Documentos · App · RODE COM LUCRO</title>
+<style>
+  :root{--brand:#2563eb;--brand-d:#1e40af;--ink:#0f172a;--ink-6:#475569;--ink-4:#94a3b8;--line:#e2e8f0;--bg:#f1f5f9;--card:#fff;--lucro:#059669}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.6;-webkit-text-size-adjust:100%}
+  .wrap{max-width:920px;margin:0 auto;padding:40px 20px 90px}
+  header.doc{border-bottom:3px solid var(--brand);padding-bottom:20px;margin-bottom:10px}
+  .kicker{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand)}
+  h1{font-size:30px;line-height:1.15;margin:8px 0 6px;font-weight:800;letter-spacing:-.01em}
+  .sub{color:var(--ink-6);font-size:15px;max-width:64ch}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  .pill{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 14px}
+  .pill b{display:block;font-size:16px;color:var(--ink)}
+  .pill span{color:var(--ink-4);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .toc{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 4px}
+  .toc a{font-size:12px;font-weight:600;color:var(--brand-d);background:#eef4ff;border:1px solid #dbe6ff;border-radius:999px;padding:4px 11px;text-decoration:none}
+  .toc a:hover{background:#dbe6ff}
+  section{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-top:18px;scroll-margin-top:14px}
+  h2{font-size:18px;margin:0 0 14px;display:flex;align-items:center;gap:9px;font-weight:800}
+  h2 .n{display:inline-flex;width:26px;height:26px;align-items:center;justify-content:center;background:var(--brand);color:#fff;border-radius:8px;font-size:13px;font-weight:800;flex:none}
+  h4{margin:18px 0 8px;font-size:14px;color:var(--brand-d);font-weight:700}
+  h4:first-of-type{margin-top:4px}
+  p{margin:0 0 10px;color:var(--ink-6)}
+  .hint{font-size:12px;color:var(--ink-4);margin-top:-4px}
+  ul,ol{margin:0;padding-left:22px}
+  li{margin:6px 0;color:var(--ink-6)}
+  ul.check{list-style:none;padding-left:0}
+  ul.check li{position:relative;padding-left:28px;margin:9px 0}
+  ul.check li::before{content:'';position:absolute;left:0;top:4px;width:16px;height:16px;border:2px solid var(--lucro);border-radius:4px}
+  .badge{display:inline-block;background:#eff6ff;color:var(--brand-d);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:800;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;flex:none}
+  .tags{display:flex;flex-wrap:wrap;gap:7px}
+  .tags span{background:#eff6ff;color:var(--brand-d);border:1px solid #dbeafe;border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600}
+  /* Modelo de dados */
+  .entidade{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 12px;background:#fbfdff}
+  .ent-nome{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px;font-weight:700;color:var(--brand-d);margin:0 0 8px}
+  ul.campos{list-style:none;padding-left:0;margin:0;display:grid;gap:5px}
+  ul.campos li{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--ink-6);background:#fff;border:1px solid var(--line);border-radius:7px;padding:5px 9px;overflow-wrap:anywhere;word-break:break-word;margin:0}
+  /* API */
+  .endpoint{border-left:3px solid var(--brand);background:#fbfdff;border-radius:0 10px 10px 0;padding:10px 14px;margin:0 0 12px}
+  .ep-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .ep-rota{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:var(--ink);overflow-wrap:anywhere;word-break:break-word}
+  .ep-desc{font-size:13px;margin:7px 0 0}
+  .teste{border-left:3px solid var(--brand);padding-left:15px;margin:14px 0}
+  .empty{color:var(--ink-4)}
+  /* Diagramas */
+  .mermaid-box{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px;margin:6px 0 10px;overflow-x:auto;text-align:center}
+  .mermaid{font-size:14px}
+  .disclaimer{margin-top:26px;font-size:12px;color:var(--ink-4);border-top:1px solid var(--line);padding-top:16px}
+  @media print{body{background:#fff}.wrap{padding:0}.toc{display:none}section{break-inside:avoid;border:none;border-bottom:1px solid var(--line);border-radius:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="doc">
+    <div class="kicker">RODE COM LUCRO · PRD Técnico</div>
+    <h1>Documentos · App</h1>
+    <p class="sub">Guia de desenvolvimento para dev full-stack sênior. O protótipo está 100% mockado; este documento orienta a construção real da funcionalidade.</p>
+    <div class="meta">
+      <div class="pill"><span>Esforço</span><b>10–17 dev-dias</b></div>
+      <div class="pill"><span>Prazo</span><b>2 a 3 semanas</b></div>
+      <div class="pill"><span>Custo estimado</span><b>R$ 21k–R$ 36k</b></div>
+      <div class="pill"><span>Premissa</span><b>R$ 2.100/dev-dia</b></div>
+    </div>
+  </header>
+  <nav class="toc"><a href="#s1">Visão técnica</a><a href="#s2">Arquitetura</a><a href="#s3">Stack</a><a href="#s4">Modelo de dados</a><a href="#s5">Contratos de API</a><a href="#s6">Frontend / fluxo</a><a href="#s7">Lógica de negócio</a><a href="#s8">Integrações</a><a href="#s9">Segurança &amp; LGPD</a><a href="#s10">Não-funcionais</a><a href="#s11">Etapas</a><a href="#s12">Plano de teste</a><a href="#s13">Critérios de aceite</a><a href="#s14">Diagramas</a></nav>
+
+  <section id="s1"><h2><span class="n">1</span>Visão técnica</h2><p>Módulo Documentos (canal App) é o &quot;Despachante digital&quot; do RODE COM LUCRO: hub privado onde o caminhoneiro autônomo cadastra e mantém em dia documentos legais (CNH, CRLV/RENAVAM, RNTRC/ANTT, tacógrafo/aferição, seguro obrigatório) e documentos sem vencimento (CPF/CNPJ, placa, comprovante de rastreador) com data de vencimento, status calculado e dias para vencer. O motorista cadastra/edita datas (o sistema recalcula status e diasParaVencer), faz upload de foto/PDF para storage PRIVADO (acesso só por URL assinada expirável) e recebe push em marcos (30/15/7/1 dia e no dia). O módulo expõe um STATUS AGREGADO (ex.: &quot;documentação em dia&quot;, &quot;1 doc vencendo&quot;, &quot;1 doc vencido&quot;) SEM o arquivo nem datas detalhadas, para alimentar o score de embarcador no portal B2B (INTERESSADOS[].score e selo de carga 'validada'). O protótipo é 100% mockado: src/data/documentos.ts (type StatusDoc string fixa) e src/data/pendencias.ts (StatusPendencia 'ok'|'proximo'|'vencido' + diasParaVencer, já usado na faixa de aviso do Início via PROXIMO_VENCIMENTO/CONTAGEM_PENDENCIAS). ATENÇÃO: pendencias.ts mistura categoria 'documento' e 'manutencao'; este PRD cobre SOMENTE categoria 'documento' — a faixa de aviso do Início continua mesclando ambas no front (manutenção fica fora de escopo). Este PRD troca os mocks de documentos por backend real (Supabase/Postgres + RLS + Edge Functions + Storage privado + cron). OCR fica para fase posterior — aqui a data de vencimento é digitada. Princípio central: o cálculo de status é determinístico e centralizado no banco (função rode_doc_status) para que App, job de push e score-agregado leiam a MESMA verdade. NOTA DE RECONCILIAÇÃO: o mock atual marca RNTRC com 34 dias como 'proximo', divergindo de um cutoff fixo de 30 dias; o PRD adota cutoff parametrizável por tipo_documento.dias_alerta (default 30) para preservar a UX do mock sem hardcode.</p></section>
+  <section id="s2"><h2><span class="n">2</span>Arquitetura</h2><ul><li>Fonte única de verdade do status: status e dias_para_vencer NÃO são persistidos como texto livre; são derivados de data_vencimento por uma função SQL determinística rode_doc_status(data_vencimento, dias_alerta) STABLE usada pela view vw_documentos_status e pela RPC de leitura. Elimina divergência entre App, push e score (corrige o mock atual onde status era string fixa em documentos.ts).</li><li>Cutoff de alerta parametrizável: tipo_documento.dias_alerta (default 30) define a janela 'proximo' por tipo, reconciliando o mock (RNTRC a 34 dias aparece como 'proximo'). rode_doc_status recebe dias_alerta do catálogo, evitando hardcode.</li><li>Backend Supabase/Postgres com Row Level Security: cada documento tem motorista_id = auth.uid(); políticas RLS por comando (SELECT/INSERT/UPDATE/DELETE) garantem que o motorista só lê/escreve os próprios documentos. Edge Functions/cron usam service_role com bypass de RLS apenas em jobs server-side.</li><li>Storage privado por padrão: bucket 'documentos' NÃO público; arquivos sob caminho documentos/{motorista_id}/{documento_id}/{uuid}.{ext}. Download só via createSignedUrl com TTL curto (60-300s) gerado por Edge Function que valida ownership. Nenhuma URL pública é gravada no banco.</li><li>Separação App vs B2B por contrato: o portal de embarcadores nunca acessa a tabela documento; consome só a RPC get_status_agregado_documentos(motorista_id) (SECURITY DEFINER) que retorna rótulo agregado + contagens, sem datas e sem caminho de arquivo. Fronteira de dados explícita para LGPD (minimização).</li><li>Notificações push via Web Push (PWA, VAPID) + tabela push_subscription; um cron diário (pg_cron ou Supabase Scheduled Function) detecta marcos 30/15/7/1/0 e enfileira notificações idempotentes (UNIQUE documento+marco+vencimento em notificacao_log).</li><li>Camada de API fina como Edge Functions (Deno/TS) para operações sensíveis (assinar URL upload/download, finalizar upload, agregação, push); CRUD simples de datas vai direto via supabase-js + RLS, reduzindo superfície de código.</li><li>Mobile-first PWA React+TS (Vite): tela Documentos reusa o modelo diasParaVencer/StatusPendencia de pendencias.ts; estado em React Query (cache + revalidação) com optimistic update ao salvar data e rollback em erro. A faixa de aviso do Início mescla documentos (API) + manutenção (mock, fora de escopo) mantendo PROXIMO_VENCIMENTO.</li></ul></section>
+  <section id="s3"><h2><span class="n">3</span>Stack sugerida</h2><div class="tags"><span>Frontend: React 18 + TypeScript + Vite (PWA mobile-first, já existente no repo). Estado de servidor com @tanstack/react-query; formulários com react-hook-form + zod. Ícones lucide-react (FileCheck já em uso em papeis.ts). Service Worker (Workbox) para Web Push e cache offline.</span><span>Backend: Supabase (Postgres 15) com Row Level Security; Edge Functions em Deno/TypeScript para assinatura de URL, finalização de upload, agregação e envio de push.</span><span>Storage: Supabase Storage bucket privado 'documentos' com signed URLs (createSignedUploadUrl / createSignedUrl).</span><span>Banco: Postgres + extensões pgcrypto (gen_random_uuid) e pg_cron (agendamento) — ou Supabase Scheduled Functions como alternativa se pg_cron indisponível.</span><span>Push: Web Push API com chaves VAPID; biblioteca web-push (Deno) na Edge Function de envio; chaves VAPID em secrets do projeto, nunca no client.</span><span>Auth: Supabase Auth (telefone/OTP, coerente com público caminhoneiro); JWT com auth.uid() amarrado a motorista_id.</span><span>Observabilidade: Supabase Logs + tabelas documento_evento (auditoria) e notificacao_log; advisors de segurança (get_advisors) rodados antes de cada release.</span><span>Testes: Vitest (unit front + funções SQL via pgTAP/SQL asserts), supabase-js em testes de integração contra branch efêmero, Playwright para e2e PWA (incluindo mock de Service Worker push).</span></div></section>
+  <section id="s4"><h2><span class="n">4</span>Modelo de dados</h2><div class="entidade">
+        <p class="ent-nome">tipo_documento (catálogo)</p>
+        <ul class="campos"><li>codigo text PK ('cnh'|'crlv'|'rntrc'|'tacografo'|'seguro'|'cpf_cnpj'|'placa'|'rastreador')</li><li>nome text NOT NULL</li><li>tem_vencimento boolean NOT NULL</li><li>obrigatorio boolean NOT NULL DEFAULT true (entra no cálculo de cobertura do agregado)</li><li>dias_alerta int NOT NULL DEFAULT 30 (janela 'proximo')</li><li>orgao text NULL ('DETRAN'|'ANTT'|'INMETRO'|'SUSEP')</li><li>ordem int NOT NULL. Seed alinhado a documentos.ts + pendencias.ts: CNH(tem_venc=true), CRLV/RENAVAM(true), RNTRC/ANTT(true), Tacógrafo(true), Seguro obrigatório(true), CPF/CNPJ(false), Placa(false), Comprovante de rastreador(false).</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">documento</p>
+        <ul class="campos"><li>id uuid PK default gen_random_uuid()</li><li>motorista_id uuid NOT NULL refs auth.users(id) ON DELETE CASCADE</li><li>tipo_codigo text NOT NULL refs tipo_documento(codigo)</li><li>numero text NULL</li><li>data_vencimento date NULL</li><li>arquivo_path text NULL (caminho no bucket, nunca URL)</li><li>arquivo_mime text NULL CHECK (arquivo_mime IN ('image/jpeg','image/png','application/pdf'))</li><li>arquivo_tamanho_bytes int NULL CHECK (arquivo_tamanho_bytes &lt;= 10485760)</li><li>criado_em timestamptz NOT NULL default now()</li><li>atualizado_em timestamptz NOT NULL default now()</li><li>CHECK (data_vencimento IS NULL OR tipo_codigo IN (SELECT codigo FROM tipo_documento WHERE tem_vencimento))</li><li>UNIQUE(motorista_id, tipo_codigo). status e dias_para_vencer NÃO são colunas físicas — derivados na view. Índice idx_documento_motorista ON documento(motorista_id).</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">vw_documentos_status (view)</p>
+        <ul class="campos"><li>Projeta documento JOIN tipo_documento + status text = rode_doc_status(data_vencimento, dias_alerta) ∈ {'em_dia','proximo','vencido','sem_data'}</li><li>dias_para_vencer int (data_vencimento - current_date, NULL se sem data)</li><li>proximo_marco int (próximo de 30/15/7/1/0 ainda futuro, NULL se vencido/sem_data)</li><li>tem_arquivo boolean (arquivo_path IS NOT NULL)</li><li>nome, ordem, tem_vencimento, obrigatorio. NÃO projeta arquivo_path. Mapeia para StatusPendencia do front ('em_dia'-&gt;'ok','proximo'-&gt;'proximo','vencido'-&gt;'vencido','sem_data'-&gt;'ok' sem alerta).</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">documento_evento (auditoria)</p>
+        <ul class="campos"><li>id bigint PK GENERATED ALWAYS AS IDENTITY</li><li>documento_id uuid refs documento(id) ON DELETE CASCADE</li><li>motorista_id uuid NOT NULL</li><li>tipo text NOT NULL CHECK (tipo IN ('data_alterada','arquivo_enviado','arquivo_removido','visualizado','excluido_lgpd'))</li><li>payload jsonb (valor antigo/novo, ex.: {de:'2027-03-01', para:'2026-07-01'})</li><li>criado_em timestamptz NOT NULL default now(). Índice ON (motorista_id, criado_em DESC).</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">push_subscription</p>
+        <ul class="campos"><li>id uuid PK default gen_random_uuid()</li><li>motorista_id uuid NOT NULL refs auth.users(id) ON DELETE CASCADE</li><li>endpoint text NOT NULL UNIQUE</li><li>p256dh text NOT NULL</li><li>auth text NOT NULL</li><li>user_agent text NULL</li><li>criado_em timestamptz NOT NULL default now()</li><li>ultimo_ok_em timestamptz NULL (atualizado em envio bem-sucedido</li><li>subscriptions com 410 Gone são removidas).</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">notificacao_log (idempotência de marcos)</p>
+        <ul class="campos"><li>id bigint PK GENERATED ALWAYS AS IDENTITY</li><li>documento_id uuid NOT NULL refs documento(id) ON DELETE CASCADE</li><li>motorista_id uuid NOT NULL</li><li>marco int NOT NULL CHECK (marco IN (30,15,7,1,0))</li><li>data_vencimento_ref date NOT NULL</li><li>enviado_em timestamptz NOT NULL default now()</li><li>status_envio text NOT NULL CHECK (status_envio IN ('enviado','falhou'))</li><li>tentativas int NOT NULL DEFAULT 1</li><li>UNIQUE(documento_id, marco, data_vencimento_ref) — garante 1 push por documento+marco+vencimento.</li></ul>
+      </div></section>
+  <section id="s5"><h2><span class="n">5</span>Contratos de API</h2><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/rest/v1/vw_documentos_status?motorista_id=eq.{uid}&amp;order=ordem</code></div>
+        <p class="ep-desc">Via supabase-js + RLS (herda RLS da tabela base documento). Lista documentos do motorista logado com status derivado, dias_para_vencer, proximo_marco e tem_arquivo. Resposta: [{id, tipo_codigo, nome, numero, data_vencimento, status:'em_dia'|'proximo'|'vencido'|'sem_data', dias_para_vencer, proximo_marco, tem_arquivo:boolean, tem_vencimento, obrigatorio, ordem}]. NUNCA expõe arquivo_path. 401 se sem JWT; retorna [] (não erro) se motorista sem documentos.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/rest/v1/documento (upsert, on_conflict=motorista_id,tipo_codigo)</code></div>
+        <p class="ep-desc">Cria ou edita numero/data_vencimento. Payload: {tipo_codigo, numero?, data_vencimento?}. RLS WITH CHECK força motorista_id=auth.uid(); cliente NÃO envia motorista_id (default via trigger/policy). Trigger BEFORE UPDATE grava documento_evento 'data_alterada' (de/para) e atualiza atualizado_em. Rejeita 400 se data_vencimento informada para tipo com tem_vencimento=false (CHECK). Resposta 200/201 com a linha; o front refaz a query da view para obter status novo. Idempotente por (motorista_id, tipo_codigo).</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/documentos-upload-url</code></div>
+        <p class="ep-desc">Edge Function. Payload: {documento_id|tipo_codigo, mime, tamanho_bytes}. Valida JWT, ownership (documento pertence ao auth.uid()), mime∈{image/jpeg,image/png,application/pdf} e tamanho_bytes∈(0,10485760], gera caminho documentos/{uid}/{doc_id}/{gen_random_uuid()}.{ext} (ext derivada do mime, nunca do nome do cliente) e retorna {signed_upload_url, token, arquivo_path} via createSignedUploadUrl (TTL 120s). 400 mime/tamanho inválido; 403 ownership; 404 documento inexistente. Cliente faz PUT direto no Storage.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/documentos-finalizar-upload</code></div>
+        <p class="ep-desc">Edge Function. Payload: {documento_id, arquivo_path, mime, tamanho_bytes}. Valida que arquivo_path tem prefixo documentos/{uid}/{documento_id}/ (anti-path-traversal), confirma objeto no Storage (HEAD), grava arquivo_path/mime/tamanho no documento, apaga arquivo anterior (se houver), registra evento 'arquivo_enviado'. Resposta: {ok:true, tem_arquivo:true}. 409 se objeto não existe no Storage; 403 se prefixo não bate com uid.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/documentos-download-url</code></div>
+        <p class="ep-desc">Edge Function. Payload: {documento_id}. Valida ownership via JWT, exige arquivo_path NOT NULL (404 se sem arquivo), registra evento 'visualizado', retorna {signed_url, expira_em} com createSignedUrl TTL 180s. Único caminho para abrir o arquivo. 403 se documento de outro motorista.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">DELETE</span><code class="ep-rota">/functions/v1/documentos-arquivo</code></div>
+        <p class="ep-desc">Edge Function. Payload: {documento_id}. Valida ownership, remove objeto do Storage, limpa arquivo_path/mime/tamanho no banco, registra 'arquivo_removido'. Resposta: {ok:true, tem_arquivo:false}. Idempotente (204 mesmo se já sem arquivo).</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/rest/v1/rpc/get_status_agregado_documentos</code></div>
+        <p class="ep-desc">RPC SECURITY DEFINER consumida pelo portal B2B/score. Param: {p_motorista_id uuid}. Retorna SOMENTE agregado: {rotulo:'em_dia'|'pendente'|'vencido', total int, vencidos int, proximos int, sem_data_obrigatorios int, atualizado_em timestamptz}. NUNCA retorna datas, números, arquivo_path ou tipo individual. Base do selo 'documentação OK' das cargas validadas. GRANT EXECUTE apenas a role de serviço B2B (não a anon/authenticated genérico do App).</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/push-subscribe</code></div>
+        <p class="ep-desc">Edge Function. Payload: {endpoint, keys:{p256dh, auth}, user_agent}. Upsert (on_conflict=endpoint) em push_subscription para o motorista logado (motorista_id=auth.uid()). Resposta 201. 400 se keys ausentes.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/lgpd-excluir-documentos</code></div>
+        <p class="ep-desc">Edge Function. Payload: {confirmacao:true}. Apaga todos objetos do Storage sob documentos/{uid}/, deleta linhas de documento do motorista (cascade em evento/notificacao), grava documento_evento 'excluido_lgpd' (sem payload sensível). Resposta: {ok:true, removidos:int}. Atende direito de exclusão LGPD art. 18.</p>
+      </div></section>
+  <section id="s6"><h2><span class="n">6</span>Frontend / fluxo</h2><ul><li>Tela DocumentosHub (rota /documentos, alvo do papel 'despachante' em papeis.ts telaAlvo='documentos'): cards de documento ordenados por urgência (vencidos primeiro, reusando a lógica de PENDENCIAS_ORDENADAS — sort por dias_para_vencer asc, sem_data por último). Card: nome, faixa de status colorida (verde 'em dia' / âmbar 'vence em N dias' / vermelho 'vencido há N dias' / cinza 'sem data'), data de vencimento formatada (mar/2027), miniatura/ícone de arquivo (FileCheck). Faixa de aviso no topo replica PROXIMO_VENCIMENTO (item mais urgente, mesclando manutenção do mock).</li><li>Componente DocumentoCard: estados visuais derivados de status + dias_para_vencer (mapeamento StatusPendencia 'ok'|'proximo'|'vencido'); botões 'Editar data' e 'Ver/Enviar foto'. Tipos sem vencimento (CPF/CNPJ, placa, rastreador) escondem botão de data e faixa de prazo.</li><li>Sheet/Modal EditarVencimento: react-hook-form + zod (data_vencimento date &gt;= hoje-3650 e &lt;= hoje+3650, numero opcional max 40 chars). Ao salvar faz optimistic update no React Query e revalida vw_documentos_status para refletir o status recalculado; rollback + toast de erro em falha. Bloqueia campo data para tipo tem_vencimento=false.</li><li>Fluxo UploadDocumento: input câmera/galeria/PDF -&gt; valida mime/tamanho no cliente (&lt;=10MB, jpeg/png/pdf) -&gt; documentos-upload-url -&gt; PUT no Storage com barra de progresso -&gt; documentos-finalizar-upload -&gt; invalida query. Erro de validação client-side antes de qualquer chamada de rede.</li><li>VisualizarArquivo: ao tocar 'Ver foto' chama documentos-download-url e abre a signed URL em visor in-app (img/pdf viewer); nunca persiste a URL no estado React além do TTL nem em localStorage.</li><li>Integração de banner e badge: faixa de aviso do Início e badge do papel Despachante leem o agregado (count de não-'ok', equivalente a CONTAGEM_PENDENCIAS) agora vindo de vw_documentos_status e não do mock; manutenção permanece via pendencias.ts até fase futura.</li><li>Estado offline: React Query persistido (persistQueryClient) cacheia a última vw_documentos_status para leitura offline read-only; mutations de data ficam em fila e sincronizam ao reconectar.</li></ul></section>
+  <section id="s7"><h2><span class="n">7</span>Lógica de negócio</h2><ul><li>Função SQL determinística rode_doc_status(p_venc date, p_dias_alerta int default 30) -&gt; text STABLE: se p_venc IS NULL -&gt; 'sem_data'; d := p_venc - current_date; d &lt; 0 -&gt; 'vencido'; d &lt;= p_dias_alerta -&gt; 'proximo'; senão 'em_dia'. dias_para_vencer := (p_venc - current_date). Mapeamento front: 'em_dia'-&gt;'ok','proximo'-&gt;'proximo','vencido'-&gt;'vencido','sem_data'-&gt;'ok'.</li><li>Cutoff por tipo: a view passa tipo_documento.dias_alerta a rode_doc_status, então RNTRC (dias_alerta&gt;=34) aparece 'proximo' a 34 dias, reconciliando pendencias.ts; demais usam default 30.</li><li>Marcos de push: MARCOS=[30,15,7,1,0]. Para cada documento com data_vencimento e tem_vencimento=true, marco_devido quando dias_para_vencer ∈ MARCOS exatamente. Idempotência via UNIQUE(documento_id, marco, data_vencimento_ref): o cron só envia se ainda não há registro para o trio (evita repetição em reexecução ou edição de data — nova data gera novo data_vencimento_ref e novos marcos).</li><li>Recalculo on-write: como status é derivado na view, editar data_vencimento não exige escrita de status; a próxima leitura já reflete. Trigger só grava auditoria 'data_alterada' (de/para em payload) e atualiza atualizado_em.</li><li>Agregação para score (get_status_agregado_documentos): rotulo='vencido' se EXISTS doc vencido; senão 'pendente' se EXISTS doc 'proximo' OU algum tipo obrigatório (obrigatorio=true, tem_vencimento=true) sem documento/sem data; senão 'em_dia'. 'em_dia' exige cobertura completa dos obrigatórios, não só ausência de vencidos. atualizado_em = max(documento.atualizado_em).</li><li>Caminho de arquivo: documentos/{motorista_id}/{documento_id}/{gen_random_uuid()}.{ext}; ext derivada do mime no servidor; ao reenviar, novo objeto é criado e o anterior apagado em finalizar-upload (1 arquivo corrente por documento, sem lixo no bucket).</li><li>TTL de signed URL: upload 120s, download 180s; respostas com Cache-Control no-store; cada visualização gera nova URL e grava evento 'visualizado' para trilha LGPD.</li></ul></section>
+  <section id="s8"><h2><span class="n">8</span>Integrações</h2><ul><li>Supabase Storage (bucket privado 'documentos') via createSignedUploadUrl/createSignedUrl — único meio de upload e download.</li><li>Web Push API (PWA) com chaves VAPID; biblioteca web-push na Edge Function de envio; Service Worker registra a subscription e exibe a notificação.</li><li>pg_cron (ou Supabase Scheduled Functions) para o job diário de detecção de marcos e enfileiramento de notificações.</li><li>Supabase Auth (telefone/OTP) fornecendo auth.uid() para RLS e ownership.</li><li>Portal B2B / módulo de score de embarcador (src/data/empresa.ts INTERESSADOS[].score, src/data/embarcadores.ts) como consumidor da RPC agregada para o selo de carga 'validada'.</li><li>Faixa de aviso do Início e badge do papel Despachante (src/data/papeis.ts, src/data/pendencias.ts) consumindo o agregado da API para documentos, mantendo manutenção no mock.</li><li>Integração futura (fora de escopo desta fase): OCR para extrair automaticamente a data de vencimento da foto enviada.</li></ul></section>
+  <section id="s9"><h2><span class="n">9</span>Segurança & LGPD</h2><ul><li>RLS obrigatória em documento, documento_evento, push_subscription, notificacao_log: políticas por comando USING (motorista_id = auth.uid()) para SELECT/UPDATE/DELETE e WITH CHECK (motorista_id = auth.uid()) para INSERT/UPDATE; nenhum acesso anônimo (REVOKE de anon). vw_documentos_status herda RLS da tabela base.</li><li>Bucket 'documentos' privado; políticas de Storage permitem ao usuário operar apenas objetos sob prefixo documentos/{auth.uid()}/. Download exclusivamente por signed URL de TTL curto emitida por Edge Function que revalida ownership pelo JWT. createSignedUploadUrl também restrito a prefixo do uid.</li><li>RPC get_status_agregado_documentos é a ÚNICA superfície exposta ao portal B2B/score e retorna apenas rótulo agregado e contagens — sem datas, números de documento ou caminho de arquivo (minimização de dados, LGPD art. 6 II/III). GRANT EXECUTE restrito à role de serviço B2B; revogado de authenticated genérico.</li><li>Validação de upload no servidor (não confiar no cliente): mime allowlist {jpeg,png,pdf}, tamanho ∈ (0, 10MB], rejeição de extensões executáveis; nome do objeto gerado pelo servidor com gen_random_uuid e ext derivada do mime para evitar path traversal; finalizar-upload valida prefixo documentos/{uid}/{documento_id}/.</li><li>LGPD: dados de documento (CNH, CPF/CNPJ, placa) são dados pessoais; base legal = execução de serviço solicitado pelo titular (art. 7 V). Direito de exclusão (art. 18): Edge Function lgpd-excluir-documentos apaga objetos do Storage + linhas e grava log 'excluido_lgpd'. Retenção: arquivo apagado ao remover documento ou encerrar conta (ON DELETE CASCADE + limpeza de Storage); documento_evento guarda quem/quando acessou.</li><li>Auditoria de acesso: toda emissão de download-url grava documento_evento 'visualizado' com motorista_id e timestamp; trilha para responder solicitações do titular e detectar abuso (acessos anômalos).</li><li>Edge Functions validam JWT (Supabase Auth getUser) e ownership antes de qualquer assinatura de URL; service_role key fica em secrets, nunca exposta ao cliente; rate-limit básico por uid nas funções de upload/download para mitigar enumeração.</li></ul></section>
+  <section id="s10"><h2><span class="n">10</span>Não-funcionais</h2><ul><li>Performance: tela Documentos carrega &lt;1.5s em 3G médio (payload da view &lt;5KB, sem arquivos); listagem usa idx_documento_motorista. Signed URL emitida em &lt;300ms (p95).</li><li>Confiabilidade do push: cron diário idempotente (UNIQUE em notificacao_log) garante no máximo 1 notificação por documento+marco+vencimento mesmo com reexecução; falhas marcadas 'falhou' e reprocessáveis sem duplicar; subscriptions retornando 410 Gone são removidas automaticamente.</li><li>Disponibilidade offline: PWA cacheia a última vw_documentos_status (status) para leitura offline; edições ficam em fila (React Query mutation queue) e sincronizam ao reconectar; conflito resolvido por last-write-wins na chave (motorista_id, tipo_codigo).</li><li>Escalabilidade do cron: job processa em lote apenas documentos com dias_para_vencer ∈ MARCOS no dia (filtro indexado), evitando varredura total; suporta a base ~1.000 motoristas do critério MVP sem degradar (&lt;10s por execução).</li><li>Segurança de storage: nenhuma URL pública persistida; TTL curto (&lt;=180s) limita a janela de vazamento de link; Cache-Control no-store nas signed URLs.</li><li>Consistência: status sempre derivado em tempo de leitura via rode_doc_status — impossível App, push e score divergirem do banco.</li><li>Acessibilidade: cores de status acompanhadas de rótulo textual ('vencido há N dias'), contraste AA, alvos de toque &gt;=44px (público caminhoneiro, uso na estrada).</li></ul></section>
+  <section id="s11"><h2><span class="n">11</span>Etapas de implementação</h2><ol><li>1. Modelagem e migrations: criar tipo_documento (seed CNH/CRLV/RNTRC/tacografo/seguro com tem_vencimento=true + CPF-CNPJ/placa/rastreador com tem_vencimento=false), documento (com CHECK de data só para tipos com vencimento), documento_evento, push_subscription, notificacao_log; função rode_doc_status; view vw_documentos_status; índices.</li><li>2. RLS e Storage: ativar RLS + políticas por comando em todas as tabelas; REVOKE de anon; criar bucket privado 'documentos' e políticas de prefixo por auth.uid().</li><li>3. CRUD de datas no App: tela DocumentosHub + DocumentoCard + EditarVencimento (react-hook-form/zod, React Query optimistic), lendo vw_documentos_status e gravando documento. Substituir mocks de documentos.ts/pendencias.ts (parte 'documento') pela API mantendo os tipos StatusPendencia do front.</li><li>4. Upload privado: Edge Functions documentos-upload-url e documentos-finalizar-upload; fluxo de câmera/PDF no front; validação de mime/tamanho client + server; limpeza de arquivo anterior.</li><li>5. Visualização segura: Edge Function documentos-download-url + visor in-app; gravação de evento 'visualizado'.</li><li>6. Push de marcos: registrar push_subscription (VAPID/Service Worker); cron diário + Edge Function de envio com idempotência via notificacao_log; marcos 30/15/7/1/0; remoção de subscriptions 410.</li><li>7. Agregação para score: RPC get_status_agregado_documentos (SECURITY DEFINER, GRANT restrito) e integração no portal B2B/seleção de carga 'validada' (selo documentação OK).</li><li>8. LGPD e hardening: Edge Function lgpd-excluir-documentos, rate-limit, get_advisors clean, testes (unit/integração/e2e) verdes, logs.</li></ol></section>
+  <section id="s12"><h2><span class="n">12</span>Plano de teste</h2><div class="teste"><h4>unit (função SQL rode_doc_status, mapeamento e agregação)</h4><ul><li>rode_doc_status: p_venc NULL -&gt; 'sem_data' e dias_para_vencer NULL.</li><li>rode_doc_status com dias_alerta=30: hoje+40 -&gt; 'em_dia', dias=40; hoje+15 -&gt; 'proximo', dias=15; hoje-3 -&gt; 'vencido', dias=-3; borda hoje+30 -&gt; 'proximo'; borda hoje+31 -&gt; 'em_dia'; borda hoje (d=0) -&gt; 'proximo'.</li><li>rode_doc_status com dias_alerta=34 (RNTRC): hoje+34 -&gt; 'proximo' (reconcilia mock pendencias.ts onde RNTRC a 34 dias é 'proximo').</li><li>Mapeamento StatusPendencia no front: 'em_dia'-&gt;'ok','proximo'-&gt;'proximo','vencido'-&gt;'vencido','sem_data'-&gt;'ok' sem faixa de alerta.</li><li>Ordenação DocumentoCard: vencido (dias=-5) acima de proximo (dias=3) acima de em_dia (dias=58) acima de sem_data; idêntico à lógica de PENDENCIAS_ORDENADAS.</li><li>Marco devido: dias_para_vencer=7 dispara marco 7; dias=6 não dispara nenhum; dias=0 dispara marco 0; dias=31 não dispara (fora de MARCOS).</li><li>Agregação rotulo: 1 doc vencido + resto ok -&gt; 'vencido'; 0 vencidos + 1 proximo -&gt; 'pendente'; 0 vencidos, 0 proximos, mas RNTRC obrigatório sem data -&gt; 'pendente'; todos obrigatórios com data e em_dia -&gt; 'em_dia'.</li><li>Zod EditarVencimento: rejeita data &gt; hoje+3650 e data com tipo tem_vencimento=false; aceita data válida + numero opcional.</li></ul></div><div class="teste"><h4>integração (RLS, RPC, Storage, Edge Functions, cron)</h4><ul><li>Motorista A não consegue SELECT/UPDATE/DELETE documento do Motorista B (RLS retorna 0 linhas; UPDATE afeta 0 rows).</li><li>INSERT em documento com motorista_id forjado (!= auth.uid()) é rejeitado pela policy WITH CHECK.</li><li>documentos-upload-url rejeita mime 'application/x-msdownload' (400) e tamanho 12MB (400); aceita image/jpeg 2MB e retorna arquivo_path com prefixo documentos/{uid}/.</li><li>documentos-finalizar-upload rejeita arquivo_path com prefixo de outro uid (403, anti-path-traversal) e arquivo_path inexistente no Storage (409); ao reenviar, o objeto anterior é apagado (bucket não acumula lixo).</li><li>documentos-download-url emite signed URL válida só para o dono e grava documento_evento 'visualizado'; chamada por outro motorista retorna 403 sem emitir URL; a URL expira após TTL 180s (GET após expiração -&gt; 403/400 do Storage).</li><li>get_status_agregado_documentos retorna apenas {rotulo,total,vencidos,proximos,sem_data_obrigatorios,atualizado_em} e o JSON NÃO contém as chaves data_vencimento, numero nem arquivo_path; chamada por role authenticated genérica (sem grant) é negada.</li><li>upsert documento (mesmo motorista+tipo) atualiza a linha existente e grava documento_evento 'data_alterada' com payload {de,para}.</li><li>Idempotência do cron: rodar o cron 2x no mesmo dia gera apenas 1 registro UNIQUE(documento_id,marco,data_vencimento_ref) e 1 push por documento+marco; editar a data (novo data_vencimento_ref) permite novo marco sem violar UNIQUE.</li><li>push-subscribe faz upsert por endpoint (não duplica subscription do mesmo device); subscription com retorno 410 do envio é removida.</li><li>lgpd-excluir-documentos apaga todos os objetos sob documentos/{uid}/ e todas as linhas do motorista, grava 'excluido_lgpd', e get_status_agregado_documentos passa a retornar total=0.</li></ul></div><div class="teste"><h4>e2e (PWA, fluxo do motorista e B2B)</h4><ul><li>Cadastrar vencimento da CNH para hoje+15: card passa a 'vence em 15 dias' (âmbar) e a faixa de aviso do Início mostra a CNH como próximo vencimento (PROXIMO_VENCIMENTO).</li><li>Editar data com optimistic update: UI atualiza imediatamente; ao simular erro 500 da API, há rollback visível e toast de erro, e o card volta ao estado anterior.</li><li>Enviar foto do CRLV (câmera): após upload card mostra 'arquivo enviado'; tocar 'Ver foto' abre a signed URL e o arquivo é exibido; reenviar substitui a foto (apenas 1 arquivo corrente).</li><li>Tentar enviar arquivo .exe ou de 12MB pela tela: bloqueado no cliente antes da chamada de rede, com mensagem de erro.</li><li>Documento vencido (RNTRC com data passada): card vermelho 'vencido há N dias'; o agregado vira 'vencido' e, no portal B2B, a seleção de carga 'validada' reflete documentação pendente (selo não-OK).</li><li>Tipo sem vencimento (CPF/CNPJ): card não mostra faixa de prazo nem botão 'Editar data', só upload/visualização.</li><li>Receber push: com vencimento em 7 dias e subscription ativa, após o cron o motorista recebe exatamente 1 notificação 'CNH vence em 7 dias' (mock do Service Worker valida payload).</li><li>Offline: com a rede desligada, a tela exibe a última lista cacheada; uma edição de data entra na fila e é sincronizada ao reconectar.</li></ul></div></section>
+  <section id="s13"><h2><span class="n">13</span>Critérios de aceite</h2><ul class="check"><li>Dado um documento com data_vencimento = hoje+12 e tipo com dias_alerta=30, quando o motorista abre /documentos, então o card exibe status 'proximo' com 'vence em 12 dias' (âmbar) e aparece acima dos documentos 'em_dia' e abaixo dos 'vencido'.</li><li>Dado o RNTRC com tipo_documento.dias_alerta=34 e data_vencimento = hoje+34, quando vw_documentos_status é lida, então status='proximo' (reconciliando o mock pendencias.ts onde RNTRC a 34 dias é 'proximo').</li><li>Dado que o motorista edita a data de vencimento da CNH e salva, quando a próxima leitura de vw_documentos_status ocorre, então status e dias_para_vencer vêm recalculados sem nenhuma escrita manual de status, e exatamente 1 documento_evento 'data_alterada' com payload {de,para} é gravado.</li><li>Dado um tipo com tem_vencimento=false (CPF/CNPJ), quando o cliente tenta gravar data_vencimento, então a operação é rejeitada (400/CHECK) e o card não exibe campo nem faixa de data.</li><li>Dado um arquivo enviado, quando o motorista toca 'Ver foto', então o sistema gera signed URL com TTL &lt;=180s, registra evento 'visualizado' e o arquivo abre; após o TTL a mesma URL deixa de funcionar (403/400 do Storage).</li><li>Dado um reenvio de arquivo no mesmo documento, quando finalizar-upload completa, então o objeto anterior é apagado do bucket e resta exatamente 1 arquivo corrente para o documento.</li><li>Dado o portal B2B consultando get_status_agregado_documentos, quando recebe a resposta, então ela contém apenas {rotulo,total,vencidos,proximos,sem_data_obrigatorios,atualizado_em} e NÃO contém data_vencimento, numero nem arquivo_path; e a RPC nega execução para role authenticated sem grant.</li><li>Dado um motorista com &gt;=1 documento obrigatório vencido, quando o agregado é calculado, então rotulo='vencido'; dado 0 vencidos mas &gt;=1 obrigatório sem data, então rotulo='pendente'; dado todos os obrigatórios com data e não-vencidos/não-proximos, então rotulo='em_dia'.</li><li>Dado um documento com vencimento em 7 dias e subscription push ativa, quando o cron diário roda, então exatamente 1 notificação do marco 7 é enviada e 1 linha UNIQUE(documento_id,7,data_vencimento_ref) é gravada em notificacao_log; reexecução no mesmo dia não gera novo envio.</li><li>Dado o Motorista A autenticado, quando tenta ler ou baixar documento do Motorista B, então a RLS/validação de ownership nega acesso (0 linhas / 403) e nenhuma signed URL é emitida.</li><li>Dado um upload, quando o mime não está em {jpeg,png,pdf} ou o tamanho &gt; 10MB, então a Edge Function rejeita com 400 e nenhum objeto é criado no bucket.</li><li>Dado um pedido de exclusão LGPD confirmado, quando lgpd-excluir-documentos roda, então todos os objetos sob documentos/{uid}/ e todas as linhas de documento do motorista são removidos, um documento_evento 'excluido_lgpd' é gravado, e o agregado passa a retornar total=0.</li></ul></section>
+  <section id="s14"><h2><span class="n">14</span>Diagramas</h2><p class="hint">Renderizados com Mermaid — requer internet ao abrir o arquivo.</p><h4>Arquitetura da solução</h4><div class="mermaid-box"><pre class="mermaid">flowchart LR
+  pwa[&quot;PWA React+TS (Vite) /documentos&quot;]
+  sw[&quot;Service Worker (Web Push VAPID)&quot;]
+  b2b[&quot;Portal B2B (score embarcador)&quot;]
+  rest[&quot;supabase-js + RLS (REST)&quot;]
+  edge[&quot;Edge Functions (Deno/TS)&quot;]
+  db[(&quot;Postgres 15 + RLS&quot;)]
+  view[&quot;vw_documentos_status&quot;]
+  storage[(&quot;Storage privado bucket documentos&quot;)]
+  cron[&quot;pg_cron job diario (marcos)&quot;]
+  pwa --&gt;|&quot;CRUD datas&quot;| rest
+  pwa --&gt;|&quot;upload/download/finalizar&quot;| edge
+  sw --&gt;|&quot;push-subscribe&quot;| edge
+  rest --&gt; db
+  edge --&gt; db
+  edge --&gt;|&quot;createSignedUrl / Upload&quot;| storage
+  db --&gt; view
+  cron --&gt; db
+  cron --&gt;|&quot;web-push VAPID&quot;| sw
+  b2b --&gt;|&quot;get_status_agregado_documentos&quot;| db</pre></div><h4>Casos de uso</h4><div class="mermaid-box"><pre class="mermaid">flowchart LR
+  motorista((&quot;Motorista&quot;))
+  empresa((&quot;Empresa B2B&quot;))
+  sistema_ator((&quot;Sistema cron&quot;))
+  subgraph Sistema
+    uc1[&quot;Cadastrar/editar data_vencimento&quot;]
+    uc2[&quot;Enviar foto/PDF (upload privado)&quot;]
+    uc3[&quot;Ver arquivo (signed URL)&quot;]
+    uc4[&quot;Excluir documentos (LGPD)&quot;]
+    uc5[&quot;Receber push de marcos&quot;]
+    uc6[&quot;Calcular status agregado&quot;]
+    uc7[&quot;Enfileirar push 30/15/7/1/0&quot;]
+  end
+  motorista --&gt; uc1
+  motorista --&gt; uc2
+  motorista --&gt; uc3
+  motorista --&gt; uc4
+  motorista --&gt; uc5
+  empresa --&gt; uc6
+  sistema_ator --&gt; uc7
+  sistema_ator --&gt; uc5</pre></div><h4>Fluxo principal</h4><div class="mermaid-box"><pre class="mermaid">flowchart TD
+  start[&quot;Motorista abre /documentos&quot;]
+  load[&quot;GET vw_documentos_status (RLS)&quot;]
+  edit[&quot;Editar data_vencimento (EditarVencimento)&quot;]
+  zod{&quot;Zod valida data e tipo tem_vencimento?&quot;}
+  err1[&quot;400 / CHECK rejeita + toast&quot;]
+  upsert[&quot;POST upsert documento (optimistic)&quot;]
+  trig[&quot;Trigger grava evento data_alterada&quot;]
+  recalc[&quot;rode_doc_status recalcula status&quot;]
+  ok500{&quot;API respondeu 200?&quot;}
+  rollback[&quot;Rollback optimistic + toast erro&quot;]
+  done[&quot;Card atualizado + faixa de aviso Inicio&quot;]
+  start --&gt; load --&gt; edit --&gt; zod
+  zod --&gt;|&quot;nao&quot;| err1
+  zod --&gt;|&quot;sim&quot;| upsert --&gt; ok500
+  ok500 --&gt;|&quot;nao&quot;| rollback
+  ok500 --&gt;|&quot;sim&quot;| trig --&gt; recalc --&gt; done</pre></div><h4>UML — classes/serviços</h4><div class="mermaid-box"><pre class="mermaid">classDiagram
+  class TipoDocumento {
+    +text codigo
+    +text nome
+    +boolean tem_vencimento
+    +boolean obrigatorio
+    +int dias_alerta
+    +text orgao
+  }
+  class Documento {
+    +uuid id
+    +uuid motorista_id
+    +text tipo_codigo
+    +date data_vencimento
+    +text arquivo_path
+    +text arquivo_mime
+  }
+  class VwDocumentosStatus {
+    +text status
+    +int dias_para_vencer
+    +int proximo_marco
+    +boolean tem_arquivo
+  }
+  class RodeDocStatus {
+    +rode_doc_status(p_venc, p_dias_alerta) text
+  }
+  class DocumentosEdgeFn {
+    +uploadUrl(mime, tamanho) signed
+    +finalizarUpload(documento_id, path)
+    +downloadUrl(documento_id) signed
+    +getStatusAgregado(motorista_id) rotulo
+  }
+  class NotificacaoLog {
+    +uuid documento_id
+    +int marco
+    +date data_vencimento_ref
+  }
+  TipoDocumento &quot;1&quot; --o &quot;0..*&quot; Documento : classifica
+  Documento ..&gt; RodeDocStatus : usa
+  VwDocumentosStatus ..&gt; Documento : projeta
+  DocumentosEdgeFn ..&gt; Documento : valida ownership
+  Documento &quot;1&quot; --o &quot;0..*&quot; NotificacaoLog : gera marcos</pre></div><h4>Banco de dados (ER)</h4><div class="mermaid-box"><pre class="mermaid">erDiagram
+  TIPO_DOCUMENTO ||--o{ DOCUMENTO : classifica
+  AUTH_USERS ||--o{ DOCUMENTO : possui
+  DOCUMENTO ||--o{ DOCUMENTO_EVENTO : audita
+  DOCUMENTO ||--o{ NOTIFICACAO_LOG : enfileira
+  AUTH_USERS ||--o{ PUSH_SUBSCRIPTION : registra
+  TIPO_DOCUMENTO {
+    text codigo PK
+    text nome
+    boolean tem_vencimento
+    boolean obrigatorio
+    int dias_alerta
+  }
+  DOCUMENTO {
+    uuid id PK
+    uuid motorista_id FK
+    text tipo_codigo FK
+    date data_vencimento
+    text arquivo_path
+  }
+  DOCUMENTO_EVENTO {
+    bigint id PK
+    uuid documento_id FK
+    text tipo
+    jsonb payload
+  }
+  PUSH_SUBSCRIPTION {
+    uuid id PK
+    uuid motorista_id FK
+    text endpoint
+  }
+  NOTIFICACAO_LOG {
+    bigint id PK
+    uuid documento_id FK
+    int marco
+    date data_vencimento_ref
+  }</pre></div><h4>Lógica do plano de testes</h4><div class="mermaid-box"><pre class="mermaid">flowchart TD
+  subgraph Unit
+    u1[&quot;rode_doc_status: borda hoje+30 = proximo&quot;]
+    u2[&quot;dias_alerta=34 RNTRC = proximo&quot;]
+    u3[&quot;Marco devido: dias=7 dispara, dias=6 nao&quot;]
+    u4[&quot;Agregacao rotulo: vencido / pendente / em_dia&quot;]
+    u5[&quot;Zod rejeita tem_vencimento=false&quot;]
+  end
+  subgraph Integracao
+    i1[&quot;RLS: Motorista A nao le doc de B (0 linhas)&quot;]
+    i2[&quot;upload-url rejeita mime/12MB (400)&quot;]
+    i3[&quot;finalizar-upload anti-path-traversal (403/409)&quot;]
+    i4[&quot;Cron idempotente UNIQUE(doc, marco, ref)&quot;]
+    i5[&quot;agregado sem data_vencimento/arquivo_path&quot;]
+  end
+  subgraph E2E
+    e1[&quot;CNH hoje+15: card ambar + faixa Inicio&quot;]
+    e2[&quot;Optimistic update: erro 500 faz rollback&quot;]
+    e3[&quot;Enviar CRLV e ver foto signed URL&quot;]
+    e4[&quot;Push: 1 notificacao CNH vence em 7 dias&quot;]
+    e5[&quot;Offline: lista cacheada + fila sincroniza&quot;]
+  end
+  Unit --&gt; Integracao --&gt; E2E</pre></div></section>
+
+  <p class="disclaimer">Documento gerado para orientar o desenvolvimento. Estimativas de esforço/custo são ordem de grandeza para planejamento (premissa R$ 2.100/dev-dia, equipe enxuta) — não é proposta comercial. O veredito de lucratividade do produto é estimativa; o piso ANTT é referência regulatória.</p>
+</div>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose', flowchart: { useMaxWidth: true }, er: { useMaxWidth: true } });
+</script>
+</body>
+</html>
