@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<!-- rode-gate -->
+<script>
+(function(){
+  var H="796a6a80c3b4662c1035ea244fc45f0ca5d6e3c5cef05b0e3b4eaea833c6e042", K='rode_assessment_unlocked';
+  function sha(t){return crypto.subtle.digest('SHA-256',new TextEncoder().encode(t)).then(function(b){return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0')}).join('')})}
+  try{ if(localStorage.getItem(K)===H) return; }catch(e){}
+  document.documentElement.style.visibility='hidden';
+  function mount(){
+    document.documentElement.style.visibility='';
+    var ov=document.createElement('div');
+    ov.setAttribute('style','position:fixed;inset:0;z-index:99999;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif');
+    ov.innerHTML='<form id="rg" style="width:100%;max-width:340px;text-align:center"><div style="width:56px;height:56px;border-radius:16px;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:24px">🔒</div><h1 style="font-size:18px;font-weight:800;color:#0f172a;margin:0 0 4px">RODE COM LUCRO</h1><p style="font-size:13px;color:#94a3b8;margin:0 0 18px">PRD técnico · acesso restrito</p><input id="rgp" type="password" autofocus placeholder="Senha de acesso" style="width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid #e2e8f0;border-radius:12px;font-size:14px;outline:none" /><p id="rge" style="display:none;color:#dc2626;font-size:12px;margin:8px 0 0">Senha incorreta.</p><button type="submit" style="width:100%;margin-top:14px;padding:11px;border:0;border-radius:12px;background:#2563eb;color:#fff;font-weight:700;font-size:14px;cursor:pointer">Entrar</button></form>';
+    document.body.appendChild(ov);
+    var f=ov.querySelector('#rg'), inp=ov.querySelector('#rgp'), err=ov.querySelector('#rge');
+    f.addEventListener('submit',function(ev){ ev.preventDefault(); sha(inp.value).then(function(h){ if(h===H){ try{localStorage.setItem(K,H)}catch(e){} ov.remove(); } else { err.style.display='block'; inp.value=''; inp.focus(); } }); });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',mount); else mount();
+})();
+</script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PRD Técnico — Identidade &amp; Onboarding do Motorista · Transversal · RODE COM LUCRO</title>
+<style>
+  :root{--brand:#2563eb;--brand-d:#1e40af;--ink:#0f172a;--ink-6:#475569;--ink-4:#94a3b8;--line:#e2e8f0;--bg:#f1f5f9;--card:#fff;--lucro:#059669}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.6;-webkit-text-size-adjust:100%}
+  .wrap{max-width:920px;margin:0 auto;padding:40px 20px 90px}
+  header.doc{border-bottom:3px solid var(--brand);padding-bottom:20px;margin-bottom:10px}
+  .kicker{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand)}
+  h1{font-size:30px;line-height:1.15;margin:8px 0 6px;font-weight:800;letter-spacing:-.01em}
+  .sub{color:var(--ink-6);font-size:15px;max-width:64ch}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  .pill{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 14px}
+  .pill b{display:block;font-size:16px;color:var(--ink)}
+  .pill span{color:var(--ink-4);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .toc{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 4px}
+  .toc a{font-size:12px;font-weight:600;color:var(--brand-d);background:#eef4ff;border:1px solid #dbe6ff;border-radius:999px;padding:4px 11px;text-decoration:none}
+  .toc a:hover{background:#dbe6ff}
+  section{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-top:18px;scroll-margin-top:14px}
+  h2{font-size:18px;margin:0 0 14px;display:flex;align-items:center;gap:9px;font-weight:800}
+  h2 .n{display:inline-flex;width:26px;height:26px;align-items:center;justify-content:center;background:var(--brand);color:#fff;border-radius:8px;font-size:13px;font-weight:800;flex:none}
+  h4{margin:18px 0 8px;font-size:14px;color:var(--brand-d);font-weight:700}
+  h4:first-of-type{margin-top:4px}
+  p{margin:0 0 10px;color:var(--ink-6)}
+  .hint{font-size:12px;color:var(--ink-4);margin-top:-4px}
+  ul,ol{margin:0;padding-left:22px}
+  li{margin:6px 0;color:var(--ink-6)}
+  ul.check{list-style:none;padding-left:0}
+  ul.check li{position:relative;padding-left:28px;margin:9px 0}
+  ul.check li::before{content:'';position:absolute;left:0;top:4px;width:16px;height:16px;border:2px solid var(--lucro);border-radius:4px}
+  .badge{display:inline-block;background:#eff6ff;color:var(--brand-d);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:800;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;flex:none}
+  .tags{display:flex;flex-wrap:wrap;gap:7px}
+  .tags span{background:#eff6ff;color:var(--brand-d);border:1px solid #dbeafe;border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600}
+  /* Modelo de dados */
+  .entidade{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 12px;background:#fbfdff}
+  .ent-nome{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px;font-weight:700;color:var(--brand-d);margin:0 0 8px}
+  ul.campos{list-style:none;padding-left:0;margin:0;display:grid;gap:5px}
+  ul.campos li{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--ink-6);background:#fff;border:1px solid var(--line);border-radius:7px;padding:5px 9px;overflow-wrap:anywhere;word-break:break-word;margin:0}
+  /* API */
+  .endpoint{border-left:3px solid var(--brand);background:#fbfdff;border-radius:0 10px 10px 0;padding:10px 14px;margin:0 0 12px}
+  .ep-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .ep-rota{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:var(--ink);overflow-wrap:anywhere;word-break:break-word}
+  .ep-desc{font-size:13px;margin:7px 0 0}
+  .teste{border-left:3px solid var(--brand);padding-left:15px;margin:14px 0}
+  .empty{color:var(--ink-4)}
+  /* Diagramas */
+  .mermaid-box{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px;margin:6px 0 10px;overflow-x:auto;text-align:center}
+  .mermaid{font-size:14px}
+  .disclaimer{margin-top:26px;font-size:12px;color:var(--ink-4);border-top:1px solid var(--line);padding-top:16px}
+  @media print{body{background:#fff}.wrap{padding:0}.toc{display:none}section{break-inside:avoid;border:none;border-bottom:1px solid var(--line);border-radius:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="doc">
+    <div class="kicker">RODE COM LUCRO · PRD Técnico</div>
+    <h1>Identidade &amp; Onboarding do Motorista · Transversal</h1>
+    <p class="sub">Guia de desenvolvimento para dev full-stack sênior. O protótipo está 100% mockado; este documento orienta a construção real da funcionalidade.</p>
+    <div class="meta">
+      <div class="pill"><span>Esforço</span><b>10–16 dev-dias</b></div>
+      <div class="pill"><span>Prazo</span><b>2 a 3 semanas</b></div>
+      <div class="pill"><span>Custo estimado</span><b>R$ 21k–R$ 34k</b></div>
+      <div class="pill"><span>Premissa</span><b>R$ 2.100/dev-dia</b></div>
+    </div>
+  </header>
+  <nav class="toc"><a href="#s1">Visão técnica</a><a href="#s2">Arquitetura</a><a href="#s3">Stack</a><a href="#s4">Modelo de dados</a><a href="#s5">Contratos de API</a><a href="#s6">Frontend / fluxo</a><a href="#s7">Lógica de negócio</a><a href="#s8">Integrações</a><a href="#s9">Segurança &amp; LGPD</a><a href="#s10">Não-funcionais</a><a href="#s11">Etapas</a><a href="#s12">Plano de teste</a><a href="#s13">Critérios de aceite</a><a href="#s14">Diagramas</a></nav>
+
+  <section id="s1"><h2><span class="n">1</span>Visão técnica</h2><p>Modulo fundacional de identidade B2C do RODE COM LUCRO: implementa o nascimento, a sessao e o ciclo de vida da conta do caminhoneiro que os demais modulos pressupõem (RLS por auth.uid(), telefone verificado para os canais -wpp e perfil canonico do motorista). O nucleo e o Supabase Auth com provider phone (OTP por SMS), mas o disparo de codigo NUNCA e chamado direto pelo cliente: passa pela Edge Function otp-solicitar, que aplica anti-abuso (limites por telefone e por IP, bloqueio progressivo, teto global diario e kill-switch) antes de acionar o GoTrue — o envio de SMS e pre-autenticacao, custa dinheiro e e alvo de SMS pumping, entao o anti-abuso e requisito de primeira classe, nao opcional. A sessao no PWA e offline-first: tokens persistidos em IndexedDB via storage adapter do supabase-js, refresh token rotativo com deteccao de reuso, app utilizavel com JWT expirado (dados locais continuam legiveis) e fila de sync que so dispara apos refresh bem-sucedido. O modulo resolve a divergencia dos 4 nomes de tabela encontrados nos PRDs (caminhao_perfil no calc-app, perfis_motorista no find-app, driver_profiles no portal, motorista nos -wpp) instituindo a tabela canonica motoristas (1:1 com auth.users) mais claims app_role e telefone_verificado injetados por custom access token hook, com views de compatibilidade security_invoker durante a migracao; caminhao_perfil permanece como perfil do VEICULO referenciando motoristas. O vinculo app&lt;-&gt;WhatsApp e verificacao de posse real do numero: o app gera codigo de 6 digitos e deep link wa.me para o numero oficial, o wa-webhook (compartilhado com os modulos -wpp) casa a mensagem VINCULAR com o wa_vinculo pendente e so entao telefone_verificado vira true — coluna que nenhum cliente consegue gravar. A migracao anonimo-&gt;conta reusa a idempotencia ja especificada no calc-app (UUIDs gerados no cliente + upsert merge-duplicates): no primeiro login a fila local sobe as analises do modo so-calculo sem duplicar e sem tela extra. Consentimento LGPD versionado e append-only entra no onboarding, e a exclusao de conta e orquestrada em nivel de identidade encadeando os apagadores dos demais modulos; reciclagem de chip e tratada como risco: conta inativa &gt;=180 dias entra em quarentena e exige desafio de perfil antes de reexpor historico — o novo dono do numero nunca herda a conta anterior.</p></section>
+  <section id="s2"><h2><span class="n">2</span>Arquitetura</h2><ul><li>Supabase Auth (GoTrue) com provider phone e o unico emissor de identidade: signInWithOtp nunca e chamado pelo bundle do PWA; todo pedido de codigo passa pela Edge Function otp-solicitar (service_role), que executa o gate anti-abuso em Postgres (tabelas otp_envio e otp_bloqueio) e so entao aciona o GoTrue — a verificacao do codigo (auth.verifyOtp) e feita direto pelo cliente porque e limitada por expiracao de 300s e 5 tentativas.</li><li>Modelo canonico do motorista: tabela motoristas com id uuid identico a auth.users.id (criada por trigger on_auth_user_created no primeiro login), absorvendo as colunas de identidade hoje espalhadas nos PRDs (telefone_e164, telefone_verificado, canal_wa_ativo, meta_alvo_centavos do fin-wpp; nome/uf do portal); caminhao_perfil (calc-app) permanece como perfil do veiculo com FK para motoristas; perfis_motorista e driver_profiles viram views security_invoker de compatibilidade (a do portal sem colunas de PII) ate os modulos migrarem, com prazo de remocao registrado em ADR.</li><li>Claims no JWT via custom access token hook (funcao Postgres before-token, mesmo mecanismo ja especificado no portal para app_role/company_id): injeta app_role='driver', driver_id=motoristas.id e telefone_verificado, permitindo que policies RLS e Edge Functions dos modulos -wpp decidam sem query extra; o hook le de motoristas, entao desvincular WhatsApp reflete no proximo refresh de token.</li><li>Sessao offline-first como invariante: supabase-js configurado com storage adapter sobre IndexedDB (idb), autoRefreshToken ligado, refresh proativo no evento visibilitychange/online; com refresh impossivel (sem rede) o app segue utilizavel em modo leitura local e a fila useSyncQueue (ja definida no calc-app) fica pausada com badge 'pendente', drenando apos refresh 2xx — token expirado NUNCA descarta itens da fila.</li><li>Vinculo app&lt;-&gt;WhatsApp por prova de posse no proprio canal: Edge Function wa-vincular cria registro wa_vinculo (codigo_hash, TTL 10min) e devolve deep link wa.me/&lt;numero_oficial&gt;?text=VINCULAR &lt;codigo&gt;; o wa-webhook existente (HMAC X-Hub-Signature-256, idempotente por wa_message_id, conforme fin-wpp) reconhece o intent VINCULAR, exige que o from_e164 seja igual ao motoristas.telefone_e164 do dono do codigo e so entao seta telefone_verificado=true via service_role — unica origem de escrita dessa coluna.</li><li>Migracao anonimo-&gt;conta sem endpoint novo: o modo so-calculo grava analises em IndexedDB com id uuid gerado no cliente e synced=false; no primeiro login a fila envia POST /rest/v1/analise_frete com Prefer: resolution=merge-duplicates e o user_id derivado do JWT pela policy WITH CHECK, marcando origem_migracao='anonimo' — reexecucao e no-op por upsert de id, e nada e migrado sem o consentimento de persistencia_historico aceito.</li><li>Exclusao de conta em nivel de identidade: Edge Function excluir-conta orquestra os apagadores por modulo (escopo do /apagar-conta do calc-app, fn_excluir_dados do fin-wpp e equivalentes), invocados server-to-server com service_role e recebendo o user_id exclusivamente do contexto autenticado da orquestracao (nunca de input externo); remove motoristas e o usuario do GoTrue por ultimo, grava trilha em identidade_audit com telefone_hash (nunca numero em claro) e e idempotente — segunda chamada responde removidos:0 sem erro.</li><li>Reciclagem de chip tratada por maquina de estados da conta: status in ('ativa','quarentena','arquivada'); job pg_cron marca quarentena para contas com ultimo_login_at &gt;= 180 dias; login OTP em conta em quarentena nao expoe historico ate o motorista responder desafio de perfil (categoria do caminhao + cidade base); falha no desafio arquiva a conta antiga (telefone_e164 liberado, telefone_hash retido para auditoria) e inicia cadastro limpo.</li><li>Observabilidade e custo: toda solicitacao de OTP gera linha em otp_envio com custo_estimado_centavos e flag convertido_login, alimentando no painel admin as metricas de custo de SMS por cadastro, taxa de conversao do funil, taxa de reenvio, % de contas com WhatsApp verificado e contas recuperadas com sucesso apos troca de numero (derivada da auditoria troca_numero) — fechando as metricas do PRD de produto — alem de alertas ao atingir 80% do teto diario global (identidade_config).</li></ul></section>
+  <section id="s3"><h2><span class="n">3</span>Stack sugerida</h2><div class="tags"><span>Front: React 18 + TypeScript + Vite com PWA (vite-plugin-pwa/Workbox), Tailwind com os tokens existentes (brand-*, ink-*, card, focus-ring), react-hook-form + zod nas telas de telefone/onboarding, lucide-react para icones; input OTP com autocomplete='one-time-code' e WebOTP API (navigator.credentials.get type 'otp') para autofill de SMS no Android.</span><span>Sessao/estado: @supabase/supabase-js v2 com storage adapter customizado sobre IndexedDB (idb) para tokens e perfil, store Zustand useSessao (estados: anonimo | autenticado | expirado_offline | quarentena) e reuso da fila useSyncQueue do calc-app para a migracao anonimo-&gt;conta.</span><span>Back: Supabase Auth (provider phone, otp_expiry=300s, otp_length=6, sms rate limit nativo como segunda linha), Postgres 15 com RLS em todas as tabelas do modulo, Edge Functions Deno/TS (otp-solicitar, wa-vincular, trocar-numero, excluir-conta) e custom access token hook em PL/pgSQL para claims.</span><span>SMS: provedor com suporte a Verify/OTP no Brasil (Twilio Verify ou Zenvia) configurado como SMS provider do GoTrue via send-sms hook, permitindo interceptar cada envio para contabilizar custo em otp_envio e aplicar o kill-switch antes do gasto.</span><span>Fallback de canal: WhatsApp Cloud API (Meta) com template HSM da categoria authentication aprovado, usado quando o SMS falha ou excede timeout de 30s e como opcao explicita 'receber codigo no WhatsApp' — reusa o numero oficial e o wa-send helper do fin-wpp.</span><span>Jobs: pg_cron para expirar wa_vinculo pendentes, zerar janelas de rate-limit, marcar quarentena de contas inativas (180d) e expurgar identidade_audit alem da retencao; pg_net para encadear notificacoes assincronas sem bloquear transacao.</span><span>Testes: Vitest (validacao E.164, maquina de bloqueio progressivo, regras de quarentena), Testing Library (telas Entrada/Verificacao/Onboarding), Playwright (e2e cadastro-&gt;1o calculo, offline/refresh, migracao anonima) e supabase CLI local + pgTAP para policies RLS, trigger de criacao de motoristas e o access token hook.</span></div></section>
+  <section id="s4"><h2><span class="n">4</span>Modelo de dados</h2><div class="entidade">
+        <p class="ent-nome">motoristas</p>
+        <ul class="campos"><li>id uuid PK REFERENCES auth.users(id) ON DELETE CASCADE (mesmo uuid do GoTrue, 1:1 — e o driver_id canonico de todos os modulos)</li><li>nome text (null ate o onboarding, nunca obrigatorio para usar o app)</li><li>telefone_e164 text UNIQUE NOT NULL CHECK (telefone_e164 ~ '^55[1-9][0-9]{9,10}$') (formato E.164 BR sem '+')</li><li>telefone_hash text NOT NULL (HMAC-SHA256 com pepper de servidor, usado em logs/auditoria e retido pos-arquivamento)</li><li>telefone_verificado boolean NOT NULL DEFAULT false (pilar dos modulos -wpp</li><li>escrita exclusiva por service_role)</li><li>telefone_verificado_em timestamptz</li><li>canal_wa_ativo boolean NOT NULL DEFAULT false (false apos PARAR/desvinculo)</li><li>uf_base char(2)</li><li>onboarding_completo_em timestamptz (null enquanto o wizard nao terminou</li><li>nao bloqueia uso)</li><li>meta_alvo_centavos bigint (migrado do PRD fin-wpp)</li><li>media_lucro_frete_centavos bigint (migrado do PRD fin-wpp)</li><li>status text NOT NULL DEFAULT 'ativa' CHECK (status IN ('ativa','quarentena','arquivada'))</li><li>ultimo_login_at timestamptz NOT NULL DEFAULT now() (base da regra de reciclagem de chip)</li><li>created_at timestamptz NOT NULL DEFAULT now()</li><li>updated_at timestamptz NOT NULL DEFAULT now()</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">otp_envio</p>
+        <ul class="campos"><li>id uuid PK DEFAULT gen_random_uuid()</li><li>telefone_hash text NOT NULL (nunca o numero em claro)</li><li>ip inet NOT NULL</li><li>canal text NOT NULL CHECK (canal IN ('sms','whatsapp'))</li><li>provider text (ex.: 'twilio_verify','meta_hsm')</li><li>custo_estimado_centavos int NOT NULL DEFAULT 0 (alimenta a metrica de custo por cadastro)</li><li>status text NOT NULL CHECK (status IN ('enviado','falha','bloqueado'))</li><li>motivo_bloqueio text (ex.: 'limite_telefone','limite_ip','teto_global','kill_switch')</li><li>convertido_login boolean NOT NULL DEFAULT false (setado quando o verifyOtp correspondente sucede)</li><li>created_at timestamptz NOT NULL DEFAULT now(). INDEX (telefone_hash, created_at) e INDEX (ip, created_at) para as janelas de rate-limit</li><li>sem policy de leitura para authenticated (tabela interna, acesso so service_role e admin)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">otp_bloqueio</p>
+        <ul class="campos"><li>id uuid PK</li><li>escopo text NOT NULL CHECK (escopo IN ('telefone','ip','global'))</li><li>chave text NOT NULL (telefone_hash, ip em texto, ou 'global')</li><li>nivel int NOT NULL DEFAULT 1 CHECK (nivel BETWEEN 1 AND 3) (bloqueio progressivo: 15min, 1h, 24h)</li><li>bloqueado_ate timestamptz NOT NULL</li><li>motivo text NOT NULL</li><li>created_at timestamptz NOT NULL DEFAULT now(). UNIQUE(escopo, chave) com upsert incrementando nivel</li><li>consultada pelo otp-solicitar ANTES de qualquer chamada ao provedor de SMS</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">wa_vinculo</p>
+        <ul class="campos"><li>id uuid PK</li><li>motorista_id uuid NOT NULL REFERENCES motoristas(id) ON DELETE CASCADE</li><li>codigo_hash text NOT NULL (SHA-256 do codigo de 6 digitos</li><li>codigo em claro nunca persiste)</li><li>expira_em timestamptz NOT NULL (created_at + 10min)</li><li>status text NOT NULL DEFAULT 'pendente' CHECK (status IN ('pendente','verificado','expirado','revogado'))</li><li>verificado_em timestamptz</li><li>wa_message_id text (id da mensagem VINCULAR que confirmou, para auditoria e idempotencia)</li><li>tentativas int NOT NULL DEFAULT 0 CHECK (tentativas &lt;= 5)</li><li>created_at timestamptz NOT NULL DEFAULT now(). INDEX parcial (motorista_id) WHERE status='pendente' — no maximo 1 pendente por motorista (constraint UNIQUE parcial)</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">consentimento</p>
+        <ul class="campos"><li>id uuid PK</li><li>motorista_id uuid NOT NULL REFERENCES motoristas(id)</li><li>tipo text NOT NULL CHECK (tipo IN ('termos_uso','politica_privacidade','persistencia_historico','canal_whatsapp'))</li><li>versao text NOT NULL (ex.: 'v1.0-2026-08', aponta para o documento versionado do modulo Seguranca &amp; LGPD)</li><li>aceito boolean NOT NULL (revogacao e uma NOVA linha com aceito=false — tabela append-only, sem UPDATE/DELETE por policy)</li><li>ip_hash text</li><li>user_agent text</li><li>created_at timestamptz NOT NULL DEFAULT now(). INDEX (motorista_id, tipo, created_at DESC) para resolver o consentimento vigente pela linha mais recente</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">identidade_audit</p>
+        <ul class="campos"><li>id uuid PK</li><li>motorista_id uuid NULL (null em eventos pre-conta, ex.: otp bloqueado de numero desconhecido)</li><li>evento text NOT NULL CHECK (evento IN ('otp_solicitado','otp_bloqueado','login_ok','login_falha','wa_vinculado','wa_desvinculado','troca_numero','quarentena_desafio_ok','quarentena_desafio_falha','conta_arquivada','conta_excluida'))</li><li>telefone_hash text (NUNCA telefone em claro — gate de code review)</li><li>ip inet</li><li>detalhe jsonb (payload minimizado, sem PII)</li><li>created_at timestamptz NOT NULL DEFAULT now(). Retencao de 180 dias com expurgo por pg_cron</li><li>leitura restrita a app_role='admin'</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">identidade_config</p>
+        <ul class="campos"><li>chave text PK (ex.: 'otp_canal_ativo','teto_sms_dia','limite_telefone_15min','limite_telefone_24h','limite_ip_hora','otp_expiry_s','quarentena_dias')</li><li>valor text NOT NULL</li><li>updated_at timestamptz NOT NULL DEFAULT now(). Kill-switch e parametros de anti-abuso ajustaveis sem deploy</li><li>escrita so por admin, leitura so por service_role</li></ul>
+      </div><div class="entidade">
+        <p class="ent-nome">views de compatibilidade (transitorias)</p>
+        <ul class="campos"><li>perfis_motorista VIEW security_invoker (espelha motoristas + join de caminhao_perfil para o find-app)</li><li>driver_profiles VIEW security_invoker (espelha motoristas SEM telefone_e164/telefone_hash para o portal — telefone so via reveal-driver-contact)</li><li>motorista VIEW security_invoker (alias singular para os modulos -wpp). Todas marcadas com comentario SQL DEPRECATED e data-alvo de remocao registrada em ADR</li><li>nenhuma view aceita INSERT/UPDATE</li></ul>
+      </div></section>
+  <section id="s5"><h2><span class="n">5</span>Contratos de API</h2><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/otp-solicitar</code></div>
+        <p class="ep-desc">Unica porta de disparo de OTP (o PWA nunca chama signInWithOtp direto). Body: {telefone_e164, canal:'sms'|'whatsapp', captcha_token?}. Pipeline: (1) valida E.164 BR e normaliza; (2) checa kill-switch identidade_config.otp_canal_ativo; (3) checa otp_bloqueio por telefone_hash, por IP e global; (4) aplica janelas: 3 envios/15min e 5/24h por telefone, 10/h e 20/24h por IP — estouro cria/incrementa otp_bloqueio (nivel 1=15min, 2=1h, 3=24h) e responde 429 {bloqueado_ate, motivo}; (5) checa teto global diario (teto_sms_dia) e alerta admin a 80%; (6) aciona GoTrue (codigo 6 digitos, expiracao 300s) via provedor SMS ou template HSM authentication quando canal='whatsapp' ou apos timeout de 30s do SMS; (7) grava otp_envio com custo. 200 {enviado:true, canal_efetivo, proximo_reenvio_s:60}. Nunca revela se o telefone ja possui conta (resposta identica para numero novo e existente).</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/auth/v1/verify</code></div>
+        <p class="ep-desc">Verificacao do codigo via supabase.auth.verifyOtp({phone, token, type:'sms'}). Sucesso emite access_token (TTL 1h) + refresh_token rotativo; no PRIMEIRO login o trigger on_auth_user_created cria a linha em motoristas (telefone_e164 do GoTrue, telefone_verificado=false, status='ativa') e o custom access token hook injeta claims app_role='driver', driver_id e telefone_verificado no JWT. Codigo errado decrementa tentativas (max 5 por codigo, controlado pelo GoTrue) e a 5a falha invalida o codigo exigindo novo envio (que volta a passar pelo gate do otp-solicitar); codigo expirado (&gt;300s) retorna 403 otp_expired. Atualiza motoristas.ultimo_login_at e marca otp_envio.convertido_login=true.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/auth/v1/token?grant_type=refresh_token</code></div>
+        <p class="ep-desc">Refresh rotativo padrao do GoTrue consumido pelo autoRefreshToken do supabase-js com storage em IndexedDB. Contrato offline-first do PWA: com o refresh inacessivel (sem rede) o app NAO desloga — mantem sessao logica local, exibe dados do IndexedDB e pausa a fila de sync; ao voltar online tenta o refresh antes de drenar a fila; reuso de refresh token ja rotacionado (deteccao nativa do GoTrue) revoga a familia inteira e forca novo OTP, protegendo contra token roubado de dispositivo antigo. Logout local revoga so o refresh do dispositivo (scope:'local'); 'sair de todos os aparelhos' usa scope:'global'.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/wa-vincular</code></div>
+        <p class="ep-desc">Autenticada (JWT driver validado por assinatura e expiracao; sem Authorization ou token invalido responde 401 sem side effect — o motorista_id vem SEMPRE do JWT, nunca do body). Inicia a prova de posse do numero no WhatsApp: gera codigo de 6 digitos, persiste wa_vinculo {codigo_hash, expira_em: now()+10min, status:'pendente'} (revogando pendente anterior — so o ultimo codigo e valido) e responde 200 {wa_link:'https://wa.me/&lt;numero_oficial&gt;?text=VINCULAR &lt;codigo&gt;', expira_em}. Rate-limit proprio: max 5 solicitacoes/hora por motorista (429), alem do UNIQUE parcial de 1 pendente. A confirmacao chega pelo wa-webhook: intent VINCULAR &lt;codigo&gt; so e aceito se o from_e164 da mensagem for IGUAL ao motoristas.telefone_e164 do dono do wa_vinculo e o codigo casar com codigo_hash dentro do TTL — entao service_role seta telefone_verificado=true, canal_wa_ativo=true, registra consentimento tipo='canal_whatsapp' e responde no proprio WhatsApp 'Numero vinculado'. Codigo de numero divergente ou expirado incrementa tentativas e orienta reiniciar pelo app; 5 tentativas revogam o vinculo pendente.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/wa-webhook</code></div>
+        <p class="ep-desc">Endpoint COMPARTILHADO com os modulos -wpp (GET verify_token + POST com HMAC X-Hub-Signature-256 sobre o corpo cru — autenticacao explicita do canal Meta; payload sem assinatura valida responde 403 sem side effect — e idempotente por wa_message_id, conforme ja especificado no fin-wpp). Este modulo adiciona dois intents roteados ANTES do NLU: VINCULAR &lt;codigo&gt; (fluxo acima, sem custo de LLM — match por regex) e DESVINCULAR (seta telefone_verificado=false e canal_wa_ativo=false do motorista resolvido pelo from_e164, responde confirmacao e audita wa_desvinculado); apos desvinculo, mensagens do numero recebem o convite de re-vinculacao e nenhum modulo -wpp processa escrita (a checagem telefone_verificado=true do fin-wpp passa a ler da tabela canonica motoristas).</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/trocar-numero</code></div>
+        <p class="ep-desc">Autenticada (JWT driver; 401 sem token; a conta afetada e SEMPRE a do auth.uid() do JWT). Troca de chip em duas etapas no MESMO endpoint: etapa='solicitar' {novo_telefone_e164} valida E.164, exige que o novo numero nao pertenca a outra conta ativa (409 numero_em_uso), passa pelo gate anti-abuso do otp-solicitar e envia OTP ao NOVO numero; etapa='confirmar' {codigo} valida o codigo, atualiza auth.users.phone e motoristas.telefone_e164/telefone_hash em transacao, seta telefone_verificado=false e canal_wa_ativo=false (re-vinculacao WhatsApp obrigatoria), revoga refresh tokens de outros dispositivos (scope global exceto o atual) e audita troca_numero com hash antigo e novo. O numero antigo fica imediatamente livre para novo cadastro sem herdar nada da conta.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">GET</span><code class="ep-rota">/rest/v1/motoristas?id=eq.{auth.uid()}&amp;select=id,nome,telefone_e164,telefone_verificado,canal_wa_ativo,uf_base,onboarding_completo_em,status</code></div>
+        <p class="ep-desc">PostgREST com RLS USING (id = auth.uid()): o motorista le exclusivamente a propria linha para hidratar a tela Conta e decidir estados de UI (badge WhatsApp vinculado, wizard de onboarding pendente, quarentena). Sem JWT retorna 401; JWT de outro usuario retorna []. E a fonte que o app cacheia em IndexedDB para funcionar offline.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">PATCH</span><code class="ep-rota">/rest/v1/motoristas?id=eq.{auth.uid()}</code></div>
+        <p class="ep-desc">Atualiza apenas campos de perfil editaveis pelo titular: nome, uf_base, meta_alvo_centavos, onboarding_completo_em. Trigger BEFORE UPDATE rejeita (RAISE) qualquer tentativa de alterar telefone_e164, telefone_hash, telefone_verificado, canal_wa_ativo, status ou ultimo_login_at vinda de request com claim app_role='driver' — essas colunas so mudam via Edge Functions service_role (wa-webhook, trocar-numero, jobs). RLS WITH CHECK (id = auth.uid()).</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/rest/v1/consentimento</code></div>
+        <p class="ep-desc">Insert direto append-only com RLS WITH CHECK (motorista_id = auth.uid()). Body: {tipo, versao, aceito, user_agent}. Sem policies de UPDATE/DELETE — revogar e inserir nova linha aceito=false; o consentimento vigente e a linha mais recente por (motorista_id, tipo). O onboarding grava termos_uso e politica_privacidade obrigatorios no primeiro login e persistencia_historico opcional (sem ele o app permanece em modo so-calculo, como definido no calc-app); canal_whatsapp e gravado pelo fluxo de vinculo.</p>
+      </div><div class="endpoint">
+        <div class="ep-head"><span class="badge">POST</span><code class="ep-rota">/functions/v1/excluir-conta</code></div>
+        <p class="ep-desc">Autenticada (JWT valido; 401 sem token; nunca aceita user_id no body — o titular e sempre o auth.uid() do JWT). Orquestra a exclusao LGPD em nivel de identidade na ordem: (1) apagadores dos modulos de dados (analise_frete e caminhao_perfil do calc-app; gasto, wa_inbound, wa_conversation_state e wa_audio com arquivos de bucket do fin-wpp; interesses do find/portal anonimizados) — invocados server-to-server com service_role, com o user_id propagado apenas pelo contexto da orquestracao; (2) consentimento e wa_vinculo, (3) linha de motoristas, (4) usuario do GoTrue (admin API). Cada passo e idempotente e o resultado agregado volta em 200 {removidos:{...}}; falha parcial deixa marcador de retomada e o job reexecuta ate concluir. Audita conta_excluida apenas com telefone_hash + timestamp.</p>
+      </div></section>
+  <section id="s6"><h2><span class="n">6</span>Frontend / fluxo</h2><ul><li>Tela Entrada (rota /entrar): campo unico de telefone com mascara BR (+55 fixo, DDD + numero, inputmode='tel', autocomplete='tel'), checkbox de aceite de termos_uso + politica_privacidade com links para os documentos versionados (o CTA 'Receber codigo' so habilita com o aceite) e opcao secundaria 'receber o codigo no WhatsApp'; o submit chama /functions/v1/otp-solicitar e trata 429 exibindo contagem regressiva de bloqueado_ate em linguagem simples ('muitas tentativas, tente em 15 min').</li><li>Tela Verificacao: 6 caixas de digito com autocomplete='one-time-code' e WebOTP API para autofill do SMS no Android (fallback: colar/digitar), timer de reenvio iniciando em 60s (reenvio volta ao otp-solicitar e o backoff progride 60/120/300s no cliente alem do limite do servidor), estados de erro distintos para codigo invalido (mostra tentativas restantes), expirado (CTA 'pedir novo codigo') e bloqueado (mostra janela); sucesso navega direto para o app — nunca para formulario longo.</li><li>Onboarding pos-login em 3 passos de 1 dado por vez (bottom-sheet, nunca pagina de formulario): tipo de caminhao (chips com as categorias de cost_defaults), eixos (stepper com default da categoria) e consumo km/L (slider com default da categoria, ex.: 2.5) — cada passo tem 'pular' e grava incrementalmente em caminhao_perfil via upsert idempotente; ao final marca motoristas.onboarding_completo_em e emite eventos de funil (onboarding_passo_1..3, onboarding_concluido) para a meta de conclusao &gt;80%.</li><li>Migracao anonimo-&gt;conta invisivel ao usuario: se ha analises locais do modo so-calculo, apos o primeiro login o app pergunta uma unica vez 'Guardar seus X calculos na sua conta?' (consentimento persistencia_historico); aceito, a useSyncQueue sobe cada analise com o proprio uuid local via upsert merge-duplicates e o Historico passa a exibi-las com badge de sync; recusado, o app permanece em modo so-calculo sem nova pergunta (persistido em IndexedDB).</li><li>Card Vinculo WhatsApp (na tela Conta e como passo opcional do onboarding): estado 'nao vinculado' mostra o botao 'Vincular WhatsApp' que chama /functions/v1/wa-vincular e abre o deep link wa.me com a mensagem VINCULAR pre-preenchida; o app assina canal realtime na propria linha de motoristas e vira o badge para 'verificado' sem reload quando telefone_verificado muda; estado 'vinculado' oferece 'Desvincular' e explica o que deixa de funcionar (lembretes e registro por WhatsApp).</li><li>Tela Conta/Sessao: exibe telefone mascarado (•••• 9999), status do vinculo WhatsApp, acoes 'Trocar numero' (wizard de 2 passos consumindo /functions/v1/trocar-numero com aviso explicito de que o WhatsApp precisara ser re-vinculado), 'Sair deste aparelho' (signOut scope local), 'Sair de todos os aparelhos' (scope global) e 'Excluir minha conta' com confirmacao dupla digitando EXCLUIR e aviso de irreversibilidade antes de chamar /functions/v1/excluir-conta.</li><li>Comportamento de sessao offline-first transversal: banner discreto 'sem conexao — seus dados estao neste aparelho' quando o refresh falha por rede, contador de itens pendentes de sync no Historico, e interceptor global que, em 401 de PostgREST com rede disponivel, tenta 1 refresh e repete a request antes de degradar para o fluxo de reautenticacao por OTP (nunca perde o que estava na fila).</li></ul></section>
+  <section id="s7"><h2><span class="n">7</span>Lógica de negócio</h2><ul><li>Anti-abuso de envio (executa ANTES de qualquer custo): normalizar telefone para E.164 BR e derivar telefone_hash=HMAC-SHA256(telefone, pepper); janelas deslizantes contadas em otp_envio — por telefone 3/15min e 5/24h, por IP 10/h e 20/24h; estouro grava otp_bloqueio com escalada de nivel (15min -&gt; 1h -&gt; 24h) e cada bloqueio audita otp_bloqueado; teto global diario (identidade_config.teto_sms_dia) bloqueia TODO envio por SMS ao ser atingido (fallback WhatsApp continua ate teto proprio) e dispara alerta ao admin em 80%; deteccao de padrao de SMS pumping (&gt;=5 numeros distintos consecutivos do mesmo IP em 10min, ou sequencia crescente de numeros) bloqueia o IP no nivel 3 imediatamente.</li><li>Ciclo de vida do OTP: codigo numerico de 6 digitos gerado pelo GoTrue, expiracao 300s (auth.otp_expiry), reenvio permitido apos 60s, maximo 5 verificacoes falhas por codigo (apos a 5a o codigo e invalidado e um novo envio precisa repassar o gate anti-abuso); comparacao do codigo e responsabilidade do GoTrue (hash + tempo constante); a resposta do otp-solicitar e deliberadamente identica para telefone com e sem conta, evitando enumeracao de usuarios.</li><li>Sessao e fila offline: access token TTL 1h e refresh rotativo; estados do cliente — autenticado (token valido), expirado_offline (token vencido sem rede: leitura local liberada, fila pausada, escrita local permitida com synced=false) e reauth_necessaria (refresh rejeitado com rede: familia revogada ou conta arquivada); a fila de sync so drena com token valido e cada item usa upsert por uuid do cliente, entao retry pos-refresh nunca duplica; multiplos dispositivos tem refresh tokens independentes e o 'sair de todos' revoga scope global.</li><li>Migracao anonimo-&gt;conta: pre-condicao e o consentimento persistencia_historico aceito; o cliente varre o IndexedDB por registros com synced=false e sem user_id, envia em lotes de 20 via POST idempotente, marca cada item synced=true no 2xx e grava origem_migracao='anonimo' no snapshot; reexecucao (app fechado no meio) e segura por upsert de id; dados locais nunca sao apagados antes do 2xx correspondente; se o login for feito em conta que JA tem historico (2o dispositivo), a migracao roda igual — uuids distintos garantem uniao sem conflito.</li><li>Regras do vinculo WhatsApp: telefone_verificado so transiciona para true no caminho wa-webhook-&gt;match de wa_vinculo (posse provada no proprio canal); transiciona para false em DESVINCULAR (WhatsApp), 'Desvincular' (app), troca de numero e comando PARAR (que tambem revoga consentimento canal_whatsapp, conforme fin-wpp); o claim telefone_verificado do JWT e atualizado no proximo refresh (&lt;=1h) e os modulos -wpp devem checar a coluna no banco (fonte de verdade) nas operacoes de escrita, usando o claim apenas para decisoes de UI.</li><li>Reciclagem de chip / troca de dono do numero: job diario marca status='quarentena' para contas com ultimo_login_at &gt;= identidade_config.quarentena_dias (default 180); login OTP em conta em quarentena autentica mas o access token hook injeta claim quarentena=true e o app bloqueia o historico atras do desafio de perfil (informar categoria do caminhao E cidade base cadastradas); acerto restaura status='ativa' e audita quarentena_desafio_ok; erro (2 tentativas) arquiva a conta antiga — telefone_e164 e liberado (coluna anulada, telefone_hash retido), status='arquivada', dados preservados dissociados do numero — e o fluxo segue como cadastro novo limpo; conta arquivada so e recuperavel por processo manual de suporte com prova de titularidade.</li><li>Modelo canonico e claims: on_auth_user_created cria motoristas e o access token hook injeta {app_role:'driver', driver_id, telefone_verificado, quarentena}; TODA policy RLS de modulos B2C referencia auth.uid() = motoristas.id (mesmo uuid), eliminando joins de mapeamento; as views perfis_motorista/driver_profiles/motorista sao somente leitura e serao removidas quando os modulos migrarem (criterio: zero SELECT nas views por 30 dias no pg_stat_statements).</li><li>Consentimento como maquina de append: o vigente de cada tipo e a ultima linha; termos_uso e politica_privacidade bloqueiam o uso do app se a versao vigente publicada for maior que a aceita (re-aceite no proximo login, tela unica); persistencia_historico=false mantem o produto funcional em modo so-calculo; toda decisao e carimbada com versao do documento para reconstituir o que o titular viu.</li></ul></section>
+  <section id="s8"><h2><span class="n">8</span>Integrações</h2><ul><li>Supabase Auth (GoTrue) como provedor de identidade: provider phone com OTP, custom access token hook para claims, admin API para exclusao de usuario e atualizacao de phone na troca de numero; configuracao versionada em codigo (config.toml) com otp_expiry=300, otp_length=6 e rate limits nativos como segunda camada atras do otp-solicitar.</li><li>Provedor de SMS (Twilio Verify ou Zenvia, decisao por custo/entregabilidade BR) plugado via send-sms hook do GoTrue, permitindo contabilizar custo por envio em otp_envio, aplicar kill-switch antes do gasto e trocar de provedor sem tocar no fluxo; credenciais em secrets das Edge Functions, nunca no bundle.</li><li>WhatsApp Cloud API (Meta) em dois papeis: fallback de entrega de OTP via template HSM categoria authentication (quando SMS falha, excede 30s ou o usuario escolhe o canal) e prova de posse do numero via wa-webhook compartilhado (intents VINCULAR/DESVINCULAR roteados por regex antes do pipeline NLU do fin-wpp), reusando numero oficial, HMAC e idempotencia por wa_message_id ja especificados.</li><li>Modulos consumidores da identidade: calc-app (RLS de caminhao_perfil/analise_frete por auth.uid() e migracao anonima), fin-wpp e demais -wpp (checagem telefone_verificado e resolucao de dono por telefone_e164 passam a ler de motoristas), find-app (view perfis_motorista ate migrar), portal (view driver_profiles sem PII + reveal-driver-contact) e admin (papeis e metricas de funil/custo de OTP).</li><li>Modulo Seguranca &amp; Governanca LGPD: fornece os textos versionados de termos/politica referenciados por consentimento.versao, o padrao de retencao/expurgo aplicado a identidade_audit e otp_envio, e consome deste modulo os claims app_role que a autorizacao transversal pressupoe.</li></ul></section>
+  <section id="s9"><h2><span class="n">9</span>Segurança & LGPD</h2><ul><li>SMS pumping e o risco financeiro numero 1 (endpoint pre-autenticacao que gasta dinheiro): defesa em camadas — rate-limit por telefone e por IP com bloqueio progressivo, deteccao de sequencia de numeros do mesmo IP, teto global diario com kill-switch (identidade_config.otp_canal_ativo=false interrompe o canal em 1 update sem deploy), alerta de custo a 80% do teto no admin e resposta 429 sem side effect; captcha invisivel (Turnstile) e acionado dinamicamente quando o IP esta em nivel de suspeita 2+ em vez de punir todo usuario legitimo.</li><li>Brute force do codigo: 6 digitos com expiracao de 300s e 5 tentativas dao probabilidade maxima de acerto de 5/10^6 por codigo; a invalidacao apos a 5a falha exige novo envio que repassa o gate anti-abuso, e tentativas de verificacao tambem contam na janela por IP — verificacao em massa distribuida esbarra no bloqueio de IP e no teto global.</li><li>Telefone e credencial E PII: em logs, auditoria (identidade_audit) e tabelas de contagem (otp_envio) circula APENAS telefone_hash (HMAC-SHA256 com pepper guardado em secret, rotacionavel); o numero em claro existe somente em auth.users.phone e motoristas.telefone_e164, ambos atras de RLS; gate de code review e teste automatizado garantem ausencia de numero em claro em console.log/Sentry.</li><li>RLS em todas as tabelas do modulo: motoristas USING/WITH CHECK (id=auth.uid()); consentimento append-only (so INSERT com WITH CHECK, sem UPDATE/DELETE); wa_vinculo legivel so pelo dono e gravavel so por service_role; otp_envio, otp_bloqueio, identidade_audit e identidade_config sem nenhuma policy para authenticated (acesso exclusivo service_role/admin) — o padrao de views com security_invoker evita bypass pelas views de compatibilidade.</li><li>Colunas de confianca nunca sao gravaveis pelo cliente: telefone_verificado, canal_wa_ativo, status e ultimo_login_at mudam exclusivamente por Edge Functions service_role e triggers; trigger BEFORE UPDATE rejeita alteracao vinda de claim driver — fecha o achado da revisao de seguranca sobre elevacao de privilegio via PATCH direto no PostgREST.</li><li>Sessao e autenticacao explicita: refresh token rotativo com deteccao de reuso do GoTrue (reuso revoga a familia inteira e exige novo OTP); tokens no IndexedDB do PWA (mitigado por CSP estrita do modulo Seguranca — XSS e o vetor real, nao o storage escolhido); troca de numero revoga refresh tokens dos demais dispositivos; toda Edge Function autenticada valida assinatura e expiracao do JWT e responde 401 sem side effect quando ausente/invalido; nenhuma Edge Function aceita user_id/driver_id por body ou query — identidade sempre do JWT, unica excecao e a resolucao por from_e164 no wa-webhook, que e autenticado explicitamente por HMAC X-Hub-Signature-256 da Meta; chamadas internas da orquestracao de exclusao usam service_role, nunca segredo estatico com user_id arbitrario.</li><li>Reciclagem de chip protege o historico financeiro: quarentena por inatividade (180d) + desafio de perfil antes de reexpor dados, arquivamento dissociando telefone da conta em caso de falha, e re-verificacao WhatsApp obrigatoria apos qualquer troca de numero — o novo dono do numero jamais ve historico, lembretes ou financeiro do dono anterior.</li><li>LGPD: consentimento granular versionado no onboarding (termos, politica, persistencia de historico, canal WhatsApp) com prova do que foi exibido; minimizacao — o cadastro exige apenas telefone (nome e opcional); retencao definida (audit 180d, otp_envio 90d, expurgo por pg_cron); exclusao de conta em nivel de identidade cobre todos os modulos com trilha auditavel e e idempotente; opt-out do canal (PARAR/DESVINCULAR) tem efeito imediato na escrita dos modulos -wpp.</li></ul></section>
+  <section id="s10"><h2><span class="n">10</span>Não-funcionais</h2><ul><li>Entrada em menos de 60s do primeiro toque ao app utilizavel: entrega de SMS p50 &lt;10s e p95 &lt;30s (medida por otp_envio.created_at ate verifyOtp), fallback WhatsApp disparado automaticamente no timeout de 30s, e onboarding inteiramente pulavel — o primeiro calculo nunca espera perfil completo.</li><li>Disponibilidade do login: se o provedor de SMS degradar (taxa de falha &gt;20% em 5min, medida em otp_envio.status), o canal WhatsApp assume como primario automaticamente e o admin e alertado; o kill-switch derruba so o canal comprometido, nunca o login por codigo ja emitido.</li><li>Offline-first verificavel: com token expirado e sem rede o app abre em &lt;3s, exibe historico local e calcula fretes; nenhuma operacao de identidade bloqueia a UI esperando rede; a fila de sync sobrevive a restart do PWA (IndexedDB) e drena em ordem apos refresh.</li><li>Custo controlado e instrumentado: custo de SMS por cadastro concluido e metrica de primeira classe (soma de otp_envio.custo_estimado_centavos / logins convertidos) exposta no admin desde o dia 1, junto com taxa de conversao iniciado-&gt;concluido (meta &gt;80%), taxa de reenvio, % de contas com WhatsApp verificado e contas recuperadas com sucesso apos troca de numero (auditoria troca_numero).</li><li>Consistencia do modelo canonico: apos a migracao, nenhum modulo escreve em tabela de identidade propria — verificacao automatizada (lint de migrations + teste de CI) falha se surgir nova tabela com colunas telefone/driver fora de motoristas; as views DEPRECATED tem data de remocao e monitoramento de uso.</li><li>Acessibilidade e teclado mobile: inputs com inputmode/autocomplete corretos (tel, one-time-code), WebOTP para autofill, alvos de toque &gt;=44px nas caixas de OTP, mensagens de erro em linguagem de motorista (sem jargao tecnico) e contraste AA nos estados de erro/bloqueio.</li><li>Testabilidade do fluxo real: os testes de RLS de TODOS os modulos devem usar JWTs emitidos por este fluxo (verifyOtp em Supabase local com provedor fake), nao tokens forjados a mao — garante que claims do hook e policies andam juntos.</li></ul></section>
+  <section id="s11"><h2><span class="n">11</span>Etapas de implementação</h2><ol><li>1. Fundacao do modelo canonico: migrations de motoristas, consentimento, identidade_audit e identidade_config; trigger on_auth_user_created; custom access token hook injetando app_role/driver_id/telefone_verificado; views de compatibilidade perfis_motorista/driver_profiles/motorista com security_invoker; ADR publicado nomeando motoristas como tabela canonica, mapeando coluna a coluna os 4 nomes divergentes e fixando o plano/data de remocao das views — esta etapa destrava os demais modulos e vem antes de qualquer tela.</li><li>2. Configurar Supabase Auth phone: provedor de SMS via send-sms hook, otp_expiry=300s, codigo de 6 digitos, rate limits nativos como segunda camada; smoke test de ponta a ponta com numero real (enviar, verificar, receber JWT com claims corretos) em ambiente de staging.</li><li>3. Edge Function otp-solicitar com o gate anti-abuso completo: tabelas otp_envio/otp_bloqueio, janelas por telefone/IP, bloqueio progressivo, teto global, kill-switch e contabilizacao de custo; testes de integracao das janelas e do 429 antes de expor qualquer tela.</li><li>4. Telas Entrada e Verificacao no PWA: mascara E.164 BR, consentimento obrigatorio no CTA, WebOTP/one-time-code, estados de erro/reenvio/bloqueio, e instrumentacao do funil (cadastro_iniciado, otp_enviado, otp_verificado, cadastro_concluido) — a metrica de conclusao &gt;80% precisa nascer junto com a tela.</li><li>5. Sessao offline-first: storage adapter IndexedDB para tokens, estados autenticado/expirado_offline/reauth_necessaria no store useSessao, interceptor 401-&gt;refresh-&gt;retry, gate da fila de sync por token valido, logout local/global e testes de restart do PWA com token vencido.</li><li>6. Migracao anonimo-&gt;conta: pergunta unica de consentimento persistencia_historico, varredura do IndexedDB, envio em lotes idempotente por uuid do cliente, marcador origem_migracao e testes de nao-duplicacao (re-login, app morto no meio do lote, 2o dispositivo).</li><li>7. Onboarding minimo 1-dado-por-vez: 3 passos pulaveis com defaults de cost_defaults por categoria, gravacao incremental em caminhao_perfil, onboarding_completo_em e eventos de funil por passo.</li><li>8. Vinculo WhatsApp: Edge Function wa-vincular (com rate-limit proprio), intents VINCULAR/DESVINCULAR no wa-webhook compartilhado (roteados por regex antes do NLU), realtime na linha de motoristas para o badge, desvinculo pelo app, e template HSM authentication como fallback de OTP; validar com os modulos -wpp que a checagem de telefone_verificado migrou para a tabela canonica.</li><li>9. Troca de numero/chip e quarentena: endpoint trocar-numero em 2 etapas, job pg_cron de quarentena (180d), desafio de perfil no cliente, arquivamento com liberacao do numero e trilha de auditoria completa.</li><li>10. Exclusao de conta e fechamento LGPD: excluir-conta orquestrando os apagadores por modulo com retomada idempotente, expurgos de retencao (audit 180d, otp_envio 90d), revisao final contra os achados de seguranca (colunas nao-gravaveis, telefone_hash em logs, 401 em toda Edge Function autenticada) e suite completa de RLS/e2e como gate de aceite.</li></ol></section>
+  <section id="s12"><h2><span class="n">12</span>Plano de teste</h2><div class="teste"><h4>Unitarios (Vitest)</h4><ul><li>Normalizacao E.164 BR: '(62) 99999-9999', '62999999999' e '+55 62 99999 9999' produzem '5562999999999'; numero com 8 digitos moveis, DDD inexistente ou pais != 55 sao rejeitados antes de qualquer chamada de rede.</li><li>Maquina de bloqueio progressivo: 4o envio do mesmo telefone_hash em 15min gera bloqueio nivel 1 (15min); reincidencia apos expirar escala para nivel 2 (1h) e nivel 3 (24h); janelas de telefone e IP contam de forma independente e o teto global bloqueia mesmo com telefone/IP limpos.</li><li>Detector de SMS pumping: 5 numeros distintos consecutivos do mesmo IP em 10min dispara bloqueio de IP nivel 3; sequencia crescente de numeros (5562999990001..0005) e detectada mesmo intercalada com numeros legitimos.</li><li>telefone_hash e determinista para o mesmo numero + pepper e muda com a rotacao do pepper; nenhum caminho de log serializa o numero em claro (teste de snapshot sobre os payloads de auditoria).</li><li>Regra de quarentena: conta com ultimo_login_at ha 179 dias nao entra em quarentena, com 180 entra; desafio de perfil compara categoria e cidade com normalizacao (caixa/acento) e falha na 2a tentativa arquiva.</li><li>Estados da sessao: token vencido + sem rede -&gt; expirado_offline com fila pausada; token vencido + rede -&gt; tenta refresh e volta a autenticado; refresh rejeitado por reuso -&gt; reauth_necessaria sem perder itens da fila.</li></ul></div><div class="teste"><h4>Integracao — OTP e anti-abuso (Supabase local + provedor fake)</h4><ul><li>POST /otp-solicitar valido retorna 200 {enviado:true, proximo_reenvio_s:60}, grava otp_envio com custo e a resposta para numero com conta existente e byte a byte igual a de numero novo (anti-enumeracao).</li><li>4a solicitacao do mesmo telefone em 15min retorna 429 {bloqueado_ate}, grava otp_envio.status='bloqueado' e NAO chama o provedor (spy nao invocado); 11a solicitacao do mesmo IP em 1h idem por escopo ip.</li><li>verifyOtp com codigo errado 5 vezes invalida o codigo (6a tentativa com o codigo certo falha) e exige novo envio; codigo com 301s de idade retorna otp_expired; sucesso marca otp_envio.convertido_login=true e atualiza ultimo_login_at.</li><li>Kill-switch: identidade_config.otp_canal_ativo='false' faz o otp-solicitar responder 503 {motivo:'kill_switch'} sem side effect; reativar volta ao fluxo normal sem deploy.</li><li>Primeiro verifyOtp de numero novo cria exatamente 1 linha em motoristas via trigger (2o login nao duplica) e o JWT emitido carrega app_role='driver', driver_id=auth.uid() e telefone_verificado=false verificados por decode.</li><li>Fallback de canal: provedor SMS respondendo timeout&gt;30s faz o reenvio automatico sair por template HSM authentication e otp_envio registra canal='whatsapp'.</li></ul></div><div class="teste"><h4>Integracao — RLS, auth e modelo canonico (pgTAP com JWTs emitidos pelo fluxo real)</h4><ul><li>Motorista A (JWT real de verifyOtp) faz SELECT em motoristas -&gt; ve apenas a propria linha; SELECT na linha de B -&gt; 0 linhas; anonimo (sem JWT) -&gt; 401.</li><li>Edge Functions autenticadas (wa-vincular, trocar-numero, excluir-conta) sem header Authorization, com JWT expirado ou com assinatura invalida retornam 401 sem nenhum side effect (nenhuma linha criada/alterada); payload contendo user_id/driver_id/motorista_id de B no body e ignorado — apenas dados do auth.uid() do JWT sao afetados.</li><li>PATCH /rest/v1/motoristas tentando setar telefone_verificado=true ou status='ativa' com claim driver e rejeitado pelo trigger (erro), enquanto PATCH de nome/uf_base sucede — colunas de confianca inalteradas confirmadas por re-select.</li><li>consentimento: INSERT proprio sucede; UPDATE/DELETE de qualquer linha retorna 0 linhas afetadas (append-only); INSERT com motorista_id de terceiro e barrado pelo WITH CHECK.</li><li>otp_envio, otp_bloqueio, identidade_audit e identidade_config retornam 0 linhas/erro para authenticated (sem policy) e sao acessiveis via service_role.</li><li>Views de compatibilidade: driver_profiles nao expoe telefone_e164 nem telefone_hash (colunas ausentes do SELECT *); perfis_motorista respeita RLS do subjacente via security_invoker (JWT de A nao ve B pela view); INSERT em qualquer view falha.</li><li>excluir-conta remove dados de todos os modulos do proprio auth.uid(), e idempotente (2a chamada {removidos:0}) e nao aceita user_id no body (payload com user_id de B nao afeta B).</li></ul></div><div class="teste"><h4>Integracao — vinculo WhatsApp (fixtures de webhook assinadas)</h4><ul><li>Fluxo feliz: wa-vincular retorna wa_link; webhook com 'VINCULAR &lt;codigo&gt;' vindo do MESMO from_e164 do dono seta telefone_verificado=true, canal_wa_ativo=true, wa_vinculo.status='verificado', grava consentimento canal_whatsapp e responde confirmacao no canal.</li><li>Codigo correto vindo de OUTRO numero (from_e164 divergente) NAO verifica, incrementa tentativas e audita a falha; codigo expirado (&gt;10min) responde orientando reiniciar pelo app; 5 tentativas revogam o vinculo pendente.</li><li>Rate-limit e unicidade do wa-vincular: 6a solicitacao na mesma hora retorna 429; gerar novo codigo revoga o pendente anterior e somente o ultimo codigo e aceito pelo webhook.</li><li>Reentrega do mesmo wa_message_id de VINCULAR e no-op (idempotencia herdada do wa-webhook); payload sem HMAC valido retorna 403 sem tocar em wa_vinculo.</li><li>DESVINCULAR pelo WhatsApp e 'Desvincular' pelo app produzem o mesmo estado final (telefone_verificado=false, canal_wa_ativo=false) e, apos isso, o fixture de gasto do fin-wpp ('gastei 350 de diesel') responde convite de re-vinculacao e nenhum gasto e criado.</li><li>Troca de numero: etapa solicitar para numero de OUTRA conta ativa retorna 409 numero_em_uso; fluxo completo atualiza auth.users.phone e motoristas em transacao, reseta telefone_verificado, revoga refresh dos outros dispositivos e o numero antigo consegue iniciar cadastro novo sem herdar nada.</li></ul></div><div class="teste"><h4>E2E (Playwright) e Seguranca/abuso</h4><ul><li>Jornada completa cronometrada: /entrar -&gt; telefone -&gt; aceite -&gt; codigo (provedor fake) -&gt; onboarding 3 passos -&gt; primeiro calculo salvo, em menos de 60s de relogio com throttling 4G, e os eventos de funil aparecem na ordem correta.</li><li>Migracao anonima: 3 analises criadas offline no modo so-calculo -&gt; login -&gt; aceite de persistencia -&gt; Historico mostra as 3 com os mesmos uuids; matar o app no meio do lote e reabrir nao duplica (count=3 no banco); recusar persistencia mantem modo so-calculo sem nova pergunta.</li><li>Offline-first: com sessao expirada e context.setOffline(true) o app abre, calcula e enfileira; setOffline(false) dispara refresh, drena a fila sem duplicar e remove os badges de pendente.</li><li>Reciclagem de chip: seed de conta com ultimo_login_at=200 dias -&gt; novo OTP autentica mas o historico fica bloqueado pelo desafio; errar categoria+cidade 2 vezes arquiva a conta antiga, libera o numero e o fluxo vira cadastro limpo — em nenhum momento o historico anterior e renderizado.</li><li>Simulacao de SMS pumping: script disparando 100 solicitacoes de numeros sequenciais do mesmo IP resulta em bloqueio de IP nivel 3 antes do 10o envio pago, alerta de custo emitido e teto global intacto; repeticao distribuida em IPs esbarra no teto global diario.</li><li>Brute force de codigo: automatizar 5 palpites errados + 1 certo confirma a invalidacao; tentar enumeracao de contas comparando respostas do otp-solicitar para numero existente vs novo nao encontra diferenca observavel (corpo, status e timing medio).</li></ul></div></section>
+  <section id="s13"><h2><span class="n">13</span>Critérios de aceite</h2><ul class="check"><li>DADO um caminhoneiro sem conta com o app aberto pela primeira vez, QUANDO informa o telefone, aceita os termos, digita o codigo recebido e pula o onboarding, ENTAO ele chega a um app utilizavel (calculadora funcional) em menos de 60s do primeiro toque, sem senha, sem e-mail e sem formulario longo, e os eventos cadastro_iniciado/otp_enviado/otp_verificado/cadastro_concluido sao emitidos.</li><li>DADO o mesmo telefone solicitando um 4o codigo dentro de 15 minutos (ou um IP no 11o pedido na hora), QUANDO o otp-solicitar processa, ENTAO responde 429 com bloqueado_ate, nenhum SMS e disparado (custo zero), o bloqueio escala progressivamente (15min/1h/24h) em reincidencia e o evento e auditado apenas com telefone_hash.</li><li>DADO o teto global diario de SMS atingido ou o kill-switch acionado, QUANDO qualquer usuario pede codigo por SMS, ENTAO o envio pago e bloqueado imediatamente, o fallback por WhatsApp segue disponivel ate o teto proprio e o admin recebeu alerta ao cruzar 80% do teto.</li><li>DADO um codigo OTP emitido, QUANDO recebe 5 tentativas erradas de verificacao ou passa de 300s, ENTAO ele se torna definitivamente invalido, a proxima tentativa exige novo envio que repassa o gate anti-abuso, e a resposta do sistema nunca distingue numero com conta de numero sem conta.</li><li>DADO qualquer Edge Function autenticada do modulo (wa-vincular, trocar-numero, excluir-conta), QUANDO chamada sem header Authorization ou com JWT invalido/expirado, ENTAO responde 401 sem nenhum side effect, e QUANDO chamada com JWT valido contendo user_id/driver_id de terceiro no body, ENTAO o payload e ignorado e apenas os dados do auth.uid() do JWT sao afetados.</li><li>DADO um motorista com 3 analises feitas no modo anonimo (so-calculo), QUANDO faz o primeiro login e aceita guardar o historico, ENTAO as 3 analises aparecem na conta com os mesmos uuids gerados no cliente, reexecutar o login ou repetir o sync nao cria duplicatas (upsert merge-duplicates) e recusar o aceite mantem o app funcional sem persistencia remota.</li><li>DADO um motorista logado que toca 'Vincular WhatsApp' e envia a mensagem VINCULAR &lt;codigo&gt; pelo proprio numero cadastrado, QUANDO o wa-webhook processa, ENTAO telefone_verificado vira true (unica origem possivel dessa transicao), o badge do app atualiza via realtime sem reload e os modulos -wpp passam a processar o numero; a MESMA mensagem vinda de outro numero nao verifica nada.</li><li>DADO qualquer cliente autenticado com claim app_role='driver', QUANDO tenta PATCH direto em telefone_verificado, canal_wa_ativo, status ou telefone_e164 via PostgREST, ENTAO a operacao e rejeitada pelo trigger/policy e as colunas permanecem inalteradas — essas transicoes ocorrem exclusivamente por Edge Functions service_role.</li><li>DADO um motorista com token expirado e sem rede na estrada, QUANDO abre o PWA, ENTAO o app abre em menos de 3s, exibe o historico local, permite calcular e enfileirar registros, e ao reconectar faz refresh do token e drena a fila sem duplicar nem perder nenhum item.</li><li>DADO um numero de telefone cuja conta esta inativa ha 180 dias ou mais (chip potencialmente reciclado), QUANDO alguem loga por OTP nesse numero, ENTAO o historico so e exposto apos acertar o desafio de perfil (categoria do caminhao + cidade base); duas falhas arquivam a conta antiga, liberam o numero para cadastro limpo e nenhum dado do dono anterior e exibido ao novo dono.</li><li>DADO um motorista que troca de chip, QUANDO conclui o fluxo trocar-numero confirmando OTP no novo numero, ENTAO telefone_e164 e atualizado em transacao unica, telefone_verificado volta a false exigindo re-vinculo do WhatsApp, os refresh tokens dos demais dispositivos sao revogados, a troca fica auditada com os hashes antigo e novo e a recuperacao bem-sucedida alimenta a metrica de contas recuperadas no admin.</li><li>DADO um titular que pede exclusao da conta, QUANDO /functions/v1/excluir-conta executa, ENTAO os dados de TODOS os modulos (analises, perfis de veiculo, gastos, midias de WhatsApp, consentimentos, vinculos) sao removidos na ordem orquestrada, o usuario some do GoTrue por ultimo, a segunda chamada e idempotente ({removidos:0} sem erro) e a trilha de auditoria guarda apenas telefone_hash e timestamp.</li><li>DADO o modelo canonico entregue, QUANDO qualquer modulo consulta identidade, ENTAO existe exatamente uma tabela de motorista (motoristas, id = auth.uid()) com claims app_role/driver_id/telefone_verificado no JWT, as views perfis_motorista/driver_profiles/motorista funcionam como leitura compativel sem expor PII indevida, e os testes de RLS de todos os modulos rodam com JWTs emitidos pelo fluxo real de OTP.</li></ul></section>
+  <section id="s14"><h2><span class="n">14</span>Diagramas</h2><p class="hint">Renderizados com Mermaid — requer internet ao abrir o arquivo.</p><h4>Arquitetura da solução</h4><div class="mermaid-box"><pre class="mermaid">flowchart LR
+  subgraph cli[&quot;PWA React + TypeScript + Vite&quot;]
+    ui[&quot;Telas Entrada, Verificacao, Onboarding, Conta&quot;]
+    st[&quot;useSessao Zustand + useSyncQueue&quot;]
+    idb[(&quot;IndexedDB: tokens, perfil, fila de sync&quot;)]
+  end
+  subgraph ef[&quot;Edge Functions Deno/TS&quot;]
+    f1[&quot;otp-solicitar (gate anti-abuso)&quot;]
+    f2[&quot;wa-vincular&quot;]
+    f3[&quot;trocar-numero (2 etapas)&quot;]
+    f4[&quot;excluir-conta (orquestrador LGPD)&quot;]
+    f5[&quot;wa-webhook (HMAC, compartilhado -wpp)&quot;]
+  end
+  subgraph sb[&quot;Supabase&quot;]
+    au[&quot;GoTrue Auth provider phone (OTP 6 digitos, 300s)&quot;]
+    hk[&quot;Custom access token hook (claims driver_id, telefone_verificado)&quot;]
+    db[(&quot;Postgres 15 + RLS: motoristas, otp_envio, otp_bloqueio, wa_vinculo, consentimento, identidade_audit, identidade_config&quot;)]
+    cr[&quot;pg_cron: quarentena 180d, expurgos, TTL de vinculos&quot;]
+  end
+  sms[&quot;Provedor SMS (Twilio Verify ou Zenvia)&quot;]
+  wa[&quot;WhatsApp Cloud API Meta (HSM authentication)&quot;]
+  adm[&quot;Painel Admin (custo, funil, alertas 80% do teto)&quot;]
+  mods[&quot;Modulos consumidores: calc-app, fin-wpp, find, portal&quot;]
+  ui --&gt; f1
+  ui --&gt;|&quot;verifyOtp e refresh rotativo&quot;| au
+  ui --&gt;|&quot;PostgREST com RLS&quot;| db
+  st --- idb
+  f1 --&gt;|&quot;janelas e bloqueios antes do custo&quot;| db
+  f1 --&gt;|&quot;so apos gate liberar&quot;| au
+  au --&gt;|&quot;send-sms hook&quot;| sms
+  f1 -.-&gt;|&quot;fallback HSM apos 30s&quot;| wa
+  wa --&gt;|&quot;webhook assinado X-Hub-Signature-256&quot;| f5
+  f5 --&gt;|&quot;telefone_verificado=true via service_role&quot;| db
+  f2 --&gt; db
+  f2 -.-&gt;|&quot;deep link wa.me VINCULAR codigo&quot;| wa
+  f3 --&gt; au
+  f3 --&gt; db
+  f4 --&gt; db
+  f4 --&gt;|&quot;admin API remove usuario por ultimo&quot;| au
+  f4 -.-&gt;|&quot;apagadores por modulo service_role&quot;| mods
+  au --- hk
+  hk --&gt; db
+  cr --&gt; db
+  db --&gt;|&quot;metricas de otp_envio&quot;| adm
+  mods --&gt;|&quot;views de compatibilidade + claims&quot;| db</pre></div><h4>Casos de uso</h4><div class="mermaid-box"><pre class="mermaid">flowchart LR
+  a1([&quot;Caminhoneiro anonimo&quot;])
+  a2([&quot;Caminhoneiro autenticado&quot;])
+  a3([&quot;Admin&quot;])
+  a4([&quot;Canal WhatsApp Meta&quot;])
+  a5([&quot;Job pg_cron&quot;])
+  a1 --&gt; u1[&quot;Usar modo so-calculo offline&quot;]
+  a1 --&gt; u2[&quot;Solicitar codigo OTP (SMS ou WhatsApp)&quot;]
+  a1 --&gt; u3[&quot;Verificar codigo e criar conta e sessao&quot;]
+  u3 --&gt; u4[&quot;Aceitar termos e politica (LGPD versionado)&quot;]
+  u3 -.-&gt; u5[&quot;Migrar analises anonimas (consentimento de historico)&quot;]
+  a2 --&gt; u6[&quot;Completar onboarding em 3 passos pulaveis&quot;]
+  a2 --&gt; u7[&quot;Vincular WhatsApp por prova de posse&quot;]
+  a2 --&gt; u8[&quot;Desvincular WhatsApp pelo app&quot;]
+  a2 --&gt; u9[&quot;Trocar numero de chip em 2 etapas&quot;]
+  a2 --&gt; u10[&quot;Responder desafio de quarentena&quot;]
+  a2 --&gt; u11[&quot;Excluir conta com confirmacao dupla&quot;]
+  a2 --&gt; u12[&quot;Sair deste aparelho ou de todos&quot;]
+  a3 --&gt; u13[&quot;Ajustar kill-switch e tetos de SMS&quot;]
+  a3 --&gt; u14[&quot;Monitorar custo por cadastro e funil de conversao&quot;]
+  a4 --&gt; u15[&quot;Confirmar VINCULAR ou DESVINCULAR no canal&quot;]
+  u15 -.-&gt;|&quot;prova posse do numero&quot;| u7
+  a5 --&gt; u16[&quot;Marcar quarentena 180 dias e expurgar retencao&quot;]</pre></div><h4>Fluxo principal</h4><div class="mermaid-box"><pre class="mermaid">sequenceDiagram
+  autonumber
+  participant M as Caminhoneiro
+  participant P as PWA
+  participant F as otp-solicitar
+  participant DB as Postgres
+  participant G as GoTrue
+  participant S as Provedor SMS
+  M-&gt;&gt;P: informa telefone e aceita termos
+  P-&gt;&gt;F: POST /functions/v1/otp-solicitar
+  F-&gt;&gt;DB: valida E.164, checa kill-switch, bloqueios e janelas
+  alt bloqueado ou teto diario atingido
+    F-&gt;&gt;DB: grava otp_envio status bloqueado (custo zero)
+    F--&gt;&gt;P: 429 com bloqueado_ate e motivo
+  else liberado
+    F-&gt;&gt;G: aciona codigo de 6 digitos com expiracao 300s
+    G-&gt;&gt;S: envia SMS via send-sms hook (fallback WhatsApp em 30s)
+    F-&gt;&gt;DB: grava otp_envio com custo_estimado_centavos
+    F--&gt;&gt;P: 200 enviado, proximo reenvio em 60s
+  end
+  M-&gt;&gt;P: digita codigo (autofill WebOTP)
+  P-&gt;&gt;G: auth.verifyOtp com phone e token
+  G-&gt;&gt;DB: primeiro login dispara trigger que cria linha em motoristas
+  G-&gt;&gt;DB: hook injeta claims app_role, driver_id e telefone_verificado
+  G-&gt;&gt;DB: marca convertido_login=true e atualiza ultimo_login_at
+  G--&gt;&gt;P: access token TTL 1h + refresh token rotativo em IndexedDB
+  P-&gt;&gt;DB: fila sync sobe analises anonimas via upsert merge-duplicates
+  P--&gt;&gt;M: app utilizavel em menos de 60s, onboarding pulavel</pre></div><h4>UML — classes/serviços</h4><div class="mermaid-box"><pre class="mermaid">classDiagram
+  class OtpSolicitarFn {
+    +solicitar(telefone_e164, canal) Resposta
+    -validarE164(telefone) string
+    -checarKillSwitch() bool
+    -acionarGoTrue(canal_efetivo) void
+    -registrarEnvio(custo_centavos) void
+  }
+  class AntiAbusoGate {
+    -limiteTelefone15min int
+    -limiteTelefone24h int
+    -limiteIpHora int
+    -tetoGlobalDia int
+    +verificar(telefone_hash, ip) Veredito
+    +escalarBloqueio(escopo, chave) int
+    +detectarSmsPumping(ip) bool
+  }
+  class GoTrueAuth {
+    +verifyOtp(phone, token) Sessao
+    +refreshToken(refresh) Sessao
+    +signOut(escopo) void
+    +adminUpdatePhone(user_id, phone) void
+    +adminDeleteUser(user_id) void
+  }
+  class AccessTokenHook {
+    +beforeToken(user_id) claims
+  }
+  class SessaoStore {
+    -estado text
+    +refreshProativo() void
+    +interceptar401() void
+    +modoOfflineLeitura() void
+  }
+  class StorageAdapterIDB {
+    +getItem(chave) string
+    +setItem(chave, valor) void
+    +removeItem(chave) void
+  }
+  class SyncQueue {
+    +pausar() void
+    +drenarAposRefresh() void
+    +migrarAnonimo(lote) int
+  }
+  class WaVincularFn {
+    +iniciar(jwt) WaLink
+    -gerarCodigo6() string
+    -revogarPendenteAnterior(motorista_id) void
+  }
+  class WaWebhookRouter {
+    +receber(payload, assinatura) int
+    -validarHmac(corpo_cru) bool
+    +intentVincular(from_e164, codigo) bool
+    +intentDesvincular(from_e164) void
+  }
+  class TrocarNumeroFn {
+    +solicitar(novo_e164) void
+    +confirmar(codigo) void
+    -revogarOutrosDispositivos() void
+  }
+  class ExcluirContaFn {
+    +executar(auth_uid) Removidos
+    -apagarPorModulo() void
+    -removerGoTruePorUltimo() void
+    -auditarComHash() void
+  }
+  class QuarentenaJob {
+    +marcarInativas180d() int
+    +expirarVinculosPendentes() int
+    +expurgarRetencao() int
+  }
+  OtpSolicitarFn --&gt; AntiAbusoGate : gate antes do custo
+  OtpSolicitarFn --&gt; GoTrueAuth : aciona envio
+  TrocarNumeroFn --&gt; AntiAbusoGate : reusa gate
+  TrocarNumeroFn --&gt; GoTrueAuth : atualiza phone em transacao
+  ExcluirContaFn --&gt; GoTrueAuth : admin API por ultimo
+  GoTrueAuth --&gt; AccessTokenHook : before-token injeta claims
+  SessaoStore --&gt; StorageAdapterIDB : tokens em IndexedDB
+  SessaoStore --&gt; SyncQueue : libera fila com token valido
+  SessaoStore --&gt; GoTrueAuth : refresh rotativo
+  WaWebhookRouter ..&gt; WaVincularFn : confirma codigo pendente</pre></div><h4>Banco de dados (ER)</h4><div class="mermaid-box"><pre class="mermaid">erDiagram
+  AUTH_USERS ||--|| MOTORISTAS : espelha
+  MOTORISTAS ||--o{ WA_VINCULO : solicita
+  MOTORISTAS ||--o{ CONSENTIMENTO : registra
+  MOTORISTAS ||--o{ IDENTIDADE_AUDIT : gera
+  MOTORISTAS ||--o{ CAMINHAO_PERFIL : possui
+  AUTH_USERS {
+    uuid id PK
+    text phone
+  }
+  MOTORISTAS {
+    uuid id PK
+    text nome
+    text telefone_e164 UK
+    text telefone_hash
+    bool telefone_verificado
+    timestamptz telefone_verificado_em
+    bool canal_wa_ativo
+    text uf_base
+    timestamptz onboarding_completo_em
+    int meta_alvo_centavos
+    int media_lucro_frete_centavos
+    text status
+    timestamptz ultimo_login_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  OTP_ENVIO {
+    uuid id PK
+    text telefone_hash
+    text ip
+    text canal
+    text provider
+    int custo_estimado_centavos
+    text status
+    text motivo_bloqueio
+    bool convertido_login
+    timestamptz created_at
+  }
+  OTP_BLOQUEIO {
+    uuid id PK
+    text escopo
+    text chave UK
+    int nivel
+    timestamptz bloqueado_ate
+    text motivo
+    timestamptz created_at
+  }
+  WA_VINCULO {
+    uuid id PK
+    uuid motorista_id FK
+    text codigo_hash
+    timestamptz expira_em
+    text status
+    timestamptz verificado_em
+    text wa_message_id
+    int tentativas
+    timestamptz created_at
+  }
+  CONSENTIMENTO {
+    uuid id PK
+    uuid motorista_id FK
+    text tipo
+    text versao
+    bool aceito
+    text ip_hash
+    text user_agent
+    timestamptz created_at
+  }
+  IDENTIDADE_AUDIT {
+    uuid id PK
+    uuid motorista_id FK
+    text evento
+    text telefone_hash
+    text ip
+    jsonb detalhe
+    timestamptz created_at
+  }
+  IDENTIDADE_CONFIG {
+    text chave PK
+    text valor
+    timestamptz updated_at
+  }
+  CAMINHAO_PERFIL {
+    uuid id PK
+    uuid motorista_id FK
+    text categoria
+    int eixos
+    numeric consumo_km_l
+  }</pre></div><h4>Lógica do plano de testes</h4><div class="mermaid-box"><pre class="mermaid">flowchart TD
+  ci[&quot;Pipeline CI do modulo identidade&quot;] --&gt; u1[&quot;Unitarios Vitest: normalizacao E.164, bloqueio progressivo 15min/1h/24h, detector de SMS pumping, regra de quarentena 180d, estados de sessao&quot;]
+  u1 --&gt; i1[&quot;Integracao OTP com provedor fake: 200 e 429 sem chamar provedor, kill-switch responde 503, resposta identica anti-enumeracao, fallback WhatsApp, trigger cria 1 linha em motoristas&quot;]
+  i1 --&gt; i2[&quot;pgTAP RLS com JWT do fluxo real: motorista ve so a propria linha, colunas de confianca imutaveis via PATCH, consentimento append-only, views sem PII, tabelas internas sem policy&quot;]
+  i2 --&gt; i3[&quot;Fixtures de webhook assinadas: VINCULAR do mesmo numero verifica, numero divergente falha, idempotencia por wa_message_id, DESVINCULAR, troca de numero com 409 numero_em_uso&quot;]
+  i3 --&gt; e1[&quot;E2E Playwright: jornada completa em menos de 60s com 4G, migracao anonima sem duplicar uuids, offline-first com fila drenada, reciclagem de chip sem expor historico&quot;]
+  e1 --&gt; s1[&quot;Seguranca e abuso: 100 numeros sequenciais bloqueiam IP nivel 3 antes do 10o envio pago, brute force invalida codigo na 5a falha, timing identico para conta existente e nova&quot;]
+  s1 --&gt; g1{&quot;Suite toda verde?&quot;}
+  g1 --&gt;|sim| ok[&quot;Gate de aceite da etapa 10 liberado&quot;]
+  g1 --&gt;|nao| fx[&quot;Falha bloqueia merge: corrigir e reexecutar&quot;]
+  fx --&gt; ci</pre></div></section>
+
+  <p class="disclaimer">Documento gerado para orientar o desenvolvimento. Estimativas de esforço/custo são ordem de grandeza para planejamento (premissa R$ 2.100/dev-dia, equipe enxuta) — não é proposta comercial. O veredito de lucratividade do produto é estimativa; o piso ANTT é referência regulatória.</p>
+</div>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose', flowchart: { useMaxWidth: true }, er: { useMaxWidth: true } });
+</script>
+</body>
+</html>
