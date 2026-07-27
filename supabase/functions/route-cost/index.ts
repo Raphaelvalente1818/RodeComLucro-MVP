@@ -2,11 +2,13 @@
 //
 // Resolve a distância de uma rota (origem/destino) via Google Routes
 // API, com cache em Postgres para não pagar de novo pela mesma rota.
-// Pedágio continua manual — nenhuma API de pedágio foi escolhida ainda
-// (ver Docs/sequencia-construcao.md, Fase 1). Esta função só resolve o
-// campo `distanciaKm` do contrato FreteInput de @rode/calc; o app
-// preenche `distanciaEstimada: true` no cliente quando cair no
-// fallback manual (sem chave configurada ou erro da API).
+// Também tenta o pedágio estimado via extraComputations=TOLLS da mesma
+// API — cobertura não é garantida pra rodovias brasileiras (a doc do
+// Google só promete "cidades selecionadas"), por isso `pedagioCentavos`
+// pode vir null; o campo manual de pedágio no app continua sendo o
+// fallback quando isso acontece. Chamadas com TOLLS são cobradas numa
+// faixa de preço mais alta pelo Google — ver Docs/sequencia-construcao.md,
+// Fase 1.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -34,6 +36,21 @@ function normalizar(endereco: string) {
   return endereco.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+interface PrecoMoeda {
+  currencyCode?: string;
+  units?: string;
+  nanos?: number;
+}
+
+/** Converte o primeiro preço de pedágio retornado pela API em centavos. Prefere BRL se houver mais de uma moeda listada. */
+function pedagioParaCentavos(precos: PrecoMoeda[] | undefined): number | null {
+  if (!precos || precos.length === 0) return null;
+  const escolhido = precos.find((p) => p.currencyCode === "BRL") ?? precos[0];
+  const unidades = Number(escolhido.units ?? "0");
+  const nanos = escolhido.nanos ?? 0;
+  return Math.round(unidades * 100 + nanos / 10_000_000);
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ erro: "method_not_allowed" }, 405);
@@ -57,7 +74,7 @@ Deno.serve(async (req: Request) => {
   // 1. Cache primeiro — evita cobrar de novo pela mesma rota.
   const { data: cache } = await supabase
     .from("rota_distancia_cache")
-    .select("distancia_km, duracao_min")
+    .select("distancia_km, duracao_min, pedagio_centavos")
     .eq("origem_norm", origemNorm)
     .eq("destino_norm", destinoNorm)
     .maybeSingle();
@@ -66,6 +83,7 @@ Deno.serve(async (req: Request) => {
     return json({
       distanciaKm: Number(cache.distancia_km),
       duracaoMin: cache.duracao_min,
+      pedagioCentavos: cache.pedagio_centavos ?? null,
       distanciaEstimada: false,
       fonte: "cache",
     });
@@ -78,7 +96,10 @@ Deno.serve(async (req: Request) => {
     return json({ motivo: "sem_chave_google" }, 503);
   }
 
-  // 3. Chama a Google Routes API (computeRoutes).
+  // 3. Chama a Google Routes API (computeRoutes), incluindo o cálculo de
+  // pedágio (extraComputations=TOLLS). Sem passe/veículo especificado, o
+  // Google retorna o preço em dinheiro (o mais alto) — estimativa segura
+  // pro motorista, ele pode corrigir manualmente se tiver tag.
   let resposta: Response;
   try {
     resposta = await fetch("https://routes.googleapis.com/directions/v2:computeRoutes", {
@@ -86,7 +107,8 @@ Deno.serve(async (req: Request) => {
       headers: {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": GOOGLE_ROUTES_API_KEY,
-        "X-Goog-FieldMask": "routes.distanceMeters,routes.duration",
+        "X-Goog-FieldMask":
+          "routes.distanceMeters,routes.duration,routes.travelAdvisory.tollInfo",
       },
       body: JSON.stringify({
         origin: { address: origem },
@@ -94,6 +116,7 @@ Deno.serve(async (req: Request) => {
         travelMode: "DRIVE",
         routingPreference: "TRAFFIC_UNAWARE",
         units: "METRIC",
+        extraComputations: ["TOLLS"],
       }),
     });
   } catch (err) {
@@ -116,6 +139,7 @@ Deno.serve(async (req: Request) => {
   const distanciaKm = Math.round((rota.distanceMeters / 1000) * 10) / 10;
   const duracaoSegundos = Number(String(rota.duration ?? "0s").replace("s", ""));
   const duracaoMin = Math.round(duracaoSegundos / 60);
+  const pedagioCentavos = pedagioParaCentavos(rota.travelAdvisory?.tollInfo?.estimatedPrice);
 
   // 4. Grava no cache para as próximas consultas da mesma rota.
   await supabase.from("rota_distancia_cache").upsert(
@@ -124,9 +148,16 @@ Deno.serve(async (req: Request) => {
       destino_norm: destinoNorm,
       distancia_km: distanciaKm,
       duracao_min: duracaoMin,
+      pedagio_centavos: pedagioCentavos,
     },
     { onConflict: "origem_norm,destino_norm" },
   );
 
-  return json({ distanciaKm, duracaoMin, distanciaEstimada: false, fonte: "google_routes" });
+  return json({
+    distanciaKm,
+    duracaoMin,
+    pedagioCentavos,
+    distanciaEstimada: false,
+    fonte: "google_routes",
+  });
 });

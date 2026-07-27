@@ -110,6 +110,9 @@ export default function Analisar() {
       }
       setDistanciaKm(String(data.distanciaKm));
       setDistanciaEstimada(Boolean(data.distanciaEstimada));
+      if (typeof data.pedagioCentavos === 'number') {
+        setPedagio(String(data.pedagioCentavos / 100));
+      }
       setAvisoRota(data.fonte === 'cache' ? null : 'Distância calculada via Google Routes.');
     } catch {
       setAvisoRota('Distância automática indisponível agora — digite manualmente.');
