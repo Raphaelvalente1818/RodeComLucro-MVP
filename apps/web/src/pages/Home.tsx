@@ -24,8 +24,14 @@ export default function Home() {
   return (
     <main className="tela">
       <h1>Rode com Lucro</h1>
-      <p>Voce esta logado. As telas de analise de frete entram na Fase 1.</p>
       <p>Telefone verificado: {telefoneVerificado ? 'sim' : 'nao'}</p>
+
+      <button type="button" onClick={() => navigate('/analisar')}>
+        Analisar frete
+      </button>
+      <button type="button" className="link-secundario" onClick={() => navigate('/perfil')}>
+        Perfil do caminhão
+      </button>
     </main>
   );
 }
