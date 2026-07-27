@@ -95,13 +95,12 @@ export default function Analisar() {
     }
   }, [distanciaKm, diasEditadoManual]);
 
-  async function buscarDistancia() {
-    if (!origem.trim() || !destino.trim()) return;
+  async function buscarDistancia(origemAtual: string, destinoAtual: string) {
     setBuscandoRota(true);
     setAvisoRota(null);
     try {
       const { data, error } = await supabase.functions.invoke('route-cost', {
-        body: { origem, destino },
+        body: { origem: origemAtual, destino: destinoAtual },
       });
       if (error || !data || typeof data.distanciaKm !== 'number') {
         setAvisoRota('Distância automática indisponível agora — digite manualmente.');
@@ -121,6 +120,20 @@ export default function Analisar() {
       setBuscandoRota(false);
     }
   }
+
+  // Busca a distância sozinho 600ms depois que o motorista para de digitar
+  // origem/destino (debounce) — sem botão manual. O motorista ainda pode
+  // sobrescrever o km na mão a qualquer momento.
+  useEffect(() => {
+    const o = origem.trim();
+    const d = destino.trim();
+    if (!o || !d) return;
+    const t = setTimeout(() => {
+      buscarDistancia(o, d);
+    }, 600);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [origem, destino]);
 
   function calcularEIr() {
     const km = parseNumeroPtBR(distanciaKm);
@@ -192,12 +205,8 @@ export default function Analisar() {
         <input value={destino} onChange={(e) => setDestino(e.target.value)} placeholder="Ex.: Recife, PE" />
       </label>
 
-      <button type="button" onClick={buscarDistancia} disabled={buscandoRota || !origem.trim() || !destino.trim()}>
-        {buscandoRota ? 'Buscando...' : 'Buscar distância automática'}
-      </button>
-
       <label>
-        Distância (km) {distanciaEstimada && distanciaKm ? '— estimativa manual' : ''}
+        Distância (km) {buscandoRota ? '— buscando...' : distanciaEstimada && distanciaKm ? '— estimativa manual' : ''}
         <input
           inputMode="decimal"
           value={distanciaKm}
@@ -205,7 +214,7 @@ export default function Analisar() {
             setDistanciaKm(e.target.value);
             setDistanciaEstimada(true);
           }}
-          placeholder="Ex.: 2650"
+          placeholder="Preenchido automaticamente ao digitar origem/destino"
         />
       </label>
       {avisoRota && <p className="aviso">{avisoRota}</p>}
