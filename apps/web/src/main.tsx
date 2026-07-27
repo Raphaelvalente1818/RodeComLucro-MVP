@@ -4,6 +4,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Entrada from './pages/Entrada';
 import Verificacao from './pages/Verificacao';
 import Home from './pages/Home';
+import Analisar from './pages/Analisar';
+import Resultado from './pages/Resultado';
+import Perfil from './pages/Perfil';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -13,6 +16,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Route path="/entrar" element={<Entrada />} />
         <Route path="/verificar" element={<Verificacao />} />
         <Route path="/" element={<Home />} />
+        <Route path="/analisar" element={<Analisar />} />
+        <Route path="/resultado" element={<Resultado />} />
+        <Route path="/perfil" element={<Perfil />} />
         <Route path="*" element={<Navigate to="/entrar" replace />} />
       </Routes>
     </BrowserRouter>
