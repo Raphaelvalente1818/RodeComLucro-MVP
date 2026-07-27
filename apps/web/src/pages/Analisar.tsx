@@ -217,6 +217,20 @@ export default function Analisar() {
           placeholder="Preenchido automaticamente ao digitar origem/destino"
         />
       </label>
+
+      <label>
+        Pedágio de ida (R$) {buscandoRota ? '— buscando...' : ''}
+        <input inputMode="decimal" value={pedagio} onChange={(e) => setPedagio(e.target.value)} placeholder="Ex.: 45,00" />
+      </label>
+      {!buscandoRota && distanciaKm && pedagio === '0' && (
+        <p className="aviso">
+          Não veio pedágio automático pra essa rota (ou é uma via sem cobertura da API) — confere e ajusta na mão se souber o valor.
+        </p>
+      )}
+      <p className="aviso">
+        Valor estimado pra veículo de passeio — caminhão paga mais (cobrança por eixo). Ajuste como preferir.
+      </p>
+
       {avisoRota && <p className="aviso">{avisoRota}</p>}
 
       <label>
@@ -279,10 +293,6 @@ export default function Analisar() {
           <label>
             Preço ARLA 32 (R$/L)
             <input type="number" step="0.01" value={arlaPreco} onChange={(e) => setArlaPreco(Number(e.target.value))} />
-          </label>
-          <label>
-            Pedágio de ida (R$)
-            <input inputMode="decimal" value={pedagio} onChange={(e) => setPedagio(e.target.value)} />
           </label>
           <label>
             Estacionamento (R$)
