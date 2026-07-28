@@ -43,6 +43,8 @@ export default function Analisar() {
   const [arlaKmPorLt, setArlaKmPorLt] = useState(20);
   const [arlaPreco, setArlaPreco] = useState(4.5);
   const [pedagio, setPedagio] = useState('0');
+  const [pedagioEditadoManual, setPedagioEditadoManual] = useState(false);
+  const [pedagioCarroCentavos, setPedagioCarroCentavos] = useState<number | null>(null);
   const [estacionamento, setEstacionamento] = useState('0');
   const [chapa, setChapa] = useState('0');
   const [manutencaoPorKm, setManutencaoPorKm] = useState(0.35);
@@ -110,7 +112,10 @@ export default function Analisar() {
       setDistanciaKm(String(data.distanciaKm));
       setDistanciaEstimada(Boolean(data.distanciaEstimada));
       if (typeof data.pedagioCentavos === 'number') {
-        setPedagio(String(data.pedagioCentavos / 100));
+        setPedagioCarroCentavos(data.pedagioCentavos);
+        setPedagioEditadoManual(false);
+      } else {
+        setPedagioCarroCentavos(null);
       }
       setAvisoRota(data.fonte === 'cache' ? null : 'Distância calculada via Google Routes.');
     } catch {
@@ -134,6 +139,18 @@ export default function Analisar() {
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [origem, destino]);
+
+  // O valor que o Google devolve é tarifa de carro. No Brasil o pedágio é
+  // cobrado por eixo e um carro de passeio equivale a 2 eixos — então a
+  // regra usual (a mesma praticada por concessionárias como ARTESP/CCR/EPR)
+  // é: tarifa_caminhão = tarifa_carro × (número_de_eixos / 2). Reajusta
+  // sozinho quando a rota ou o número de eixos mudam, mas para de mexer
+  // assim que o motorista edita o campo na mão.
+  useEffect(() => {
+    if (pedagioCarroCentavos == null || pedagioEditadoManual) return;
+    const centavosCaminhao = Math.round(pedagioCarroCentavos * (numeroEixos / 2));
+    setPedagio(String(centavosCaminhao / 100));
+  }, [pedagioCarroCentavos, numeroEixos, pedagioEditadoManual]);
 
   function calcularEIr() {
     const km = parseNumeroPtBR(distanciaKm);
@@ -220,16 +237,27 @@ export default function Analisar() {
 
       <label>
         Pedágio de ida (R$) {buscandoRota ? '— buscando...' : ''}
-        <input inputMode="decimal" value={pedagio} onChange={(e) => setPedagio(e.target.value)} placeholder="Ex.: 45,00" />
+        <input
+          inputMode="decimal"
+          value={pedagio}
+          onChange={(e) => {
+            setPedagio(e.target.value);
+            setPedagioEditadoManual(true);
+          }}
+          placeholder="Ex.: 45,00"
+        />
       </label>
       {!buscandoRota && distanciaKm && pedagio === '0' && (
         <p className="aviso">
           Não veio pedágio automático pra essa rota (ou é uma via sem cobertura da API) — confere e ajusta na mão se souber o valor.
         </p>
       )}
-      <p className="aviso">
-        Valor estimado pra veículo de passeio — caminhão paga mais (cobrança por eixo). Ajuste como preferir.
-      </p>
+      {pedagioCarroCentavos != null && !pedagioEditadoManual && (
+        <p className="aviso">
+          Já ajustado pros seus {numeroEixos} eixos (o Google devolve tarifa de carro — pedágio no Brasil é cobrado por eixo, carro
+          equivale a 2). Pode variar por concessionária; ajuste como preferir.
+        </p>
+      )}
 
       {avisoRota && <p className="aviso">{avisoRota}</p>}
 
