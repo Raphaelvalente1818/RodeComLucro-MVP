@@ -224,31 +224,33 @@ export default function Analisar() {
         <input value={destino} onChange={(e) => setDestino(e.target.value)} placeholder="Ex.: Recife, PE" />
       </label>
 
-      <label>
-        Distância (km) {buscandoRota ? '— buscando...' : distanciaEstimada && distanciaKm ? '— estimativa manual' : ''}
-        <input
-          inputMode="decimal"
-          value={distanciaKm}
-          onChange={(e) => {
-            setDistanciaKm(e.target.value);
-            setDistanciaEstimada(true);
-          }}
-          placeholder="Preenchido automaticamente ao digitar origem/destino"
-        />
-      </label>
+      <div className="linha-campos">
+        <label>
+          Distância (km) {buscandoRota ? '— buscando...' : distanciaEstimada && distanciaKm ? '— estimativa manual' : ''}
+          <input
+            inputMode="decimal"
+            value={distanciaKm}
+            onChange={(e) => {
+              setDistanciaKm(e.target.value);
+              setDistanciaEstimada(true);
+            }}
+            placeholder="Preenchido automaticamente"
+          />
+        </label>
 
-      <label>
-        Pedágio de ida (R$) {buscandoRota ? '— buscando...' : ''}
-        <input
-          inputMode="decimal"
-          value={pedagio}
-          onChange={(e) => {
-            setPedagio(e.target.value);
-            setPedagioEditadoManual(true);
-          }}
-          placeholder="Ex.: 45,00"
-        />
-      </label>
+        <label>
+          Pedágio de ida (R$) {buscandoRota ? '— buscando...' : ''}
+          <input
+            inputMode="decimal"
+            value={pedagio}
+            onChange={(e) => {
+              setPedagio(e.target.value);
+              setPedagioEditadoManual(true);
+            }}
+            placeholder="Ex.: 45,00"
+          />
+        </label>
+      </div>
       {!buscandoRota && distanciaKm && pedagio === '0' && (
         <p className="aviso">
           Não veio pedágio automático pra essa rota (ou é uma via sem cobertura da API) — confere e ajusta na mão se souber o valor.

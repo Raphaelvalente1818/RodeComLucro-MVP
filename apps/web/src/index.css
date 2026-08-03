@@ -123,6 +123,12 @@ button:disabled {
   font-size: 14px;
 }
 
+.linha-campos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
 .kpis {
   display: grid;
   grid-template-columns: 1fr 1fr;
