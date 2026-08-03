@@ -133,6 +133,17 @@ button:disabled {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.linha-campos label {
+  min-width: 0;
+}
+
+.linha-campos input {
+  min-width: 0;
+  width: 100%;
 }
 
 .kpis {
