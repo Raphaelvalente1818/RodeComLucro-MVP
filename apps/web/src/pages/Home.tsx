@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import { decodeClaims } from '../lib/claims';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -13,8 +14,8 @@ export default function Home() {
         navigate('/entrar', { replace: true });
         return;
       }
-      const appMeta = data.session.user.app_metadata as Record<string, unknown>;
-      setTelefoneVerificado(Boolean(appMeta?.telefone_verificado));
+      const claims = decodeClaims(data.session.access_token);
+      setTelefoneVerificado(Boolean(claims.telefone_verificado));
       setCarregando(false);
     });
   }, [navigate]);
