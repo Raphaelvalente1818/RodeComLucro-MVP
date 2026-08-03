@@ -81,6 +81,30 @@ export default function Perfil() {
       </label>
 
       <label>
+        Ano do caminhão
+        <input
+          type="number"
+          min={1970}
+          max={2100}
+          value={form.ano ?? ''}
+          onChange={(e) => campo('ano', e.target.value === '' ? null : Number(e.target.value))}
+          placeholder="Ex.: 2018"
+        />
+      </label>
+
+      <label>
+        Valor do caminhão (R$)
+        <input
+          type="number"
+          step="1000"
+          min={0}
+          value={form.valor_caminhao ?? ''}
+          onChange={(e) => campo('valor_caminhao', e.target.value === '' ? null : Number(e.target.value))}
+          placeholder="Ex.: 250000"
+        />
+      </label>
+
+      <label>
         UF base
         <input
           value={form.uf_base ?? ''}
@@ -149,8 +173,8 @@ export default function Perfil() {
         Margem desejada: {form.margem_desejada}%
         <input
           type="range"
-          min={5}
-          max={40}
+          min={0}
+          max={100}
           step={1}
           value={form.margem_desejada}
           onChange={(e) => campo('margem_desejada', Number(e.target.value))}

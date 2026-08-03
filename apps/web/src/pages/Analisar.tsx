@@ -162,6 +162,8 @@ export default function Analisar() {
         id: perfil?.id ?? '',
         user_id: userId ?? '',
         apelido: null,
+        ano: null,
+        valor_caminhao: null,
         numero_eixos: numeroEixos,
         diesel_km_por_lt: dieselKmPorLt,
         diesel_preco_por_litro: dieselPreco,

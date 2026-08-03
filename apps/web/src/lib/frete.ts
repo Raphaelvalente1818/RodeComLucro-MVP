@@ -29,6 +29,8 @@ export interface CaminhaoPerfil {
   chapa_padrao: number;
   margem_desejada: number;
   uf_base: string | null;
+  ano: number | null;
+  valor_caminhao: number | null;
 }
 
 export const PERFIL_DEFAULT: Omit<CaminhaoPerfil, 'id' | 'user_id'> = {
@@ -47,6 +49,8 @@ export const PERFIL_DEFAULT: Omit<CaminhaoPerfil, 'id' | 'user_id'> = {
   chapa_padrao: 0,
   margem_desejada: 20,
   uf_base: null,
+  ano: null,
+  valor_caminhao: null,
 };
 
 export async function carregarPerfil(userId: string): Promise<CaminhaoPerfil | null> {
