@@ -279,8 +279,8 @@ export default function Analisar() {
         Margem desejada: {margemDesejada}%
         <input
           type="range"
-          min={5}
-          max={40}
+          min={0}
+          max={100}
           step={1}
           value={margemDesejada}
           onChange={(e) => setMargemDesejada(Number(e.target.value))}
