@@ -68,38 +68,56 @@ async function bloqueioAtivo(escopo: "telefone" | "ip" | "global", chave: string
 const NIVEL_MINUTOS: Record<1 | 2 | 3, number> = { 1: 15, 2: 60, 3: 60 * 24 };
 
 async function registrarBloqueio(escopo: "telefone" | "ip" | "global", chave: string, motivo: string) {
-  const { data: atual } = await supabase
-    .from("otp_bloqueio")
-    .select("nivel")
-    .eq("escopo", escopo)
-    .eq("chave", chave)
-    .maybeSingle();
+  // Escalada de nivel via RPC atomica (migration
+  // 0012_registrar_bloqueio_otp_atomico.sql): o SELECT nivel + UPSERT
+  // em duas chamadas separadas que existia aqui tinha race condition —
+  // requests quase simultaneas liam o mesmo nivel de partida e cada
+  // uma escalava a partir dele, deixando um usuario pular de nivel 1
+  // (15min) pra nivel 3 (24h) em poucos segundos. A RPC resolve tudo
+  // num unico UPSERT no banco, que serializa via lock de linha.
+  const { data, error } = await supabase.rpc("registrar_bloqueio_otp", {
+    p_escopo: escopo,
+    p_chave: chave,
+    p_motivo: motivo,
+  });
 
-  const proximoNivel = (Math.min((atual?.nivel ?? 0) + 1, 3)) as 1 | 2 | 3;
-  const bloqueadoAte = new Date(Date.now() + NIVEL_MINUTOS[proximoNivel] * 60_000).toISOString();
+  if (error || !data) {
+    // Fallback conservador (nivel 1) se a RPC falhar por algum motivo —
+    // melhor bloquear 15min do que nao bloquear nada.
+    // eslint-disable-next-line no-console
+    console.error("registrar_bloqueio_otp falhou, aplicando fallback nivel 1", error);
+    const bloqueadoAte = new Date(Date.now() + NIVEL_MINUTOS[1] * 60_000).toISOString();
+    await supabase.from("otp_bloqueio").upsert(
+      { escopo, chave, nivel: 1, bloqueado_ate: bloqueadoAte, motivo },
+      { onConflict: "escopo,chave" },
+    );
+    return bloqueadoAte;
+  }
 
-  await supabase.from("otp_bloqueio").upsert(
-    { escopo, chave, nivel: proximoNivel, bloqueado_ate: bloqueadoAte, motivo },
-    { onConflict: "escopo,chave" },
-  );
-
-  return bloqueadoAte;
+  return data as string;
 }
 
 async function contarEnvios(telefoneHash: string, desde: Date) {
+  // Exclui tentativas com status 'bloqueado': elas nunca chegaram a
+  // mandar SMS, entao nao devem contar pro proprio limite que as
+  // gerou (senao o bloqueio se auto-reforca e nunca expira dentro da
+  // janela — bug corrigido em 2026-08-04).
   const { count } = await supabase
     .from("otp_envio")
     .select("id", { count: "exact", head: true })
     .eq("telefone_hash", telefoneHash)
+    .neq("status", "bloqueado")
     .gte("created_at", desde.toISOString());
   return count ?? 0;
 }
 
 async function contarEnviosPorIp(ip: string, desde: Date) {
+  // Mesmo motivo de contarEnvios(): bloqueado nao conta.
   const { count } = await supabase
     .from("otp_envio")
     .select("id", { count: "exact", head: true })
     .eq("ip", ip)
+    .neq("status", "bloqueado")
     .gte("created_at", desde.toISOString());
   return count ?? 0;
 }
