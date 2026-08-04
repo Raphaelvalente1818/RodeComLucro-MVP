@@ -50,3 +50,18 @@ Descoberta importante ao conectar a pasta local (`D:\RodeComLucro-MVP`) ao Cowor
 Antes de editar qualquer coisa na pasta local, alinhar com o Raphael como reconciliar (provavelmente um `git pull`/checkout do estado do GitHub, com cuidado para não perder nada local que só existe aí). Não fiz isso sozinho porque a última vez que "reconciliar histórico divergente" apareceu, foi tratado como decisão do Raphael (merge vs. rebase vs. force), e a pasta local teve avisos de permissão ao tocar em `.git/objects` nesta sessão — vale investigar antes de mexer.
 
 O mockup da Garagem (`garagem_mockup.png`) foi salvo em `mockups/` na pasta local.
+
+
+## Atualização — 04/08 (continuação)
+
+**Links do projeto** (pra referência rápida em qualquer sessão futura):
+- GitHub: https://github.com/Raphaelvalente1818/RodeComLucro-MVP
+- App em produção (Vercel): https://rode-com-lucro-mvp.vercel.app
+- Painel Vercel (deployments, exige login): https://vercel.com/rode-com-lucro/rode-com-lucro-mvp/deployments
+- Supabase (banco, projeto `RodeComLucro-MVP` / ref `gastwloozlzthpqhxnzr`): https://supabase.com/dashboard/project/gastwloozlzthpqhxnzr
+
+**Estimativa de prazo discutida** (baseada no ritmo real dos commits, não é estimativa de PM formal):
+- Ritmo observado: ~20 dias corridos desde o início (15/07), 35 commits, ~14 dias de trabalho efetivo descontando o fim de semana e o hiato do reset/virtualização (28/07–02/08).
+- Nesse ritmo: Fase 0 completa + Fase 1 (calc-app) ~85% pronta (falta fila offline-first e a tela Garagem/cadastro do motorista).
+- Marco mais confiável pra acompanhar: **Fase 1 completa** (offline + Garagem) — estimativa de 1-2 semanas.
+- MVP completo (6 módulos): estimativa de **5 a 8 semanas**, com a maior incerteza sendo o tempo de aprovação de template do WhatsApp Business pela Meta (Fase 2 / calc-wpp), não o tempo de código em si.
