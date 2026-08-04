@@ -41,3 +41,12 @@ Fizemos um **mockup estático** (imagem PNG, gerado com Pillow, salvo como `gara
 
 - Este arquivo (`status-sessao.md`) e `sequencia-construcao.md` devem ser atualizados ao fim de cada sessão de trabalho relevante — é o que permite retomar depois de um reset sem repetir a conversa antiga.
 - A partir de 04/08, a pasta local do projeto (`D:\RodeComLucro-MVP`) passou a ficar conectada diretamente ao Cowork, então não é mais necessário colar token do GitHub a cada sessão nova para eu ler/editar arquivos.
+
+
+## ATENÇÃO para a próxima sessão
+
+Descoberta importante ao conectar a pasta local (`D:\RodeComLucro-MVP`) ao Cowork: **ela está 30 commits atrás do GitHub** (parada em `e67c0ee`, "Extrai @rode/calc..."). Faltam nela, entre outras coisas, todas as migrations de identidade recentes, as Edge Functions, e boa parte das telas do `apps/web` que já existem no GitHub. Também há uma alteração local não commitada (`Pasta01` modificado) e arquivos não rastreados.
+
+Antes de editar qualquer coisa na pasta local, alinhar com o Raphael como reconciliar (provavelmente um `git pull`/checkout do estado do GitHub, com cuidado para não perder nada local que só existe aí). Não fiz isso sozinho porque a última vez que "reconciliar histórico divergente" apareceu, foi tratado como decisão do Raphael (merge vs. rebase vs. force), e a pasta local teve avisos de permissão ao tocar em `.git/objects` nesta sessão — vale investigar antes de mexer.
+
+O mockup da Garagem (`garagem_mockup.png`) foi salvo em `mockups/` na pasta local.
