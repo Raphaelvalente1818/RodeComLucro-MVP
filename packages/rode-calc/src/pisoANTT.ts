@@ -1,15 +1,16 @@
-// Piso mínimo de frete da ANTT — Tabela A (Operação completa / Carga Geral).
+// Piso mínimo de frete da ANTT — Tabela A (Carga Geral, transporte
+// rodoviário de carga lotação).
 //
-// Origem: extraído sem alteração de
-// github.com/emerson1001a/calculadora-experimental (src/engine/pisoANTT.ts).
-//
-// Verificado na fonte oficial (ANTTlegis) em 2026-07-17: os coeficientes
-// abaixo (Portaria SUROC Nº 4/2026, que reajusta o Anexo II da Resolução
-// ANTT 6.076/2026 por gatilho do diesel — referência de diesel S10 a
-// R$7,35/L) são os vigentes hoje. A "Resolução ANTT 6.034/2024" citada no
-// PRD técnico do calc-app é uma norma anterior e está desatualizada — os
-// PRDs devem ser corrigidos para referenciar a 6.076/2026 + Portaria
-// SUROC 4/2026 ao invés da 6.034/2024.
+// ATUALIZADO em 2026-08-04: os coeficientes abaixo vêm da Resolução ANTT
+// Nº 6.084, de 16/07/2026 (DOU de 17/07/2026, Seção 1, Pág. 168), que
+// altera o Anexo II da Resolução ANTT 5.867/2020. Texto extraído direto
+// do Diário Oficial (in.gov.br), linha "5 Carga Geral" da Tabela A.
+// Substitui os valores da Portaria SUROC Nº 4/2026 (março/2026), que
+// estavam vigentes até esta atualização e ficaram desatualizados sem
+// ninguém perceber por ~2,5 semanas — não há nenhum processo automático
+// de verificação de reajuste (gatilho do diesel/IPCA), então checagens
+// futuras precisam ser manuais. Ver TODO abaixo sobre versionar isso no
+// banco em vez de constante no cliente.
 //
 // Fórmula: piso = (distanciaKm × CCD) + CC
 //   CCD = Coeficiente de Deslocamento (R$/km)
@@ -21,17 +22,17 @@
 // Esta constante cobre só "carga geral" — ao migrar para o schema do banco,
 // os demais tipos de carga ainda precisam ser levantados e adicionados.
 
-export const ANTT_VERSAO = 'suroc-4-2026';
-export const ANTT_FONTE = 'Portaria SUROC Nº 4/2026 (Resolução ANTT 6.076/2026, Anexo II)';
+export const ANTT_VERSAO = 'resolucao-6084-2026';
+export const ANTT_FONTE = 'Resolução ANTT Nº 6.084/2026 (altera Anexo II da Resolução ANTT 5.867/2020), DOU 17/07/2026';
 
 export const ANTT_CARGA_GERAL: Record<number, { ccd: number; cc: number }> = {
-  2: { ccd: 4.0031, cc: 436.39 },
-  3: { ccd: 5.1295, cc: 523.33 },
-  4: { ccd: 5.8178, cc: 568.72 },
-  5: { ccd: 6.7126, cc: 635.08 },
-  6: { ccd: 7.4124, cc: 648.95 },
-  7: { ccd: 8.1252, cc: 803.22 },
-  9: { ccd: 9.2466, cc: 872.44 },
+  2: { ccd: 3.9826, cc: 451.84 },
+  3: { ccd: 5.0977, cc: 541.86 },
+  4: { ccd: 5.7822, cc: 588.86 },
+  5: { ccd: 6.6718, cc: 657.56 },
+  6: { ccd: 7.3547, cc: 671.93 },
+  7: { ccd: 8.0927, cc: 831.66 },
+  9: { ccd: 9.2027, cc: 903.32 },
 };
 
 const EIXOS_ORDENADOS = Object.keys(ANTT_CARGA_GERAL)
