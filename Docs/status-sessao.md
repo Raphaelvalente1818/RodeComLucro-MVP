@@ -65,3 +65,17 @@ O mockup da Garagem (`garagem_mockup.png`) foi salvo em `mockups/` na pasta loca
 - Nesse ritmo: Fase 0 completa + Fase 1 (calc-app) ~85% pronta (falta fila offline-first e a tela Garagem/cadastro do motorista).
 - Marco mais confiável pra acompanhar: **Fase 1 completa** (offline + Garagem) — estimativa de 1-2 semanas.
 - MVP completo (6 módulos): estimativa de **5 a 8 semanas**, com a maior incerteza sendo o tempo de aprovação de template do WhatsApp Business pela Meta (Fase 2 / calc-wpp), não o tempo de código em si.
+
+
+## Atualização — 04/08: Garagem implementada e no ar
+
+Codei e subi a tela Garagem (commit `7063aa5`, já em `main`, Vercel deve fazer deploy automático a partir daqui):
+
+- `Garagem.tsx` substitui `Home.tsx` na rota `/`: saudação com nome do motorista, status (UF base + WhatsApp vinculado), botão grande "Analisar frete", cards "Perfil do caminhão" e "Meu perfil", barra de meta de lucro do mês (soma o `lucro` das análises do mês corrente via `resultado_snapshot`, compara com `meta_alvo_centavos` — só aparece se a meta estiver preenchida) e lista das últimas 3 análises com veredicto colorido.
+- `Motorista.tsx` (rota nova `/motorista`): cadastro de nome, UF base e meta de lucro mensal. `canal_wa_ativo`/`telefone_verificado` aparecem como status, só leitura — o vínculo real do WhatsApp continua pelo fluxo de `wa_vinculo`, não foi duplicado aqui. É sempre `update`, nunca insert (a linha em `motoristas` já existe desde o primeiro login via trigger).
+- Novo `lib/motorista.ts` e três funções novas em `lib/frete.ts` (`carregarUltimasAnalises`, `carregarLucroMesAtual`, `tempoRelativo`).
+- Validado com `tsc -b` + `vite build` limpos e os 21 testes do `@rode/calc` continuam passando (não mexi no motor).
+
+**Não incluído nesta rodada** (fica pra depois, por decisão de escopo): fila offline-first (IndexedDB) — a Garagem/Motorista ainda gravam direto no Supabase, igual o resto do calc-app hoje.
+
+**Pendência que continua em aberto**: a pasta local `D:\RodeComLucro-MVP` segue desatualizada (ver seção "ATENÇÃO" acima) — o código novo está no GitHub, mas pra rodar/ver localmente é preciso reconciliar a pasta primeiro.
