@@ -352,6 +352,10 @@ export default function Analisar() {
       <button type="button" disabled={!podeCalcular} onClick={calcularEIr}>
         Calcular
       </button>
+
+      <button type="button" className="link-secundario" onClick={() => navigate('/')}>
+        Voltar para a Garagem
+      </button>
     </main>
   );
 }
