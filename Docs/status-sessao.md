@@ -102,3 +102,50 @@ Isso é seguro: como os arquivos já estão idênticos ao GitHub, esse comando s
 - `supabase/migrations/20260731120000_identidade_schema.sql` e `20260731120100_identidade_trigger_hook.sql` — duas migrations com nomenclatura de timestamp (padrão Supabase CLI), diferentes das migrations `000N_*.sql` que estão no GitHub. Parecem um experimento anterior abandonado — não conflitam com nada, mas valem uma checada.
 - `Fontes-App/` — um clone git aninhado e desatualizado (parado em 27/07). Hoje é redundante, já que a pasta principal está atualizada; pode ser apagado.
 - `mockups/` — já existia, com `garagem_mockup.png` e um `identidade-entrada-verificacao.html`.
+
+
+## Atualização — 05/08: clicar numa análise recente abre o Resultado
+
+Implementado (commit `7cc57cb`): clicar numa linha de "Últimas análises" na Garagem agora navega para `/resultado/:id` e mostra a tela de Resultado com os dados exatos daquele cálculo (custos, veredicto, detalhamento) — carregados de `resultado_snapshot`/`custos_snapshot` no banco, não recalculados. Nesse modo, o botão Salvar vira "Voltar para a Garagem" e aparece a data/hora do cálculo original.
+
+Pasta local também sincronizada (mesmo processo manual de cópia de arquivo, pelo mesmo motivo do `.git` com lock — ver seção anterior). Rodar `git fetch && git reset --hard origin/main` localmente ainda é recomendado pra limpar o histórico do git, mas os arquivos já estão certos nos dois lugares.
+
+
+## Atualização — 05/08: Número da CNH e Vencimento da CNH em "Meu perfil"
+
+Commit `b1a031f`: dois campos novos no cadastro do motorista — `cnh_numero` (texto livre, sem validação de formato) e `cnh_vencimento` (data). Migration `0013_motoristas_cnh.sql` já aplicada direto no Supabase (projeto `gastwloozlzthpqhxnzr`) via MCP, e o arquivo commitado no repo pra manter o histórico de migrations completo. Não precisou mexer em RLS/trigger — a guarda de colunas sensíveis em `0003` é uma lista explícita e essas colunas novas não entram nela.
+
+
+## Atualização — 05/08: Validade do Exame Toxicológico em "Meu perfil"
+
+Commit seguinte ao da CNH: campo `exame_toxicologico_vencimento` (date), migration `0014` já aplicada no Supabase. Mesmo padrão dos campos de CNH — sem validação de formato, edição livre pelo motorista.
+
+
+## Atualização — 05/08: autocomplete de marca/modelo no Perfil do caminhão
+
+Commit `8e395a5`: portei o autocomplete marca→modelo da calculadora-experimental do Emerson (github.com/emerson1001a/calculadora-experimental, `src/data/caminhoes.ts` + `src/screens/PerfilCaminhaoScreen.tsx`) — catálogo de 8 marcas com seus modelos, consumo de diesel/ARLA de referência e categoria (pesado/semipesado/médio-leve). Ao digitar a marca, sugere; ao escolher e digitar o modelo, sugere filtrado; ao escolher o modelo, preenche consumo de diesel/ARLA. A manutenção por km também se ajusta sozinha pela idade do veículo (marca+modelo+ano → categoria → taxa por faixa etária), enquanto o motorista não editar na mão.
+
+**Correção de memória importante**: o Raphael lembrava que o ANO carregava os modelos disponíveis daquela marca+ano. Fui checar o código-fonte original antes de implementar e isso não é real — o ano nunca filtrou modelos lá, só a marca filtra. O ano entra numa conta separada (auto-ajuste de manutenção por idade do veículo). Implementei o comportamento real, não a lembrança, e documentei a diferença no código (`Perfil.tsx`) e aqui.
+
+Migration `0015`: colunas `marca`/`modelo` em `caminhao_perfil` (já aplicada no Supabase), pra lembrar a seleção da próxima vez. Catálogo vive em `packages/rode-calc/src/caminhoes.ts` (exportado pelo pacote, não só pelo app) pra poder ser reaproveitado pelo calc-wpp quando esse módulo começar.
+
+
+## Atualização — 05/08: Tabela FIPE integrada (marca→modelo→ano + depreciação real)
+
+Commit `5c7e1d1`. O Raphael pediu pra restringir os modelos por ano de fabricação (ideia original: marca → ano → modelo). Investiguei a API da FIPE (via parallelum.com.br/fipe/api, testado direto no banco com a extensão `http` antes de codar, pra confirmar o formato real das respostas — não por suposição) e a ordem real dela é marca → modelo → ano (o endpoint de modelo é quem lista os anos realmente catalogados pra aquele modelo específico; não existe um caminho marca→ano→modelo na API). Alinhei isso com ele via pergunta direta antes de construir, e ele optou por integrar a FIPE de qualquer forma (opção "maior esforço").
+
+O que entrou:
+- **Edge Function `fipe-caminhao`**: proxy pra FIPE com cache de 30 dias (`fipe_cache`), mesmo espírito do `route-cost`.
+- **Perfil.tsx**: Marca (autocomplete FIPE) → Modelo (autocomplete FIPE filtrado pela marca) → Ano (select, só com os anos que a FIPE realmente cataloga pra aquele modelo — é isso que resolve o pedido original de restringir as opções).
+- **Depreciação real**: ao escolher o ano, busca o valor FIPE daquele ano (autopreenche `valor_caminhao`) e do ano anterior do mesmo modelo, calcula a diferença e divide pelos km rodados por ano (campo novo, `km_rodados_ano`) — isso vira `depreciacao_por_km` de verdade, baseada em mercado, em vez de estimativa por faixa etária.
+- Consumo de diesel/ARLA e a taxa de manutenção por idade continuam vindo do catálogo estático da calculadora do Emerson, agora casado por nome com o que a FIPE devolve (`encontrarModeloEstatico` em `lib/fipe.ts`) — a FIPE não tem dado de consumo de combustível, só preço.
+- Tudo com fallback manual se a FIPE estiver fora do ar (nunca trava o cadastro).
+
+Migration `0016` já aplicada no Supabase.
+
+
+## Atualização — 05/08: backlog provisório dos testes (form no app + chat)
+
+Criado um mural de backlog provisório pra Raphael e os outros 3 sócios registrarem bugs/sugestões enquanto testam o app: botão "Backlog" no header da Garagem abre um modal com Nome/Página/Problema-Sugestão/Observação e toggle Aberto↔Feito. Tudo marcado como `PROVISÓRIO` em `lib/backlog.ts`, `components/BacklogModal.tsx`, `Garagem.tsx`, `index.css` e na migration `20260805200031_backlog_provisorio_schema.sql` — apagar tudo isso (arquivos, trechos marcados e `drop table backlog_provisorio`) quando o MVP acabar.
+
+**Combinado com o Raphael**: além desse formulário, backlog também vai ser registrado direto aqui no chat (ele me conta um problema/sugestão na conversa). Então, daqui pra frente, ao revisar/planejar backlog, considerar as DUAS fontes: (1) a tabela `backlog_provisorio` no Supabase, (2) o que foi dito nas conversas do Cowork. Vale perguntar ao Raphael se ele quer que eu also grave o que for dito em chat na mesma tabela (unificar as duas fontes), ou se prefere manter separado.

@@ -19,6 +19,9 @@ import {
   type AnaliseResumo,
 } from '../lib/frete';
 import { carregarMotorista, type Motorista } from '../lib/motorista';
+// PROVISÓRIO — remover esta linha e o bloco marcado abaixo quando os
+// testes de backlog com os sócios acabarem (ver components/BacklogModal.tsx).
+import BacklogModal from '../components/BacklogModal';
 
 function classeVeredicto(v: AnaliseResumo['veredicto']): string {
   if (v === 'BOM') return 'badge-veredicto badge-bom';
@@ -32,6 +35,8 @@ export default function Garagem() {
   const [motorista, setMotorista] = useState<Motorista | null>(null);
   const [analises, setAnalises] = useState<AnaliseResumo[]>([]);
   const [lucroMes, setLucroMes] = useState(0);
+  // PROVISÓRIO — remover junto com o botão/modal de backlog abaixo.
+  const [backlogAberto, setBacklogAberto] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -55,6 +60,9 @@ export default function Garagem() {
           media_lucro_frete_centavos: null,
           canal_wa_ativo: Boolean(claims.telefone_verificado) && false,
           telefone_verificado: Boolean(claims.telefone_verificado),
+          cnh_numero: null,
+          cnh_vencimento: null,
+          exame_toxicologico_vencimento: null,
         },
       );
       setAnalises(ultimas);
@@ -76,7 +84,14 @@ export default function Garagem() {
           <p className="garagem-eyebrow">Garagem</p>
           <h1>Olá{primeiroNome ? `, ${primeiroNome}` : ''}</h1>
         </div>
+        {/* PROVISÓRIO — botão de backlog para os sócios testando o app.
+            Remover junto com components/BacklogModal.tsx e lib/backlog.ts. */}
+        <button type="button" className="backlog-botao" onClick={() => setBacklogAberto(true)}>
+          Backlog
+        </button>
       </header>
+
+      {backlogAberto && <BacklogModal onFechar={() => setBacklogAberto(false)} />}
 
       <div className="garagem-status">
         <span>Base: {motorista.uf_base ?? 'não informada'}</span>
@@ -125,16 +140,22 @@ export default function Garagem() {
         ) : (
           <ul className="lista-analises">
             {analises.map((a) => (
-              <li key={a.id} className="linha-analise">
-                <div>
-                  <p className="linha-analise-rota">
-                    {a.origem} → {a.destino}
-                  </p>
-                  <p className="linha-analise-detalhe">
-                    {fmtBRL(a.valorFreteCentavos / 100)} · {tempoRelativo(a.createdAt)}
-                  </p>
-                </div>
-                <span className={classeVeredicto(a.veredicto)}>{a.veredicto}</span>
+              <li key={a.id}>
+                <button
+                  type="button"
+                  className="linha-analise"
+                  onClick={() => navigate(`/resultado/${a.id}`)}
+                >
+                  <div>
+                    <p className="linha-analise-rota">
+                      {a.origem} → {a.destino}
+                    </p>
+                    <p className="linha-analise-detalhe">
+                      {fmtBRL(a.valorFreteCentavos / 100)} · {tempoRelativo(a.createdAt)}
+                    </p>
+                  </div>
+                  <span className={classeVeredicto(a.veredicto)}>{a.veredicto}</span>
+                </button>
               </li>
             ))}
           </ul>
