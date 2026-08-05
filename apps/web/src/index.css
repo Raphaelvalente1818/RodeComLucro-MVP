@@ -1,6 +1,7 @@
 :root {
   font-family: system-ui, sans-serif;
 }
+/* build: força novo deploy real na Vercel (webhook anterior nao disparou) */
 
 *,
 *::before,
