@@ -162,6 +162,8 @@ export default function Analisar() {
         id: perfil?.id ?? '',
         user_id: userId ?? '',
         apelido: null,
+        marca: null,
+        modelo: null,
         ano: null,
         valor_caminhao: null,
         numero_eixos: numeroEixos,

@@ -15,6 +15,8 @@ export interface CaminhaoPerfil {
   id: string;
   user_id: string;
   apelido: string | null;
+  marca: string | null;
+  modelo: string | null;
   numero_eixos: number;
   diesel_km_por_lt: number;
   diesel_preco_por_litro: number;
@@ -35,6 +37,8 @@ export interface CaminhaoPerfil {
 
 export const PERFIL_DEFAULT: Omit<CaminhaoPerfil, 'id' | 'user_id'> = {
   apelido: null,
+  marca: null,
+  modelo: null,
   numero_eixos: 5,
   diesel_km_por_lt: 2.5,
   diesel_preco_por_litro: 6.1,
