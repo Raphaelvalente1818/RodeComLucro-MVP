@@ -3,13 +3,19 @@
 // Tela 2 do calc-app (Fase 1): mostra o veredito (semáforo BOM/ACEITÁVEL/
 // RUIM), KPIs, o detalhamento de custo ("para onde vai o dinheiro") e o
 // botão Salvar, que grava em analise_frete (id gerado no cliente, upsert).
+//
+// Também funciona em "modo histórico": quando aberta via /resultado/:id
+// (clique numa linha de "Últimas análises" na Garagem), carrega a análise
+// já salva do banco (resultado_snapshot/custos_snapshot) em vez de esperar
+// o estado de navegação de uma análise recém-calculada. Nesse modo o botão
+// Salvar some (já está salva) e aparece a data do cálculo original.
 
-import { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import type { Custos, FreteResultado } from '@rode/calc';
 import { fmtBRL, fmtPct } from '@rode/calc';
 import { supabase } from '../lib/supabaseClient';
-import { explicarVeredicto, salvarAnalise } from '../lib/frete';
+import { explicarVeredicto, salvarAnalise, carregarAnalisePorId } from '../lib/frete';
 
 interface EstadoRota {
   resultado?: FreteResultado;
@@ -38,14 +44,72 @@ const RUBRICAS: Array<[keyof FreteResultado['custoDetalhado'], string]> = [
   ['depreciacao', 'Depreciação'],
 ];
 
+function fmtDataHora(iso: string): string {
+  return new Date(iso).toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export default function Resultado() {
+  const { id } = useParams<{ id: string }>();
   const { state } = useLocation();
   const navigate = useNavigate();
-  const { resultado, custos, distanciaEstimada, caminhaoPerfilId } = (state ?? {}) as EstadoRota;
+  const estadoRota = (state ?? {}) as EstadoRota;
+
+  const modoHistorico = Boolean(id);
+
+  const [carregandoHistorico, setCarregandoHistorico] = useState(modoHistorico);
+  const [naoEncontrada, setNaoEncontrada] = useState(false);
+  const [dados, setDados] = useState<{
+    resultado?: FreteResultado;
+    custos?: Custos;
+    distanciaEstimada?: boolean;
+    caminhaoPerfilId?: string | null;
+    analisadoEm?: string;
+  }>(modoHistorico ? {} : estadoRota);
 
   const [salvando, setSalvando] = useState(false);
   const [salvo, setSalvo] = useState(false);
   const [erroSalvar, setErroSalvar] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!modoHistorico || !id) return;
+    carregarAnalisePorId(id).then((achada) => {
+      if (!achada) {
+        setNaoEncontrada(true);
+        setCarregandoHistorico(false);
+        return;
+      }
+      setDados({
+        resultado: achada.resultado,
+        custos: achada.custos,
+        distanciaEstimada: achada.distanciaEstimada,
+        caminhaoPerfilId: achada.caminhaoPerfilId,
+        analisadoEm: achada.createdAt,
+      });
+      setCarregandoHistorico(false);
+    });
+  }, [modoHistorico, id]);
+
+  if (carregandoHistorico) return null;
+
+  if (naoEncontrada) {
+    return (
+      <main className="tela tela-resultado">
+        <h1>Análise não encontrada</h1>
+        <p className="aviso">Essa análise não existe mais ou não pertence a esta conta.</p>
+        <button type="button" onClick={() => navigate('/')}>
+          Voltar para a Garagem
+        </button>
+      </main>
+    );
+  }
+
+  const { resultado, custos, distanciaEstimada, caminhaoPerfilId, analisadoEm } = dados;
 
   if (!resultado || !custos) {
     navigate('/analisar', { replace: true });
@@ -90,6 +154,12 @@ export default function Resultado() {
   return (
     <main className="tela tela-resultado">
       <h1>Resultado</h1>
+
+      {modoHistorico && analisadoEm && <p className="aviso">Analisado em {fmtDataHora(analisadoEm)}</p>}
+
+      <p className="linha-analise-rota" style={{ margin: 0 }}>
+        {resultado.entrada.origem} → {resultado.entrada.destino}
+      </p>
 
       <div className="chip-veredicto" style={{ backgroundColor: cor }}>
         {resultado.veredicto}
@@ -139,18 +209,26 @@ export default function Resultado() {
         veredito não é aconselhamento jurídico ou financeiro.
       </p>
 
-      {salvo ? (
-        <p className="sucesso">Análise salva.</p>
-      ) : (
-        <button type="button" disabled={salvando} onClick={salvar}>
-          {salvando ? 'Salvando...' : 'Salvar análise'}
+      {modoHistorico ? (
+        <button type="button" onClick={() => navigate('/')}>
+          Voltar para a Garagem
         </button>
-      )}
-      {erroSalvar && <p className="aviso-erro">Não foi possível salvar: {erroSalvar}</p>}
+      ) : (
+        <>
+          {salvo ? (
+            <p className="sucesso">Análise salva.</p>
+          ) : (
+            <button type="button" disabled={salvando} onClick={salvar}>
+              {salvando ? 'Salvando...' : 'Salvar análise'}
+            </button>
+          )}
+          {erroSalvar && <p className="aviso-erro">Não foi possível salvar: {erroSalvar}</p>}
 
-      <button type="button" className="link-secundario" onClick={() => navigate('/analisar')}>
-        Nova análise
-      </button>
+          <button type="button" className="link-secundario" onClick={() => navigate('/analisar')}>
+            Nova análise
+          </button>
+        </>
+      )}
     </main>
   );
 }

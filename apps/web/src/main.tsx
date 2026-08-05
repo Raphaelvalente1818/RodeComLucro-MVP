@@ -20,6 +20,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Route path="/motorista" element={<Motorista />} />
         <Route path="/analisar" element={<Analisar />} />
         <Route path="/resultado" element={<Resultado />} />
+        <Route path="/resultado/:id" element={<Resultado />} />
         <Route path="/perfil" element={<Perfil />} />
         <Route path="*" element={<Navigate to="/entrar" replace />} />
       </Routes>

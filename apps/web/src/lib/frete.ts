@@ -15,6 +15,8 @@ export interface CaminhaoPerfil {
   id: string;
   user_id: string;
   apelido: string | null;
+  marca: string | null;
+  modelo: string | null;
   numero_eixos: number;
   diesel_km_por_lt: number;
   diesel_preco_por_litro: number;
@@ -31,10 +33,17 @@ export interface CaminhaoPerfil {
   uf_base: string | null;
   ano: number | null;
   valor_caminhao: number | null;
+  fipe_codigo_marca: string | null;
+  fipe_codigo_modelo: string | null;
+  fipe_codigo_ano: string | null;
+  /** Km rodados por ano — usado para converter depreciação anual (FIPE) em R$/km. */
+  km_rodados_ano: number | null;
 }
 
 export const PERFIL_DEFAULT: Omit<CaminhaoPerfil, 'id' | 'user_id'> = {
   apelido: null,
+  marca: null,
+  modelo: null,
   numero_eixos: 5,
   diesel_km_por_lt: 2.5,
   diesel_preco_por_litro: 6.1,
@@ -51,6 +60,10 @@ export const PERFIL_DEFAULT: Omit<CaminhaoPerfil, 'id' | 'user_id'> = {
   uf_base: null,
   ano: null,
   valor_caminhao: null,
+  fipe_codigo_marca: null,
+  fipe_codigo_modelo: null,
+  fipe_codigo_ano: null,
+  km_rodados_ano: 120000,
 };
 
 export async function carregarPerfil(userId: string): Promise<CaminhaoPerfil | null> {
@@ -241,4 +254,33 @@ export function tempoRelativo(iso: string): string {
   if (semanas < 5) return `há ${semanas} semanas`;
   const meses = Math.floor(dias / 30);
   return meses <= 1 ? 'há 1 mês' : `há ${meses} meses`;
+}
+
+export interface AnaliseCompleta {
+  resultado: FreteResultado;
+  custos: Custos;
+  distanciaEstimada: boolean;
+  caminhaoPerfilId: string | null;
+  createdAt: string;
+}
+
+/** Carrega uma análise salva pelo id — usado pela tela Resultado quando aberta a partir da Garagem (histórico). */
+export async function carregarAnalisePorId(id: string): Promise<AnaliseCompleta | null> {
+  const { data, error } = await supabase
+    .from('analise_frete')
+    .select('resultado_snapshot, custos_snapshot, distancia_estimada, caminhao_perfil_id, created_at')
+    .eq('id', id)
+    .maybeSingle();
+  if (error || !data) {
+    // eslint-disable-next-line no-console
+    if (error) console.error('carregarAnalisePorId', error);
+    return null;
+  }
+  return {
+    resultado: data.resultado_snapshot as FreteResultado,
+    custos: data.custos_snapshot as Custos,
+    distanciaEstimada: Boolean(data.distancia_estimada),
+    caminhaoPerfilId: (data.caminhao_perfil_id as string | null) ?? null,
+    createdAt: data.created_at as string,
+  };
 }

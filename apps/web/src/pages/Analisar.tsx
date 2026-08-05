@@ -162,6 +162,8 @@ export default function Analisar() {
         id: perfil?.id ?? '',
         user_id: userId ?? '',
         apelido: null,
+        marca: null,
+        modelo: null,
         ano: null,
         valor_caminhao: null,
         numero_eixos: numeroEixos,
@@ -178,6 +180,10 @@ export default function Analisar() {
         chapa_padrao: parseNumeroPtBR(chapa),
         margem_desejada: margemDesejada,
         uf_base: null,
+        fipe_codigo_marca: null,
+        fipe_codigo_modelo: null,
+        fipe_codigo_ano: null,
+        km_rodados_ano: null,
       },
       dias,
       parseNumeroPtBR(pedagio),
@@ -351,6 +357,10 @@ export default function Analisar() {
 
       <button type="button" disabled={!podeCalcular} onClick={calcularEIr}>
         Calcular
+      </button>
+
+      <button type="button" className="link-secundario" onClick={() => navigate('/')}>
+        Voltar para a Garagem
       </button>
     </main>
   );

@@ -16,7 +16,14 @@ import {
   type FormMotorista,
 } from '../lib/motorista';
 
-const FORM_VAZIO: FormMotorista = { nome: '', uf_base: '', metaAlvoReais: null };
+const FORM_VAZIO: FormMotorista = {
+  nome: '',
+  uf_base: '',
+  metaAlvoReais: null,
+  cnhNumero: '',
+  cnhVencimento: '',
+  exameToxicologicoVencimento: '',
+};
 
 export default function Motorista() {
   const navigate = useNavigate();
@@ -96,6 +103,30 @@ export default function Motorista() {
           value={form.metaAlvoReais ?? ''}
           onChange={(e) => campo('metaAlvoReais', e.target.value === '' ? null : Number(e.target.value))}
           placeholder="Ex.: 5000"
+        />
+      </label>
+
+      <label>
+        Número da CNH
+        <input
+          inputMode="numeric"
+          value={form.cnhNumero}
+          onChange={(e) => campo('cnhNumero', e.target.value)}
+          placeholder="Ex.: 12345678900"
+        />
+      </label>
+
+      <label>
+        Vencimento da CNH
+        <input type="date" value={form.cnhVencimento} onChange={(e) => campo('cnhVencimento', e.target.value)} />
+      </label>
+
+      <label>
+        Validade do Exame Toxicológico
+        <input
+          type="date"
+          value={form.exameToxicologicoVencimento}
+          onChange={(e) => campo('exameToxicologicoVencimento', e.target.value)}
         />
       </label>
 
