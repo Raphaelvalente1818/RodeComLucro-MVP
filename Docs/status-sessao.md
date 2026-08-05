@@ -102,3 +102,10 @@ Isso é seguro: como os arquivos já estão idênticos ao GitHub, esse comando s
 - `supabase/migrations/20260731120000_identidade_schema.sql` e `20260731120100_identidade_trigger_hook.sql` — duas migrations com nomenclatura de timestamp (padrão Supabase CLI), diferentes das migrations `000N_*.sql` que estão no GitHub. Parecem um experimento anterior abandonado — não conflitam com nada, mas valem uma checada.
 - `Fontes-App/` — um clone git aninhado e desatualizado (parado em 27/07). Hoje é redundante, já que a pasta principal está atualizada; pode ser apagado.
 - `mockups/` — já existia, com `garagem_mockup.png` e um `identidade-entrada-verificacao.html`.
+
+
+## Atualização — 05/08: clicar numa análise recente abre o Resultado
+
+Implementado (commit `7cc57cb`): clicar numa linha de "Últimas análises" na Garagem agora navega para `/resultado/:id` e mostra a tela de Resultado com os dados exatos daquele cálculo (custos, veredicto, detalhamento) — carregados de `resultado_snapshot`/`custos_snapshot` no banco, não recalculados. Nesse modo, o botão Salvar vira "Voltar para a Garagem" e aparece a data/hora do cálculo original.
+
+Pasta local também sincronizada (mesmo processo manual de cópia de arquivo, pelo mesmo motivo do `.git` com lock — ver seção anterior). Rodar `git fetch && git reset --hard origin/main` localmente ainda é recomendado pra limpar o histórico do git, mas os arquivos já estão certos nos dois lugares.
