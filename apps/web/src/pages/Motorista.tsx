@@ -16,7 +16,7 @@ import {
   type FormMotorista,
 } from '../lib/motorista';
 
-const FORM_VAZIO: FormMotorista = { nome: '', uf_base: '', metaAlvoReais: null };
+const FORM_VAZIO: FormMotorista = { nome: '', uf_base: '', metaAlvoReais: null, cnhNumero: '', cnhVencimento: '' };
 
 export default function Motorista() {
   const navigate = useNavigate();
@@ -97,6 +97,21 @@ export default function Motorista() {
           onChange={(e) => campo('metaAlvoReais', e.target.value === '' ? null : Number(e.target.value))}
           placeholder="Ex.: 5000"
         />
+      </label>
+
+      <label>
+        Número da CNH
+        <input
+          inputMode="numeric"
+          value={form.cnhNumero}
+          onChange={(e) => campo('cnhNumero', e.target.value)}
+          placeholder="Ex.: 12345678900"
+        />
+      </label>
+
+      <label>
+        Vencimento da CNH
+        <input type="date" value={form.cnhVencimento} onChange={(e) => campo('cnhVencimento', e.target.value)} />
       </label>
 
       <div className="garagem-status">

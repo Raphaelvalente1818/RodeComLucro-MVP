@@ -55,6 +55,8 @@ export default function Garagem() {
           media_lucro_frete_centavos: null,
           canal_wa_ativo: Boolean(claims.telefone_verificado) && false,
           telefone_verificado: Boolean(claims.telefone_verificado),
+          cnh_numero: null,
+          cnh_vencimento: null,
         },
       );
       setAnalises(ultimas);
