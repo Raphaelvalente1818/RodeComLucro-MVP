@@ -79,3 +79,26 @@ Codei e subi a tela Garagem (commit `7063aa5`, já em `main`, Vercel deve fazer 
 **Não incluído nesta rodada** (fica pra depois, por decisão de escopo): fila offline-first (IndexedDB) — a Garagem/Motorista ainda gravam direto no Supabase, igual o resto do calc-app hoje.
 
 **Pendência que continua em aberto**: a pasta local `D:\RodeComLucro-MVP` segue desatualizada (ver seção "ATENÇÃO" acima) — o código novo está no GitHub, mas pra rodar/ver localmente é preciso reconciliar a pasta primeiro.
+
+
+## Atualização — 05/08: pasta local reconciliada (com ressalva sobre o .git)
+
+Copiei o conteúdo atual do GitHub (`ac9f6fa`) por cima da pasta local `D:\RodeComLucro-MVP` — os arquivos agora batem 100% com o repositório (conferido com `diff -rq`), incluindo a Garagem e o cadastro do motorista.
+
+**Como foi feito**: não usei `git pull` direto na pasta local porque o `.git` dela deu erro persistente de permissão ao criar/apagar lock files (`index.lock`, `HEAD.lock`) — parece uma limitação do jeito que essa pasta do Windows fica montada no meu sandbox, não um problema do repositório em si. Copiei os arquivos manualmente por cima (preservando tudo que já existia) e tentei sincronizar o `.git` também, mas essa parte ficou inconsistente pelo mesmo motivo.
+
+**Ressalva importante**: os arquivos estão certos, mas o `.git` da pasta local pode estar num estado estranho (`git status` pode mostrar coisa esquisita). Pra deixar isso limpo, rode localmente (fora do Cowork, no PowerShell/CMD/terminal do Claude Code — lá não deve ter esse problema de permissão):
+
+```
+cd D:\RodeComLucro-MVP
+git fetch origin
+git reset --hard origin/main
+```
+
+Isso é seguro: como os arquivos já estão idênticos ao GitHub, esse comando só arruma o histórico do git, não perde nada.
+
+**O que foi preservado e ainda está lá, fora do controle do git** (revisar e descartar quando quiser):
+- `_legado-pre-sync/otp-solicitar-index-local-31jul.ts` — uma versão antiga e diferente do `otp-solicitar/index.ts`, que existia solta na pasta (não rastreada) e nunca foi commitada em lugar nenhum.
+- `supabase/migrations/20260731120000_identidade_schema.sql` e `20260731120100_identidade_trigger_hook.sql` — duas migrations com nomenclatura de timestamp (padrão Supabase CLI), diferentes das migrations `000N_*.sql` que estão no GitHub. Parecem um experimento anterior abandonado — não conflitam com nada, mas valem uma checada.
+- `Fontes-App/` — um clone git aninhado e desatualizado (parado em 27/07). Hoje é redundante, já que a pasta principal está atualizada; pode ser apagado.
+- `mockups/` — já existia, com `garagem_mockup.png` e um `identidade-entrada-verificacao.html`.
