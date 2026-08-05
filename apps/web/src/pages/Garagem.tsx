@@ -57,6 +57,7 @@ export default function Garagem() {
           telefone_verificado: Boolean(claims.telefone_verificado),
           cnh_numero: null,
           cnh_vencimento: null,
+          exame_toxicologico_vencimento: null,
         },
       );
       setAnalises(ultimas);

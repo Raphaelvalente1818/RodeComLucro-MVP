@@ -24,6 +24,7 @@ export interface Motorista {
   cnh_numero: string | null;
   /** Formato ISO (YYYY-MM-DD), como o Postgres devolve uma coluna `date`. */
   cnh_vencimento: string | null;
+  exame_toxicologico_vencimento: string | null;
 }
 
 export interface FormMotorista {
@@ -34,6 +35,7 @@ export interface FormMotorista {
   cnhNumero: string;
   /** Formato YYYY-MM-DD (o que <input type="date"> usa e o Postgres `date` aceita direto). */
   cnhVencimento: string;
+  exameToxicologicoVencimento: string;
 }
 
 export function motoristaParaForm(m: Motorista): FormMotorista {
@@ -43,13 +45,14 @@ export function motoristaParaForm(m: Motorista): FormMotorista {
     metaAlvoReais: m.meta_alvo_centavos != null ? centsToReais(m.meta_alvo_centavos) : null,
     cnhNumero: m.cnh_numero ?? '',
     cnhVencimento: m.cnh_vencimento ?? '',
+    exameToxicologicoVencimento: m.exame_toxicologico_vencimento ?? '',
   };
 }
 
 export async function carregarMotorista(userId: string): Promise<Motorista | null> {
   const { data, error } = await supabase
     .from('motoristas')
-    .select('id, nome, uf_base, meta_alvo_centavos, media_lucro_frete_centavos, canal_wa_ativo, telefone_verificado, cnh_numero, cnh_vencimento')
+    .select('id, nome, uf_base, meta_alvo_centavos, media_lucro_frete_centavos, canal_wa_ativo, telefone_verificado, cnh_numero, cnh_vencimento, exame_toxicologico_vencimento')
     .eq('id', userId)
     .maybeSingle();
   if (error) {
@@ -72,6 +75,7 @@ export async function salvarMotorista(
       meta_alvo_centavos: form.metaAlvoReais != null ? reaisToCents(form.metaAlvoReais) : null,
       cnh_numero: form.cnhNumero.trim() || null,
       cnh_vencimento: form.cnhVencimento || null,
+      exame_toxicologico_vencimento: form.exameToxicologicoVencimento || null,
     })
     .eq('id', userId);
   return { error: error?.message ?? null };
