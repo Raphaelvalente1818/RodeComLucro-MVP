@@ -114,3 +114,8 @@ Pasta local também sincronizada (mesmo processo manual de cópia de arquivo, pe
 ## Atualização — 05/08: Número da CNH e Vencimento da CNH em "Meu perfil"
 
 Commit `b1a031f`: dois campos novos no cadastro do motorista — `cnh_numero` (texto livre, sem validação de formato) e `cnh_vencimento` (data). Migration `0013_motoristas_cnh.sql` já aplicada direto no Supabase (projeto `gastwloozlzthpqhxnzr`) via MCP, e o arquivo commitado no repo pra manter o histórico de migrations completo. Não precisou mexer em RLS/trigger — a guarda de colunas sensíveis em `0003` é uma lista explícita e essas colunas novas não entram nela.
+
+
+## Atualização — 05/08: Validade do Exame Toxicológico em "Meu perfil"
+
+Commit seguinte ao da CNH: campo `exame_toxicologico_vencimento` (date), migration `0014` já aplicada no Supabase. Mesmo padrão dos campos de CNH — sem validação de formato, edição livre pelo motorista.
