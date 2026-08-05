@@ -1,0 +1,145 @@
+// apps/web/src/pages/Garagem.tsx
+//
+// Portal inicial pós-login (substitui Home.tsx). Reúne os três blocos que
+// o motorista usa toda vez que abre o app: analisar frete, perfil do
+// caminhão e perfil do motorista — mais um resumo de meta de lucro e as
+// últimas análises, que já eram salvas silenciosamente em analise_frete
+// mas nunca apareciam em lugar nenhum. Ver Docs/status-sessao.md (04/08)
+// pro contexto da decisão e o mockup que embasou este layout.
+
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabaseClient';
+import { decodeClaims } from '../lib/claims';
+import { fmtBRL } from '@rode/calc';
+import {
+  carregarUltimasAnalises,
+  carregarLucroMesAtual,
+  tempoRelativo,
+  type AnaliseResumo,
+} from '../lib/frete';
+import { carregarMotorista, type Motorista } from '../lib/motorista';
+
+function classeVeredicto(v: AnaliseResumo['veredicto']): string {
+  if (v === 'BOM') return 'badge-veredicto badge-bom';
+  if (v === 'RUIM') return 'badge-veredicto badge-ruim';
+  return 'badge-veredicto badge-aceitavel';
+}
+
+export default function Garagem() {
+  const navigate = useNavigate();
+  const [carregando, setCarregando] = useState(true);
+  const [motorista, setMotorista] = useState<Motorista | null>(null);
+  const [analises, setAnalises] = useState<AnaliseResumo[]>([]);
+  const [lucroMes, setLucroMes] = useState(0);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data }) => {
+      const uid = data.session?.user.id;
+      if (!uid) {
+        navigate('/entrar', { replace: true });
+        return;
+      }
+      const claims = decodeClaims(data.session!.access_token);
+      const [m, ultimas, lucro] = await Promise.all([
+        carregarMotorista(uid),
+        carregarUltimasAnalises(uid, 3),
+        carregarLucroMesAtual(uid),
+      ]);
+      setMotorista(
+        m ?? {
+          id: uid,
+          nome: null,
+          uf_base: null,
+          meta_alvo_centavos: null,
+          media_lucro_frete_centavos: null,
+          canal_wa_ativo: Boolean(claims.telefone_verificado) && false,
+          telefone_verificado: Boolean(claims.telefone_verificado),
+        },
+      );
+      setAnalises(ultimas);
+      setLucroMes(lucro);
+      setCarregando(false);
+    });
+  }, [navigate]);
+
+  if (carregando || !motorista) return null;
+
+  const primeiroNome = motorista.nome?.trim() ? motorista.nome.trim().split(' ')[0] : null;
+  const metaReais = motorista.meta_alvo_centavos != null ? motorista.meta_alvo_centavos / 100 : null;
+  const progresso = metaReais && metaReais > 0 ? Math.min(1, Math.max(0, lucroMes / metaReais)) : null;
+
+  return (
+    <main className="tela tela-garagem">
+      <header className="garagem-header">
+        <div>
+          <p className="garagem-eyebrow">Garagem</p>
+          <h1>Olá{primeiroNome ? `, ${primeiroNome}` : ''}</h1>
+        </div>
+      </header>
+
+      <div className="garagem-status">
+        <span>Base: {motorista.uf_base ?? 'não informada'}</span>
+        <span className={motorista.canal_wa_ativo ? 'sucesso' : 'aviso'}>
+          {motorista.canal_wa_ativo ? 'WhatsApp vinculado' : 'WhatsApp não vinculado'}
+        </span>
+      </div>
+
+      <button type="button" className="cta-primaria" onClick={() => navigate('/analisar')}>
+        <span className="cta-titulo">Analisar frete</span>
+        <span className="cta-subtitulo">Calcular lucro de uma nova rota</span>
+      </button>
+
+      <div className="grid-2">
+        <button type="button" className="card-secundaria" onClick={() => navigate('/perfil')}>
+          <span className="card-eyebrow">Caminhão</span>
+          <span className="card-titulo">Perfil do caminhão</span>
+        </button>
+        <button type="button" className="card-secundaria" onClick={() => navigate('/motorista')}>
+          <span className="card-eyebrow">Perfil</span>
+          <span className="card-titulo">Meu perfil</span>
+        </button>
+      </div>
+
+      {metaReais != null && progresso != null && (
+        <div className="meta-lucro">
+          <div className="meta-lucro-topo">
+            <span>Meta de lucro do mês</span>
+            <b>
+              {fmtBRL(lucroMes)} / {fmtBRL(metaReais)}
+            </b>
+          </div>
+          <div className="barra-progresso">
+            <div className="barra-progresso-preenchida" style={{ width: `${progresso * 100}%` }} />
+          </div>
+        </div>
+      )}
+
+      <section className="ultimas-analises">
+        <div className="ultimas-analises-topo">
+          <h2>Últimas análises</h2>
+        </div>
+
+        {analises.length === 0 ? (
+          <p className="aviso">Você ainda não analisou nenhum frete.</p>
+        ) : (
+          <ul className="lista-analises">
+            {analises.map((a) => (
+              <li key={a.id} className="linha-analise">
+                <div>
+                  <p className="linha-analise-rota">
+                    {a.origem} → {a.destino}
+                  </p>
+                  <p className="linha-analise-detalhe">
+                    {fmtBRL(a.valorFreteCentavos / 100)} · {tempoRelativo(a.createdAt)}
+                  </p>
+                </div>
+                <span className={classeVeredicto(a.veredicto)}>{a.veredicto}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </main>
+  );
+}

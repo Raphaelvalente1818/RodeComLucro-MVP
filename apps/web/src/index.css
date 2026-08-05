@@ -195,3 +195,166 @@ button:disabled {
   border-top: 1px solid #1f2937;
   padding-top: 12px;
 }
+
+.garagem-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.garagem-eyebrow {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #9ca3af;
+  margin: 0 0 4px;
+}
+
+.garagem-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #111827;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #cbd5e1;
+}
+
+.cta-primaria {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  text-align: left;
+  padding: 16px;
+}
+
+.cta-titulo {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.cta-subtitulo {
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.card-secundaria {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  text-align: left;
+  background: #111827;
+  color: #f3f4f6;
+  border: 1px solid #374151;
+  padding: 14px;
+}
+
+.card-eyebrow {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #9ca3af;
+}
+
+.card-titulo {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.meta-lucro {
+  background: #111827;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.meta-lucro-topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #cbd5e1;
+}
+
+.barra-progresso {
+  height: 6px;
+  border-radius: 4px;
+  background: #374151;
+  overflow: hidden;
+}
+
+.barra-progresso-preenchida {
+  height: 100%;
+  background: #3b82f6;
+}
+
+.ultimas-analises-topo h2 {
+  font-size: 15px;
+  margin: 0 0 8px;
+}
+
+.lista-analises {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.linha-analise {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid #1f2937;
+}
+
+.linha-analise-rota {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.linha-analise-detalhe {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 2px 0 0;
+}
+
+.badge-veredicto {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.badge-bom {
+  background: #14301f;
+  color: #4ade80;
+}
+
+.badge-aceitavel {
+  background: #3a2a10;
+  color: #fbbf24;
+}
+
+.badge-ruim {
+  background: #3a1414;
+  color: #f87171;
+}

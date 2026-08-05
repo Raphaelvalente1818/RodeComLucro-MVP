@@ -1,0 +1,68 @@
+// apps/web/src/lib/motorista.ts
+//
+// Helpers da tela "Meu perfil" (cadastro do motorista): nome, UF base e
+// meta de lucro mensal. A linha em public.motoristas já existe desde o
+// primeiro login (trigger on_auth_user_created, ver
+// supabase/migrations/0003_identidade_trigger.sql) — por isso é sempre
+// update, nunca insert/upsert por aqui.
+//
+// canal_wa_ativo e telefone_verificado são só leitura nesta tela: o
+// vínculo real do WhatsApp passa pelo fluxo de código (wa_vinculo), não
+// por um campo editável neste formulário.
+
+import { supabase } from './supabaseClient';
+import { centsToReais, reaisToCents } from '@rode/calc';
+
+export interface Motorista {
+  id: string;
+  nome: string | null;
+  uf_base: string | null;
+  meta_alvo_centavos: number | null;
+  media_lucro_frete_centavos: number | null;
+  canal_wa_ativo: boolean;
+  telefone_verificado: boolean;
+}
+
+export interface FormMotorista {
+  nome: string;
+  uf_base: string;
+  /** Meta de lucro mensal, em reais (a UI trabalha em reais; o banco persiste em centavos). */
+  metaAlvoReais: number | null;
+}
+
+export function motoristaParaForm(m: Motorista): FormMotorista {
+  return {
+    nome: m.nome ?? '',
+    uf_base: m.uf_base ?? '',
+    metaAlvoReais: m.meta_alvo_centavos != null ? centsToReais(m.meta_alvo_centavos) : null,
+  };
+}
+
+export async function carregarMotorista(userId: string): Promise<Motorista | null> {
+  const { data, error } = await supabase
+    .from('motoristas')
+    .select('id, nome, uf_base, meta_alvo_centavos, media_lucro_frete_centavos, canal_wa_ativo, telefone_verificado')
+    .eq('id', userId)
+    .maybeSingle();
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error('carregarMotorista', error);
+    return null;
+  }
+  return data as Motorista | null;
+}
+
+export async function salvarMotorista(
+  userId: string,
+  form: FormMotorista,
+): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from('motoristas')
+    .update({
+      nome: form.nome.trim() || null,
+      uf_base: form.uf_base.trim().toUpperCase() || null,
+      meta_alvo_centavos: form.metaAlvoReais != null ? reaisToCents(form.metaAlvoReais) : null,
+    })
+    .eq('id', userId);
+  return { error: error?.message ?? null };
+}

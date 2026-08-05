@@ -174,3 +174,71 @@ export function explicarVeredicto(r: FreteResultado): string {
   }
   return 'Frete dentro (ou acima) da margem que você queria. Bom negócio.';
 }
+
+export interface AnaliseResumo {
+  id: string;
+  origem: string;
+  destino: string;
+  valorFreteCentavos: number;
+  veredicto: 'BOM' | 'ACEITÁVEL' | 'RUIM';
+  createdAt: string;
+}
+
+/** Últimas N análises do motorista, mais recentes primeiro — usado no bloco "Últimas análises" da Garagem. */
+export async function carregarUltimasAnalises(userId: string, limite = 3): Promise<AnaliseResumo[]> {
+  const { data, error } = await supabase
+    .from('analise_frete')
+    .select('id, origem, destino, valor_frete_centavos, veredicto, created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limite);
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error('carregarUltimasAnalises', error);
+    return [];
+  }
+  return (data ?? []).map((r) => ({
+    id: r.id as string,
+    origem: r.origem as string,
+    destino: r.destino as string,
+    valorFreteCentavos: r.valor_frete_centavos as number,
+    veredicto: r.veredicto as AnaliseResumo['veredicto'],
+    createdAt: r.created_at as string,
+  }));
+}
+
+/** Soma do lucro (em reais) das análises do mês corrente — usado na barra de meta de lucro da Garagem. */
+export async function carregarLucroMesAtual(userId: string): Promise<number> {
+  const inicioMes = new Date();
+  inicioMes.setDate(1);
+  inicioMes.setHours(0, 0, 0, 0);
+
+  const { data, error } = await supabase
+    .from('analise_frete')
+    .select('resultado_snapshot')
+    .eq('user_id', userId)
+    .gte('created_at', inicioMes.toISOString());
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error('carregarLucroMesAtual', error);
+    return 0;
+  }
+  return (data ?? []).reduce((acc, r) => {
+    const snap = r.resultado_snapshot as { lucro?: number } | null;
+    return acc + (snap?.lucro ?? 0);
+  }, 0);
+}
+
+/** Quanto tempo faz desde `iso`, em português curto ("hoje", "há 2 dias", "há 3 semanas"). */
+export function tempoRelativo(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const dias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (dias <= 0) return 'hoje';
+  if (dias === 1) return 'há 1 dia';
+  if (dias < 7) return `há ${dias} dias`;
+  const semanas = Math.floor(dias / 7);
+  if (semanas === 1) return 'há 1 semana';
+  if (semanas < 5) return `há ${semanas} semanas`;
+  const meses = Math.floor(dias / 30);
+  return meses <= 1 ? 'há 1 mês' : `há ${meses} meses`;
+}
