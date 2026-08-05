@@ -173,16 +173,18 @@ export default function Perfil() {
     }
   }
 
-  async function selecionarAno(item: FipeItem) {
-    campo('fipe_codigo_ano', item.codigo);
-    const anoNumero = anoDoItem(item);
-    if (anoNumero) campo('ano', anoNumero);
-
-    if (!form.fipe_codigo_marca || !form.fipe_codigo_modelo) return;
+  /**
+   * Busca o valor FIPE do ano escolhido (+ ano anterior, pra depreciação
+   * real) e aplica no form — respeitando edição manual do motorista.
+   * Compartilhado entre `selecionarAno` (clique no select "Ano de
+   * fabricação") e o autofill automático abaixo (quando o motorista digita
+   * o ano direto no campo "Ano do caminhão", sem passar pelo select).
+   */
+  async function buscarEAplicarValorAno(codigoMarca: string, codigoModelo: string, item: FipeItem, anoNumero: number | null) {
     setCarregandoValor(true);
     setFipeMesReferencia(null);
 
-    const valorAtual = await buscarValorFipe(form.fipe_codigo_marca, form.fipe_codigo_modelo, item.codigo);
+    const valorAtual = await buscarValorFipe(codigoMarca, codigoModelo, item.codigo);
     if (valorAtual) {
       setFipeMesReferencia(valorAtual.mesReferencia);
       if (!valorEditadoManualmente) campo('valor_caminhao', valorAtual.valor);
@@ -191,7 +193,7 @@ export default function Perfil() {
       if (anoNumero) {
         const itemAnoAnterior = anosFipe.find((a) => anoDoItem(a) === anoNumero - 1);
         if (itemAnoAnterior) {
-          const valorAnterior = await buscarValorFipe(form.fipe_codigo_marca, form.fipe_codigo_modelo, itemAnoAnterior.codigo);
+          const valorAnterior = await buscarValorFipe(codigoMarca, codigoModelo, itemAnoAnterior.codigo);
           const kmAno = form.km_rodados_ano;
           if (valorAnterior && kmAno && kmAno > 0 && !depreciacaoEditadaManualmente) {
             const depreciacaoAnual = Math.max(0, valorAtual.valor - valorAnterior.valor);
@@ -202,6 +204,31 @@ export default function Perfil() {
     }
     setCarregandoValor(false);
   }
+
+  async function selecionarAno(item: FipeItem) {
+    campo('fipe_codigo_ano', item.codigo);
+    const anoNumero = anoDoItem(item);
+    if (anoNumero) campo('ano', anoNumero);
+
+    if (!form.fipe_codigo_marca || !form.fipe_codigo_modelo) return;
+    await buscarEAplicarValorAno(form.fipe_codigo_marca, form.fipe_codigo_modelo, item, anoNumero);
+  }
+
+  // Autofill automático do valor/depreciação: cobre o caso de o motorista
+  // digitar o ano direto no campo "Ano do caminhão" (em vez de escolher no
+  // select "Ano de fabricação — Tabela FIPE"), desde que marca e modelo já
+  // tenham vindo de uma sugestão da FIPE e aquele ano exista no catálogo.
+  // Sem isso, quem não percebe/usa o select nunca tinha o valor preenchido
+  // sozinho — foi o que o Emerson reportou no backlog de testes.
+  useEffect(() => {
+    if (!form.fipe_codigo_marca || !form.fipe_codigo_modelo) return;
+    if (!form.ano || anosFipe.length === 0) return;
+    const item = anosFipe.find((a) => anoDoItem(a) === form.ano);
+    if (!item || form.fipe_codigo_ano === item.codigo) return;
+    campo('fipe_codigo_ano', item.codigo);
+    buscarEAplicarValorAno(form.fipe_codigo_marca, form.fipe_codigo_modelo, item, form.ano);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.fipe_codigo_marca, form.fipe_codigo_modelo, form.ano, anosFipe]);
 
   // Recalcula manutencao_por_km por idade do veiculo (categoria do
   // modelo casado no catálogo estático -> taxa por faixa etária)

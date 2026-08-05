@@ -7,7 +7,7 @@
 // mas nunca apareciam em lugar nenhum. Ver Docs/status-sessao.md (04/08)
 // pro contexto da decisão e o mockup que embasou este layout.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { decodeClaims } from '../lib/claims';
@@ -29,6 +29,26 @@ function classeVeredicto(v: AnaliseResumo['veredicto']): string {
   return 'badge-veredicto badge-aceitavel';
 }
 
+interface AlertaVencimento {
+  label: string;
+  data: string;
+  dias: number;
+  vencido: boolean;
+}
+
+/** Dias corridos até `iso` (negativo se já passou). Compara por data, sem hora. */
+function diasAte(iso: string): number {
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const alvo = new Date(`${iso}T00:00:00`);
+  return Math.round((alvo.getTime() - hoje.getTime()) / 86400000);
+}
+
+function fmtDataBR(iso: string): string {
+  const [ano, mes, dia] = iso.split('-');
+  return `${dia}/${mes}/${ano}`;
+}
+
 export default function Garagem() {
   const navigate = useNavigate();
   const [carregando, setCarregando] = useState(true);
@@ -37,6 +57,7 @@ export default function Garagem() {
   const [lucroMes, setLucroMes] = useState(0);
   // PROVISÓRIO — remover junto com o botão/modal de backlog abaixo.
   const [backlogAberto, setBacklogAberto] = useState(false);
+  const [alertaVencimentoAberto, setAlertaVencimentoAberto] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -71,6 +92,22 @@ export default function Garagem() {
     });
   }, [navigate]);
 
+  // Alerta de CNH/exame toxicológico vencendo em até 60 dias (ou já
+  // vencidos). Hook precisa vir antes do "return null" abaixo (regra dos
+  // hooks), por isso trata motorista == null aqui dentro.
+  const alertasVencimento = useMemo<AlertaVencimento[]>(() => {
+    if (!motorista) return [];
+    const itens: AlertaVencimento[] = [];
+    function checar(label: string, iso: string | null) {
+      if (!iso) return;
+      const dias = diasAte(iso);
+      if (dias <= 60) itens.push({ label, data: iso, dias, vencido: dias < 0 });
+    }
+    checar('CNH', motorista.cnh_vencimento);
+    checar('Exame toxicológico', motorista.exame_toxicologico_vencimento);
+    return itens;
+  }, [motorista]);
+
   if (carregando || !motorista) return null;
 
   const primeiroNome = motorista.nome?.trim() ? motorista.nome.trim().split(' ')[0] : null;
@@ -82,7 +119,17 @@ export default function Garagem() {
       <header className="garagem-header">
         <div>
           <p className="garagem-eyebrow">Garagem</p>
-          <h1>Olá{primeiroNome ? `, ${primeiroNome}` : ''}</h1>
+          <h1>
+            Olá{primeiroNome ? `, ${primeiroNome}` : ''}
+            {alertasVencimento.length > 0 && (
+              <button
+                type="button"
+                className={`alerta-vencimento-bolinha ${alertasVencimento.some((a) => a.vencido) ? 'vencido' : 'proximo'}`}
+                aria-label="Documento vencendo — clique para ver detalhes"
+                onClick={() => setAlertaVencimentoAberto((v) => !v)}
+              />
+            )}
+          </h1>
         </div>
         {/* PROVISÓRIO — botão de backlog para os sócios testando o app.
             Remover junto com components/BacklogModal.tsx e lib/backlog.ts. */}
@@ -90,6 +137,19 @@ export default function Garagem() {
           Backlog
         </button>
       </header>
+
+      {alertaVencimentoAberto && alertasVencimento.length > 0 && (
+        <div className="alerta-vencimento-detalhe">
+          {alertasVencimento.map((a) => (
+            <p key={a.label} className={a.vencido ? 'aviso-erro' : 'aviso'}>
+              {a.label}: {a.vencido ? `vencida há ${Math.abs(a.dias)} dia(s)` : `vence em ${a.dias} dia(s)`} ({fmtDataBR(a.data)})
+            </p>
+          ))}
+          <button type="button" className="link-secundario" onClick={() => navigate('/motorista')}>
+            Atualizar em Meu perfil
+          </button>
+        </div>
+      )}
 
       {backlogAberto && <BacklogModal onFechar={() => setBacklogAberto(false)} />}
 

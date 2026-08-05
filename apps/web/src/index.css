@@ -210,6 +210,41 @@ button:disabled {
   margin: 0 0 4px;
 }
 
+.alerta-vencimento-bolinha {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  border-radius: 999px;
+  border: none;
+  vertical-align: middle;
+  margin-left: 8px;
+  cursor: pointer;
+}
+
+.alerta-vencimento-bolinha.proximo {
+  background: #fbbf24;
+}
+
+.alerta-vencimento-bolinha.vencido {
+  background: #f87171;
+}
+
+.alerta-vencimento-detalhe {
+  background: #111827;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.alerta-vencimento-detalhe p {
+  margin: 0;
+  font-size: 13px;
+}
+
 .garagem-status {
   display: flex;
   align-items: center;

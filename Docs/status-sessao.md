@@ -149,3 +149,15 @@ Migration `0016` já aplicada no Supabase.
 Criado um mural de backlog provisório pra Raphael e os outros 3 sócios registrarem bugs/sugestões enquanto testam o app: botão "Backlog" no header da Garagem abre um modal com Nome/Página/Problema-Sugestão/Observação e toggle Aberto↔Feito. Tudo marcado como `PROVISÓRIO` em `lib/backlog.ts`, `components/BacklogModal.tsx`, `Garagem.tsx`, `index.css` e na migration `20260805200031_backlog_provisorio_schema.sql` — apagar tudo isso (arquivos, trechos marcados e `drop table backlog_provisorio`) quando o MVP acabar.
 
 **Combinado com o Raphael**: além desse formulário, backlog também vai ser registrado direto aqui no chat (ele me conta um problema/sugestão na conversa). Então, daqui pra frente, ao revisar/planejar backlog, considerar as DUAS fontes: (1) a tabela `backlog_provisorio` no Supabase, (2) o que foi dito nas conversas do Cowork. Vale perguntar ao Raphael se ele quer que eu também grave o que for dito em chat na mesma tabela (unificar as duas fontes), ou se prefere manter separado.
+
+**Decisão**: unificar — backlog dito em chat vai direto pra tabela `backlog_provisorio` também (mesmo mural, sem separar por fonte).
+
+
+## Atualização — 05/08: dois itens de backlog implementados
+
+Dois pontos registrados pelo Raphael via chat, já marcados como `feito` na tabela:
+
+1. **Valor do caminhão via FIPE nem sempre preenchia sozinho** (`Perfil.tsx`). Causa: o autofill só disparava ao escolher o ano no select dedicado "Ano de fabricação (Tabela FIPE)" — se o motorista digitasse o ano direto no campo solto "Ano do caminhão" (sem usar aquele select), o valor nunca era buscado. Corrigido extraindo a busca pra `buscarEAplicarValorAno()` e adicionando um `useEffect` que dispara sozinho assim que marca+modelo (vindos de sugestão da FIPE) e o ano batem com um ano catalogado — não importa por qual campo o ano entrou. Campo `valor_caminhao` continua editável manualmente (guard `valorEditadoManualmente` já existia).
+2. **Alerta de vencimento de CNH/exame toxicológico na Garagem**: bolinha ao lado do "Olá, Nome" (âmbar se vence em até 60 dias, vermelha se já venceu), calculada a partir de `motorista.cnh_vencimento`/`exame_toxicologico_vencimento` (já carregados na Garagem). Clique abre um painel com a mensagem de cada documento vencendo/vencido e um atalho pra "Meu perfil". Não aparece nada se não houver vencimento próximo.
+
+Validado com `tsc --noEmit` limpo. Ainda não commitado/pushado — pasta local segue com o mesmo problema de `.git` desatualizado das rodadas anteriores (ver seções acima); path recomendado é `git add` dos arquivos específicos + `git pull origin main --no-rebase` + `git push`, resolvendo conflitos manualmente se aparecerem (geralmente são só adições puras, sem conflito de conteúdo real).
