@@ -125,16 +125,22 @@ export default function Garagem() {
         ) : (
           <ul className="lista-analises">
             {analises.map((a) => (
-              <li key={a.id} className="linha-analise">
-                <div>
-                  <p className="linha-analise-rota">
-                    {a.origem} → {a.destino}
-                  </p>
-                  <p className="linha-analise-detalhe">
-                    {fmtBRL(a.valorFreteCentavos / 100)} · {tempoRelativo(a.createdAt)}
-                  </p>
-                </div>
-                <span className={classeVeredicto(a.veredicto)}>{a.veredicto}</span>
+              <li key={a.id}>
+                <button
+                  type="button"
+                  className="linha-analise"
+                  onClick={() => navigate(`/resultado/${a.id}`)}
+                >
+                  <div>
+                    <p className="linha-analise-rota">
+                      {a.origem} → {a.destino}
+                    </p>
+                    <p className="linha-analise-detalhe">
+                      {fmtBRL(a.valorFreteCentavos / 100)} · {tempoRelativo(a.createdAt)}
+                    </p>
+                  </div>
+                  <span className={classeVeredicto(a.veredicto)}>{a.veredicto}</span>
+                </button>
               </li>
             ))}
           </ul>

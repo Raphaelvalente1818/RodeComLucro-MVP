@@ -242,3 +242,32 @@ export function tempoRelativo(iso: string): string {
   const meses = Math.floor(dias / 30);
   return meses <= 1 ? 'há 1 mês' : `há ${meses} meses`;
 }
+
+export interface AnaliseCompleta {
+  resultado: FreteResultado;
+  custos: Custos;
+  distanciaEstimada: boolean;
+  caminhaoPerfilId: string | null;
+  createdAt: string;
+}
+
+/** Carrega uma análise salva pelo id — usado pela tela Resultado quando aberta a partir da Garagem (histórico). */
+export async function carregarAnalisePorId(id: string): Promise<AnaliseCompleta | null> {
+  const { data, error } = await supabase
+    .from('analise_frete')
+    .select('resultado_snapshot, custos_snapshot, distancia_estimada, caminhao_perfil_id, created_at')
+    .eq('id', id)
+    .maybeSingle();
+  if (error || !data) {
+    // eslint-disable-next-line no-console
+    if (error) console.error('carregarAnalisePorId', error);
+    return null;
+  }
+  return {
+    resultado: data.resultado_snapshot as FreteResultado,
+    custos: data.custos_snapshot as Custos,
+    distanciaEstimada: Boolean(data.distancia_estimada),
+    caminhaoPerfilId: (data.caminhao_perfil_id as string | null) ?? null,
+    createdAt: data.created_at as string,
+  };
+}

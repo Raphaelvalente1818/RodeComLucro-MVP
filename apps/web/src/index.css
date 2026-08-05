@@ -320,8 +320,20 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  width: 100%;
   padding: 10px 0;
+  border: none;
   border-top: 1px solid #1f2937;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.linha-analise:hover {
+  background: #111827;
 }
 
 .linha-analise-rota {
