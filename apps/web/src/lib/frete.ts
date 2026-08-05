@@ -33,6 +33,11 @@ export interface CaminhaoPerfil {
   uf_base: string | null;
   ano: number | null;
   valor_caminhao: number | null;
+  fipe_codigo_marca: string | null;
+  fipe_codigo_modelo: string | null;
+  fipe_codigo_ano: string | null;
+  /** Km rodados por ano — usado para converter depreciação anual (FIPE) em R$/km. */
+  km_rodados_ano: number | null;
 }
 
 export const PERFIL_DEFAULT: Omit<CaminhaoPerfil, 'id' | 'user_id'> = {
@@ -55,6 +60,10 @@ export const PERFIL_DEFAULT: Omit<CaminhaoPerfil, 'id' | 'user_id'> = {
   uf_base: null,
   ano: null,
   valor_caminhao: null,
+  fipe_codigo_marca: null,
+  fipe_codigo_modelo: null,
+  fipe_codigo_ano: null,
+  km_rodados_ano: 120000,
 };
 
 export async function carregarPerfil(userId: string): Promise<CaminhaoPerfil | null> {

@@ -3,21 +3,39 @@
 // Tela 3 do calc-app (Fase 1): dados do caminhão (consumo, custos/km,
 // margem desejada) usados como default na tela Analisar. Upsert único por
 // user_id (um perfil por motorista, por enquanto).
+//
+// Marca -> Modelo -> Ano vem da Tabela FIPE (lib/fipe.ts): é a FIPE que
+// restringe de verdade as opções ao que existiu no mercado — a lista de
+// anos é por MODELO (não um intervalo genérico). Ordem real da FIPE é
+// marca->modelo->ano (não marca->ano->modelo: a API não tem esse
+// caminho). Ao escolher o ano, preenche sozinho o valor do caminhão (FIPE
+// do ano escolhido) e a depreciação por km (diferença de valor FIPE entre
+// esse ano e o ano anterior do mesmo modelo, dividida pelos km rodados
+// por ano). Consumo de diesel/ARLA e a taxa de manutenção por idade ainda
+// usam o catálogo estático da calculadora do Emerson (@rode/calc),
+// casado por nome com o que a FIPE devolveu — ver encontrarModeloEstatico
+// em lib/fipe.ts. Tudo com fallback manual se a FIPE estiver fora do ar.
 
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { carregarPerfil, salvarPerfil, PERFIL_DEFAULT, type CaminhaoPerfil } from '../lib/frete';
-import { caminhoes, marcas, type ModeloCaminhao } from '@rode/calc';
+import type { ModeloCaminhao } from '@rode/calc';
+import {
+  buscarMarcasFipe,
+  buscarModelosFipe,
+  buscarAnosFipe,
+  buscarValorFipe,
+  anoDoItem,
+  encontrarModeloEstatico,
+  type FipeItem,
+} from '../lib/fipe';
 
 /**
  * Taxas de manutenção por km segundo idade do veículo e categoria do
  * modelo (pesado/semipesado/médio-leve): faixas ≤1, ≤5, ≤10, >10 anos.
  * Extraído de calculadora-experimental (mesma lógica, sem alteração de
- * valores) — recalcula manutencao_por_km automaticamente ao escolher
- * marca+modelo+ano, mas para de mexer assim que o motorista edita o
- * campo na mão (mesmo princípio já usado em dias de viagem/pedágio na
- * tela Analisar).
+ * valores).
  */
 const TAXAS_MANUTENCAO_POR_IDADE: Record<ModeloCaminhao['categoria'], readonly [number, number, number, number]> = {
   pesado: [0.2, 0.35, 0.5, 0.7],
@@ -38,13 +56,23 @@ export default function Perfil() {
 
   const [form, setForm] = useState<FormPerfil>(PERFIL_DEFAULT);
 
-  // Autocomplete marca -> modelo (ver Docs/status-sessao.md, 05/08, pro
-  // contexto: portado da calculadora-experimental do Emerson). Booleans
-  // só controlam quando mostrar a lista de sugestões — o valor de
-  // verdade continua em form.marca/form.modelo.
+  // Autocomplete marca -> modelo -> ano via FIPE. Booleans só controlam
+  // quando mostrar sugestões/select — o valor de verdade continua em
+  // form.marca/form.modelo/form.ano/form.fipe_codigo_*.
   const [marcaConfirmada, setMarcaConfirmada] = useState(false);
   const [modeloConfirmado, setModeloConfirmado] = useState(false);
   const [manutencaoEditadaManualmente, setManutencaoEditadaManualmente] = useState(false);
+  const [valorEditadoManualmente, setValorEditadoManualmente] = useState(false);
+  const [depreciacaoEditadaManualmente, setDepreciacaoEditadaManualmente] = useState(false);
+
+  const [marcasFipe, setMarcasFipe] = useState<FipeItem[]>([]);
+  const [modelosFipe, setModelosFipe] = useState<FipeItem[]>([]);
+  const [anosFipe, setAnosFipe] = useState<FipeItem[]>([]);
+  const [carregandoModelos, setCarregandoModelos] = useState(false);
+  const [carregandoAnos, setCarregandoAnos] = useState(false);
+  const [carregandoValor, setCarregandoValor] = useState(false);
+  const [avisoFipe, setAvisoFipe] = useState<string | null>(null);
+  const [fipeMesReferencia, setFipeMesReferencia] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -64,6 +92,10 @@ export default function Perfil() {
       }
       setCarregando(false);
     });
+    buscarMarcasFipe().then((lista) => {
+      if (lista.length === 0) setAvisoFipe('Tabela FIPE indisponível agora — digite marca/modelo/ano manualmente.');
+      setMarcasFipe(lista);
+    });
   }, [navigate]);
 
   function campo<K extends keyof FormPerfil>(chave: K, valor: FormPerfil[K]) {
@@ -71,50 +103,113 @@ export default function Perfil() {
     setSalvo(false);
   }
 
+  // Modelos da marca escolhida, buscados uma vez quando o código FIPE da marca muda.
+  useEffect(() => {
+    if (!form.fipe_codigo_marca) {
+      setModelosFipe([]);
+      return;
+    }
+    setCarregandoModelos(true);
+    buscarModelosFipe(form.fipe_codigo_marca).then((lista) => {
+      setModelosFipe(lista);
+      setCarregandoModelos(false);
+    });
+  }, [form.fipe_codigo_marca]);
+
+  // Anos realmente disponíveis PARA AQUELE MODELO — buscados quando o código FIPE do modelo muda.
+  useEffect(() => {
+    if (!form.fipe_codigo_marca || !form.fipe_codigo_modelo) {
+      setAnosFipe([]);
+      return;
+    }
+    setCarregandoAnos(true);
+    buscarAnosFipe(form.fipe_codigo_marca, form.fipe_codigo_modelo).then((lista) => {
+      setAnosFipe(lista);
+      setCarregandoAnos(false);
+    });
+  }, [form.fipe_codigo_marca, form.fipe_codigo_modelo]);
+
   const sugestoesMarca = useMemo(() => {
     if (marcaConfirmada || !form.marca || form.marca.length < 1) return [];
     const q = form.marca.toLowerCase();
-    return marcas.filter((m) => m.toLowerCase().includes(q)).slice(0, 6);
-  }, [form.marca, marcaConfirmada]);
+    return marcasFipe.filter((m) => m.nome.toLowerCase().includes(q)).slice(0, 6);
+  }, [form.marca, marcaConfirmada, marcasFipe]);
 
   const sugestoesModelo = useMemo(() => {
-    if (!form.marca || modeloConfirmado || !form.modelo || form.modelo.length < 1) return [];
+    if (!form.fipe_codigo_marca || modeloConfirmado || !form.modelo || form.modelo.length < 1) return [];
     const q = form.modelo.toLowerCase();
-    const lista = caminhoes[form.marca] ?? [];
-    return lista.filter((m) => m.modelo.toLowerCase().includes(q)).slice(0, 6);
-  }, [form.marca, form.modelo, modeloConfirmado]);
+    return modelosFipe.filter((m) => m.nome.toLowerCase().includes(q)).slice(0, 8);
+  }, [form.fipe_codigo_marca, form.modelo, modeloConfirmado, modelosFipe]);
 
   const placeholderModelo = useMemo(() => {
-    if (!form.marca) return 'Selecione uma marca primeiro';
-    const lista = caminhoes[form.marca] ?? [];
-    if (lista.length === 0) return 'Digite o modelo';
-    return lista.slice(0, 3).map((m) => m.modelo).join(', ') + '...';
-  }, [form.marca]);
+    if (!form.fipe_codigo_marca) return 'Selecione uma marca primeiro';
+    if (carregandoModelos) return 'Carregando modelos da FIPE...';
+    if (modelosFipe.length === 0) return 'Digite o modelo';
+    return modelosFipe.slice(0, 2).map((m) => m.nome).join(', ') + '...';
+  }, [form.fipe_codigo_marca, carregandoModelos, modelosFipe]);
 
-  function selecionarMarca(m: string) {
-    campo('marca', m);
+  function selecionarMarca(item: FipeItem) {
+    campo('marca', item.nome);
+    campo('fipe_codigo_marca', item.codigo);
     setMarcaConfirmada(true);
     campo('modelo', null);
+    campo('fipe_codigo_modelo', null);
+    campo('fipe_codigo_ano', null);
     setModeloConfirmado(false);
   }
 
-  function selecionarModelo(item: ModeloCaminhao) {
-    campo('modelo', item.modelo);
+  function selecionarModelo(item: FipeItem) {
+    campo('modelo', item.nome);
+    campo('fipe_codigo_modelo', item.codigo);
+    campo('fipe_codigo_ano', null);
     setModeloConfirmado(true);
-    campo('diesel_km_por_lt', item.consumoDieselKmL);
-    if (item.consumoArlaKmL !== null) {
-      campo('arla_km_por_lt', item.consumoArlaKmL);
-    }
     setManutencaoEditadaManualmente(false);
+
+    // Best-effort: casa com o catálogo estático (Emerson) pra sugerir consumo — se não achar, fica no que já estava.
+    const match = encontrarModeloEstatico(form.marca ?? item.nome, item.nome);
+    if (match) {
+      campo('diesel_km_por_lt', match.consumoDieselKmL);
+      if (match.consumoArlaKmL !== null) campo('arla_km_por_lt', match.consumoArlaKmL);
+    }
   }
 
-  // Recalcula manutencao_por_km por idade do veiculo (marca+modelo+ano
-  // -> categoria do modelo -> taxa por faixa etária) enquanto o
-  // motorista não tiver editado o campo na mão.
+  async function selecionarAno(item: FipeItem) {
+    campo('fipe_codigo_ano', item.codigo);
+    const anoNumero = anoDoItem(item);
+    if (anoNumero) campo('ano', anoNumero);
+
+    if (!form.fipe_codigo_marca || !form.fipe_codigo_modelo) return;
+    setCarregandoValor(true);
+    setFipeMesReferencia(null);
+
+    const valorAtual = await buscarValorFipe(form.fipe_codigo_marca, form.fipe_codigo_modelo, item.codigo);
+    if (valorAtual) {
+      setFipeMesReferencia(valorAtual.mesReferencia);
+      if (!valorEditadoManualmente) campo('valor_caminhao', valorAtual.valor);
+
+      // Depreciação real: valor deste ano menos valor do mesmo modelo um ano mais velho, dividido pelos km/ano.
+      if (anoNumero) {
+        const itemAnoAnterior = anosFipe.find((a) => anoDoItem(a) === anoNumero - 1);
+        if (itemAnoAnterior) {
+          const valorAnterior = await buscarValorFipe(form.fipe_codigo_marca, form.fipe_codigo_modelo, itemAnoAnterior.codigo);
+          const kmAno = form.km_rodados_ano;
+          if (valorAnterior && kmAno && kmAno > 0 && !depreciacaoEditadaManualmente) {
+            const depreciacaoAnual = Math.max(0, valorAtual.valor - valorAnterior.valor);
+            campo('depreciacao_por_km', Math.round((depreciacaoAnual / kmAno) * 100) / 100);
+          }
+        }
+      }
+    }
+    setCarregandoValor(false);
+  }
+
+  // Recalcula manutencao_por_km por idade do veiculo (categoria do
+  // modelo casado no catálogo estático -> taxa por faixa etária)
+  // enquanto o motorista não tiver editado o campo na mão.
   useEffect(() => {
     if (manutencaoEditadaManualmente) return;
-    if (!form.marca || !form.modelo || !form.ano) return;
-    const item = (caminhoes[form.marca] ?? []).find((m) => m.modelo === form.modelo);
+    if (!form.ano) return;
+    const item = encontrarModeloEstatico(form.marca, form.modelo);
     if (!item) return;
     const anoAtual = new Date().getFullYear();
     if (form.ano < 1950 || form.ano > anoAtual) return;
@@ -144,12 +239,15 @@ export default function Perfil() {
     <main className="tela tela-perfil">
       <h1>Perfil do caminhão</h1>
 
+      {avisoFipe && <p className="aviso">{avisoFipe}</p>}
+
       <label>
         Marca
         <input
           value={form.marca ?? ''}
           onChange={(e) => {
             campo('marca', e.target.value || null);
+            campo('fipe_codigo_marca', null);
             setMarcaConfirmada(false);
           }}
           placeholder="Volvo, Scania, Mercedes-Benz..."
@@ -157,10 +255,10 @@ export default function Perfil() {
       </label>
       {sugestoesMarca.length > 0 && (
         <ul className="sugestoes-box">
-          {sugestoesMarca.map((m) => (
-            <li key={m}>
-              <button type="button" className="sugestao-item" onClick={() => selecionarMarca(m)}>
-                {m}
+          {sugestoesMarca.map((item) => (
+            <li key={item.codigo}>
+              <button type="button" className="sugestao-item" onClick={() => selecionarMarca(item)}>
+                {item.nome}
               </button>
             </li>
           ))}
@@ -171,9 +269,10 @@ export default function Perfil() {
         Modelo
         <input
           value={form.modelo ?? ''}
-          disabled={!form.marca}
+          disabled={!form.fipe_codigo_marca}
           onChange={(e) => {
             campo('modelo', e.target.value || null);
+            campo('fipe_codigo_modelo', null);
             setModeloConfirmado(false);
           }}
           placeholder={placeholderModelo}
@@ -182,16 +281,43 @@ export default function Perfil() {
       {sugestoesModelo.length > 0 && (
         <ul className="sugestoes-box">
           {sugestoesModelo.map((item) => (
-            <li key={item.modelo}>
+            <li key={item.codigo}>
               <button type="button" className="sugestao-item" onClick={() => selecionarModelo(item)}>
-                {item.modelo}
+                {item.nome}
               </button>
             </li>
           ))}
         </ul>
       )}
-      {modeloConfirmado && (
+      {modeloConfirmado && encontrarModeloEstatico(form.marca, form.modelo) && (
         <p className="aviso">Consumo de diesel/ARLA preenchido com valor de referência do modelo — edite se souber o real.</p>
+      )}
+
+      {form.fipe_codigo_modelo && (
+        <label>
+          Ano de fabricação (Tabela FIPE)
+          <select
+            value={form.fipe_codigo_ano ?? ''}
+            onChange={(e) => {
+              const item = anosFipe.find((a) => a.codigo === e.target.value);
+              if (item) selecionarAno(item);
+            }}
+          >
+            <option value="">{carregandoAnos ? 'Carregando anos...' : 'Selecione o ano'}</option>
+            {anosFipe.map((item) => (
+              <option key={item.codigo} value={item.codigo}>
+                {item.nome}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      {!carregandoAnos && form.fipe_codigo_modelo && anosFipe.length === 0 && (
+        <p className="aviso">FIPE não tem anos catalogados pra esse modelo — informe o ano manualmente abaixo.</p>
+      )}
+      {carregandoValor && <p className="aviso">Buscando valor de mercado na FIPE...</p>}
+      {fipeMesReferencia && !carregandoValor && (
+        <p className="aviso">Valor e depreciação calculados com a Tabela FIPE de {fipeMesReferencia} — edite se preferir.</p>
       )}
 
       <label>
@@ -223,13 +349,28 @@ export default function Perfil() {
       </label>
 
       <label>
+        Km rodados por ano
+        <input
+          type="number"
+          step="1000"
+          min={0}
+          value={form.km_rodados_ano ?? ''}
+          onChange={(e) => campo('km_rodados_ano', e.target.value === '' ? null : Number(e.target.value))}
+          placeholder="Ex.: 120000"
+        />
+      </label>
+
+      <label>
         Valor do caminhão (R$)
         <input
           type="number"
           step="1000"
           min={0}
           value={form.valor_caminhao ?? ''}
-          onChange={(e) => campo('valor_caminhao', e.target.value === '' ? null : Number(e.target.value))}
+          onChange={(e) => {
+            setValorEditadoManualmente(true);
+            campo('valor_caminhao', e.target.value === '' ? null : Number(e.target.value));
+          }}
           placeholder="Ex.: 250000"
         />
       </label>
@@ -287,8 +428,19 @@ export default function Perfil() {
 
       <label>
         Depreciação (R$/km)
-        <input type="number" step="0.01" value={form.depreciacao_por_km} onChange={(e) => campo('depreciacao_por_km', Number(e.target.value))} />
+        <input
+          type="number"
+          step="0.01"
+          value={form.depreciacao_por_km}
+          onChange={(e) => {
+            setDepreciacaoEditadaManualmente(true);
+            campo('depreciacao_por_km', Number(e.target.value));
+          }}
+        />
       </label>
+      {!depreciacaoEditadaManualmente && fipeMesReferencia && (
+        <p className="aviso">Calculada a partir da variação de valor FIPE entre este ano e o anterior, dividida pelos km/ano.</p>
+      )}
 
       <label>
         Alimentação por dia (R$)
