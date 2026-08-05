@@ -119,3 +119,12 @@ Commit `b1a031f`: dois campos novos no cadastro do motorista — `cnh_numero` (t
 ## Atualização — 05/08: Validade do Exame Toxicológico em "Meu perfil"
 
 Commit seguinte ao da CNH: campo `exame_toxicologico_vencimento` (date), migration `0014` já aplicada no Supabase. Mesmo padrão dos campos de CNH — sem validação de formato, edição livre pelo motorista.
+
+
+## Atualização — 05/08: autocomplete de marca/modelo no Perfil do caminhão
+
+Commit `8e395a5`: portei o autocomplete marca→modelo da calculadora-experimental do Emerson (github.com/emerson1001a/calculadora-experimental, `src/data/caminhoes.ts` + `src/screens/PerfilCaminhaoScreen.tsx`) — catálogo de 8 marcas com seus modelos, consumo de diesel/ARLA de referência e categoria (pesado/semipesado/médio-leve). Ao digitar a marca, sugere; ao escolher e digitar o modelo, sugere filtrado; ao escolher o modelo, preenche consumo de diesel/ARLA. A manutenção por km também se ajusta sozinha pela idade do veículo (marca+modelo+ano → categoria → taxa por faixa etária), enquanto o motorista não editar na mão.
+
+**Correção de memória importante**: o Raphael lembrava que o ANO carregava os modelos disponíveis daquela marca+ano. Fui checar o código-fonte original antes de implementar e isso não é real — o ano nunca filtrou modelos lá, só a marca filtra. O ano entra numa conta separada (auto-ajuste de manutenção por idade do veículo). Implementei o comportamento real, não a lembrança, e documentei a diferença no código (`Perfil.tsx`) e aqui.
+
+Migration `0015`: colunas `marca`/`modelo` em `caminhao_perfil` (já aplicada no Supabase), pra lembrar a seleção da próxima vez. Catálogo vive em `packages/rode-calc/src/caminhoes.ts` (exportado pelo pacote, não só pelo app) pra poder ser reaproveitado pelo calc-wpp quando esse módulo começar.
