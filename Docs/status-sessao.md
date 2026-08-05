@@ -109,3 +109,8 @@ Isso é seguro: como os arquivos já estão idênticos ao GitHub, esse comando s
 Implementado (commit `7cc57cb`): clicar numa linha de "Últimas análises" na Garagem agora navega para `/resultado/:id` e mostra a tela de Resultado com os dados exatos daquele cálculo (custos, veredicto, detalhamento) — carregados de `resultado_snapshot`/`custos_snapshot` no banco, não recalculados. Nesse modo, o botão Salvar vira "Voltar para a Garagem" e aparece a data/hora do cálculo original.
 
 Pasta local também sincronizada (mesmo processo manual de cópia de arquivo, pelo mesmo motivo do `.git` com lock — ver seção anterior). Rodar `git fetch && git reset --hard origin/main` localmente ainda é recomendado pra limpar o histórico do git, mas os arquivos já estão certos nos dois lugares.
+
+
+## Atualização — 05/08: Número da CNH e Vencimento da CNH em "Meu perfil"
+
+Commit `b1a031f`: dois campos novos no cadastro do motorista — `cnh_numero` (texto livre, sem validação de formato) e `cnh_vencimento` (data). Migration `0013_motoristas_cnh.sql` já aplicada direto no Supabase (projeto `gastwloozlzthpqhxnzr`) via MCP, e o arquivo commitado no repo pra manter o histórico de migrations completo. Não precisou mexer em RLS/trigger — a guarda de colunas sensíveis em `0003` é uma lista explícita e essas colunas novas não entram nela.
