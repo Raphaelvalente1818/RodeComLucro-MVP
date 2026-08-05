@@ -128,3 +128,17 @@ Commit `8e395a5`: portei o autocomplete marca→modelo da calculadora-experiment
 **Correção de memória importante**: o Raphael lembrava que o ANO carregava os modelos disponíveis daquela marca+ano. Fui checar o código-fonte original antes de implementar e isso não é real — o ano nunca filtrou modelos lá, só a marca filtra. O ano entra numa conta separada (auto-ajuste de manutenção por idade do veículo). Implementei o comportamento real, não a lembrança, e documentei a diferença no código (`Perfil.tsx`) e aqui.
 
 Migration `0015`: colunas `marca`/`modelo` em `caminhao_perfil` (já aplicada no Supabase), pra lembrar a seleção da próxima vez. Catálogo vive em `packages/rode-calc/src/caminhoes.ts` (exportado pelo pacote, não só pelo app) pra poder ser reaproveitado pelo calc-wpp quando esse módulo começar.
+
+
+## Atualização — 05/08: Tabela FIPE integrada (marca→modelo→ano + depreciação real)
+
+Commit `5c7e1d1`. O Raphael pediu pra restringir os modelos por ano de fabricação (ideia original: marca → ano → modelo). Investiguei a API da FIPE (via parallelum.com.br/fipe/api, testado direto no banco com a extensão `http` antes de codar, pra confirmar o formato real das respostas — não por suposição) e a ordem real dela é marca → modelo → ano (o endpoint de modelo é quem lista os anos realmente catalogados pra aquele modelo específico; não existe um caminho marca→ano→modelo na API). Alinhei isso com ele via pergunta direta antes de construir, e ele optou por integrar a FIPE de qualquer forma (opção "maior esforço").
+
+O que entrou:
+- **Edge Function `fipe-caminhao`**: proxy pra FIPE com cache de 30 dias (`fipe_cache`), mesmo espírito do `route-cost`.
+- **Perfil.tsx**: Marca (autocomplete FIPE) → Modelo (autocomplete FIPE filtrado pela marca) → Ano (select, só com os anos que a FIPE realmente cataloga pra aquele modelo — é isso que resolve o pedido original de restringir as opções).
+- **Depreciação real**: ao escolher o ano, busca o valor FIPE daquele ano (autopreenche `valor_caminhao`) e do ano anterior do mesmo modelo, calcula a diferença e divide pelos km rodados por ano (campo novo, `km_rodados_ano`) — isso vira `depreciacao_por_km` de verdade, baseada em mercado, em vez de estimativa por faixa etária.
+- Consumo de diesel/ARLA e a taxa de manutenção por idade continuam vindo do catálogo estático da calculadora do Emerson, agora casado por nome com o que a FIPE devolve (`encontrarModeloEstatico` em `lib/fipe.ts`) — a FIPE não tem dado de consumo de combustível, só preço.
+- Tudo com fallback manual se a FIPE estiver fora do ar (nunca trava o cadastro).
+
+Migration `0016` já aplicada no Supabase.
