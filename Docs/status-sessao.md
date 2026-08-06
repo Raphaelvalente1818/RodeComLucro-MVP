@@ -178,3 +178,8 @@ Importado 1:1 (mesmos valores) pra `packages/rode-calc/src/tiposCaminhao.ts` (ex
 **Importante, checado no código do Emerson antes de implementar**: esses dois campos são só perfil/UX lá — a fórmula de piso ANTT usa só `numeroEixos`, não filtra por tipo de carroceria/carga. Mantive igual aqui (`pisoANTT.ts` não mudou). Isso deixa a base pronta pro TODO que já estava registrado em `pisoANTT.ts` (tabela ANTT por tipo de carga — granel sólido, granel líquido, frigorificada, conteinerizada — que ainda não foi levantada), mas essa extensão da fórmula continua pendente, não foi feita agora.
 
 Validado com `tsc --noEmit` limpo. Ainda não commitado/pushado.
+
+
+## Atualização — 06/08: ícones nos cards da Garagem
+
+Pedido rápido do Raphael (backlog dado direto no chat, já registrado como `feito`): nos dois cards da Garagem, trocar o texto e adicionar um ícone. `Garagem.tsx` — card "Perfil do caminhão" virou "🚛 Meu Caminhão", card "Meu perfil" virou "😊 Meu Perfil" (emoji nativo, sem lib de ícone — o projeto não usa nenhuma). `card-eyebrow` ("Caminhão"/"Perfil") ficou como estava. Validado com `tsc --noEmit` limpo. Ainda não commitado/pushado.

@@ -168,11 +168,11 @@ export default function Garagem() {
       <div className="grid-2">
         <button type="button" className="card-secundaria" onClick={() => navigate('/perfil')}>
           <span className="card-eyebrow">Caminhão</span>
-          <span className="card-titulo">Perfil do caminhão</span>
+          <span className="card-titulo">🚛 Meu Caminhão</span>
         </button>
         <button type="button" className="card-secundaria" onClick={() => navigate('/motorista')}>
           <span className="card-eyebrow">Perfil</span>
-          <span className="card-titulo">Meu perfil</span>
+          <span className="card-titulo">😊 Meu Perfil</span>
         </button>
       </div>
 
