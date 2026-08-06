@@ -161,3 +161,20 @@ Dois pontos registrados pelo Raphael via chat, já marcados como `feito` na tabe
 2. **Alerta de vencimento de CNH/exame toxicológico na Garagem**: bolinha ao lado do "Olá, Nome" (âmbar se vence em até 60 dias, vermelha se já venceu), calculada a partir de `motorista.cnh_vencimento`/`exame_toxicologico_vencimento` (já carregados na Garagem). Clique abre um painel com a mensagem de cada documento vencendo/vencido e um atalho pra "Meu perfil". Não aparece nada se não houver vencimento próximo.
 
 Validado com `tsc --noEmit` limpo. Ainda não commitado/pushado — pasta local segue com o mesmo problema de `.git` desatualizado das rodadas anteriores (ver seções acima); path recomendado é `git add` dos arquivos específicos + `git pull origin main --no-rebase` + `git push`, resolvendo conflitos manualmente se aparecerem (geralmente são só adições puras, sem conflito de conteúdo real).
+
+**Commitado e publicado depois** (dois commits, pelo Raphael no CMD local): `04fa51e` (os dois itens acima) e `cb77b36` (ajuste visual do `<select>`, que não tinha estilo dark — ficava branco/claro, fora do padrão; adicionado `select` nativo com `appearance: none` + seta desenhada via SVG inline no `index.css`).
+
+**Descoberta operacional**: depois do `cb77b36`, a Vercel não criou NENHUM deployment pra esse commit (nem sucesso, nem erro, nem cancelado — sumiu). Um commit vazio (`git commit --allow-empty`) pra forçar o webhook resultou em deployment `Canceled` (a Vercel pula build de commit sem mudança de arquivo relevante). Resolvido com um commit real mínimo (comentário no `index.css`) — aí sim buildou normal. Se isso acontecer de novo: checar o filtro "Status" na aba Deployments da Vercel (esconde `Canceled` por padrão) antes de assumir que o push falhou.
+
+
+## Atualização — 06/08: Tipo de veículo e Tipo de carroceria no Perfil do caminhão
+
+Pedido do Raphael: verificar se a calculadora-experimental do Emerson tinha campo de tipo de caminhão (porta-container, graneleiro etc.) e importar. Achei — são DOIS campos separados lá (`src/types/index.ts` + `src/screens/PerfilCaminhaoScreen.tsx` no repo do Emerson):
+- **Tipo de veículo** (configuração do conjunto): Carreta, Carreta LS, Vanderléia, Carreta 4º eixo, Bitrem 7/9 eixos, Rodotrem (Pesado) · Truck, BiTruck (Médio) · Fiorino, VLC, 3/4, Toco (Leve).
+- **Tipo de carroceria** (o que carrega): Graneleiro, Grade baixa, Prancha, Caçamba, Plataforma (Abertas) · Sider, Baú, Baú Frigorífico, Baú Refrigerado (Fechadas) · Silo, Cegonheiro, Gaiola, Tanque, Bug Porta Container, Munk, Apenas Cavalo, Cavaqueira, Hoper (Especiais).
+
+Importado 1:1 (mesmos valores) pra `packages/rode-calc/src/tiposCaminhao.ts` (exportado pelo pacote, reaproveitável no calc-wpp depois). Migration `20260806162718` adiciona `tipo_veiculo`/`tipo_carroceria` (text, nullable, com check constraint da lista) em `caminhao_perfil`. `Perfil.tsx` ganhou duas seções de chips (clicável pra marcar/desmarcar, agrupado por categoria, visual novo `.chip`/`.chip-ativo` no `index.css`) entre "Apelido" e "Número de eixos" — escolher a carroceria sugere `numero_eixos` (mesmo mapeamento `eixosPorCarroceria` do Emerson), respeitando edição manual do campo.
+
+**Importante, checado no código do Emerson antes de implementar**: esses dois campos são só perfil/UX lá — a fórmula de piso ANTT usa só `numeroEixos`, não filtra por tipo de carroceria/carga. Mantive igual aqui (`pisoANTT.ts` não mudou). Isso deixa a base pronta pro TODO que já estava registrado em `pisoANTT.ts` (tabela ANTT por tipo de carga — granel sólido, granel líquido, frigorificada, conteinerizada — que ainda não foi levantada), mas essa extensão da fórmula continua pendente, não foi feita agora.
+
+Validado com `tsc --noEmit` limpo. Ainda não commitado/pushado.

@@ -20,7 +20,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { carregarPerfil, salvarPerfil, PERFIL_DEFAULT, type CaminhaoPerfil } from '../lib/frete';
-import type { ModeloCaminhao } from '@rode/calc';
+import type { ModeloCaminhao, TipoVeiculo, TipoCarroceria } from '@rode/calc';
+import { VEICULOS, CARROCERIAS, eixosPorCarroceria } from '@rode/calc';
 import {
   buscarMarcasFipe,
   buscarModelosFipe,
@@ -64,6 +65,7 @@ export default function Perfil() {
   const [manutencaoEditadaManualmente, setManutencaoEditadaManualmente] = useState(false);
   const [valorEditadoManualmente, setValorEditadoManualmente] = useState(false);
   const [depreciacaoEditadaManualmente, setDepreciacaoEditadaManualmente] = useState(false);
+  const [eixosEditadoManualmente, setEixosEditadoManualmente] = useState(false);
 
   const [marcasFipe, setMarcasFipe] = useState<FipeItem[]>([]);
   const [modelosFipe, setModelosFipe] = useState<FipeItem[]>([]);
@@ -247,6 +249,23 @@ export default function Perfil() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.marca, form.modelo, form.ano, manutencaoEditadaManualmente]);
 
+  // Selecionar/desselecionar (clique de novo desmarca) tipo de veículo e
+  // carroceria — mesmo padrão de chip do Emerson. Escolher a carroceria
+  // sugere numeroEixos (eixosPorCarroceria), a não ser que o motorista já
+  // tenha editado esse campo na mão.
+  function selecionarTipoVeiculo(op: TipoVeiculo) {
+    campo('tipo_veiculo', form.tipo_veiculo === op ? null : op);
+  }
+
+  function selecionarTipoCarroceria(op: TipoCarroceria) {
+    const novo = form.tipo_carroceria === op ? null : op;
+    campo('tipo_carroceria', novo);
+    if (novo && !eixosEditadoManualmente) {
+      const eixosSugerido = eixosPorCarroceria[novo];
+      if (eixosSugerido !== undefined) campo('numero_eixos', eixosSugerido);
+    }
+  }
+
   async function salvar() {
     if (!userId) return;
     setSalvando(true);
@@ -352,6 +371,48 @@ export default function Perfil() {
         <input value={form.apelido ?? ''} onChange={(e) => campo('apelido', e.target.value)} placeholder="Ex.: Scania vermelha" />
       </label>
 
+      <div className="chip-secao">
+        <p className="chip-secao-titulo">Tipo de veículo</p>
+        {VEICULOS.map(({ categoria, opcoes }) => (
+          <div key={categoria} className="chip-grupo">
+            <p className="chip-grupo-label">{categoria}</p>
+            <div className="chip-grid">
+              {opcoes.map((op) => (
+                <button
+                  key={op}
+                  type="button"
+                  className={`chip ${form.tipo_veiculo === op ? 'chip-ativo' : ''}`}
+                  onClick={() => selecionarTipoVeiculo(op)}
+                >
+                  {op}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="chip-secao">
+        <p className="chip-secao-titulo">Tipo de carroceria</p>
+        {CARROCERIAS.map(({ categoria, opcoes }) => (
+          <div key={categoria} className="chip-grupo">
+            <p className="chip-grupo-label">{categoria}</p>
+            <div className="chip-grid">
+              {opcoes.map((op) => (
+                <button
+                  key={op}
+                  type="button"
+                  className={`chip ${form.tipo_carroceria === op ? 'chip-ativo' : ''}`}
+                  onClick={() => selecionarTipoCarroceria(op)}
+                >
+                  {op}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
       <label>
         Número de eixos
         <input
@@ -359,9 +420,15 @@ export default function Perfil() {
           min={2}
           max={9}
           value={form.numero_eixos}
-          onChange={(e) => campo('numero_eixos', Number(e.target.value))}
+          onChange={(e) => {
+            setEixosEditadoManualmente(true);
+            campo('numero_eixos', Number(e.target.value));
+          }}
         />
       </label>
+      {form.tipo_carroceria && !eixosEditadoManualmente && (
+        <p className="aviso">Sugerido pela carroceria escolhida — edite se souber o real.</p>
+      )}
 
       <label>
         Ano do caminhão

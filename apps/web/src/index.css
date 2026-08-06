@@ -221,6 +221,54 @@ button:disabled {
   padding-top: 12px;
 }
 
+.chip-secao {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chip-secao-titulo {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.chip-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chip-grupo-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  width: auto;
+  background: #111827;
+  color: #cbd5e1;
+  border: 1px solid #374151;
+  border-radius: 999px;
+  font-size: 13px;
+  padding: 7px 14px;
+}
+
+.chip-ativo {
+  background: #14301f;
+  color: #4ade80;
+  border-color: #16a34a;
+}
+
 .garagem-header {
   display: flex;
   align-items: center;

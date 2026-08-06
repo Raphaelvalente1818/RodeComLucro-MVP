@@ -184,6 +184,8 @@ export default function Analisar() {
         fipe_codigo_modelo: null,
         fipe_codigo_ano: null,
         km_rodados_ano: null,
+        tipo_veiculo: null,
+        tipo_carroceria: null,
       },
       dias,
       parseNumeroPtBR(pedagio),
