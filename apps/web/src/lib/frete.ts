@@ -65,7 +65,7 @@ export const PERFIL_DEFAULT: Omit<CaminhaoPerfil, 'id' | 'user_id'> = {
   fipe_codigo_marca: null,
   fipe_codigo_modelo: null,
   fipe_codigo_ano: null,
-  km_rodados_ano: 120000,
+  km_rodados_ano: 100000,
   tipo_veiculo: null,
   tipo_carroceria: null,
 };

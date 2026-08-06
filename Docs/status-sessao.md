@@ -184,4 +184,21 @@ Validado com `tsc --noEmit` limpo. Ainda não commitado/pushado.
 
 Pedido rápido do Raphael (backlog dado direto no chat, já registrado como `feito`): nos dois cards da Garagem, trocar o texto e adicionar um ícone. `Garagem.tsx` — card "Perfil do caminhão" virou "🚛 Meu Caminhão", card "Meu perfil" virou "😊 Meu Perfil" (emoji nativo, sem lib de ícone — o projeto não usa nenhuma). `card-eyebrow` ("Caminhão"/"Perfil") ficou como estava. Validado com `tsc --noEmit` limpo.
 
-**Ajuste em seguida, mesmo dia**: Raphael achou o emoji com "cara de rascunho" e pediu ícone mais profissional, além de tirar o `card-eyebrow` (duplicava "Caminhão"/"Perfil" com o texto novo). Troquei o emoji por SVG inline (`components/IconesCard.tsx`, `IconeCaminhao`/`IconePerfil`, estilo outline igual Lucide/Feather, sem adicionar dependência nova) e removi o `<span className="card-eyebrow">` dos dois cards — cada botão agora mostra só ícone + "Meu Caminhão" / "Meu Perfil". Classe `.card-eyebrow` ficou órfã no CSS (não usada em nenhum TSX agora), deixei por não atrapalhar — pode ser removida numa limpeza futura. Validado com `tsc --noEmit` limpo. Ainda não commitado/pushado.
+**Ajuste em seguida, mesmo dia**: Raphael achou o emoji com "cara de rascunho" e pediu ícone mais profissional, além de tirar o `card-eyebrow` (duplicava "Caminhão"/"Perfil" com o texto novo). Troquei o emoji por SVG inline (`components/IconesCard.tsx`, `IconeCaminhao`/`IconePerfil`, estilo outline igual Lucide/Feather, sem adicionar dependência nova) e removi o `<span className="card-eyebrow">` dos dois cards — cada botão agora mostra só ícone + "Meu Caminhão" / "Meu Perfil". Classe `.card-eyebrow` ficou órfã no CSS (não usada em nenhum TSX agora), deixei por não atrapalhar — pode ser removida numa limpeza futura. Validado com `tsc --noEmit` limpo.
+
+
+## Atualização — 06/08: revisão do backlog aberto + grupo 1 de ajustes rápidos
+
+Revisei os 11 itens abertos que o Emerson tinha registrado (formulário do app), apresentei um resumo agrupado pro Raphael (Perfil do caminhão / Garagem / Cálculo de frete) com uma sugestão de ordem por tamanho/risco. Ele aprovou o grupo 1 ("rápidos, sem ambiguidade") com um ajuste — tirar o item de "KM atual do caminhão" do backlog (decidiu não fazer, não é bug de implementação).
+
+O que entrou:
+- `PERFIL_DEFAULT.km_rodados_ano`: 120.000 → **100.000** (`lib/frete.ts`), pedido do próprio Raphael.
+- `Perfil.tsx`: campo **Apelido** subiu pro topo do formulário (antes era depois do Ano da FIPE) — é a identificação do caminhão pro motorista, faz sentido vir primeiro. Prepara terreno pro item "múltiplos caminhões", que o Emerson já marcou como "no futuro" (não mexi nisso agora).
+- `Resultado.tsx`: depois de salvar uma análise, além de "Análise salva." e "Nova análise", agora aparece um botão **"Voltar para a Garagem"**. Conferi antes de mexer: esse texto já existia em outras telas/estados (histórico, análise não encontrada, tela Analisar), mas não no momento logo após salvar — era só isso que faltava.
+- Item "Incluir o Campo da Km atual do caminhão" **removido** (deletado, não marcado feito) do `backlog_provisorio` a pedido do Raphael.
+
+Itens marcados `feito`: KM anual, Apelido no topo, botão Voltar pós-salvar.
+
+**Ainda em aberto, sem decisão ainda** (grupos 2 a 4 da sugestão que passei pro Raphael): pneu por km calculado pelo nº de eixos (preciso de fórmula/referência — perguntei se pesquiso uma ou se ele passa os valores, ainda sem resposta), depreciação com fallback quando o caminhão não tem match na FIPE, alerta de troca de óleo, alertas de vencimento mais amplos na Garagem (óleo/pneus), lucro do mês por frete executado vs. salvo (precisa de conceito de "status do frete" novo no schema), "Frete a Combinar" com slider, formulário de empresa/contato ao salvar frete, múltiplos caminhões.
+
+Validado com `tsc --noEmit` limpo. Ainda não commitado/pushado.

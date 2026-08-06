@@ -216,7 +216,12 @@ export default function Resultado() {
       ) : (
         <>
           {salvo ? (
-            <p className="sucesso">Análise salva.</p>
+            <>
+              <p className="sucesso">Análise salva.</p>
+              <button type="button" onClick={() => navigate('/')}>
+                Voltar para a Garagem
+              </button>
+            </>
           ) : (
             <button type="button" disabled={salvando} onClick={salvar}>
               {salvando ? 'Salvando...' : 'Salvar análise'}

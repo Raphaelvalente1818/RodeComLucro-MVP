@@ -288,6 +288,11 @@ export default function Perfil() {
       {avisoFipe && <p className="aviso">{avisoFipe}</p>}
 
       <label>
+        Apelido
+        <input value={form.apelido ?? ''} onChange={(e) => campo('apelido', e.target.value)} placeholder="Ex.: Scania vermelha" />
+      </label>
+
+      <label>
         Marca
         <input
           value={form.marca ?? ''}
@@ -365,11 +370,6 @@ export default function Perfil() {
       {fipeMesReferencia && !carregandoValor && (
         <p className="aviso">Valor e depreciação calculados com a Tabela FIPE de {fipeMesReferencia} — edite se preferir.</p>
       )}
-
-      <label>
-        Apelido
-        <input value={form.apelido ?? ''} onChange={(e) => campo('apelido', e.target.value)} placeholder="Ex.: Scania vermelha" />
-      </label>
 
       <div className="chip-secao">
         <p className="chip-secao-titulo">Tipo de veículo</p>
