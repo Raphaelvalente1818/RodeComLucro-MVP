@@ -19,6 +19,7 @@ import {
   type AnaliseResumo,
 } from '../lib/frete';
 import { carregarMotorista, type Motorista } from '../lib/motorista';
+import { IconeCaminhao, IconePerfil } from '../components/IconesCard';
 // PROVISÓRIO — remover esta linha e o bloco marcado abaixo quando os
 // testes de backlog com os sócios acabarem (ver components/BacklogModal.tsx).
 import BacklogModal from '../components/BacklogModal';
@@ -167,12 +168,16 @@ export default function Garagem() {
 
       <div className="grid-2">
         <button type="button" className="card-secundaria" onClick={() => navigate('/perfil')}>
-          <span className="card-eyebrow">Caminhão</span>
-          <span className="card-titulo">🚛 Meu Caminhão</span>
+          <span className="card-titulo card-titulo-icone">
+            <IconeCaminhao />
+            Meu Caminhão
+          </span>
         </button>
         <button type="button" className="card-secundaria" onClick={() => navigate('/motorista')}>
-          <span className="card-eyebrow">Perfil</span>
-          <span className="card-titulo">😊 Meu Perfil</span>
+          <span className="card-titulo card-titulo-icone">
+            <IconePerfil />
+            Meu Perfil
+          </span>
         </button>
       </div>
 

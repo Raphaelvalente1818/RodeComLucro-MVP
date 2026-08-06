@@ -380,6 +380,18 @@ button:disabled {
   font-weight: 700;
 }
 
+.card-titulo-icone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icone-card {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
 .meta-lucro {
   background: #111827;
   border: 1px solid #374151;
