@@ -199,6 +199,19 @@ O que entrou:
 
 Itens marcados `feito`: KM anual, Apelido no topo, botão Voltar pós-salvar.
 
-**Ainda em aberto, sem decisão ainda** (grupos 2 a 4 da sugestão que passei pro Raphael): pneu por km calculado pelo nº de eixos (preciso de fórmula/referência — perguntei se pesquiso uma ou se ele passa os valores, ainda sem resposta), depreciação com fallback quando o caminhão não tem match na FIPE, alerta de troca de óleo, alertas de vencimento mais amplos na Garagem (óleo/pneus), lucro do mês por frete executado vs. salvo (precisa de conceito de "status do frete" novo no schema), "Frete a Combinar" com slider, formulário de empresa/contato ao salvar frete, múltiplos caminhões.
+**Ainda em aberto, sem decisão ainda** (grupos 2 a 4 da sugestão que passei pro Raphael): pneu por km calculado pelo nº de eixos (preciso de fórmula/referência — perguntei se pesquiso uma ou se ele passa os valores, ainda sem resposta), depreciação com fallback quando o caminhão não tem match na FIPE, alerta de troca de óleo, alertas de vencimento mais amplos na Garagem (óleo/pneus), lucro do mês por frete executado vs. salvo (precisa de conceito de "status do frete" novo no schema), formulário de empresa/contato ao salvar frete, múltiplos caminhões.
 
 Validado com `tsc --noEmit` limpo. Ainda não commitado/pushado.
+
+
+## Atualização — 06/08: "A negociar" (Frete a Combinar) em Analisar.tsx
+
+Pedido do Raphael: verificar se a calculadora do Emerson tinha um modo de frete a combinar, e trazer o cálculo. Achei em `src/screens/AnalisarScreen.tsx` do repo do Emerson — modo "A NEGOCIAR": desativa o campo de valor, mostra um slider de margem e calcula o frete mínimo em tempo real (`custoTotal / (1 - margem/100)`), com uma zona verde/amarela/vermelha própria (comparando com o piso ANTT e com uma "margem desejada" que, no código dele, tava hardcoded em 0 — nunca puxava do perfil de verdade).
+
+**Não portei 1:1** — simplifiquei aproveitando o que já tínhamos:
+- Em vez de um slider novo "Margem alvo" duplicado, o modo "A negociar" usa o slider **"Margem desejada"** que já existe na tela — ativar o toggle e mexer nesse slider já recalcula o frete mínimo na hora, sem campo a mais.
+- Em vez do sistema de zona verde/amarela/vermelha paralelo do Emerson, reaproveitei o **veredito BOM/ACEITÁVEL/RUIM** que o motor `calcularFrete` já calcula (rodando o frete mínimo como se fosse o valor ofertado) — mesmas badges/cores que já existem no resto do app, sem lógica duplicada. E, diferente do código do Emerson, aqui a margem desejada usada na comparação é a de verdade (a do formulário), não um valor fixo.
+
+Implementado: botão "A negociar" (reaproveita a classe `.chip`/`.chip-ativo` já criada) ao lado do label "Valor do frete", desativa o input quando ativo, e mostra um painel (`negociar-painel`) com o frete mínimo calculado, o veredito e aviso se ficar abaixo do piso ANTT. `montarCustos()` foi extraído de `calcularEIr()` pra evitar duplicar a montagem do objeto de custos entre o cálculo final e o preview ao vivo (`useMemo` `resultadoNegociar`).
+
+Item "Frete a Combinar" marcado `feito` no backlog. Validado com `tsc --noEmit` limpo. Ainda não commitado/pushado.

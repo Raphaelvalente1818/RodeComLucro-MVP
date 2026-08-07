@@ -269,6 +269,36 @@ button:disabled {
   border-color: #16a34a;
 }
 
+.frete-valor-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #cbd5e1;
+}
+
+.negociar-painel {
+  background: #111827;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.negociar-label {
+  font-size: 13px;
+  color: #cbd5e1;
+  margin: 0;
+}
+
+.negociar-valor {
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0;
+}
+
 .garagem-header {
   display: flex;
   align-items: center;

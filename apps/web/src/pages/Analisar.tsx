@@ -5,9 +5,9 @@
 // distância (route-cost) e o salvamento final dependem de rede, e ambos
 // têm caminho manual/offline-tolerante.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { calcularFrete, parseNumeroPtBR } from '@rode/calc';
+import { calcularFrete, fmtBRL, parseNumeroPtBR, type FreteResultado } from '@rode/calc';
 import { supabase } from '../lib/supabaseClient';
 import {
   carregarPerfil,
@@ -16,6 +16,12 @@ import {
   PERFIL_DEFAULT,
   type CaminhaoPerfil,
 } from '../lib/frete';
+
+function classeVeredicto(v: FreteResultado['veredicto']): string {
+  if (v === 'BOM') return 'badge-veredicto badge-bom';
+  if (v === 'RUIM') return 'badge-veredicto badge-ruim';
+  return 'badge-veredicto badge-aceitavel';
+}
 
 export default function Analisar() {
   const navigate = useNavigate();
@@ -31,6 +37,13 @@ export default function Analisar() {
   const [avisoRota, setAvisoRota] = useState<string | null>(null);
 
   const [valorFrete, setValorFrete] = useState('');
+  // "A negociar" — frete de valor ainda não fechado (importado da
+  // calculadora do Emerson, src/screens/AnalisarScreen.tsx). Em vez de
+  // digitar o valor, calcula o frete mínimo pra bater a "Margem desejada"
+  // (custoTotal / (1 - margem/100)) e reaproveita o próprio veredito
+  // BOM/ACEITÁVEL/RUIM do motor — não precisa de um sistema de zona
+  // verde/amarela/vermelha paralelo como o do Emerson.
+  const [aNegociar, setANegociar] = useState(false);
   const [voltaVazia, setVoltaVazia] = useState(false);
   const [margemDesejada, setMargemDesejada] = useState(20);
   const [dias, setDias] = useState(1);
@@ -152,12 +165,8 @@ export default function Analisar() {
     setPedagio(String(centavosCaminhao / 100));
   }, [pedagioCarroCentavos, numeroEixos, pedagioEditadoManual]);
 
-  function calcularEIr() {
-    const km = parseNumeroPtBR(distanciaKm);
-    const valor = parseNumeroPtBR(valorFrete);
-    if (km <= 0 || valor <= 0) return;
-
-    const custos = perfilParaCustos(
+  function montarCustos() {
+    return perfilParaCustos(
       {
         id: perfil?.id ?? '',
         user_id: userId ?? '',
@@ -190,6 +199,35 @@ export default function Analisar() {
       dias,
       parseNumeroPtBR(pedagio),
     );
+  }
+
+  // Preview ao vivo do modo "A negociar": custo total (valorFrete=0 só
+  // pra extrair custoTotal, que não depende do valor do frete) -> frete
+  // mínimo pra bater a margem desejada -> resultado completo (veredicto,
+  // piso ANTT) rodando o frete mínimo pelo próprio motor de novo.
+  const resultadoNegociar = useMemo(() => {
+    if (!aNegociar) return null;
+    const km = parseNumeroPtBR(distanciaKm);
+    if (km <= 0 || margemDesejada >= 100) return null;
+    const custos = montarCustos();
+    const base = { origem: origem || 'Origem', destino: destino || 'Destino', distanciaKm: km, voltaVazia, margemDesejada, custos, distanciaEstimada, numeroEixos };
+    const { custoTotal } = calcularFrete({ ...base, valorFrete: 0 });
+    const freteMinimo = custoTotal / (1 - margemDesejada / 100);
+    const resultado = calcularFrete({ ...base, valorFrete: freteMinimo });
+    return { freteMinimo, resultado };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    aNegociar, distanciaKm, voltaVazia, margemDesejada, numeroEixos, dieselKmPorLt, dieselPreco,
+    arlaKmPorLt, arlaPreco, pedagio, estacionamento, chapa, manutencaoPorKm, pneusPorKm,
+    depreciacaoPorKm, dias, distanciaEstimada, origem, destino,
+  ]);
+
+  function calcularEIr() {
+    const km = parseNumeroPtBR(distanciaKm);
+    const valor = aNegociar ? (resultadoNegociar?.freteMinimo ?? 0) : parseNumeroPtBR(valorFrete);
+    if (km <= 0 || valor <= 0) return;
+
+    const custos = montarCustos();
 
     const resultado = calcularFrete({
       origem,
@@ -216,7 +254,9 @@ export default function Analisar() {
 
   if (carregando) return null;
 
-  const podeCalcular = parseNumeroPtBR(distanciaKm) > 0 && parseNumeroPtBR(valorFrete) > 0;
+  const podeCalcular =
+    parseNumeroPtBR(distanciaKm) > 0 &&
+    (aNegociar ? Boolean(resultadoNegociar) : parseNumeroPtBR(valorFrete) > 0);
 
   return (
     <main className="tela tela-analisar">
@@ -273,10 +313,45 @@ export default function Analisar() {
 
       {avisoRota && <p className="aviso">{avisoRota}</p>}
 
-      <label>
-        Valor do frete (R$)
-        <input inputMode="decimal" value={valorFrete} onChange={(e) => setValorFrete(e.target.value)} placeholder="Ex.: 8000" />
-      </label>
+      <div className="frete-valor-topo">
+        <span>Valor do frete (R$)</span>
+        <button
+          type="button"
+          className={`chip ${aNegociar ? 'chip-ativo' : ''}`}
+          onClick={() => setANegociar((v) => !v)}
+        >
+          {aNegociar ? '✕ A negociar' : 'A negociar'}
+        </button>
+      </div>
+      <input
+        inputMode="decimal"
+        value={aNegociar ? '' : valorFrete}
+        disabled={aNegociar}
+        onChange={(e) => setValorFrete(e.target.value)}
+        placeholder={aNegociar ? 'Calculado pela margem desejada' : 'Ex.: 8000'}
+      />
+
+      {aNegociar && (
+        <div className="negociar-painel">
+          {!resultadoNegociar ? (
+            <p className="aviso">Informe a distância pra calcular o frete mínimo.</p>
+          ) : (
+            <>
+              <p className="negociar-label">Pra margem de {margemDesejada}%, o frete mínimo é</p>
+              <p className="negociar-valor">{fmtBRL(resultadoNegociar.freteMinimo)}</p>
+              <span className={classeVeredicto(resultadoNegociar.resultado.veredicto)}>
+                {resultadoNegociar.resultado.veredicto}
+              </span>
+              {resultadoNegociar.resultado.abaixoPisoANTT && (
+                <p className="aviso-erro">
+                  Abaixo do piso mínimo ANTT ({fmtBRL(resultadoNegociar.resultado.pisoANTT)})
+                </p>
+              )}
+            </>
+          )}
+          <p className="aviso">Ajuste a "Margem desejada" abaixo pra recalcular na hora.</p>
+        </div>
+      )}
 
       <label className="campo-toggle">
         <input type="checkbox" role="switch" checked={voltaVazia} onChange={(e) => setVoltaVazia(e.target.checked)} />
