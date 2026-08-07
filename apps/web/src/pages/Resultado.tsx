@@ -16,6 +16,13 @@ import type { Custos, FreteResultado } from '@rode/calc';
 import { fmtBRL, fmtPct } from '@rode/calc';
 import { supabase } from '../lib/supabaseClient';
 import { explicarVeredicto, salvarAnalise, carregarAnalisePorId } from '../lib/frete';
+import { carregarMotorista } from '../lib/motorista';
+
+/** Primeiro nome, ou null se vazio — usado pra deixar a saudação da mensagem de WhatsApp mais natural. */
+function primeiroNome(nome: string | null | undefined): string | null {
+  const p = nome?.trim().split(' ')[0];
+  return p || null;
+}
 
 interface EstadoRota {
   resultado?: FreteResultado;
@@ -86,6 +93,17 @@ export default function Resultado() {
   const [empresaNome, setEmpresaNome] = useState('');
   const [contatoNome, setContatoNome] = useState('');
   const [contatoTelefone, setContatoTelefone] = useState('');
+
+  // Nome do motorista (perfil próprio) — usado só pra montar a mensagem
+  // de WhatsApp ("Aqui é o Fulano, motorista"), não pro resto da tela.
+  const [nomeMotorista, setNomeMotorista] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      const uid = data.session?.user.id;
+      if (!uid) return;
+      carregarMotorista(uid).then((m) => setNomeMotorista(m?.nome ?? null));
+    });
+  }, []);
 
   useEffect(() => {
     if (!modoHistorico || !id) return;
@@ -169,6 +187,23 @@ export default function Resultado() {
 
   const cor = CORES[resultado.veredicto];
 
+  // Mensagem pronta pro WhatsApp da empresa: saudação (com o nome do
+  // contato, se tiver) + quem é o motorista + o frete específico (rota +
+  // valor) + as 3 perguntas que importam pra fechar (data, prazo de
+  // pagamento, quem paga o pedágio). Estrutura combinada com o Raphael
+  // antes de codar.
+  function montarMensagemWhatsapp(): string {
+    const nomeContato = primeiroNome(contatoSalvo);
+    const nomeMoto = primeiroNome(nomeMotorista);
+    const saudacao = nomeContato ? `Olá, ${nomeContato}!` : 'Olá!';
+    const apresentacao = nomeMoto ? ` Aqui é o ${nomeMoto}, motorista.` : '';
+    const corpo =
+      ` Vi o frete de ${resultado!.entrada.origem} para ${resultado!.entrada.destino}, valor de ${fmtBRL(
+        resultado!.entrada.valorFrete,
+      )}, e tenho interesse. Pode me passar mais detalhes? Preciso saber a data de coleta, o prazo de pagamento e quem fica responsável pelo pedágio. Fico no aguardo, obrigado!`;
+    return `${saudacao}${apresentacao}${corpo}`;
+  }
+
   return (
     <main className="tela tela-resultado">
       <h1>Resultado</h1>
@@ -188,7 +223,11 @@ export default function Resultado() {
               {' · '}
               <a href={`tel:${telefoneSalvo.replace(/\D/g, '')}`}>Ligar</a>
               {' · '}
-              <a href={`https://wa.me/55${telefoneSalvo.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">
+              <a
+                href={`https://wa.me/55${telefoneSalvo.replace(/\D/g, '')}?text=${encodeURIComponent(montarMensagemWhatsapp())}`}
+                target="_blank"
+                rel="noreferrer"
+              >
                 WhatsApp
               </a>
             </p>

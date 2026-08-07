@@ -253,4 +253,15 @@ O que entrou:
 - `Resultado.tsx`: clicar "Salvar análise" agora abre um modal (novo, genérico — `.modal-overlay`/`.modal-card` no CSS, não confundir com o `.backlog-overlay` provisório) com os 3 campos; o botão "Salvar análise" de dentro do modal é quem de fato chama `salvarAnalise`. Cancelar ou clicar fora fecha sem salvar (bloqueado enquanto `salvando`).
 - No modo histórico (`/resultado/:id`), se a análise tiver algum desses 3 campos preenchidos, aparece um bloco "Contato do frete" logo no topo, com link `tel:` e `wa.me` pro telefone (limpando tudo que não é dígito do número informado).
 
-Item "formulário de empresa/contato ao salvar frete" marcado `feito` no backlog. Validado com `tsc --noEmit` limpo. Ainda não commitado/pushado.
+Item "formulário de empresa/contato ao salvar frete" marcado `feito` no backlog. Validado com `tsc --noEmit` limpo.
+
+
+## Atualização — 07/08: mensagem pronta no link do WhatsApp
+
+Pedido em seguida, mesmo dia: o link "WhatsApp" do bloco "Contato do frete" deveria abrir já com uma mensagem pronta, não uma conversa em branco. Antes de codar, alinhei o texto com o Raphael (ele aprovou):
+
+> Olá, {nome do contato}! Aqui é o {nome do motorista}, motorista. Vi o frete de {origem} para {destino}, valor de {valor do frete}, e tenho interesse. Pode me passar mais detalhes? Preciso saber a data de coleta, o prazo de pagamento e quem fica responsável pelo pedágio. Fico no aguardo, obrigado!
+
+Implementado em `Resultado.tsx`: `montarMensagemWhatsapp()` monta o texto (com fallback pros dois nomes — se o contato ou o motorista não tiverem nome preenchido, a frase correspondente some, sem deixar "Olá, !" quebrado) e vai como `?text=` (URL-encoded) no link `wa.me`. O nome do motorista vem de `carregarMotorista` (novo fetch nessa tela, só pra isso — o resto da tela não precisava do perfil do motorista até agora).
+
+Validado com `tsc --noEmit` limpo. Ainda não commitado/pushado.
