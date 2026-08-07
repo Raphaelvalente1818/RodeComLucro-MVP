@@ -194,7 +194,7 @@ Revisei os 11 itens abertos que o Emerson tinha registrado (formulário do app),
 O que entrou:
 - `PERFIL_DEFAULT.km_rodados_ano`: 120.000 → **100.000** (`lib/frete.ts`), pedido do próprio Raphael.
 - `Perfil.tsx`: campo **Apelido** subiu pro topo do formulário (antes era depois do Ano da FIPE) — é a identificação do caminhão pro motorista, faz sentido vir primeiro. Prepara terreno pro item "múltiplos caminhões", que o Emerson já marcou como "no futuro" (não mexi nisso agora).
-- `Resultado.tsx`: depois de salvar uma análise, além de "Análise salva." e "Nova análise", agora aparece um botão **"Voltar para a Garagem"**. Conferi antes de mexer: esse texto já existia em outras telas/estados (histórico, análise não encontrada, tela Analisar), mas não no momento logo após salvar — era só isso que faltava.
+- `Resultado.tsx`: **"Voltar para a Garagem"** agora aparece assim que o cálculo termina — link secundário ao lado de "Nova análise", visível tanto antes quanto depois de clicar "Salvar análise". (Primeira versão só mostrava depois de salvar; o Raphael apontou com print da tela ao vivo que precisava aparecer antes também, corrigido no mesmo dia.)
 - Item "Incluir o Campo da Km atual do caminhão" **removido** (deletado, não marcado feito) do `backlog_provisorio` a pedido do Raphael.
 
 Itens marcados `feito`: KM anual, Apelido no topo, botão Voltar pós-salvar.

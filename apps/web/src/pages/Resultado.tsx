@@ -216,12 +216,7 @@ export default function Resultado() {
       ) : (
         <>
           {salvo ? (
-            <>
-              <p className="sucesso">Análise salva.</p>
-              <button type="button" onClick={() => navigate('/')}>
-                Voltar para a Garagem
-              </button>
-            </>
+            <p className="sucesso">Análise salva.</p>
           ) : (
             <button type="button" disabled={salvando} onClick={salvar}>
               {salvando ? 'Salvando...' : 'Salvar análise'}
@@ -231,6 +226,9 @@ export default function Resultado() {
 
           <button type="button" className="link-secundario" onClick={() => navigate('/analisar')}>
             Nova análise
+          </button>
+          <button type="button" className="link-secundario" onClick={() => navigate('/')}>
+            Voltar para a Garagem
           </button>
         </>
       )}
