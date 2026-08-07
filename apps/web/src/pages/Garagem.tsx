@@ -15,6 +15,7 @@ import { fmtBRL } from '@rode/calc';
 import {
   carregarUltimasAnalises,
   carregarLucroMesAtual,
+  alternarRealizado,
   tempoRelativo,
   type AnaliseResumo,
 } from '../lib/frete';
@@ -111,6 +112,17 @@ export default function Garagem() {
 
   if (carregando || !motorista) return null;
 
+  // Botão "Realizado" na lista de análises: só fretes marcados como
+  // realmente executados (não só calculados/salvos) entram na soma do
+  // "lucro do mês" — daí recarregar carregarLucroMesAtual() ao alternar.
+  async function alternarRealizadoEAtualizarLucro(a: AnaliseResumo) {
+    setAnalises((prev) => prev.map((x) => (x.id === a.id ? { ...x, realizado: !x.realizado } : x)));
+    const { error } = await alternarRealizado(a.id, a.realizado);
+    if (!error) {
+      setLucroMes(await carregarLucroMesAtual(motorista!.id));
+    }
+  }
+
   const primeiroNome = motorista.nome?.trim() ? motorista.nome.trim().split(' ')[0] : null;
   const metaReais = motorista.meta_alvo_centavos != null ? motorista.meta_alvo_centavos / 100 : null;
   const progresso = metaReais && metaReais > 0 ? Math.min(1, Math.max(0, lucroMes / metaReais)) : null;
@@ -205,7 +217,7 @@ export default function Garagem() {
         ) : (
           <ul className="lista-analises">
             {analises.map((a) => (
-              <li key={a.id}>
+              <li key={a.id} className="linha-analise-item">
                 <button
                   type="button"
                   className="linha-analise"
@@ -220,6 +232,13 @@ export default function Garagem() {
                     </p>
                   </div>
                   <span className={classeVeredicto(a.veredicto)}>{a.veredicto}</span>
+                </button>
+                <button
+                  type="button"
+                  className={a.realizado ? 'realizado-toggle-on' : 'realizado-toggle-off'}
+                  onClick={() => alternarRealizadoEAtualizarLucro(a)}
+                >
+                  {a.realizado ? '✓ Realizado' : 'Marcar como realizado'}
                 </button>
               </li>
             ))}

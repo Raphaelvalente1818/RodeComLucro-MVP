@@ -199,13 +199,15 @@ export interface AnaliseResumo {
   valorFreteCentavos: number;
   veredicto: 'BOM' | 'ACEITÁVEL' | 'RUIM';
   createdAt: string;
+  /** Frete de fato executado (não só calculado/salvo) — só isso conta pro "lucro do mês". */
+  realizado: boolean;
 }
 
 /** Últimas N análises do motorista, mais recentes primeiro — usado no bloco "Últimas análises" da Garagem. */
 export async function carregarUltimasAnalises(userId: string, limite = 3): Promise<AnaliseResumo[]> {
   const { data, error } = await supabase
     .from('analise_frete')
-    .select('id, origem, destino, valor_frete_centavos, veredicto, created_at')
+    .select('id, origem, destino, valor_frete_centavos, veredicto, created_at, realizado')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(limite);
@@ -221,10 +223,28 @@ export async function carregarUltimasAnalises(userId: string, limite = 3): Promi
     valorFreteCentavos: r.valor_frete_centavos as number,
     veredicto: r.veredicto as AnaliseResumo['veredicto'],
     createdAt: r.created_at as string,
+    realizado: Boolean(r.realizado),
   }));
 }
 
-/** Soma do lucro (em reais) das análises do mês corrente — usado na barra de meta de lucro da Garagem. */
+/**
+ * Alterna `realizado` de uma análise — botão "Realizado" na lista da
+ * Garagem. Só fretes com `realizado = true` entram na soma de
+ * `carregarLucroMesAtual`.
+ */
+export async function alternarRealizado(
+  id: string,
+  realizadoAtual: boolean,
+): Promise<{ realizado: boolean; error: string | null }> {
+  const novo = !realizadoAtual;
+  const { error } = await supabase
+    .from('analise_frete')
+    .update({ realizado: novo, realizado_em: novo ? new Date().toISOString() : null })
+    .eq('id', id);
+  return { realizado: novo, error: error?.message ?? null };
+}
+
+/** Soma do lucro (em reais) das análises REALIZADAS do mês corrente — usado na barra de meta de lucro da Garagem. */
 export async function carregarLucroMesAtual(userId: string): Promise<number> {
   const inicioMes = new Date();
   inicioMes.setDate(1);
@@ -234,6 +254,7 @@ export async function carregarLucroMesAtual(userId: string): Promise<number> {
     .from('analise_frete')
     .select('resultado_snapshot')
     .eq('user_id', userId)
+    .eq('realizado', true)
     .gte('created_at', inicioMes.toISOString());
   if (error) {
     // eslint-disable-next-line no-console

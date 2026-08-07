@@ -215,3 +215,19 @@ Pedido do Raphael: verificar se a calculadora do Emerson tinha um modo de frete 
 Implementado: botão "A negociar" (reaproveita a classe `.chip`/`.chip-ativo` já criada) ao lado do label "Valor do frete", desativa o input quando ativo, e mostra um painel (`negociar-painel`) com o frete mínimo calculado, o veredito e aviso se ficar abaixo do piso ANTT. `montarCustos()` foi extraído de `calcularEIr()` pra evitar duplicar a montagem do objeto de custos entre o cálculo final e o preview ao vivo (`useMemo` `resultadoNegociar`).
 
 Item "Frete a Combinar" marcado `feito` no backlog. Validado com `tsc --noEmit` limpo. Ainda não commitado/pushado.
+
+
+## Atualização — 07/08: botão "Realizado" — lucro do mês só conta frete executado
+
+Pedido do Raphael, com print da Garagem ao vivo: o "lucro do mês" somava toda análise SALVA, mesmo que o frete nunca tivesse acontecido de verdade. Pedido específico: um botão "Realizado" em cada frete da lista, e só contar no lucro quando ele for marcado.
+
+Implementado:
+- Migration `20260807141618`: `analise_frete.realizado` (boolean, default `false`) + `realizado_em` (timestamptz, preenchido quando marca). Índice por `(user_id, realizado, created_at desc)`.
+- `lib/frete.ts`: `AnaliseResumo` ganhou `realizado`; `carregarUltimasAnalises` já traz o campo; nova função `alternarRealizado(id, realizadoAtual)` faz o update; `carregarLucroMesAtual` agora filtra `.eq('realizado', true)` além do intervalo do mês.
+- `Garagem.tsx`: cada item da lista "Últimas análises" ganhou um botão "Marcar como realizado" / "✓ Realizado" (pill, mesmo padrão visual do toggle do backlog) — clicar chama `alternarRealizado` e recarrega `carregarLucroMesAtual` na hora, então a barra de meta já atualiza sem precisar recarregar a página. Reestruturei o `<li>` (antes era um `<button>` só, agora é `<li>` com dois botões irmãos — não dá pra aninhar `<button>` dentro de `<button>`).
+
+**Decisão de escopo, não perguntada explicitamente**: "lucro do mês" continua filtrando por `created_at` (quando a análise foi salva) dentro do mês corrente, E agora também por `realizado = true` — não criei um campo separado de "data que o frete foi executado". Ou seja, um frete salvo em julho e marcado como realizado em agosto ainda conta como lucro de julho, não de agosto. Se isso não for o comportamento esperado, é um ajuste pequeno (trocar o filtro pra usar `realizado_em` em vez de `created_at`).
+
+Botão "Realizado" existe só na lista da Garagem por enquanto (não dupliquei na tela Resultado, que também mostra análises salvas em modo histórico — não foi pedido).
+
+Validado com `tsc --noEmit` limpo. Ainda não commitado/pushado.
