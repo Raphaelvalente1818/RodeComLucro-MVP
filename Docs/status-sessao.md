@@ -230,4 +230,14 @@ Implementado:
 
 Botão "Realizado" existe só na lista da Garagem por enquanto (não dupliquei na tela Resultado, que também mostra análises salvas em modo histórico — não foi pedido).
 
+Validado com `tsc --noEmit` limpo.
+
+
+## Atualização — 07/08: KPI "Valor do frete" na tela Resultado
+
+Pedido do Raphael (print da tela ao vivo): faltava mostrar o valor do frete que foi informado/negociado nos KPIs do Resultado. Adicionado `resultado.entrada.valorFrete` como primeiro card, e reordenados os 6 KPIs em 3 linhas de 2 (grid já era `1fr 1fr`, só mudou a ordem):
+Linha 1: Valor do frete · Lucro provável
+Linha 2: Custo estimado · Margem real
+Linha 3: Piso mínimo ANTT · Negocie a partir de
+
 Validado com `tsc --noEmit` limpo. Ainda não commitado/pushado.

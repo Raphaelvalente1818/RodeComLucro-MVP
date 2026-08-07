@@ -169,24 +169,28 @@ export default function Resultado() {
 
       <div className="kpis">
         <div className="kpi">
-          <span>Custo estimado</span>
-          <b>{fmtBRL(resultado.custoTotal)}</b>
+          <span>Valor do frete</span>
+          <b>{fmtBRL(resultado.entrada.valorFrete)}</b>
         </div>
         <div className="kpi">
           <span>{resultado.lucro >= 0 ? 'Lucro provável' : 'Prejuízo provável'}</span>
           <b>{fmtBRL(Math.abs(resultado.lucro))}</b>
         </div>
         <div className="kpi">
+          <span>Custo estimado</span>
+          <b>{fmtBRL(resultado.custoTotal)}</b>
+        </div>
+        <div className="kpi">
           <span>Margem real</span>
           <b>{fmtPct(resultado.margemReal)}</b>
         </div>
         <div className="kpi">
-          <span>Negocie a partir de</span>
-          <b>{fmtBRL(resultado.custoTotal * (1 + resultado.entrada.margemDesejada / 100))}</b>
-        </div>
-        <div className="kpi">
           <span>Piso mínimo ANTT</span>
           <b>{fmtBRL(resultado.pisoANTT)}</b>
+        </div>
+        <div className="kpi">
+          <span>Negocie a partir de</span>
+          <b>{fmtBRL(resultado.custoTotal * (1 + resultado.entrada.margemDesejada / 100))}</b>
         </div>
       </div>
 
