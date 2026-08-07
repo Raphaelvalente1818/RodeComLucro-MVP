@@ -240,4 +240,17 @@ Linha 1: Valor do frete · Lucro provável
 Linha 2: Custo estimado · Margem real
 Linha 3: Piso mínimo ANTT · Negocie a partir de
 
-Validado com `tsc --noEmit` limpo. Ainda não commitado/pushado.
+Validado com `tsc --noEmit` limpo.
+
+
+## Atualização — 07/08: popup de contato ao salvar o frete
+
+Pedido do Raphael, item que já estava no backlog do Emerson: ao clicar "Salvar análise", abrir um popup pedindo empresa, contato e telefone/WhatsApp de quem ofereceu o frete — pra ficar disponível quando o motorista reabrir esse frete salvo depois, pra negociar/fechar.
+
+O que entrou:
+- Migration `20260807143848`: `analise_frete.empresa_nome`, `contato_nome`, `contato_telefone` (text, nullable — nenhum é obrigatório).
+- `lib/frete.ts`: `AnaliseParaSalvar`/`salvarAnalise` gravam os 3 campos; `AnaliseCompleta`/`carregarAnalisePorId` trazem de volta no modo histórico.
+- `Resultado.tsx`: clicar "Salvar análise" agora abre um modal (novo, genérico — `.modal-overlay`/`.modal-card` no CSS, não confundir com o `.backlog-overlay` provisório) com os 3 campos; o botão "Salvar análise" de dentro do modal é quem de fato chama `salvarAnalise`. Cancelar ou clicar fora fecha sem salvar (bloqueado enquanto `salvando`).
+- No modo histórico (`/resultado/:id`), se a análise tiver algum desses 3 campos preenchidos, aparece um bloco "Contato do frete" logo no topo, com link `tel:` e `wa.me` pro telefone (limpando tudo que não é dígito do número informado).
+
+Item "formulário de empresa/contato ao salvar frete" marcado `feito` no backlog. Validado com `tsc --noEmit` limpo. Ainda não commitado/pushado.

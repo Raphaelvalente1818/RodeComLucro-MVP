@@ -141,6 +141,10 @@ export interface AnaliseParaSalvar {
   custos: Custos;
   resultado: FreteResultado;
   caminhaoPerfilId?: string | null;
+  /** Coletados no popup ao clicar "Salvar análise" — pra achar o contato depois. */
+  empresaNome?: string | null;
+  contatoNome?: string | null;
+  contatoTelefone?: string | null;
 }
 
 /**
@@ -170,6 +174,9 @@ export async function salvarAnalise(
       resultado_snapshot: analise.resultado,
       veredicto: analise.resultado.veredicto,
       formula_versao: analise.resultado.formulaVersao,
+      empresa_nome: analise.empresaNome?.trim() || null,
+      contato_nome: analise.contatoNome?.trim() || null,
+      contato_telefone: analise.contatoTelefone?.trim() || null,
     },
     { onConflict: 'id' },
   );
@@ -287,13 +294,18 @@ export interface AnaliseCompleta {
   distanciaEstimada: boolean;
   caminhaoPerfilId: string | null;
   createdAt: string;
+  empresaNome: string | null;
+  contatoNome: string | null;
+  contatoTelefone: string | null;
 }
 
 /** Carrega uma análise salva pelo id — usado pela tela Resultado quando aberta a partir da Garagem (histórico). */
 export async function carregarAnalisePorId(id: string): Promise<AnaliseCompleta | null> {
   const { data, error } = await supabase
     .from('analise_frete')
-    .select('resultado_snapshot, custos_snapshot, distancia_estimada, caminhao_perfil_id, created_at')
+    .select(
+      'resultado_snapshot, custos_snapshot, distancia_estimada, caminhao_perfil_id, created_at, empresa_nome, contato_nome, contato_telefone',
+    )
     .eq('id', id)
     .maybeSingle();
   if (error || !data) {
@@ -307,5 +319,8 @@ export async function carregarAnalisePorId(id: string): Promise<AnaliseCompleta 
     distanciaEstimada: Boolean(data.distancia_estimada),
     caminhaoPerfilId: (data.caminhao_perfil_id as string | null) ?? null,
     createdAt: data.created_at as string,
+    empresaNome: (data.empresa_nome as string | null) ?? null,
+    contatoNome: (data.contato_nome as string | null) ?? null,
+    contatoTelefone: (data.contato_telefone as string | null) ?? null,
   };
 }

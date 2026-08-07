@@ -70,11 +70,22 @@ export default function Resultado() {
     distanciaEstimada?: boolean;
     caminhaoPerfilId?: string | null;
     analisadoEm?: string;
+    empresaNome?: string | null;
+    contatoNome?: string | null;
+    contatoTelefone?: string | null;
   }>(modoHistorico ? {} : estadoRota);
 
   const [salvando, setSalvando] = useState(false);
   const [salvo, setSalvo] = useState(false);
   const [erroSalvar, setErroSalvar] = useState<string | null>(null);
+
+  // Popup de contato (empresa/nome/telefone), aberto ao clicar "Salvar
+  // análise" — pedido do Raphael pra achar o contato depois ao reabrir um
+  // frete salvo.
+  const [mostrarContato, setMostrarContato] = useState(false);
+  const [empresaNome, setEmpresaNome] = useState('');
+  const [contatoNome, setContatoNome] = useState('');
+  const [contatoTelefone, setContatoTelefone] = useState('');
 
   useEffect(() => {
     if (!modoHistorico || !id) return;
@@ -90,6 +101,9 @@ export default function Resultado() {
         distanciaEstimada: achada.distanciaEstimada,
         caminhaoPerfilId: achada.caminhaoPerfilId,
         analisadoEm: achada.createdAt,
+        empresaNome: achada.empresaNome,
+        contatoNome: achada.contatoNome,
+        contatoTelefone: achada.contatoTelefone,
       });
       setCarregandoHistorico(false);
     });
@@ -109,7 +123,7 @@ export default function Resultado() {
     );
   }
 
-  const { resultado, custos, distanciaEstimada, caminhaoPerfilId, analisadoEm } = dados;
+  const { resultado, custos, distanciaEstimada, caminhaoPerfilId, analisadoEm, empresaNome: empresaSalva, contatoNome: contatoSalvo, contatoTelefone: telefoneSalvo } = dados;
 
   if (!resultado || !custos) {
     navigate('/analisar', { replace: true });
@@ -138,11 +152,15 @@ export default function Resultado() {
         custos: custos!,
         resultado: resultado!,
         caminhaoPerfilId,
+        empresaNome,
+        contatoNome,
+        contatoTelefone,
       });
       if (error) {
         setErroSalvar(error);
         return;
       }
+      setMostrarContato(false);
       setSalvo(true);
     } finally {
       setSalvando(false);
@@ -156,6 +174,27 @@ export default function Resultado() {
       <h1>Resultado</h1>
 
       {modoHistorico && analisadoEm && <p className="aviso">Analisado em {fmtDataHora(analisadoEm)}</p>}
+
+      {modoHistorico && (empresaSalva || contatoSalvo || telefoneSalvo) && (
+        <div className="contato-frete">
+          <p className="chip-secao-titulo" style={{ margin: 0 }}>
+            Contato do frete
+          </p>
+          {empresaSalva && <p className="contato-frete-linha">{empresaSalva}</p>}
+          {contatoSalvo && <p className="contato-frete-linha">{contatoSalvo}</p>}
+          {telefoneSalvo && (
+            <p className="contato-frete-linha">
+              {telefoneSalvo}
+              {' · '}
+              <a href={`tel:${telefoneSalvo.replace(/\D/g, '')}`}>Ligar</a>
+              {' · '}
+              <a href={`https://wa.me/55${telefoneSalvo.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">
+                WhatsApp
+              </a>
+            </p>
+          )}
+        </div>
+      )}
 
       <p className="linha-analise-rota" style={{ margin: 0 }}>
         {resultado.entrada.origem} → {resultado.entrada.destino}
@@ -222,8 +261,8 @@ export default function Resultado() {
           {salvo ? (
             <p className="sucesso">Análise salva.</p>
           ) : (
-            <button type="button" disabled={salvando} onClick={salvar}>
-              {salvando ? 'Salvando...' : 'Salvar análise'}
+            <button type="button" disabled={salvando} onClick={() => setMostrarContato(true)}>
+              Salvar análise
             </button>
           )}
           {erroSalvar && <p className="aviso-erro">Não foi possível salvar: {erroSalvar}</p>}
@@ -235,6 +274,36 @@ export default function Resultado() {
             Voltar para a Garagem
           </button>
         </>
+      )}
+
+      {mostrarContato && (
+        <div className="modal-overlay" onClick={() => !salvando && setMostrarContato(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <h2>Contato do frete</h2>
+            <p className="aviso" style={{ margin: 0 }}>
+              Fica salvo com essa análise, pra você achar o contato depois.
+            </p>
+            <label>
+              Empresa
+              <input value={empresaNome} onChange={(e) => setEmpresaNome(e.target.value)} placeholder="Nome da empresa" />
+            </label>
+            <label>
+              Contato
+              <input value={contatoNome} onChange={(e) => setContatoNome(e.target.value)} placeholder="Nome da pessoa" />
+            </label>
+            <label>
+              Telefone / WhatsApp
+              <input value={contatoTelefone} onChange={(e) => setContatoTelefone(e.target.value)} placeholder="(11) 91234-5678" />
+            </label>
+            {erroSalvar && <p className="aviso-erro">Não foi possível salvar: {erroSalvar}</p>}
+            <button type="button" disabled={salvando} onClick={salvar}>
+              {salvando ? 'Salvando...' : 'Salvar análise'}
+            </button>
+            <button type="button" className="link-secundario" disabled={salvando} onClick={() => setMostrarContato(false)}>
+              Cancelar
+            </button>
+          </div>
+        </div>
       )}
     </main>
   );
