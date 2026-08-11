@@ -318,6 +318,16 @@ Pedido do Raphael, em cima da tela anterior: "precisa ter a cidade que o motoris
 
 Validado com `tsc --noEmit` limpo em `apps/web`. Conferido no banco: `municipios_brasil` com 5.571 linhas, `fretes_publicados` com 796/800 com coordenada (bate com o relatado na etapa de dados). Ainda não commitado/pushado.
 
+## Atualização — 11/08 (6): bug real no autocomplete de cidade — "São Paulo SP" não encontrava nada
+
+O Raphael testou no site publicado e digitou "sao paulo sp" em "Minha cidade agora" — nenhuma sugestão aparecia, então a cidade nunca ficava selecionada, o seletor de raio nunca aparecia, e sobrava só o filtro de Destino visível (parecia que o app só perguntava o estado de destino).
+
+Causa: `buscarMunicipios` (lib/municipios.ts) buscava `nome_norm ilike '<tudo que foi digitado>%'`, mas `nome_norm` só guarda o nome do município, sem a UF — "sao paulo sp" nunca é prefixo de "sao paulo". O placeholder do campo ("Ex.: Sinop/MT") sugeria digitar cidade+UF junto, mas a busca não sabia separar isso.
+
+Corrigido: nova função `extrairCidadeEUf()` separa "Cidade/UF" (com barra) ou "Cidade UF" (com espaço, reconhecendo a sigla contra `UFS_BRASIL`) antes de buscar — a UF, quando reconhecida, também filtra o resultado (`eq('uf', ...)`), o que de quebra resolve a ambiguidade de cidades homônimas (existem 4 "São Paulo" no Brasil — capital/SP, e outras em RS, AM, RN). Sem UF reconhecida, continua buscando só pelo nome, como antes.
+
+Conferido no banco que "São Paulo"/SP existe em `municipios_brasil` (lat -23.5329, lng -46.6395) e que o filtro por UF agora isola ela das outras 3 homônimas. `tsc --noEmit` limpo. Ainda não commitado/pushado.
+
 ## Atualização — 11/08 (3): tela "Buscar frete" no app do motorista
 
 Pedido do Raphael: "pode seguir" (na tela busca frete, combinado na atualização anterior).

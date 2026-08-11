@@ -231,7 +231,7 @@ export default function BuscarFrete() {
               f.tiposVeiculoAceitos.includes(tipoVeiculoPerfil as TipoVeiculo);
             return (
               <li key={f.id} className="linha-analise-item">
-                <div className="linha-analise">
+                <div className="frete-linha">
                   <div>
                     <p className="linha-analise-rota">
                       {f.origemCidade}/{f.origemUf} → {f.destinoCidade}/{f.destinoUf}

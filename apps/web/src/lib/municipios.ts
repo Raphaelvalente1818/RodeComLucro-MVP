@@ -11,6 +11,7 @@
 // lib/frete.ts pra pedágio/km) numa lista inteira de fretes de uma vez só.
 
 import { supabase } from './supabaseClient';
+import { UFS_BRASIL } from './fretesPublicados';
 
 export interface Municipio {
   nome: string;
@@ -27,16 +28,45 @@ function normalizar(s: string): string {
     .replace(/[̀-ͯ]/g, '');
 }
 
-/** Sugestões de cidade pra autocomplete — busca por prefixo do nome normalizado (minúsculo, sem acento). */
-export async function buscarMunicipios(consulta: string, limite = 8): Promise<Municipio[]> {
-  const termo = normalizar(consulta);
+/**
+ * Separa "Cidade/UF" ou "Cidade UF" digitado num campo só. `nome_norm` no
+ * banco só guarda o nome do município (sem UF) — sem isso, digitar
+ * "São Paulo/SP" ou "São Paulo SP" (como o placeholder sugere) nunca
+ * batia com nada e a busca ficava sempre vazia, sem dar pra escolher a
+ * cidade. Bug real, achado pelo Raphael testando (11/08).
+ */
+function extrairCidadeEUf(consulta: string): { cidade: string; uf: string | null } {
+  const bruto = consulta.trim();
+  const barraIdx = bruto.lastIndexOf('/');
+  if (barraIdx > 0) {
+    const ufCandidato = bruto.slice(barraIdx + 1).trim().toUpperCase();
+    if (UFS_BRASIL.includes(ufCandidato)) {
+      return { cidade: bruto.slice(0, barraIdx).trim(), uf: ufCandidato };
+    }
+  }
+  const partes = bruto.split(/\s+/);
+  if (partes.length > 1) {
+    const ultimo = partes[partes.length - 1].toUpperCase();
+    if (UFS_BRASIL.includes(ultimo)) {
+      return { cidade: partes.slice(0, -1).join(' '), uf: ultimo };
+    }
+  }
+  return { cidade: bruto, uf: null };
+}
+
+/** Sugestões de cidade pra autocomplete — busca por prefixo do nome normalizado (minúsculo, sem acento), com UF opcional pra desambiguar cidades com o mesmo nome em estados diferentes. */
+export async function buscarMunicipios(consultaBruta: string, limite = 8): Promise<Municipio[]> {
+  const { cidade, uf } = extrairCidadeEUf(consultaBruta);
+  const termo = normalizar(cidade);
   if (termo.length < 2) return [];
-  const { data, error } = await supabase
+  let query = supabase
     .from('municipios_brasil')
     .select('nome, uf, latitude, longitude')
     .ilike('nome_norm', `${termo}%`)
     .order('nome')
     .limit(limite);
+  if (uf) query = query.eq('uf', uf);
+  const { data, error } = await query;
   if (error) {
     // eslint-disable-next-line no-console
     console.error('buscarMunicipios', error);

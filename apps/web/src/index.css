@@ -541,6 +541,19 @@ button:disabled {
   gap: 8px;
 }
 
+/* Mesmo layout de .linha-analise (rota + valor + badge lado a lado), mas
+   sem cursor:pointer/hover — usada na tela Buscar Frete, onde a linha é
+   uma <div> sem ação de clique (o link de verdade é WhatsApp/Ligar
+   embaixo). Bug achado pelo Raphael: reaproveitar .linha-analise ali
+   deixava tudo com cara de clicável sem fazer nada. */
+.frete-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+}
+
 .linha-analise {
   display: flex;
   align-items: center;
