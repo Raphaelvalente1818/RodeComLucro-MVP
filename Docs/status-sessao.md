@@ -282,3 +282,21 @@ Análise de compatibilidade com a Fretebras (planilha `fretes_fretebras_800.xlsx
 Hoje, os dados reais da Fretebras só preenchem `tiposVeiculo` (a amostra não trouxe nenhuma informação de carroceria) — `tiposCarroceria` fica vazio pra frete importado de lá, e só vem preenchido nos fretes que nascerem direto no nosso portal. Ainda não existe tabela `opportunities` nem app de empresa — isso é só a peça de tradução de dado, pronta pra quando o import começar a existir de verdade.
 
 Ainda não commitado/pushado (junto com a atualização anterior, do WhatsApp).
+
+## Atualização — 11/08 (2): tabela `fretes_publicados` criada + populada com dado de teste da Fretebras
+
+Pedido do Raphael: "pode iniciar a construir a tabela de fretes" (pra depois começarmos o "busca frete" dentro do app do motorista) + "já coloque os fretes dentro da nova tabela para termos massa de dados para testar".
+
+**Decisão de arquitetura confirmada**: dois apps distintos (motorista e empresa), não um app só com rotas extras — isso ainda não foi implementado (nenhum app de empresa existe), só a tabela compartilhada de fretes.
+
+**Migration** `supabase/migrations/20260811150000_fretes_publicados_schema.sql`, tabela `public.fretes_publicados`:
+- Campos compatíveis com a Fretebras: `empresa_nome`, `contato_nome`, `contato_telefone`, `origem_cidade`/`origem_uf`, `destino_cidade`/`destino_uf`, `valor_frete_centavos` (nullable) + `valor_a_combinar` (bool), `tipos_veiculo_aceitos` (text[]).
+- Campos extras: `company_id` (uuid, **sem FK ainda** — tabela `companies` do portal de empresas não existe, isso é só a coluna preparada pra quando existir), `tipos_carroceria_aceitos` (text[], reaproveitando `TipoCarroceria` do `@rode/calc`), `peso_kg`, `distancia_km`, `data_coleta`, `pedagio_por_conta_de`, `status` (aberto/negociando/fechado/expirado), `fonte` (RODE_DIRETO/MANUAL), `dado_teste` (bool — pra marcar e conseguir apagar depois dado de teste sem misturar com frete real), `observacoes`, timestamps.
+- Índices: btree em `origem_uf`/`destino_uf`/`status`, GIN em `tipos_veiculo_aceitos`/`tipos_carroceria_aceitos`.
+- RLS habilitada: SELECT liberado pra qualquer usuário `authenticated` (é vitrine pública de frete, motorista logado já pode ver tudo). Escrita não tem policy pra usuário comum ainda — só `service_role` — porque não existe login de empresa pra restringir por dono.
+
+**Import da planilha `fretes_fretebras_800.xlsx`** (800 anúncios, 177 empresas): parseado em Python replicando a mesma lógica do `normalizarVeiculoExterno` (split por " / " com espaço obrigatório, mapeamento pro enum oficial), inserido em 4 lotes de 200 via `execute_sql`. Todos marcados `fonte='MANUAL'`, `dado_teste=true` (pra poder identificar e apagar esse lote de teste antes de ir pra produção, sem tocar em frete real).
+
+Conferência pós-import: `800` linhas, `800` com `dado_teste=true` (nenhum vazou como se fosse real), `196` com `valor_a_combinar=true` (bate com a amostra original), `177` empresas distintas (bate). `select distinct unnest(tipos_veiculo_aceitos)` retornou exatamente os 12 valores esperados do `TipoVeiculo`, sem nenhum termo quebrado — confirma que a lógica de parse (e a correção do bug do separador "3/4") está correta também fora do TypeScript.
+
+Não mexi em nenhuma tela do app nesta etapa — só banco. Próximo passo (não iniciado): a tela "busca frete" dentro do app do motorista, consumindo essa tabela.
