@@ -265,3 +265,20 @@ Pedido em seguida, mesmo dia: o link "WhatsApp" do bloco "Contato do frete" deve
 Implementado em `Resultado.tsx`: `montarMensagemWhatsapp()` monta o texto (com fallback pros dois nomes — se o contato ou o motorista não tiverem nome preenchido, a frase correspondente some, sem deixar "Olá, !" quebrado) e vai como `?text=` (URL-encoded) no link `wa.me`. O nome do motorista vem de `carregarMotorista` (novo fetch nessa tela, só pra isso — o resto da tela não precisava do perfil do motorista até agora).
 
 Validado com `tsc --noEmit` limpo. Ainda não commitado/pushado.
+
+## Atualização — 11/08: início do portal de empresas — decisões de arquitetura + camada de compatibilidade com a Fretebras
+
+Pesquisa (sem codar): confirmado, lendo `Docs/PRD-tecnico-portal.html` e `Docs/sequencia-construcao.md`, que o "portal de empresas" (onde transportadoras cadastram e publicam fretes) **não existe no código real** — o PRD é 100% mockado ("O protótipo está 100% mockado; este documento orienta a construção real da funcionalidade"), os caminhos que ele cita (`src/empresa/EmpresaApp.tsx`, `src/admin`) não correspondem à estrutura real (`apps/web/src/pages/*.tsx`), e não existem tabelas `companies`/`opportunities` no Supabase. O plano de fases (`sequencia-construcao.md`) já resolve o problema de ovo-e-galinha entre "portal" (quem publica) e "find-app" (quem busca): portal nasce primeiro, alimentando `opportunities` via cadastro de empresa OU inserção manual (admin) — o find-app consome dessa mesma tabela e pode nascer 1-2 semanas depois, já com dado real.
+
+Decisão do Raphael: **dois apps distintos** (motorista e empresa), não um app só com rotas extras.
+
+Análise de compatibilidade com a Fretebras (planilha `fretes_fretebras_800.xlsx`, 800 anúncios, 177 empresas, fornecida pelo Raphael): o campo único "Veículo" da Fretebras mistura, num só texto separado por " / ", tanto configuração de eixos (Carreta, Bitrem 7/9 eixos, Rodotrem, Truck, Toco...) quanto — potencialmente, em outras amostras — informação de carroceria; na nossa base isso é dois campos normalizados (`TipoVeiculo` e `TipoCarroceria`, já existentes em `packages/rode-calc/src/tiposCaminhao.ts`). Pra essa diferença estrutural não virar problema quando formos importar/comparar dado de fontes externas, foi criada uma camada de compatibilidade:
+
+- **Novo arquivo** `packages/rode-calc/src/compatibilidadeExterna.ts`: exporta `normalizarVeiculoExterno(bruto: string)`, que recebe uma string externa (formato Fretebras ou similar) e devolve `{ tiposVeiculo, tiposCarroceria, naoReconhecidos }`. Quebra a string em termos (separador " / ", "," ou ";" — cuidado: a barra só conta como separador com espaço nos dois lados, senão quebraria valores legítimos tipo "3/4"), reconhece cada termo contra os enums oficiais de `tiposCaminhao.ts` (incluindo aliases pra grafias diferentes, ex: "Bitruck" da Fretebras → "BiTruck" nosso), e classifica cada termo automaticamente no grupo certo (veículo ou carroceria) — um mesmo campo externo pode conter os dois tipos misturados. Termos não reconhecidos não travam o import, só ficam marcados pra revisão manual.
+- Exportado em `packages/rode-calc/src/index.ts` (`normalizarVeiculoExterno`, tipo `ResultadoNormalizacao`).
+- Validado com as 45 combinações únicas reais da planilha `fretes_fretebras_800.xlsx`: 45/45 reconhecidas, 0 termos sem match, depois de corrigir um bug do regex de separador (estava quebrando "3/4" em "3" e "4").
+- `tsc --noEmit` limpo em `packages/rode-calc` e em `apps/web`.
+
+Hoje, os dados reais da Fretebras só preenchem `tiposVeiculo` (a amostra não trouxe nenhuma informação de carroceria) — `tiposCarroceria` fica vazio pra frete importado de lá, e só vem preenchido nos fretes que nascerem direto no nosso portal. Ainda não existe tabela `opportunities` nem app de empresa — isso é só a peça de tradução de dado, pronta pra quando o import começar a existir de verdade.
+
+Ainda não commitado/pushado (junto com a atualização anterior, do WhatsApp).

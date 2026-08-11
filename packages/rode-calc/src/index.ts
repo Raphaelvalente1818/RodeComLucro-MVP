@@ -6,3 +6,5 @@ export { caminhoes, marcas } from './caminhoes';
 export type { ModeloCaminhao } from './caminhoes';
 export { VEICULOS, CARROCERIAS, eixosPorCarroceria } from './tiposCaminhao';
 export type { TipoVeiculo, TipoCarroceria } from './tiposCaminhao';
+export { normalizarVeiculoExterno } from './compatibilidadeExterna';
+export type { ResultadoNormalizacao } from './compatibilidadeExterna';
