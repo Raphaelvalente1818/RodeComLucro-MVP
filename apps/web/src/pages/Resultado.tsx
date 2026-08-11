@@ -36,6 +36,8 @@ interface EstadoRota {
     contatoNome: string | null;
     contatoTelefone: string | null;
   } | null;
+  /** true quando o valor veio do modo "A negociar" (mínimo calculado pelo motorista pra bater a margem), não de uma oferta real da empresa. */
+  valorACombinar?: boolean;
 }
 
 const CORES: Record<FreteResultado['veredicto'], string> = {
@@ -86,6 +88,7 @@ export default function Resultado() {
     empresaNome?: string | null;
     contatoNome?: string | null;
     contatoTelefone?: string | null;
+    valorACombinar?: boolean;
   }>(modoHistorico ? {} : estadoRota);
 
   const [salvando, setSalvando] = useState(false);
@@ -130,6 +133,7 @@ export default function Resultado() {
         empresaNome: achada.empresaNome,
         contatoNome: achada.contatoNome,
         contatoTelefone: achada.contatoTelefone,
+        valorACombinar: achada.valorACombinar,
       });
       setCarregandoHistorico(false);
     });
@@ -149,7 +153,7 @@ export default function Resultado() {
     );
   }
 
-  const { resultado, custos, distanciaEstimada, caminhaoPerfilId, analisadoEm, empresaNome: empresaSalva, contatoNome: contatoSalvo, contatoTelefone: telefoneSalvo } = dados;
+  const { resultado, custos, distanciaEstimada, caminhaoPerfilId, analisadoEm, empresaNome: empresaSalva, contatoNome: contatoSalvo, contatoTelefone: telefoneSalvo, valorACombinar } = dados;
 
   if (!resultado || !custos) {
     navigate('/analisar', { replace: true });
@@ -181,6 +185,7 @@ export default function Resultado() {
         empresaNome,
         contatoNome,
         contatoTelefone,
+        valorACombinar,
       });
       if (error) {
         setErroSalvar(error);
@@ -253,9 +258,15 @@ export default function Resultado() {
 
       <p className="conselho">{explicarVeredicto(resultado)}</p>
 
+      {valorACombinar && (
+        <p className="aviso">
+          Frete a combinar — este valor é o mínimo que você calculou pra bater sua margem, não uma oferta da empresa.
+        </p>
+      )}
+
       <div className="kpis">
         <div className="kpi">
-          <span>Valor do frete</span>
+          <span>Valor do frete{valorACombinar ? ' (a combinar)' : ''}</span>
           <b>{fmtBRL(resultado.entrada.valorFrete)}</b>
         </div>
         <div className="kpi">

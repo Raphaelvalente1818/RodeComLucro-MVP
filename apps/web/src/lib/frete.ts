@@ -145,6 +145,8 @@ export interface AnaliseParaSalvar {
   empresaNome?: string | null;
   contatoNome?: string | null;
   contatoTelefone?: string | null;
+  /** true quando o valor veio do modo "A negociar" (mínimo calculado pelo motorista), não de uma oferta real da empresa. */
+  valorACombinar?: boolean;
 }
 
 /**
@@ -177,6 +179,7 @@ export async function salvarAnalise(
       empresa_nome: analise.empresaNome?.trim() || null,
       contato_nome: analise.contatoNome?.trim() || null,
       contato_telefone: analise.contatoTelefone?.trim() || null,
+      valor_a_combinar: analise.valorACombinar ?? false,
     },
     { onConflict: 'id' },
   );
@@ -208,13 +211,15 @@ export interface AnaliseResumo {
   createdAt: string;
   /** Frete de fato executado (não só calculado/salvo) — só isso conta pro "lucro do mês". */
   realizado: boolean;
+  /** true quando o valor veio do modo "A negociar" — não é uma oferta real da empresa. */
+  valorACombinar: boolean;
 }
 
 /** Últimas N análises do motorista, mais recentes primeiro — usado no bloco "Últimas análises" da Garagem. */
 export async function carregarUltimasAnalises(userId: string, limite = 3): Promise<AnaliseResumo[]> {
   const { data, error } = await supabase
     .from('analise_frete')
-    .select('id, origem, destino, valor_frete_centavos, veredicto, created_at, realizado')
+    .select('id, origem, destino, valor_frete_centavos, veredicto, created_at, realizado, valor_a_combinar')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(limite);
@@ -231,6 +236,7 @@ export async function carregarUltimasAnalises(userId: string, limite = 3): Promi
     veredicto: r.veredicto as AnaliseResumo['veredicto'],
     createdAt: r.created_at as string,
     realizado: Boolean(r.realizado),
+    valorACombinar: Boolean(r.valor_a_combinar),
   }));
 }
 
@@ -297,6 +303,8 @@ export interface AnaliseCompleta {
   empresaNome: string | null;
   contatoNome: string | null;
   contatoTelefone: string | null;
+  /** true quando o valor veio do modo "A negociar" — não é uma oferta real da empresa. */
+  valorACombinar: boolean;
 }
 
 /** Carrega uma análise salva pelo id — usado pela tela Resultado quando aberta a partir da Garagem (histórico). */
@@ -304,7 +312,7 @@ export async function carregarAnalisePorId(id: string): Promise<AnaliseCompleta 
   const { data, error } = await supabase
     .from('analise_frete')
     .select(
-      'resultado_snapshot, custos_snapshot, distancia_estimada, caminhao_perfil_id, created_at, empresa_nome, contato_nome, contato_telefone',
+      'resultado_snapshot, custos_snapshot, distancia_estimada, caminhao_perfil_id, created_at, empresa_nome, contato_nome, contato_telefone, valor_a_combinar',
     )
     .eq('id', id)
     .maybeSingle();
@@ -322,5 +330,6 @@ export async function carregarAnalisePorId(id: string): Promise<AnaliseCompleta 
     empresaNome: (data.empresa_nome as string | null) ?? null,
     contatoNome: (data.contato_nome as string | null) ?? null,
     contatoTelefone: (data.contato_telefone as string | null) ?? null,
+    valorACombinar: Boolean(data.valor_a_combinar),
   };
 }

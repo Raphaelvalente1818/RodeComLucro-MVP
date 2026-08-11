@@ -273,6 +273,10 @@ export default function Analisar() {
         dias,
         caminhaoPerfilId: perfil?.id ?? null,
         contato: estadoInicial.contato ?? null,
+        // O valor calculado no modo "A negociar" é o mínimo que bate a
+        // margem desejada do motorista, não uma oferta real da empresa —
+        // precisa ir marcado pra não confundir os dois na tela Resultado.
+        valorACombinar: aNegociar,
       },
     });
   }

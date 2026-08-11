@@ -237,7 +237,8 @@ export default function Garagem() {
                       {a.origem} → {a.destino}
                     </p>
                     <p className="linha-analise-detalhe">
-                      {fmtBRL(a.valorFreteCentavos / 100)} · {tempoRelativo(a.createdAt)}
+                      {fmtBRL(a.valorFreteCentavos / 100)}
+                      {a.valorACombinar ? ' (a combinar)' : ''} · {tempoRelativo(a.createdAt)}
                     </p>
                   </div>
                   <span className={classeVeredicto(a.veredicto)}>{a.veredicto}</span>

@@ -341,6 +341,18 @@ Implementado via estado de navegação do React Router (`navigate(..., { state: 
 
 Validado com `tsc --noEmit` limpo em `apps/web`. Não mexe em nenhuma tabela/coluna nova. Ainda não commitado/pushado.
 
+## Atualização — 11/08 (8): marcar "Frete a Combinar" ao salvar análise
+
+Pedido do Raphael: quando o frete é salvo no modo "A negociar"/"Valor a combinar" (mesma coisa), o valor gravado é o mínimo que o motorista calculou pra bater a margem dele — não uma oferta real da empresa. Precisa ir marcado junto, senão fica parecendo que a empresa ofereceu aquele valor.
+
+- **Migração** `20260811170000_analise_frete_valor_a_combinar.sql`: nova coluna `valor_a_combinar boolean not null default false` em `analise_frete`. Aplicada via `apply_migration` e salva no repo.
+- **`lib/frete.ts`**: `AnaliseParaSalvar`, `AnaliseCompleta` e `AnaliseResumo` ganharam `valorACombinar`; `salvarAnalise`, `carregarAnalisePorId` e `carregarUltimasAnalises` gravam/leem a nova coluna.
+- **`Analisar.tsx`**: `calcularEIr()` agora manda `valorACombinar: aNegociar` no `state` da navegação pra `/resultado` — reaproveita o toggle "A negociar" que já existia, sem novo controle na tela.
+- **`Resultado.tsx`**: `EstadoRota` ganhou `valorACombinar`; ao salvar, o valor vai junto pro banco. Quando marcado (tanto na análise recém-calculada quanto reabrindo uma salva/histórico), aparece um aviso "Frete a combinar — este valor é o mínimo que você calculou..." acima dos KPIs, e o rótulo "Valor do frete" ganha o sufixo "(a combinar)".
+- **`Garagem.tsx`**: lista de "Últimas análises" mostra "(a combinar)" ao lado do valor quando aplicável.
+
+Validado com `tsc --noEmit` limpo em `apps/web`. Ainda não commitado/pushado.
+
 ## Atualização — 11/08 (3): tela "Buscar frete" no app do motorista
 
 Pedido do Raphael: "pode seguir" (na tela busca frete, combinado na atualização anterior).
