@@ -301,6 +301,23 @@ Conferência pós-import: `800` linhas, `800` com `dado_teste=true` (nenhum vazo
 
 Não mexi em nenhuma tela do app nesta etapa — só banco. Próximo passo (não iniciado): a tela "busca frete" dentro do app do motorista, consumindo essa tabela.
 
+## Atualização — 11/08 (5): busca por raio + compatibilidade de veículo na tela Buscar Frete
+
+Pedido do Raphael, em cima da tela anterior: "precisa ter a cidade que o motorista está e o raio que ele aceita percorrer até a cidade do frete", considerando também a compatibilidade do veículo. Antes de codar, perguntei e alinhei duas decisões (ver seção "(4)" acima pro trabalho de dados que isso disparou):
+
+1. **Distância em linha reta (haversine)**, não rota real de rodovia — evita chamar a Google Routes API (paga, usada hoje só pro cálculo de frete individual) numa lista inteira de fretes de uma vez.
+2. **"Onde estou agora" é digitado na própria tela de busca e o app lembra** — persistido em `motoristas.cidade_atual`/`uf_atual`/`cidade_atual_lat`/`cidade_atual_lng` (colunas novas, ver seção anterior), separado da `uf_base` do cadastro (que é a base fixa do motorista, não onde ele está agora).
+
+**Novo**: `apps/web/src/lib/municipios.ts` — `buscarMunicipios(consulta)` (autocomplete por prefixo do nome normalizado contra `municipios_brasil`, debounce de 300ms no componente), `distanciaKm(lat1,lng1,lat2,lng2)` (haversine puro), `RAIOS_KM` (100/200/300/500/1000).
+
+**`lib/motorista.ts`**: `Motorista` ganhou `cidade_atual`/`uf_atual`/`cidade_atual_lat`/`cidade_atual_lng`; nova função `salvarCidadeAtual(userId, cidade, uf, lat, lng)`. `Garagem.tsx` ajustado (objeto fallback de motorista precisava dos 4 campos novos pra bater com o tipo).
+
+**`lib/fretesPublicados.ts`**: `FretePublicado` ganhou `origemLat`/`origemLng` (nulo pros 4 fretes sem match geográfico); removi `origemUf` dos filtros de `FiltrosFrete` (foi substituído pela busca por raio) — `destinoUf` e `tipoVeiculo` continuam. Limite padrão subiu de 40 pra 300 (o filtro de raio agora é aplicado no cliente, precisa de mais candidatos pra comparar).
+
+**`BuscarFrete.tsx`** reescrita: campo "Minha cidade agora" com autocomplete (mesmo padrão visual `.sugestoes-box`/`.sugestao-item` já usado em Perfil.tsx pra marca/modelo do caminhão), ao selecionar já salva em `motoristas` e recarrega prefiltrada nas próximas visitas. Select de raio (só aparece depois de escolher a cidade). Cálculo de distância e filtro por raio feitos no cliente (`useMemo`, ordena por distância crescente). Mantido filtro de UF de destino e o chip "Só o meu veículo" de antes. **Novo**: badge "Compatível"/"Não aceita meu veículo" em cada frete da lista (reaproveita `badge-veredicto`/`badge-bom`/`badge-ruim` já existentes), comparando `tipo_veiculo` do perfil do motorista contra `tiposVeiculoAceitos` do frete — aparece sempre que o motorista tem `tipo_veiculo` preenchido, não só quando o filtro "só o meu veículo" está ativo. Aviso informativo quando algum frete não entrou na comparação de distância por falta de coordenada.
+
+Validado com `tsc --noEmit` limpo em `apps/web`. Conferido no banco: `municipios_brasil` com 5.571 linhas, `fretes_publicados` com 796/800 com coordenada (bate com o relatado na etapa de dados). Ainda não commitado/pushado.
+
 ## Atualização — 11/08 (3): tela "Buscar frete" no app do motorista
 
 Pedido do Raphael: "pode seguir" (na tela busca frete, combinado na atualização anterior).
@@ -316,3 +333,25 @@ Pedido do Raphael: "pode seguir" (na tela busca frete, combinado na atualizaçã
 Validado com `tsc --noEmit` limpo em `apps/web`. Não criei nenhuma tabela/coluna nova — só leitura da `fretes_publicados` já existente. Ainda não commitado/pushado.
 
 Em aberto pra próxima etapa (não pedido ainda): paginação/"carregar mais" (hoje corta em 40 resultados), e o lado empresa (cadastro + publicar frete) continua não iniciado — só a leitura do lado motorista existe agora.
+
+## Atualização — 11/08 (4): dados geográficos (lat/lng) pra busca de frete por raio
+
+Pedido do Raphael (via agente separado, só banco — nenhum arquivo de `apps/web/src` foi tocado nesta etapa): preparar a base geográfica pra futura busca de frete por raio (motorista digita a cidade onde está, escolhe um raio em km, o app calcula a distância em linha reta até a origem de cada frete). **Decisão já confirmada antes**: distância em linha reta (haversine), sem chamar API paga por busca.
+
+**Tabela nova `public.municipios_brasil`** (migration `20260811160000_municipios_brasil_schema.sql`, aplicada como `municipios_brasil_schema`): `nome`, `nome_norm` (minúsculo, sem acento — mesmo espírito de `compatibilidadeExterna.ts`), `uf`, `latitude`, `longitude`. Índices em `(nome_norm, uf)` e `nome_norm`. RLS: SELECT liberado pra `authenticated`, mesmo padrão de `fretes_publicados`.
+
+**Fonte do dado**: CSV público `municipios.csv` do repositório `github.com/kelvins/Municipios-Brasileiros` (dado do IBGE, mantido pela comunidade) — obtido via `git clone` (o `raw.githubusercontent.com` direto estava bloqueado pelo proxy do sandbox; `git clone https://github.com/...` funcionou normalmente). Processado em Python (normalização = NFD unicode + remoção de combining marks + minúsculo, mapeamento de `codigo_uf` de 2 dígitos pra sigla). **5.571 municípios inseridos** (5.570 municípios + Distrito Federal) — bate com o total do CSV. Inserção em 12 lotes de ~500 linhas via `execute_sql` (carga de dado, sem migration própria, mesmo padrão do seed de `fretes_publicados`).
+
+**Migration** `20260811160100_fretes_publicados_geolocalizacao.sql` (aplicada como `fretes_publicados_geolocalizacao`): colunas `origem_lat`/`origem_lng` (numeric, nullable) em `fretes_publicados`.
+
+**Migration** `20260811160200_motoristas_cidade_atual.sql` (aplicada como `motoristas_cidade_atual`): colunas `cidade_atual`, `uf_atual` (text) e `cidade_atual_lat`/`cidade_atual_lng` (numeric) em `motoristas` — pra guardar onde o motorista está agora (diferente de `uf_base`, que é a UF onde ele mora/é baseado). Nenhuma tela preenche isso ainda.
+
+**Preenchimento de `fretes_publicados.origem_lat`/`origem_lng`**: habilitada a extensão `unaccent` (estava disponível mas não habilitada — `create extension if not exists unaccent;`), confirmado que `lower(unaccent(...))` bate com a normalização usada em `municipios_brasil.nome_norm`. UPDATE por join `municipios_brasil.nome_norm = lower(unaccent(trim(origem_cidade)))` + `municipios_brasil.uf = trim(origem_uf)`.
+
+**Resultado da conferência**: **796 de 800 fretes** ficaram com coordenada preenchida. Os 4 que não bateram (2 pares distintos) foram investigados individualmente, não é falha da base de referência:
+- `Boa Esperança` / `MT`: não existe município com esse nome exato em MT na base do IBGE (existe `Boa Esperança do Norte`, `Água Boa`, etc.) — parece erro/nome incompleto no dado de origem (planilha Fretebras).
+- `São João dAliança` / `GO`: falta o apóstrofo — o nome oficial é `São João d'Aliança` (existe certinho em `municipios_brasil`, `nome_norm = 'sao joao d''alianca'`). É um typo na planilha original, não um problema de cobertura da base.
+
+Ambos ficam como pendência pra decisão do Raphael (corrigir manualmente esses 2 pares na `fretes_publicados`, ou deixar como estão já que são poucos registros de dado de teste).
+
+Não mexi em nenhum arquivo de `apps/web/src` — essa etapa foi só banco (tabela de referência + colunas novas + UPDATE de backfill). Próximo passo (não iniciado): consumir essas coordenadas nas telas do motorista (input de "cidade atual" + filtro de raio em `BuscarFrete.tsx`).

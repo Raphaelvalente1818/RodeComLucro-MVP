@@ -86,6 +86,10 @@ export default function Garagem() {
           cnh_numero: null,
           cnh_vencimento: null,
           exame_toxicologico_vencimento: null,
+          cidade_atual: null,
+          uf_atual: null,
+          cidade_atual_lat: null,
+          cidade_atual_lng: null,
         },
       );
       setAnalises(ultimas);

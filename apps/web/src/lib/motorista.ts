@@ -9,6 +9,11 @@
 // canal_wa_ativo e telefone_verificado são só leitura nesta tela: o
 // vínculo real do WhatsApp passa pelo fluxo de código (wa_vinculo), não
 // por um campo editável neste formulário.
+//
+// cidade_atual/uf_atual/cidade_atual_lat/cidade_atual_lng não são editados
+// aqui — são preenchidos pela tela Buscar Frete (lib/municipios.ts), pra
+// resolver o raio de busca. Ficam na mesma tabela por serem dado do
+// motorista, mas o formulário desta tela (Meu Perfil) não mexe neles.
 
 import { supabase } from './supabaseClient';
 import { centsToReais, reaisToCents } from '@rode/calc';
@@ -25,6 +30,11 @@ export interface Motorista {
   /** Formato ISO (YYYY-MM-DD), como o Postgres devolve uma coluna `date`. */
   cnh_vencimento: string | null;
   exame_toxicologico_vencimento: string | null;
+  /** "Onde estou agora" — usado pelo filtro de raio da tela Buscar Frete, não é a UF base do cadastro. */
+  cidade_atual: string | null;
+  uf_atual: string | null;
+  cidade_atual_lat: number | null;
+  cidade_atual_lng: number | null;
 }
 
 export interface FormMotorista {
@@ -52,7 +62,9 @@ export function motoristaParaForm(m: Motorista): FormMotorista {
 export async function carregarMotorista(userId: string): Promise<Motorista | null> {
   const { data, error } = await supabase
     .from('motoristas')
-    .select('id, nome, uf_base, meta_alvo_centavos, media_lucro_frete_centavos, canal_wa_ativo, telefone_verificado, cnh_numero, cnh_vencimento, exame_toxicologico_vencimento')
+    .select(
+      'id, nome, uf_base, meta_alvo_centavos, media_lucro_frete_centavos, canal_wa_ativo, telefone_verificado, cnh_numero, cnh_vencimento, exame_toxicologico_vencimento, cidade_atual, uf_atual, cidade_atual_lat, cidade_atual_lng',
+    )
     .eq('id', userId)
     .maybeSingle();
   if (error) {
@@ -61,6 +73,21 @@ export async function carregarMotorista(userId: string): Promise<Motorista | nul
     return null;
   }
   return data as Motorista | null;
+}
+
+/** Grava "onde o motorista está agora" — usado pelo filtro de raio da tela Buscar Frete. */
+export async function salvarCidadeAtual(
+  userId: string,
+  cidade: string,
+  uf: string,
+  lat: number,
+  lng: number,
+): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from('motoristas')
+    .update({ cidade_atual: cidade, uf_atual: uf, cidade_atual_lat: lat, cidade_atual_lng: lng })
+    .eq('id', userId);
+  return { error: error?.message ?? null };
 }
 
 export async function salvarMotorista(
