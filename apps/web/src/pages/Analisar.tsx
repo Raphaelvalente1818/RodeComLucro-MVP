@@ -6,7 +6,7 @@
 // têm caminho manual/offline-tolerante.
 
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { calcularFrete, fmtBRL, parseNumeroPtBR, type FreteResultado } from '@rode/calc';
 import { supabase } from '../lib/supabaseClient';
 import {
@@ -23,27 +23,51 @@ function classeVeredicto(v: FreteResultado['veredicto']): string {
   return 'badge-veredicto badge-aceitavel';
 }
 
+/** Dados de contato do frete, vindos da tela Buscar Frete — atravessam esta tela sem virar campo nenhum, só pra chegar pré-preenchidos no popup de "Salvar análise" da tela Resultado. */
+interface ContatoFrete {
+  empresaNome: string | null;
+  contatoNome: string | null;
+  contatoTelefone: string | null;
+}
+
+interface EstadoBuscarFrete {
+  origem?: string;
+  destino?: string;
+  /** Em reais — só vem quando o frete já tem valor definido (não é "a combinar"). */
+  valorFrete?: number | null;
+  aNegociar?: boolean;
+  contato?: ContatoFrete | null;
+}
+
 export default function Analisar() {
   const navigate = useNavigate();
+  const { state } = useLocation();
+  // Lido uma vez só, na primeira renderização — vem do botão "Analisar
+  // Frete" na tela Buscar Frete (BuscarFrete.tsx). Ver Docs/status-sessao.md
+  // (11/08) pro pedido original.
+  const [estadoInicial] = useState<EstadoBuscarFrete>(() => (state as EstadoBuscarFrete) ?? {});
   const [userId, setUserId] = useState<string | null>(null);
   const [perfil, setPerfil] = useState<CaminhaoPerfil | null>(null);
   const [carregando, setCarregando] = useState(true);
 
-  const [origem, setOrigem] = useState('');
-  const [destino, setDestino] = useState('');
+  const [origem, setOrigem] = useState(estadoInicial.origem ?? '');
+  const [destino, setDestino] = useState(estadoInicial.destino ?? '');
   const [distanciaKm, setDistanciaKm] = useState('');
   const [distanciaEstimada, setDistanciaEstimada] = useState(true);
   const [buscandoRota, setBuscandoRota] = useState(false);
   const [avisoRota, setAvisoRota] = useState<string | null>(null);
 
-  const [valorFrete, setValorFrete] = useState('');
+  const [valorFrete, setValorFrete] = useState(
+    estadoInicial.valorFrete != null ? String(estadoInicial.valorFrete) : '',
+  );
   // "A negociar" — frete de valor ainda não fechado (importado da
   // calculadora do Emerson, src/screens/AnalisarScreen.tsx). Em vez de
   // digitar o valor, calcula o frete mínimo pra bater a "Margem desejada"
   // (custoTotal / (1 - margem/100)) e reaproveita o próprio veredito
   // BOM/ACEITÁVEL/RUIM do motor — não precisa de um sistema de zona
-  // verde/amarela/vermelha paralelo como o do Emerson.
-  const [aNegociar, setANegociar] = useState(false);
+  // verde/amarela/vermelha paralelo como o do Emerson. Ligado sozinho
+  // quando o frete veio "a combinar" da tela Buscar Frete.
+  const [aNegociar, setANegociar] = useState(Boolean(estadoInicial.aNegociar));
   const [voltaVazia, setVoltaVazia] = useState(false);
   const [margemDesejada, setMargemDesejada] = useState(20);
   const [dias, setDias] = useState(1);
@@ -248,6 +272,7 @@ export default function Analisar() {
         distanciaEstimada,
         dias,
         caminhaoPerfilId: perfil?.id ?? null,
+        contato: estadoInicial.contato ?? null,
       },
     });
   }

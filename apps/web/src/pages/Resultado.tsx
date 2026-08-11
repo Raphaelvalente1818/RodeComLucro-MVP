@@ -30,6 +30,12 @@ interface EstadoRota {
   distanciaEstimada?: boolean;
   dias?: number;
   caminhaoPerfilId?: string | null;
+  /** Vem da tela Buscar Frete (via Analisar) quando a análise nasceu de um frete publicado — pré-preenche o popup de "Salvar análise" em vez do motorista redigitar. */
+  contato?: {
+    empresaNome: string | null;
+    contatoNome: string | null;
+    contatoTelefone: string | null;
+  } | null;
 }
 
 const CORES: Record<FreteResultado['veredicto'], string> = {
@@ -90,9 +96,11 @@ export default function Resultado() {
   // análise" — pedido do Raphael pra achar o contato depois ao reabrir um
   // frete salvo.
   const [mostrarContato, setMostrarContato] = useState(false);
-  const [empresaNome, setEmpresaNome] = useState('');
-  const [contatoNome, setContatoNome] = useState('');
-  const [contatoTelefone, setContatoTelefone] = useState('');
+  // Pré-preenche com o contato do frete, se a análise veio da tela Buscar
+  // Frete (ver Analisar.tsx) — o motorista ainda pode editar antes de salvar.
+  const [empresaNome, setEmpresaNome] = useState(estadoRota.contato?.empresaNome ?? '');
+  const [contatoNome, setContatoNome] = useState(estadoRota.contato?.contatoNome ?? '');
+  const [contatoTelefone, setContatoTelefone] = useState(estadoRota.contato?.contatoTelefone ?? '');
 
   // Nome do motorista (perfil próprio) — usado só pra montar a mensagem
   // de WhatsApp ("Aqui é o Fulano, motorista"), não pro resto da tela.

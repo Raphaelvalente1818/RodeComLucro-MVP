@@ -136,6 +136,30 @@ export default function BuscarFrete() {
     ? fretes.filter((f) => f.origemLat == null || f.origemLng == null).length
     : 0;
 
+  // Botão "Analisar frete": leva pra calculadora já preenchida com
+  // origem/destino/valor desse frete, e carrega o contato (empresa/nome/
+  // telefone) no estado de navegação — a tela Analisar não usa esses
+  // campos, só repassa adiante pra Resultado.tsx, que pré-preenche o
+  // popup de "Salvar análise" com eles em vez do motorista redigitar.
+  // Frete "a combinar" já liga o modo "A negociar" da calculadora, já que
+  // não tem valor pronto pra preencher mesmo.
+  function abrirAnalise(f: FretePublicado) {
+    const semValor = f.valorACombinar || f.valorFreteCentavos == null;
+    navigate('/analisar', {
+      state: {
+        origem: `${f.origemCidade}/${f.origemUf}`,
+        destino: `${f.destinoCidade}/${f.destinoUf}`,
+        valorFrete: semValor ? null : f.valorFreteCentavos! / 100,
+        aNegociar: semValor,
+        contato: {
+          empresaNome: f.empresaNome,
+          contatoNome: f.contatoNome,
+          contatoTelefone: f.contatoTelefone,
+        },
+      },
+    });
+  }
+
   return (
     <main className="tela">
       <header className="garagem-header">
@@ -254,6 +278,9 @@ export default function BuscarFrete() {
                     </span>
                   )}
                 </div>
+                <button type="button" className="btn-frete-analisar" onClick={() => abrirAnalise(f)}>
+                  Analisar frete
+                </button>
                 {f.contatoTelefone && (
                   <p className="contato-frete-linha">
                     <a href={`tel:${f.contatoTelefone.replace(/\D/g, '')}`}>Ligar</a>

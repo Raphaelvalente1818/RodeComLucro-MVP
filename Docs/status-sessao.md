@@ -328,6 +328,19 @@ Corrigido: nova função `extrairCidadeEUf()` separa "Cidade/UF" (com barra) ou 
 
 Conferido no banco que "São Paulo"/SP existe em `municipios_brasil` (lat -23.5329, lng -46.6395) e que o filtro por UF agora isola ela das outras 3 homônimas. `tsc --noEmit` limpo. Ainda não commitado/pushado.
 
+## Atualização — 11/08 (7): botão "Analisar frete" ligando Buscar Frete → Analisar → Resultado
+
+Pedido do Raphael: cada frete da tela Buscar Frete ganha um botão "Analisar Frete" que abre a calculadora já preenchida (origem/destino/valor) e leva junto, "em memória", os dados de contato do frete — pra quando o motorista salvar a análise, o popup de Empresa/Contato/Telefone (Resultado.tsx) já vir preenchido sozinho. Perguntei e confirmei antes de codar: quando o frete é "a combinar" (sem valor definido), a calculadora já abre com o modo "A negociar" ligado.
+
+Implementado via estado de navegação do React Router (`navigate(..., { state: {...} })`), sem gravar nada novo no banco até o "Salvar análise" de fato acontecer:
+
+- **`BuscarFrete.tsx`**: novo botão `.btn-frete-analisar` (pill azul) em cada card. `abrirAnalise(f)` monta `origem`/`destino` no formato "Cidade/UF", `valorFrete` (null se "a combinar"), `aNegociar` (true se "a combinar") e `contato` (empresaNome/contatoNome/contatoTelefone do frete), e navega pra `/analisar` com esse estado.
+- **`Analisar.tsx`**: nova interface `EstadoBuscarFrete`; lê `location.state` uma vez só (`useState` com inicializador preguiçoso) em `estadoInicial`; `origem`/`destino`/`valorFrete`/`aNegociar` agora partem desse estado em vez de sempre vazio — o efeito de busca automática de distância (já existente) dispara sozinho porque origem/destino já vêm preenchidos. Ao calcular, `estadoInicial.contato` é repassado no `state` da navegação pra `/resultado` (a tela Analisar nunca mostra nem edita esses campos, só atravessa).
+- **`Resultado.tsx`**: `EstadoRota` ganhou `contato?`; `empresaNome`/`contatoNome`/`contatoTelefone` (estado do popup "Salvar análise") agora partem de `estadoRota.contato` em vez de sempre `''` — continuam editáveis normalmente.
+- **CSS**: `.btn-frete-analisar` (pill azul, mesmo tom do `.cta-frete`).
+
+Validado com `tsc --noEmit` limpo em `apps/web`. Não mexe em nenhuma tabela/coluna nova. Ainda não commitado/pushado.
+
 ## Atualização — 11/08 (3): tela "Buscar frete" no app do motorista
 
 Pedido do Raphael: "pode seguir" (na tela busca frete, combinado na atualização anterior).
