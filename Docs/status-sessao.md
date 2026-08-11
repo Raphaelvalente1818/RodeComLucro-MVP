@@ -300,3 +300,19 @@ Pedido do Raphael: "pode iniciar a construir a tabela de fretes" (pra depois com
 Conferência pós-import: `800` linhas, `800` com `dado_teste=true` (nenhum vazou como se fosse real), `196` com `valor_a_combinar=true` (bate com a amostra original), `177` empresas distintas (bate). `select distinct unnest(tipos_veiculo_aceitos)` retornou exatamente os 12 valores esperados do `TipoVeiculo`, sem nenhum termo quebrado — confirma que a lógica de parse (e a correção do bug do separador "3/4") está correta também fora do TypeScript.
 
 Não mexi em nenhuma tela do app nesta etapa — só banco. Próximo passo (não iniciado): a tela "busca frete" dentro do app do motorista, consumindo essa tabela.
+
+## Atualização — 11/08 (3): tela "Buscar frete" no app do motorista
+
+Pedido do Raphael: "pode seguir" (na tela busca frete, combinado na atualização anterior).
+
+**Novo**: `apps/web/src/lib/fretesPublicados.ts` — `listarFretesAbertos(filtros, limite)` lê `fretes_publicados` (status='aberto', mais recente primeiro, limite 40), com filtros opcionais `origemUf`/`destinoUf` (`.eq`) e `tipoVeiculo` (`.contains` no array `tipos_veiculo_aceitos`). Não filtra por `dado_teste` de propósito — quando o portal de empresas existir e publicar fretes reais (`fonte='RODE_DIRETO'`) na mesma tabela, essa tela já mostra os dois juntos sem precisar mudar nada. Exporta também `UFS_BRASIL` (lista fixa das 27 UFs, pros selects de filtro).
+
+**Novo**: `apps/web/src/pages/BuscarFrete.tsx` — carrega motorista + perfil do caminhão (pra pegar `tipo_veiculo` e nome), filtros de UF origem/destino (selects) + chip "Só o meu veículo" (só aparece se o motorista já tiver `tipo_veiculo` preenchido no Perfil), lista os fretes no mesmo estilo visual de "Últimas análises" (`.lista-analises`/`.linha-analise-item`), e por frete mostra rota, valor (ou "Valor a combinar"), empresa, tipos de veículo aceitos, e — se tiver telefone — links `tel:`/`wa.me` com mensagem pronta (`montarMensagemWhatsapp`, mesma estrutura já aprovada na tela Resultado: saudação + apresentação do motorista + origem/destino/valor + pedido de detalhes de coleta/pagamento/pedágio).
+
+**Rota**: `/buscar-frete` adicionada em `main.tsx`. **Garagem**: novo botão "Buscar frete" (`cta-frete`, azul pra diferenciar do "Analisar frete" verde) logo abaixo do CTA de analisar.
+
+**CSS**: `.cta-frete` (fundo azul `#1d4ed8`) e `.filtro-frete` (linha flexível pros dois selects + chip).
+
+Validado com `tsc --noEmit` limpo em `apps/web`. Não criei nenhuma tabela/coluna nova — só leitura da `fretes_publicados` já existente. Ainda não commitado/pushado.
+
+Em aberto pra próxima etapa (não pedido ainda): paginação/"carregar mais" (hoje corta em 40 resultados), e o lado empresa (cadastro + publicar frete) continua não iniciado — só a leitura do lado motorista existe agora.

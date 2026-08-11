@@ -178,6 +178,11 @@ export default function Garagem() {
         <span className="cta-subtitulo">Calcular lucro de uma nova rota</span>
       </button>
 
+      <button type="button" className="cta-primaria cta-frete" onClick={() => navigate('/buscar-frete')}>
+        <span className="cta-titulo">Buscar frete</span>
+        <span className="cta-subtitulo">Ver fretes publicados por transportadoras</span>
+      </button>
+
       <div className="grid-2">
         <button type="button" className="card-secundaria" onClick={() => navigate('/perfil')}>
           <span className="card-titulo card-titulo-icone">

@@ -438,6 +438,22 @@ button:disabled {
   gap: 12px;
 }
 
+.cta-frete {
+  background: #1d4ed8;
+}
+
+.filtro-frete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.filtro-frete label {
+  flex: 1;
+  min-width: 110px;
+}
+
 .card-secundaria {
   display: flex;
   flex-direction: column;
