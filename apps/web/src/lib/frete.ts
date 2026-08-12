@@ -40,6 +40,8 @@ export interface CaminhaoPerfil {
   km_rodados_ano: number | null;
   tipo_veiculo: string | null;
   tipo_carroceria: string | null;
+  /** Capacidade máxima de carga, em toneladas — usada para estimar o valor total de fretes cobrados "por tonelada" (ver lib/fretesPublicados.ts). Preenchimento opcional. */
+  carga_maxima_toneladas: number | null;
 }
 
 export const PERFIL_DEFAULT: Omit<CaminhaoPerfil, 'id' | 'user_id'> = {
@@ -68,6 +70,7 @@ export const PERFIL_DEFAULT: Omit<CaminhaoPerfil, 'id' | 'user_id'> = {
   km_rodados_ano: 100000,
   tipo_veiculo: null,
   tipo_carroceria: null,
+  carga_maxima_toneladas: null,
 };
 
 export async function carregarPerfil(userId: string): Promise<CaminhaoPerfil | null> {

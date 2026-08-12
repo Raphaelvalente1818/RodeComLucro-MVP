@@ -219,6 +219,7 @@ export default function Analisar() {
         km_rodados_ano: null,
         tipo_veiculo: null,
         tipo_carroceria: null,
+        carga_maxima_toneladas: null,
       },
       dias,
       parseNumeroPtBR(pedagio),

@@ -37,10 +37,23 @@ function montarMensagemWhatsapp(frete: FretePublicado, nomeMotorista: string | n
   const valor =
     frete.valorACombinar || frete.valorFreteCentavos == null
       ? 'valor a combinar'
-      : `valor de ${fmtBRL(frete.valorFreteCentavos / 100)}`;
+      : `valor de ${fmtBRL(frete.valorFreteCentavos / 100)}${frete.tipoValor === 'por_tonelada' ? '/tonelada' : ''}`;
   const corpo =
     ` Vi o frete de ${frete.origemCidade}/${frete.origemUf} para ${frete.destinoCidade}/${frete.destinoUf}, ${valor}, e tenho interesse. Pode me passar mais detalhes? Preciso saber a data de coleta, o prazo de pagamento e quem fica responsável pelo pedágio. Fico no aguardo, obrigado!`;
   return `${saudacao}${apresentacao}${corpo}`;
+}
+
+/**
+ * Fretes "por tonelada" gravam só a taxa unitária (fretes_publicados não
+ * tem o peso da carga — ver lib/fretesPublicados.ts). Com a carga máxima
+ * do caminhão (Perfil.tsx, 12/08) dá pra estimar o valor TOTAL do frete
+ * (taxa × carga máxima), assumindo o caminhão sai cheio — é uma
+ * estimativa (a carga real pode ser menor), não um valor fechado com a
+ * empresa.
+ */
+function valorTotalEstimadoCentavos(f: FretePublicado, cargaMaximaToneladas: number | null): number | null {
+  if (f.tipoValor !== 'por_tonelada' || f.valorFreteCentavos == null || !cargaMaximaToneladas) return null;
+  return Math.round(f.valorFreteCentavos * cargaMaximaToneladas);
 }
 
 interface FreteComDistancia extends FretePublicado {
@@ -52,6 +65,7 @@ export default function BuscarFrete() {
   const [userId, setUserId] = useState<string | null>(null);
   const [nomeMotorista, setNomeMotorista] = useState<string | null>(null);
   const [tipoVeiculoPerfil, setTipoVeiculoPerfil] = useState<string | null>(null);
+  const [cargaMaximaPerfil, setCargaMaximaPerfil] = useState<number | null>(null);
 
   const [cidadeTexto, setCidadeTexto] = useState('');
   const [cidadeSelecionada, setCidadeSelecionada] = useState<Municipio | null>(null);
@@ -75,6 +89,7 @@ export default function BuscarFrete() {
       const [motorista, perfil] = await Promise.all([carregarMotorista(uid), carregarPerfil(uid)]);
       setNomeMotorista(primeiroNome(motorista?.nome));
       setTipoVeiculoPerfil(perfil?.tipo_veiculo ?? null);
+      setCargaMaximaPerfil(perfil?.carga_maxima_toneladas ?? null);
       if (motorista?.cidade_atual && motorista.cidade_atual_lat != null && motorista.cidade_atual_lng != null) {
         setCidadeTexto(`${motorista.cidade_atual}/${motorista.uf_atual ?? ''}`);
         setCidadeSelecionada({
@@ -141,15 +156,24 @@ export default function BuscarFrete() {
   // telefone) no estado de navegação — a tela Analisar não usa esses
   // campos, só repassa adiante pra Resultado.tsx, que pré-preenche o
   // popup de "Salvar análise" com eles em vez do motorista redigitar.
-  // Frete "a combinar" já liga o modo "A negociar" da calculadora, já que
-  // não tem valor pronto pra preencher mesmo.
+  // Frete "a combinar" liga o modo "A negociar" da calculadora, já que
+  // não tem valor pronto pra preencher mesmo. Frete "por tonelada" sem
+  // carga máxima cadastrada no Perfil entra no mesmo caminho (o valor
+  // salvo é só a taxa por tonelada, não o total — pré-preencher "Valor do
+  // frete" com esse número faria a calculadora achar que é o total e
+  // calcular o lucro errado). Com a carga máxima cadastrada (12/08), dá
+  // pra estimar o total (taxa × carga máxima) e preencher normalmente —
+  // o campo continua editável, o motorista ajusta se a carga real for
+  // menor que a máxima.
   function abrirAnalise(f: FretePublicado) {
-    const semValor = f.valorACombinar || f.valorFreteCentavos == null;
+    const totalEstimado = valorTotalEstimadoCentavos(f, cargaMaximaPerfil);
+    const semValor = f.valorACombinar || f.valorFreteCentavos == null || (f.tipoValor === 'por_tonelada' && totalEstimado == null);
+    const valorFrete = semValor ? null : totalEstimado != null ? totalEstimado / 100 : f.valorFreteCentavos! / 100;
     navigate('/analisar', {
       state: {
         origem: `${f.origemCidade}/${f.origemUf}`,
         destino: `${f.destinoCidade}/${f.destinoUf}`,
-        valorFrete: semValor ? null : f.valorFreteCentavos! / 100,
+        valorFrete,
         aNegociar: semValor,
         contato: {
           empresaNome: f.empresaNome,
@@ -253,6 +277,7 @@ export default function BuscarFrete() {
               !tipoVeiculoPerfil ||
               f.tiposVeiculoAceitos.length === 0 ||
               f.tiposVeiculoAceitos.includes(tipoVeiculoPerfil as TipoVeiculo);
+            const totalEstimado = valorTotalEstimadoCentavos(f, cargaMaximaPerfil);
             return (
               <li key={f.id} className="linha-analise-item">
                 <div className="frete-linha">
@@ -263,13 +288,17 @@ export default function BuscarFrete() {
                     <p className="linha-analise-detalhe">
                       {f.valorACombinar || f.valorFreteCentavos == null
                         ? 'Valor a combinar'
-                        : fmtBRL(f.valorFreteCentavos / 100)}
+                        : `${fmtBRL(f.valorFreteCentavos / 100)}${f.tipoValor === 'por_tonelada' ? '/ton' : ''}`}
+                      {totalEstimado != null && ` · ≈ ${fmtBRL(totalEstimado / 100)} total (carga máx. ${cargaMaximaPerfil} ton)`}
                       {' · '}
                       {f.empresaNome}
                       {f.distancia != null ? ` · ${f.distancia.toFixed(0)} km` : ''}
                     </p>
                     {f.tiposVeiculoAceitos.length > 0 && (
                       <p className="linha-analise-detalhe">Aceita: {f.tiposVeiculoAceitos.join(', ')}</p>
+                    )}
+                    {f.tipoValor === 'por_tonelada' && totalEstimado == null && (
+                      <p className="linha-analise-detalhe">Cadastre a carga máxima no Perfil do caminhão pra ver o valor total estimado.</p>
                     )}
                   </div>
                   {tipoVeiculoPerfil && (

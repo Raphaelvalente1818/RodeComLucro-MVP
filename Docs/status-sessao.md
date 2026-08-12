@@ -1,6 +1,6 @@
 # Status da sessão — RODE COM LUCRO
 
-> Última atualização: 2026-08-04. A sessão anterior (17/07) foi perdida num reset — este arquivo e `sequencia-construcao.md` foram o que permitiu retomar o contexto. Manter este hábito daqui pra frente.
+> Última atualização: 2026-08-12. A sessão anterior (17/07) foi perdida num reset — este arquivo e `sequencia-construcao.md` foram o que permitiu retomar o contexto. Manter este hábito daqui pra frente.
 
 ## O que já está pronto (confirmado lendo o repo em 04/08)
 
@@ -352,6 +352,33 @@ Pedido do Raphael: quando o frete é salvo no modo "A negociar"/"Valor a combina
 - **`Garagem.tsx`**: lista de "Últimas análises" mostra "(a combinar)" ao lado do valor quando aplicável.
 
 Validado com `tsc --noEmit` limpo em `apps/web`. Ainda não commitado/pushado.
+
+## Atualização — 12/08: campo "tipo_valor" — corrigindo fretes "por tonelada"
+
+Raphael perguntou onde ficava guardada a distinção entre frete "por tonelagem" e "a combinar" na tabela de fretes. Ao investigar, achei um problema real na importação original (11/08): a coluna "Valor" da planilha Fretebras trazia textos como `"R$ 285,00 (Por tonelada)"`, mas na importação eu só extraí o número e descartei o "(Por tonelada)" — resultado: **499 dos 800 fretes de teste (62%)** ficaram gravados como se o valor fosse o total do frete, quando na verdade é uma taxa por tonelada. Isso fazia o botão "Analisar Frete" calcular o lucro com um valor de frete bem menor que o real nesses casos.
+
+Perguntei ao Raphael como corrigir; ele escolheu a opção recomendada: corrigir o armazenamento e mostrar "R$ 285,00/ton" na tela, sem tentar calcular o total automaticamente (a planilha não tem o peso da carga, então não dá pra converter por tonelada → total sozinho).
+
+- **Migração** `20260812120000_fretes_publicados_tipo_valor.sql`: nova coluna `tipo_valor text check in ('fixo','por_tonelada')` em `fretes_publicados` (null quando `valor_a_combinar = true`).
+- **Reimportação completa dos 800 fretes**: reprocessei o `fretes_fretebras_800.xlsx` original preservando o "(Por tonelada)", reaproveitando `normalizarVeiculoExterno` (zero termos não reconhecidos, mesmos 45 combos de veículo de antes) pra não perder a compatibilidade de veículo já validada. `TRUNCATE` + reinserção em 4 lotes + regeocodificação (`origem_lat`/`origem_lng` via join com `municipios_brasil`, mesmo método de antes). Conferido depois: 800 total, 196 a combinar, 499 por tonelada, 105 fixo, 45 combos de veículo, 796 com geolocalização — bate exatamente com os números originais.
+- **`lib/fretesPublicados.ts`**: `FretePublicado` ganhou `tipoValor: 'fixo' | 'por_tonelada' | null`; `listarFretesAbertos` lê a nova coluna.
+- **`BuscarFrete.tsx`**: valor exibido no card e na mensagem de WhatsApp ganha o sufixo "/ton" quando `tipoValor === 'por_tonelada'`. No botão "Analisar Frete", fretes por tonelada agora entram no mesmo caminho de "a combinar" (liga o modo "A negociar" da calculadora) em vez de pré-preencher "Valor do frete" com a taxa por tonelada como se fosse o total — evita um cálculo de lucro errado.
+
+Validado com `tsc --noEmit` limpo em `apps/web`. Ainda não commitado/pushado.
+
+## Atualização — 12/08 (2): Carga Máxima no Perfil — fecha o ciclo do frete "por tonelada"
+
+Pedido do Raphael, em cima da correção do `tipo_valor` (seção anterior): cadastrar a **carga máxima do caminhão (toneladas)** no Perfil, pra poder converter a taxa/tonelada dos fretes `por_tonelada` em valor TOTAL estimado (taxa × carga máxima) — hoje esse cálculo não dava pra fazer porque faltava a capacidade do caminhão.
+
+- **Migração** `20260812150000_caminhao_perfil_carga_maxima.sql`: coluna `carga_maxima_toneladas numeric(6,2)` em `caminhao_perfil`, nullable, opcional. Aplicada direto no Supabase via MCP.
+- **`lib/frete.ts`**: `CaminhaoPerfil`/`PERFIL_DEFAULT` ganharam o campo.
+- **`Perfil.tsx`**: campo novo "Carga máxima (toneladas)" logo após "Número de eixos".
+- **`Analisar.tsx`**: objeto de perfil montado manualmente em `montarCustos()` precisou do campo novo (erro de TS pego pelo `tsc --noEmit`, corrigido com `null` — esse fluxo não usa carga máxima, só o de Buscar Frete).
+- **`BuscarFrete.tsx`** (é aqui que fecha o ciclo): nova função `valorTotalEstimadoCentavos(frete, cargaMaxima)` = taxa/ton × carga máxima do perfil, só quando `tipoValor === 'por_tonelada'`. Card do frete agora mostra `≈ R$ X total (carga máx. Y ton)` ao lado da taxa, quando o motorista tem carga máxima cadastrada; sem cadastro, mostra aviso "Cadastre a carga máxima...". Botão "Analisar Frete": antes, todo frete `por_tonelada` forçava o modo "A negociar" (não tinha como saber o total); agora, com carga máxima cadastrada, pré-preenche "Valor do frete" com o total estimado (editável — é estimativa assumindo caminhão cheio, a carga real pode ser menor). Sem carga máxima cadastrada, comportamento antigo se mantém (força "A negociar").
+
+Validado com `tsc --noEmit` limpo em `apps/web`. Ainda não commitado/pushado.
+
+**Decisão explícita, importante**: o valor estimado assume o caminhão saindo com a carga máxima cheia — é uma aproximação pra ajudar a decisão, não um valor fechado com a empresa. O motorista sempre pode editar "Valor do frete" na tela Analisar antes de calcular, e a negociação real de peso/valor continua acontecendo por telefone/WhatsApp com o contato do frete.
 
 ## Atualização — 11/08 (3): tela "Buscar frete" no app do motorista
 

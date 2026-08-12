@@ -431,6 +431,19 @@ export default function Perfil() {
       )}
 
       <label>
+        Carga máxima (toneladas)
+        <input
+          type="number"
+          step="0.1"
+          min={0}
+          value={form.carga_maxima_toneladas ?? ''}
+          onChange={(e) => campo('carga_maxima_toneladas', e.target.value === '' ? null : Number(e.target.value))}
+          placeholder="Ex.: 27"
+        />
+      </label>
+      <p className="aviso">Usada para estimar o valor total de fretes cobrados por tonelada, na tela Buscar frete.</p>
+
+      <label>
         Ano do caminhão
         <input
           type="number"
