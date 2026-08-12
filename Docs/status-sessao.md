@@ -366,6 +366,10 @@ Perguntei ao Raphael como corrigir; ele escolheu a opção recomendada: corrigir
 
 Validado com `tsc --noEmit` limpo em `apps/web`. Ainda não commitado/pushado.
 
+## Atualização — 12/08 (3): borda nos grupos de chips do Perfil
+
+Pedido do Raphael, com print da tela: os chips de "Tipo de veículo" e "Tipo de carroceria" pareciam itens soltos, sem deixar claro que cada bloco é um único campo. Adicionada borda arredondada (`.chip-secao` em `index.css`, `border: 1px solid #374151; border-radius: 12px; padding: 12px`) — classe já compartilhada pelos dois blocos em `Perfil.tsx`, então uma mudança só resolve os dois. Não mexe em `Resultado.tsx` (usa só `.chip-secao-titulo`, não `.chip-secao`).
+
 ## Atualização — 12/08 (2): Carga Máxima no Perfil — fecha o ciclo do frete "por tonelada"
 
 Pedido do Raphael, em cima da correção do `tipo_valor` (seção anterior): cadastrar a **carga máxima do caminhão (toneladas)** no Perfil, pra poder converter a taxa/tonelada dos fretes `por_tonelada` em valor TOTAL estimado (taxa × carga máxima) — hoje esse cálculo não dava pra fazer porque faltava a capacidade do caminhão.
