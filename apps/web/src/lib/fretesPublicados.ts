@@ -25,6 +25,8 @@ export interface FretePublicado {
   destinoUf: string;
   valorFreteCentavos: number | null;
   valorACombinar: boolean;
+  /** Unidade de valorFreteCentavos quando valorACombinar é false: 'fixo' (total do frete) ou 'por_tonelada' (taxa por tonelada — a fonte não informa peso, então não dá pra calcular o total). Null quando valorACombinar é true. */
+  tipoValor: 'fixo' | 'por_tonelada' | null;
   tiposVeiculoAceitos: TipoVeiculo[];
   tiposCarroceriaAceitos: TipoCarroceria[];
   status: string;
@@ -42,7 +44,7 @@ export async function listarFretesAbertos(filtros: FiltrosFrete = {}, limite = 3
   let query = supabase
     .from('fretes_publicados')
     .select(
-      'id, empresa_nome, contato_nome, contato_telefone, origem_cidade, origem_uf, origem_lat, origem_lng, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipos_veiculo_aceitos, tipos_carroceria_aceitos, status, created_at',
+      'id, empresa_nome, contato_nome, contato_telefone, origem_cidade, origem_uf, origem_lat, origem_lng, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, tipos_veiculo_aceitos, tipos_carroceria_aceitos, status, created_at',
     )
     .eq('status', 'aberto')
     .order('created_at', { ascending: false })
@@ -70,6 +72,7 @@ export async function listarFretesAbertos(filtros: FiltrosFrete = {}, limite = 3
     destinoUf: r.destino_uf as string,
     valorFreteCentavos: (r.valor_frete_centavos as number | null) ?? null,
     valorACombinar: Boolean(r.valor_a_combinar),
+    tipoValor: (r.tipo_valor as 'fixo' | 'por_tonelada' | null) ?? null,
     tiposVeiculoAceitos: (r.tipos_veiculo_aceitos as TipoVeiculo[] | null) ?? [],
     tiposCarroceriaAceitos: (r.tipos_carroceria_aceitos as TipoCarroceria[] | null) ?? [],
     status: r.status as string,
