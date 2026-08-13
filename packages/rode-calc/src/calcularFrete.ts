@@ -29,7 +29,7 @@ import { calcularPisoANTT } from './pisoANTT';
 export const FORMULA_VERSAO = 'emerson-v1';
 
 export function calcularFrete(entrada: FreteInput): FreteResultado {
-  const { distanciaKm, valorFrete, voltaVazia, margemDesejada, custos, numeroEixos } = entrada;
+  const { distanciaKm, valorFrete, voltaVazia, margemDesejada, custos, numeroEixos, tipoCarga } = entrada;
 
   // Com volta vazia, os custos variáveis por km e o pedágio dobram (o
   // caminhão roda a distância total, ida + volta, sem gerar receita extra).
@@ -70,7 +70,7 @@ export function calcularFrete(entrada: FreteInput): FreteResultado {
   const custoTotal = Object.values(custoDetalhado).reduce((acc, v) => acc + v, 0);
   const lucro = valorFrete - custoTotal;
   const margemReal = valorFrete > 0 ? (lucro / valorFrete) * 100 : 0;
-  const pisoANTT = calcularPisoANTT(distanciaKm, numeroEixos);
+  const pisoANTT = calcularPisoANTT(distanciaKm, numeroEixos, tipoCarga);
   const abaixoPisoANTT = valorFrete < pisoANTT;
 
   let veredicto: FreteResultado['veredicto'];

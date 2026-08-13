@@ -11,6 +11,8 @@
 //     preço/litro), não `arlaPct` como percentual do diesel — o PRD
 //     calc-app estava desatualizado nesse ponto.
 
+import type { TipoCarga } from './pisoANTT';
+
 export interface Custos {
   /** Consumo de diesel em km por litro. */
   dieselKmPorLt: number;
@@ -54,6 +56,8 @@ export interface FreteInput {
   distanciaEstimada?: boolean;
   /** Número de eixos do caminhão, usado para resolver o piso mínimo ANTT. Default: 5 (carreta). */
   numeroEixos?: number;
+  /** Tipo de carga (Tabela A da ANTT), usado para resolver o piso mínimo. Default: 'carga_geral'. */
+  tipoCarga?: TipoCarga;
 }
 
 export interface CustoDetalhado {

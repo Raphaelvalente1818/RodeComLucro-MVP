@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { calcularPisoANTT, ANTT_CARGA_GERAL } from '../src/pisoANTT';
+import {
+  calcularPisoANTT,
+  ANTT_TABELA_A,
+  ANTT_CARGA_GERAL,
+  ANTT_GRANEL_SOLIDO,
+  ANTT_GRANEL_LIQUIDO,
+  ANTT_FRIGORIFICADA,
+  ANTT_CONTEINERIZADA,
+  type TipoCarga,
+} from '../src/pisoANTT';
 
 describe('calcularPisoANTT', () => {
   it('aplica piso = distanciaKm * CCD + CC para eixos exatos da tabela', () => {
@@ -32,5 +41,33 @@ describe('calcularPisoANTT', () => {
     const curto = calcularPisoANTT(100, 5);
     const longo = calcularPisoANTT(1000, 5);
     expect(longo).toBeGreaterThan(curto);
+  });
+
+  it('usa carga_geral como default quando tipoCarga não é informado', () => {
+    expect(calcularPisoANTT(900, 5)).toBe(calcularPisoANTT(900, 5, 'carga_geral'));
+  });
+
+  it.each([
+    ['granel_solido', ANTT_GRANEL_SOLIDO],
+    ['granel_liquido', ANTT_GRANEL_LIQUIDO],
+    ['frigorificada', ANTT_FRIGORIFICADA],
+    ['conteinerizada', ANTT_CONTEINERIZADA],
+  ] as const)('calcula o piso de %s a partir da tabela oficial (Res. ANTT 6.084/2026)', (tipo, tabela) => {
+    const { ccd, cc } = tabela[5];
+    expect(calcularPisoANTT(900, 5, tipo as TipoCarga)).toBeCloseTo(900 * ccd + cc, 4);
+  });
+
+  it('conteinerizada não tem 2 eixos na tabela oficial — cai no menor disponível (3)', () => {
+    const doisEixos = calcularPisoANTT(500, 2, 'conteinerizada');
+    const tresEixos = calcularPisoANTT(500, 3, 'conteinerizada');
+    expect(doisEixos).toBe(tresEixos);
+  });
+
+  it('ANTT_TABELA_A reúne os 5 tipos e bate com as constantes individuais', () => {
+    expect(ANTT_TABELA_A.carga_geral).toBe(ANTT_CARGA_GERAL);
+    expect(ANTT_TABELA_A.granel_solido).toBe(ANTT_GRANEL_SOLIDO);
+    expect(ANTT_TABELA_A.granel_liquido).toBe(ANTT_GRANEL_LIQUIDO);
+    expect(ANTT_TABELA_A.frigorificada).toBe(ANTT_FRIGORIFICADA);
+    expect(ANTT_TABELA_A.conteinerizada).toBe(ANTT_CONTEINERIZADA);
   });
 });

@@ -1,6 +1,17 @@
 export type { FreteInput, FreteResultado, CustoDetalhado, Custos, Veredicto } from './types';
 export { calcularFrete, FORMULA_VERSAO } from './calcularFrete';
-export { calcularPisoANTT, ANTT_CARGA_GERAL, ANTT_VERSAO, ANTT_FONTE } from './pisoANTT';
+export {
+  calcularPisoANTT,
+  ANTT_TABELA_A,
+  ANTT_CARGA_GERAL,
+  ANTT_GRANEL_SOLIDO,
+  ANTT_GRANEL_LIQUIDO,
+  ANTT_FRIGORIFICADA,
+  ANTT_CONTEINERIZADA,
+  ANTT_VERSAO,
+  ANTT_FONTE,
+} from './pisoANTT';
+export type { TipoCarga } from './pisoANTT';
 export { fmtBRL, fmtPct, centsToReais, reaisToCents, parseNumeroPtBR } from './format';
 export { caminhoes, marcas } from './caminhoes';
 export type { ModeloCaminhao } from './caminhoes';
