@@ -529,6 +529,16 @@ export default function Perfil() {
       )}
 
       <label>
+        Próxima troca de óleo
+        <input
+          type="date"
+          value={form.proxima_troca_oleo ?? ''}
+          onChange={(e) => campo('proxima_troca_oleo', e.target.value || null)}
+        />
+      </label>
+      <p className="aviso">Você recebe um alerta na Garagem uma semana antes de vencer.</p>
+
+      <label>
         Pneus (R$/km)
         <input type="number" step="0.01" value={form.pneus_por_km} onChange={(e) => campo('pneus_por_km', Number(e.target.value))} />
       </label>

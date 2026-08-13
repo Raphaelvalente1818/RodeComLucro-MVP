@@ -42,6 +42,8 @@ export interface CaminhaoPerfil {
   tipo_carroceria: string | null;
   /** Capacidade máxima de carga, em toneladas — usada para estimar o valor total de fretes cobrados "por tonelada" (ver lib/fretesPublicados.ts). Preenchimento opcional. */
   carga_maxima_toneladas: number | null;
+  /** Data prevista da próxima troca de óleo (ISO, "AAAA-MM-DD") — alerta na Garagem uma semana antes de vencer. Preenchimento opcional. */
+  proxima_troca_oleo: string | null;
 }
 
 export const PERFIL_DEFAULT: Omit<CaminhaoPerfil, 'id' | 'user_id'> = {
@@ -71,6 +73,7 @@ export const PERFIL_DEFAULT: Omit<CaminhaoPerfil, 'id' | 'user_id'> = {
   tipo_veiculo: null,
   tipo_carroceria: null,
   carga_maxima_toneladas: null,
+  proxima_troca_oleo: null,
 };
 
 export async function carregarPerfil(userId: string): Promise<CaminhaoPerfil | null> {

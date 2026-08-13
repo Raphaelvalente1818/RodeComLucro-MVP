@@ -220,6 +220,7 @@ export default function Analisar() {
         tipo_veiculo: null,
         tipo_carroceria: null,
         carga_maxima_toneladas: null,
+        proxima_troca_oleo: null,
       },
       dias,
       parseNumeroPtBR(pedagio),

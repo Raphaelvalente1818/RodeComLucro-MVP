@@ -412,6 +412,17 @@ Pedido do Raphael (via agente separado, só banco — nenhum arquivo de `apps/we
 
 **Migration** `20260811160200_motoristas_cidade_atual.sql` (aplicada como `motoristas_cidade_atual`): colunas `cidade_atual`, `uf_atual` (text) e `cidade_atual_lat`/`cidade_atual_lng` (numeric) em `motoristas` — pra guardar onde o motorista está agora (diferente de `uf_base`, que é a UF onde ele mora/é baseado). Nenhuma tela preenche isso ainda.
 
+## Atualização — 12/08 (5): "Próxima troca de óleo" no Perfil + alerta na Garagem
+
+Pedido do Raphael, print da tela Perfil. Item que já estava no backlog em aberto (ver seção 06/08 "revisão do backlog", "alerta de troca de óleo"). Mesmo padrão do alerta de CNH/exame toxicológico, mas com uma diferença importante: óleo é atributo do **caminhão** (`caminhao_perfil`), não do motorista, e o Raphael pediu uma janela de aviso mais curta (**1 semana antes**, não 60 dias como CNH/exame).
+
+- **Migração** `20260812160000_caminhao_perfil_proxima_troca_oleo.sql`: coluna `proxima_troca_oleo date` em `caminhao_perfil`, nullable. Aplicada direto no Supabase via MCP.
+- **`lib/frete.ts`**: `CaminhaoPerfil`/`PERFIL_DEFAULT` ganharam o campo (`string | null`, formato ISO "AAAA-MM-DD" — mesmo padrão de `cnh_vencimento`).
+- **`Perfil.tsx`**: campo novo "Próxima troca de óleo" (`<input type="date">`, mesmo componente nativo já usado pra CNH/exame em `Motorista.tsx` — o navegador exibe no formato local, DD/MM/AAAA em pt-BR) logo após "Manutenção (R$/km)", com aviso "Você recebe um alerta na Garagem uma semana antes de vencer."
+- **`Garagem.tsx`**: passou a carregar `carregarPerfil(uid)` também (antes só carregava `motorista`), extrai `proxima_troca_oleo`. A função `checar()` do alerta (antes fixa em 60 dias) ganhou um parâmetro `limiteDias` opcional — "Troca de óleo" usa `checar('Troca de óleo', proximaTrocaOleo, 7)`. Bolinha de alerta (âmbar/vermelha) ao lado do "Olá, Nome" agora também acende por troca de óleo vencendo, mesma UX de antes (clique abre painel com detalhe). Como CNH/exame vivem em "Meu Perfil" (`/motorista`) e óleo vive em "Meu Caminhão" (`/perfil`), o botão de atalho do painel virou `botoesAtualizarAlerta` (um `Map` rota→texto) — mostra os dois links se houver alerta dos dois tipos ao mesmo tempo, só um se só um tipo estiver vencendo.
+
+Validado com `tsc --noEmit` limpo em `apps/web`. Ainda não commitado/pushado.
+
 ## Atualização — 12/08 (4): botão "Calcular" → "Analisar Frete"
 
 Pedido rápido do Raphael, print da tela Analisar: texto do botão principal trocado de "Calcular" pra "Analisar Frete" (`Analisar.tsx`, linha do botão de submit). `tsc --noEmit` limpo. Ainda não commitado/pushado.

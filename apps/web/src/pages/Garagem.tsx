@@ -20,6 +20,7 @@ import {
   type AnaliseResumo,
 } from '../lib/frete';
 import { carregarMotorista, type Motorista } from '../lib/motorista';
+import { carregarPerfil } from '../lib/frete';
 import { IconeCaminhao, IconePerfil } from '../components/IconesCard';
 // PROVISÓRIO — remover esta linha e o bloco marcado abaixo quando os
 // testes de backlog com os sócios acabarem (ver components/BacklogModal.tsx).
@@ -55,6 +56,7 @@ export default function Garagem() {
   const navigate = useNavigate();
   const [carregando, setCarregando] = useState(true);
   const [motorista, setMotorista] = useState<Motorista | null>(null);
+  const [proximaTrocaOleo, setProximaTrocaOleo] = useState<string | null>(null);
   const [analises, setAnalises] = useState<AnaliseResumo[]>([]);
   const [lucroMes, setLucroMes] = useState(0);
   // PROVISÓRIO — remover junto com o botão/modal de backlog abaixo.
@@ -69,11 +71,13 @@ export default function Garagem() {
         return;
       }
       const claims = decodeClaims(data.session!.access_token);
-      const [m, ultimas, lucro] = await Promise.all([
+      const [m, ultimas, lucro, perfil] = await Promise.all([
         carregarMotorista(uid),
         carregarUltimasAnalises(uid, 3),
         carregarLucroMesAtual(uid),
+        carregarPerfil(uid),
       ]);
+      setProximaTrocaOleo(perfil?.proxima_troca_oleo ?? null);
       setMotorista(
         m ?? {
           id: uid,
@@ -104,15 +108,32 @@ export default function Garagem() {
   const alertasVencimento = useMemo<AlertaVencimento[]>(() => {
     if (!motorista) return [];
     const itens: AlertaVencimento[] = [];
-    function checar(label: string, iso: string | null) {
+    function checar(label: string, iso: string | null, limiteDias = 60) {
       if (!iso) return;
       const dias = diasAte(iso);
-      if (dias <= 60) itens.push({ label, data: iso, dias, vencido: dias < 0 });
+      if (dias <= limiteDias) itens.push({ label, data: iso, dias, vencido: dias < 0 });
     }
     checar('CNH', motorista.cnh_vencimento);
     checar('Exame toxicológico', motorista.exame_toxicologico_vencimento);
+    // Troca de óleo é por caminhão (caminhao_perfil), não por motorista — e o
+    // Raphael pediu uma janela mais curta (1 semana), diferente dos 60 dias
+    // de CNH/exame, já que óleo é algo que se resolve rápido numa oficina.
+    checar('Troca de óleo', proximaTrocaOleo, 7);
     return itens;
-  }, [motorista]);
+  }, [motorista, proximaTrocaOleo]);
+
+  // CNH/exame ficam em "Meu perfil" (motoristas), troca de óleo fica em
+  // "Meu Caminhão" (caminhao_perfil) — o botão de atalho do alerta precisa
+  // apontar pro lugar certo, e pode precisar mostrar os dois se houver
+  // alerta dos dois tipos ao mesmo tempo.
+  const botoesAtualizarAlerta = useMemo(() => {
+    const mapa = new Map<string, string>();
+    for (const a of alertasVencimento) {
+      if (a.label === 'Troca de óleo') mapa.set('/perfil', 'Atualizar em Meu Caminhão');
+      else mapa.set('/motorista', 'Atualizar em Meu Perfil');
+    }
+    return Array.from(mapa.entries());
+  }, [alertasVencimento]);
 
   if (carregando || !motorista) return null;
 
@@ -162,9 +183,11 @@ export default function Garagem() {
               {a.label}: {a.vencido ? `vencida há ${Math.abs(a.dias)} dia(s)` : `vence em ${a.dias} dia(s)`} ({fmtDataBR(a.data)})
             </p>
           ))}
-          <button type="button" className="link-secundario" onClick={() => navigate('/motorista')}>
-            Atualizar em Meu perfil
-          </button>
+          {botoesAtualizarAlerta.map(([rota, texto]) => (
+            <button key={rota} type="button" className="link-secundario" onClick={() => navigate(rota)}>
+              {texto}
+            </button>
+          ))}
         </div>
       )}
 
