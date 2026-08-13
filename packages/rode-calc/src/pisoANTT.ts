@@ -105,6 +105,15 @@ export const ANTT_TABELA_A: Record<TipoCarga, CoeficientesPorEixo> = {
   conteinerizada: ANTT_CONTEINERIZADA,
 };
 
+/** Rótulo em português pra exibir na UI (ex.: KPI de piso ANTT na tela Resultado). */
+export const TIPO_CARGA_LABEL: Record<TipoCarga, string> = {
+  carga_geral: 'Carga Geral',
+  granel_solido: 'Granel Sólido',
+  granel_liquido: 'Granel Líquido',
+  frigorificada: 'Frigorificada',
+  conteinerizada: 'Conteinerizada',
+};
+
 function eixosOrdenados(tabela: CoeficientesPorEixo): number[] {
   return Object.keys(tabela)
     .map(Number)

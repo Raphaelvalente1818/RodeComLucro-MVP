@@ -7,7 +7,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { calcularFrete, fmtBRL, parseNumeroPtBR, type FreteResultado } from '@rode/calc';
+import { calcularFrete, fmtBRL, parseNumeroPtBR, tipoCargaPorCarroceria, TIPO_CARGA_LABEL, type FreteResultado } from '@rode/calc';
 import { supabase } from '../lib/supabaseClient';
 import {
   carregarPerfil,
@@ -189,6 +189,12 @@ export default function Analisar() {
     setPedagio(String(centavosCaminhao / 100));
   }, [pedagioCarroCentavos, numeroEixos, pedagioEditadoManual]);
 
+  // Piso ANTT por tipo de carga (13/08): resolvido automaticamente a
+  // partir da carroceria já cadastrada no Perfil — o motorista não
+  // escolhe isso aqui, não é um campo novo na tela. Sem carroceria
+  // cadastrada, cai em 'carga_geral' (mesmo comportamento de antes).
+  const tipoCarga = useMemo(() => tipoCargaPorCarroceria(perfil?.tipo_carroceria), [perfil]);
+
   function montarCustos() {
     return perfilParaCustos(
       {
@@ -236,7 +242,7 @@ export default function Analisar() {
     const km = parseNumeroPtBR(distanciaKm);
     if (km <= 0 || margemDesejada >= 100) return null;
     const custos = montarCustos();
-    const base = { origem: origem || 'Origem', destino: destino || 'Destino', distanciaKm: km, voltaVazia, margemDesejada, custos, distanciaEstimada, numeroEixos };
+    const base = { origem: origem || 'Origem', destino: destino || 'Destino', distanciaKm: km, voltaVazia, margemDesejada, custos, distanciaEstimada, numeroEixos, tipoCarga };
     const { custoTotal } = calcularFrete({ ...base, valorFrete: 0 });
     const freteMinimo = custoTotal / (1 - margemDesejada / 100);
     const resultado = calcularFrete({ ...base, valorFrete: freteMinimo });
@@ -245,7 +251,7 @@ export default function Analisar() {
   }, [
     aNegociar, distanciaKm, voltaVazia, margemDesejada, numeroEixos, dieselKmPorLt, dieselPreco,
     arlaKmPorLt, arlaPreco, pedagio, estacionamento, chapa, manutencaoPorKm, pneusPorKm,
-    depreciacaoPorKm, dias, distanciaEstimada, origem, destino,
+    depreciacaoPorKm, dias, distanciaEstimada, origem, destino, tipoCarga,
   ]);
 
   function calcularEIr() {
@@ -265,6 +271,7 @@ export default function Analisar() {
       custos,
       distanciaEstimada,
       numeroEixos,
+      tipoCarga,
     });
 
     navigate('/resultado', {
@@ -424,6 +431,11 @@ export default function Analisar() {
             Número de eixos
             <input type="number" min={2} max={9} value={numeroEixos} onChange={(e) => setNumeroEixos(Number(e.target.value))} />
           </label>
+          {perfil?.tipo_carroceria && (
+            <p className="aviso">
+              Piso ANTT calculado como "{TIPO_CARGA_LABEL[tipoCarga]}" (carroceria "{perfil.tipo_carroceria}" do seu perfil) — ajuste a carroceria em Meu Caminhão se precisar.
+            </p>
+          )}
           <label>
             Consumo diesel (km/L)
             <input type="number" step="0.1" value={dieselKmPorLt} onChange={(e) => setDieselKmPorLt(Number(e.target.value))} />

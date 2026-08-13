@@ -13,7 +13,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import type { Custos, FreteResultado } from '@rode/calc';
-import { fmtBRL, fmtPct } from '@rode/calc';
+import { fmtBRL, fmtPct, TIPO_CARGA_LABEL } from '@rode/calc';
 import { supabase } from '../lib/supabaseClient';
 import { explicarVeredicto, salvarAnalise, carregarAnalisePorId } from '../lib/frete';
 import { carregarMotorista } from '../lib/motorista';
@@ -282,7 +282,12 @@ export default function Resultado() {
           <b>{fmtPct(resultado.margemReal)}</b>
         </div>
         <div className="kpi">
-          <span>Piso mínimo ANTT</span>
+          <span>
+            Piso mínimo ANTT
+            {resultado.entrada.tipoCarga && resultado.entrada.tipoCarga !== 'carga_geral'
+              ? ` (${TIPO_CARGA_LABEL[resultado.entrada.tipoCarga]})`
+              : ''}
+          </span>
           <b>{fmtBRL(resultado.pisoANTT)}</b>
         </div>
         <div className="kpi">

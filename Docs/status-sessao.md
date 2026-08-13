@@ -412,6 +412,17 @@ Pedido do Raphael (via agente separado, só banco — nenhum arquivo de `apps/we
 
 **Migration** `20260811160200_motoristas_cidade_atual.sql` (aplicada como `motoristas_cidade_atual`): colunas `cidade_atual`, `uf_atual` (text) e `cidade_atual_lat`/`cidade_atual_lng` (numeric) em `motoristas` — pra guardar onde o motorista está agora (diferente de `uf_base`, que é a UF onde ele mora/é baseado). Nenhuma tela preenche isso ainda.
 
+## Atualização — 13/08 (2): liga tipo_carroceria → tipo de carga ANTT automaticamente
+
+Pedido do Raphael, execução direta da sugestão deixada na resposta anterior: em vez de deixar `tipoCarga` sempre default `'carga_geral'`, resolver automaticamente a partir do `tipo_carroceria` que o motorista já cadastra no Perfil — sem criar campo novo em tela nenhuma.
+
+- **`packages/rode-calc/src/tipoCargaPorCarroceria.ts`** (novo): `TIPO_CARGA_POR_CARROCERIA`, mapeamento das 18 carrocerias já cadastradas (`tiposCaminhao.ts`) pros 5 tipos de carga ANTT. Critério documentado no cabeçalho do arquivo — é uma aproximação de bom senso, a ANTT não define essa correspondência oficialmente: Graneleiro/Silo/Cavaqueira/Hoper/Caçamba → `granel_solido`; Tanque → `granel_liquido`; Baú Frigorífico/Baú Refrigerado → `frigorificada`; Bug Porta Container → `conteinerizada`; todo o resto (Grade baixa, Prancha, Plataforma, Sider, Baú, Cegonheiro, Gaiola, Munk, Apenas Cavalo) → `carga_geral`, por não ter categoria ANTT própria. Função `tipoCargaPorCarroceria(carroceria)` cai em `'carga_geral'` se não houver carroceria cadastrada ou o valor não for reconhecido. `pisoANTT.ts` ganhou `TIPO_CARGA_LABEL` (rótulo em português pra UI). Exportado em `index.ts`.
+- **Testes** (`test/tipoCargaPorCarroceria.test.ts`): 4 casos novos, incluindo checagem de que as 18 carrocerias de `CARROCERIAS` têm mapeamento. **32/32 testes passando** no `@rode/calc` (28 de antes + 4 novos).
+- **`Analisar.tsx`**: `tipoCarga` calculado via `useMemo(() => tipoCargaPorCarroceria(perfil?.tipo_carroceria), [perfil])`, repassado nas duas chamadas a `calcularFrete` (preview "A negociar" e cálculo final). Aviso novo em "Ajustar parâmetros do caminhão e custos" — só aparece se o motorista já cadastrou carroceria no Perfil — mostrando qual tipo de carga está sendo usado e lembrando que dá pra ajustar a carroceria em "Meu Caminhão" se estiver errado.
+- **`Resultado.tsx`**: KPI "Piso mínimo ANTT" ganha o tipo de carga entre parênteses (ex.: "Piso mínimo ANTT (Granel Líquido)") sempre que não for carga geral — dado já vinha em `resultado.entrada.tipoCarga`, não precisou de fetch novo.
+
+Validado: `tsc --noEmit` limpo em `packages/rode-calc` e `apps/web`, 32/32 testes do `@rode/calc`. Ainda não commitado/pushado.
+
 ## Atualização — 13/08: fecha o TODO da Fase 0 — piso ANTT pra todos os tipos de carga
 
 Raphael perguntou "podemos fazer a Fase 0? tem algum impecilio?" — respondi que a Fase 0 já estava praticamente pronta (identidade, `@rode/calc`, infra), faltando só um pedaço documentado desde a extração do motor (04/08): o piso ANTT só cobria "carga geral", os outros 4 tipos (granel sólido, granel líquido, frigorificada, conteinerizada) e a versão em banco (`antt_piso_tabela`, prevista no PRD original) nunca foram feitos. Ele confirmou: fechar isso, migrando pra tabela versionada no banco.
