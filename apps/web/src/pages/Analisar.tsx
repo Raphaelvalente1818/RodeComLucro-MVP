@@ -463,7 +463,7 @@ export default function Analisar() {
       )}
 
       <button type="button" disabled={!podeCalcular} onClick={calcularEIr}>
-        Calcular
+        Analisar Frete
       </button>
 
       <button type="button" className="link-secundario" onClick={() => navigate('/')}>

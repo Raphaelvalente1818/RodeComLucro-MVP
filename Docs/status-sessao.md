@@ -412,6 +412,32 @@ Pedido do Raphael (via agente separado, só banco — nenhum arquivo de `apps/we
 
 **Migration** `20260811160200_motoristas_cidade_atual.sql` (aplicada como `motoristas_cidade_atual`): colunas `cidade_atual`, `uf_atual` (text) e `cidade_atual_lat`/`cidade_atual_lng` (numeric) em `motoristas` — pra guardar onde o motorista está agora (diferente de `uf_base`, que é a UF onde ele mora/é baseado). Nenhuma tela preenche isso ainda.
 
+## Atualização — 12/08 (4): botão "Calcular" → "Analisar Frete"
+
+Pedido rápido do Raphael, print da tela Analisar: texto do botão principal trocado de "Calcular" pra "Analisar Frete" (`Analisar.tsx`, linha do botão de submit). `tsc --noEmit` limpo. Ainda não commitado/pushado.
+
+## Onde paramos — 12/08, fim de sessão (Raphael vai trocar de projeto)
+
+Resumo do estado atual, pra retomar sem perder contexto:
+
+**Já commitado e no GitHub** (commit `c79804f`, feature de carga máxima): `Docs/status-sessao.md`, `apps/web/src/lib/frete.ts`, `apps/web/src/pages/Analisar.tsx`, `apps/web/src/pages/BuscarFrete.tsx`, `apps/web/src/pages/Perfil.tsx`, `supabase/migrations/20260812150000_caminhao_perfil_carga_maxima.sql`. Esse commit é o que quebrou o build no Vercel (ver próximo item).
+
+**Bug descoberto e corrigido no código, mas AINDA NÃO COMMITADO/PUSHADO** — é o que está bloqueando o deploy agora:
+- O commit anterior desta sessão (correção do `tipo_valor`, feito numa sessão passada) nunca incluiu de fato `apps/web/src/lib/fretesPublicados.ts` nem a migração `supabase/migrations/20260812120000_fretes_publicados_tipo_valor.sql` — ficaram só como mudança local, nunca comitados. Como o commit `c79804f` (carga máxima) depende do campo `tipoValor` desse arquivo, o build do Vercel quebrou (`Property 'tipoValor' does not exist on type 'FretePublicado'`).
+- Também nesta sessão: borda (`.chip-secao` em `index.css`) nos grupos "Tipo de veículo"/"Tipo de carroceria" do Perfil, pedido do Raphael pra deixar claro que são campos únicos (multi-chip), não itens soltos.
+- **Comandos passados ao Raphael pra rodar localmente (fora do Cowork, terminal próprio) e ainda sem confirmação de execução:**
+  ```
+  cd D:\RodeComLucro-MVP
+  del .git\index.lock
+  git add apps/web/src/lib/fretesPublicados.ts supabase/migrations/20260812120000_fretes_publicados_tipo_valor.sql apps/web/src/index.css Docs/status-sessao.md
+  git commit -m "fix: tipoValor faltante + borda nos grupos de chip do Perfil"
+  git push origin main
+  ```
+
+**Próximo passo assim que essa sessão retomar**: confirmar com o Raphael se ele rodou esses comandos e se o deploy do Vercel passou limpo depois do push. Se ainda não rodou, isso é prioridade — o site em produção está com o último deploy quebrado até esse push acontecer.
+
+**Funcionalidade nova pendente de validação visual**: campo "Carga máxima (toneladas)" no Perfil e o valor total estimado (`≈ R$ X total`) no card de frete "por tonelada" em Buscar Frete — implementados e com `tsc --noEmit` limpo, mas o Raphael ainda não viu/testou ao vivo (só viu print da borda dos chips).
+
 **Preenchimento de `fretes_publicados.origem_lat`/`origem_lng`**: habilitada a extensão `unaccent` (estava disponível mas não habilitada — `create extension if not exists unaccent;`), confirmado que `lower(unaccent(...))` bate com a normalização usada em `municipios_brasil.nome_norm`. UPDATE por join `municipios_brasil.nome_norm = lower(unaccent(trim(origem_cidade)))` + `municipios_brasil.uf = trim(origem_uf)`.
 
 **Resultado da conferência**: **796 de 800 fretes** ficaram com coordenada preenchida. Os 4 que não bateram (2 pares distintos) foram investigados individualmente, não é falha da base de referência:
