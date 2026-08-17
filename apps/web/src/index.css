@@ -523,9 +523,42 @@ button:disabled {
   background: #3b82f6;
 }
 
+.ultimas-analises-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
 .ultimas-analises-topo h2 {
   font-size: 15px;
-  margin: 0 0 8px;
+  margin: 0;
+}
+
+/* Botão "Só realizados" — mesmo padrão visual de pílula do
+   .realizado-toggle-on/off (linha de cada análise), pra ficar consistente:
+   apagado quando o filtro está desligado, verde quando está ligado. */
+.filtro-realizados-off,
+.filtro-realizados-on {
+  width: auto;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.filtro-realizados-off {
+  background: none;
+  color: #9ca3af;
+  border: 1px dashed #6b7280;
+}
+
+.filtro-realizados-on {
+  background: #14301f;
+  color: #4ade80;
+  border: 1px solid #16a34a;
 }
 
 .lista-analises {

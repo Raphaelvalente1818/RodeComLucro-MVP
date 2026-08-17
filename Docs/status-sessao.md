@@ -535,4 +535,14 @@ Pedido do Raphael, a partir de um print da Garagem em produção: a lista "Últi
 
 **Validação**: `tsc --noEmit` limpo em `apps/web`.
 
+## Atualização — 17/08 (2): filtro "Só realizados" nas Últimas análises
+
+Pedido do Raphael logo em seguida, olhando a mesma tela: um botão ao lado de "Últimas análises" pra mostrar só os fretes marcados como realizado — os que realmente entram na conta do "lucro do mês" (diferente dos calculados/salvos mas não executados). Perguntou sugestão de nome; optei por "Só realizados" (fica claro que é um toggle liga/desliga, não uma tela de filtro separada).
+
+**`apps/web/src/pages/Garagem.tsx`**: novo estado `apenasRealizados`; `analisesExibidas` filtra a lista já carregada em memória (não refaz busca no Supabase — o filtro é só visual sobre o que já veio pela paginação). Texto do botão vira "✓ Só realizados" quando ativo. Se o filtro estiver ligado e não sobrar nenhum item entre os já carregados, mostra aviso sugerindo isso (em vez de lista vazia sem explicação) — nesse caso o botão "Ver mais" (que ignora o filtro ao buscar) ajuda a achar mais realizados mais antigos.
+
+**`apps/web/src/index.css`**: `.ultimas-analises-topo` virou flex-row (h2 + botão lado a lado); botão reaproveita o mesmo visual de pílula do "Realizado"/"Marcar como realizado" de cada linha (`.filtro-realizados-on/off`), pra manter consistência visual.
+
+**Validação**: `tsc --noEmit` limpo em `apps/web`.
+
 Ainda não commitado/pushado.

@@ -70,6 +70,10 @@ export default function Garagem() {
   // duplicados enquanto a busca está em andamento.
   const [temMaisAnalises, setTemMaisAnalises] = useState(false);
   const [carregandoMais, setCarregandoMais] = useState(false);
+  // Filtro visual da lista já carregada — não refaz a busca no Supabase,
+  // só esconde quem não é `realizado` (o que Raphael pediu: ver de cara só
+  // o que já entrou no cálculo da meta de lucro do mês).
+  const [apenasRealizados, setApenasRealizados] = useState(false);
   const [lucroMes, setLucroMes] = useState(0);
   // PROVISÓRIO — remover junto com o botão/modal de backlog abaixo.
   const [backlogAberto, setBacklogAberto] = useState(false);
@@ -187,6 +191,8 @@ export default function Garagem() {
     setCarregandoMais(false);
   }
 
+  const analisesExibidas = apenasRealizados ? analises.filter((a) => a.realizado) : analises;
+
   const primeiroNome = motorista.nome?.trim() ? motorista.nome.trim().split(' ')[0] : null;
   const metaReais = motorista.meta_alvo_centavos != null ? motorista.meta_alvo_centavos / 100 : null;
   const progresso = metaReais && metaReais > 0 ? Math.min(1, Math.max(0, lucroMes / metaReais)) : null;
@@ -290,13 +296,22 @@ export default function Garagem() {
       <section className="ultimas-analises">
         <div className="ultimas-analises-topo">
           <h2>Últimas análises</h2>
+          <button
+            type="button"
+            className={apenasRealizados ? 'filtro-realizados-on' : 'filtro-realizados-off'}
+            onClick={() => setApenasRealizados((v) => !v)}
+          >
+            {apenasRealizados ? '✓ Só realizados' : 'Só realizados'}
+          </button>
         </div>
 
         {analises.length === 0 ? (
           <p className="aviso">Você ainda não analisou nenhum frete.</p>
+        ) : analisesExibidas.length === 0 ? (
+          <p className="aviso">Nenhum frete realizado ainda nas análises carregadas.</p>
         ) : (
           <ul className="lista-analises">
-            {analises.map((a) => (
+            {analisesExibidas.map((a) => (
               <li key={a.id} className="linha-analise-item">
                 <button
                   type="button"
