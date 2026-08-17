@@ -17,6 +17,7 @@
 
 import { supabase } from './supabaseClient';
 import { centsToReais, reaisToCents } from '@rode/calc';
+import { gravarOuEnfileirar, registrarExecutor } from './filaOffline';
 
 export interface Motorista {
   id: string;
@@ -75,7 +76,23 @@ export async function carregarMotorista(userId: string): Promise<Motorista | nul
   return data as Motorista | null;
 }
 
-/** Grava "onde o motorista está agora" — usado pelo filtro de raio da tela Buscar Frete. */
+interface PayloadCidadeAtual {
+  userId: string;
+  cidade: string;
+  uf: string;
+  lat: number;
+  lng: number;
+}
+
+registrarExecutor<PayloadCidadeAtual>('motoristas_cidade_atual', async ({ userId, cidade, uf, lat, lng }) => {
+  const { error } = await supabase
+    .from('motoristas')
+    .update({ cidade_atual: cidade, uf_atual: uf, cidade_atual_lat: lat, cidade_atual_lng: lng })
+    .eq('id', userId);
+  return { error: error?.message ?? null };
+});
+
+/** Grava "onde o motorista está agora" — usado pelo filtro de raio da tela Buscar Frete. Passa pela fila offline (chave por usuário — só a última cidade digitada é reenviada). */
 export async function salvarCidadeAtual(
   userId: string,
   cidade: string,
@@ -83,17 +100,17 @@ export async function salvarCidadeAtual(
   lat: number,
   lng: number,
 ): Promise<{ error: string | null }> {
-  const { error } = await supabase
-    .from('motoristas')
-    .update({ cidade_atual: cidade, uf_atual: uf, cidade_atual_lat: lat, cidade_atual_lng: lng })
-    .eq('id', userId);
-  return { error: error?.message ?? null };
+  const payload: PayloadCidadeAtual = { userId, cidade, uf, lat, lng };
+  const { error } = await gravarOuEnfileirar('motoristas_cidade_atual', payload, `motoristas_cidade_atual:${userId}`);
+  return { error };
 }
 
-export async function salvarMotorista(
-  userId: string,
-  form: FormMotorista,
-): Promise<{ error: string | null }> {
+interface PayloadMotorista {
+  userId: string;
+  form: FormMotorista;
+}
+
+registrarExecutor<PayloadMotorista>('motoristas_editar', async ({ userId, form }) => {
   const { error } = await supabase
     .from('motoristas')
     .update({
@@ -106,4 +123,14 @@ export async function salvarMotorista(
     })
     .eq('id', userId);
   return { error: error?.message ?? null };
+});
+
+/** Passa pela fila offline — chave por usuário: se o motorista editar o cadastro mais de uma vez sem sinal, só a última versão é reenviada. */
+export async function salvarMotorista(
+  userId: string,
+  form: FormMotorista,
+): Promise<{ error: string | null }> {
+  const payload: PayloadMotorista = { userId, form };
+  const { error } = await gravarOuEnfileirar('motoristas_editar', payload, `motoristas_editar:${userId}`);
+  return { error };
 }

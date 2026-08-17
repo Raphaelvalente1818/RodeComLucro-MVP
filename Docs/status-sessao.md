@@ -498,3 +498,31 @@ Prioridades em aberto, sem ordem definida ainda — retomar com o Raphael:
 Ambos ficam como pendência pra decisão do Raphael (corrigir manualmente esses 2 pares na `fretes_publicados`, ou deixar como estão já que são poucos registros de dado de teste).
 
 Não mexi em nenhum arquivo de `apps/web/src` — essa etapa foi só banco (tabela de referência + colunas novas + UPDATE de backfill). Próximo passo (não iniciado): consumir essas coordenadas nas telas do motorista (input de "cidade atual" + filtro de raio em `BuscarFrete.tsx`).
+
+## Atualização — 13/08 (2): fila offline-first — fecha a Fase 1
+
+Depois de confirmar o checkpoint da sessão anterior (código e deploy sincronizados, commit `1704731`), perguntei ao Raphael qual frente entrar em seguida. Sugeri não priorizar Admin/instrumentação (dívida sem prazo, ainda com poucos usuários testando) e sim duas coisas com relógio correndo: fechar a Fase 1 (offline-first) e começar a submissão de template do calc-wpp na Meta cedo (aprovação é o gargalo, não o código). Ele escolheu começar pela Fase 1.
+
+Antes de codar, perguntei o alcance: só a fila de "Salvar análise" (o que o próprio código já previa desde a extração do `@rode/calc`) ou fila genérica pra toda gravação do app. Raphael pediu uma estimativa de esforço antes de decidir — expliquei que o grosso do trabalho é construir a fila em si (não escala por tela) e ele optou pelo escopo completo. Incluí também, por conta própria, um problema relacionado mas diferente: se o motorista abre o app já sem sinal, `carregarPerfil` falhava e a calculadora caía nos custos genéricos (`PERFIL_DEFAULT`) em vez dos custos reais do caminhão — isso dava um veredito calculado errado sem avisar que era estimativa. Resolvido junto, como cache de leitura (problema distinto de fila de escrita).
+
+**Novo `apps/web/src/lib/filaOffline.ts`** — motor genérico de fila offline via IndexedDB:
+- `registrarExecutor(tipo, fn)`: cada módulo de domínio (`lib/frete.ts`, `lib/motorista.ts`) ensina a fila a reenviar seu tipo de gravação, sem `filaOffline.ts` precisar conhecer `analise_frete`/`motoristas` — evita dependência circular.
+- `gravarOuEnfileirar(tipo, payload, idFila?)`: tenta gravar na hora; se `navigator.onLine` for `false` ou a chamada lançar exceção (rede caiu no meio), guarda no IndexedDB em vez de propagar erro. Erro *real* do servidor (RLS, validação — não exceção de rede) continua sendo um erro de verdade, não é mascarado como "salvo offline".
+- `processarFila()`: reenvia os itens pendentes na ordem de criação; item que falhar de novo fica na fila (com contagem de tentativas) em vez de ser descartado — preferível a perder silenciosamente uma análise que o motorista já achou que tinha salvo.
+- Sincroniza sozinho: no evento `online` do navegador, na carga do módulo (cobre reabrir o app já com sinal depois de ter ficado offline) e por um `setInterval` de 30s (o evento `online` nem sempre é confiável).
+- Evento customizado `rode:fila-offline-mudou` no `window`, disparado sempre que a fila muda — é o que a Garagem escuta pra atualizar o aviso sem precisar de F5.
+- `idFila` explícito por chamador (ex: `analise_frete_realizado:${id}`, `motoristas_editar:${userId}`) — reenviar a mesma chave sobrescreve em vez de duplicar (ex: motorista marca/desmarca "Realizado" duas vezes sem sinal → só o último estado desejado é sincronizado, não cada clique).
+
+**Gravações plugadas na fila** (`lib/frete.ts`, `lib/motorista.ts`): `salvarAnalise`, `alternarRealizado`, `salvarPerfil`, `salvarCidadeAtual`, `salvarMotorista`. Cada função manteve a mesma assinatura pública (só `salvarAnalise` ganhou um campo novo no retorno, `enfileirado: boolean`).
+
+**`Resultado.tsx`**: `salvar()` agora lê `enfileirado`; a mensagem de sucesso muda pra "Análise salva no aparelho — sem sinal agora, vai pro Supabase sozinha assim que a conexão voltar." quando aplicável, em vez do "Análise salva." genérico.
+
+**Novo `apps/web/src/lib/cacheLocal.ts`** — cache simples via `localStorage` (só a leitura mais recente, sobrescrita a cada sucesso, sem versionamento/expiração). `carregarPerfil` (`lib/frete.ts`) agora: se `navigator.onLine` for `false` ou a chamada falhar por rede, cai pro cache local em vez de retornar `null` (que fazia `Analisar.tsx` usar `PERFIL_DEFAULT`). Se estiver online e o Supabase responder com sucesso, atualiza o cache.
+
+**`Garagem.tsx`**: novo aviso "N alteração(ões) aguardando conexão — vai sincronizar sozinho assim que voltar o sinal", lido de `contarPendentes()` no carregamento e atualizado ao vivo pelo evento `rode:fila-offline-mudou`.
+
+**Validação**: `tsc --noEmit` limpo em `apps/web`, 32/32 testes do `@rode/calc` continuam passando (não mexi no motor). Como IndexedDB não roda nesta ferramenta de terminal, escrevi um smoke test isolado (Node + `fake-indexeddb`, arquivo temporário, apagado depois de rodar) cobrindo 6 cenários: enfileira offline, enfileira quando a chamada falha mesmo online, chave repetida sobrescreve em vez de duplicar, erro real do servidor fica na fila (não é descartado), e a fila esvazia sozinha assim que o executor volta a funcionar. Os 6 bateram como esperado.
+
+**Fora do escopo desta rodada, decisão explícita**: login/OTP (sempre precisa de rede, não faz sentido enfileirar) e as buscas de FIPE/distância (route-cost) — já tinham fallback manual antes desta sessão, funcionam diferente de uma fila de gravação pendente. Cache de leitura ficou só no Perfil do caminhão (o que afeta a correção do cálculo); não estendi pra `motoristas`/Garagem (nome, meta, últimas análises) — isso é sobre a tela abrir com algo pra mostrar, não sobre calcular errado, então fica como possível próximo passo se o Raphael quiser.
+
+Ainda não commitado/pushado.

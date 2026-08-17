@@ -10,6 +10,8 @@
 
 import type { Custos, FreteResultado } from '@rode/calc';
 import { supabase } from './supabaseClient';
+import { gravarOuEnfileirar, registrarExecutor } from './filaOffline';
+import { lerCache, salvarCache } from './cacheLocal';
 
 export interface CaminhaoPerfil {
   id: string;
@@ -76,32 +78,52 @@ export const PERFIL_DEFAULT: Omit<CaminhaoPerfil, 'id' | 'user_id'> = {
   proxima_troca_oleo: null,
 };
 
+const CHAVE_CACHE_PERFIL = (userId: string) => `caminhao_perfil:${userId}`;
+
+/**
+ * Sem sinal (ou se a chamada falhar por rede no meio do caminho), cai pra
+ * última cópia salva localmente em vez de deixar quem chamou usar
+ * PERFIL_DEFAULT — evita calcular o frete com custos genéricos como se
+ * fossem os custos reais do caminhão do motorista.
+ */
 export async function carregarPerfil(userId: string): Promise<CaminhaoPerfil | null> {
-  const { data, error } = await supabase
-    .from('caminhao_perfil')
-    .select('*')
-    .eq('user_id', userId)
-    .maybeSingle();
-  if (error) {
-    // eslint-disable-next-line no-console
-    console.error('carregarPerfil', error);
-    return null;
+  const semSinal = typeof navigator !== 'undefined' && !navigator.onLine;
+  if (!semSinal) {
+    try {
+      const { data, error } = await supabase
+        .from('caminhao_perfil')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (!error) {
+        const perfil = data as CaminhaoPerfil | null;
+        if (perfil) salvarCache(CHAVE_CACHE_PERFIL(userId), perfil);
+        return perfil;
+      }
+      // eslint-disable-next-line no-console
+      console.error('carregarPerfil', error);
+      return null;
+    } catch {
+      // caiu a conexão no meio da chamada — segue pro cache abaixo.
+    }
   }
-  return data as CaminhaoPerfil | null;
+  return lerCache<CaminhaoPerfil>(CHAVE_CACHE_PERFIL(userId));
 }
 
+registrarExecutor<Record<string, unknown>>('caminhao_perfil_salvar', async (linha) => {
+  const { error } = await supabase.from('caminhao_perfil').upsert(linha, { onConflict: 'user_id' });
+  return { error: error?.message ?? null };
+});
+
+/** Passa pela fila offline — chave por usuário: se o motorista editar o perfil mais de uma vez sem sinal, só a última versão é reenviada. */
 export async function salvarPerfil(
   userId: string,
   perfil: Omit<CaminhaoPerfil, 'id' | 'user_id'>,
   id?: string,
 ): Promise<{ error: string | null }> {
-  const { error } = await supabase
-    .from('caminhao_perfil')
-    .upsert(
-      { id: id ?? crypto.randomUUID(), user_id: userId, ...perfil },
-      { onConflict: 'user_id' },
-    );
-  return { error: error?.message ?? null };
+  const linha = { id: id ?? crypto.randomUUID(), user_id: userId, ...perfil };
+  const { error } = await gravarOuEnfileirar('caminhao_perfil_salvar', linha, `caminhao_perfil_salvar:${userId}`);
+  return { error };
 }
 
 /** Dias estimados por faixa de km (auto-preenchimento, editável pelo motorista). */
@@ -155,41 +177,52 @@ export interface AnaliseParaSalvar {
   valorACombinar?: boolean;
 }
 
+/** Linha pronta pra gravar em analise_frete — montada uma vez, reaproveitada tanto na tentativa direta quanto, se precisar, no reenvio pela fila offline. */
+type LinhaAnaliseFrete = ReturnType<typeof montarLinhaAnalise>;
+
+function montarLinhaAnalise(userId: string, id: string, analise: AnaliseParaSalvar) {
+  return {
+    id,
+    user_id: userId,
+    caminhao_perfil_id: analise.caminhaoPerfilId ?? null,
+    origem: analise.origem,
+    destino: analise.destino,
+    distancia_km: analise.distanciaKm,
+    distancia_estimada: analise.distanciaEstimada,
+    volta_vazia: analise.voltaVazia,
+    valor_frete_centavos: analise.valorFreteCentavos,
+    margem_desejada: analise.margemDesejada,
+    numero_eixos: analise.numeroEixos ?? null,
+    custos_snapshot: analise.custos,
+    resultado_snapshot: analise.resultado,
+    veredicto: analise.resultado.veredicto,
+    formula_versao: analise.resultado.formulaVersao,
+    empresa_nome: analise.empresaNome?.trim() || null,
+    contato_nome: analise.contatoNome?.trim() || null,
+    contato_telefone: analise.contatoTelefone?.trim() || null,
+    valor_a_combinar: analise.valorACombinar ?? false,
+  };
+}
+
+registrarExecutor<LinhaAnaliseFrete>('analise_frete_salvar', async (linha) => {
+  const { error } = await supabase.from('analise_frete').upsert(linha, { onConflict: 'id' });
+  return { error: error?.message ?? null };
+});
+
 /**
- * Grava a análise no Supabase com id gerado no cliente + upsert. Ponto
- * único de persistência — quando a fila offline (IndexedDB) entrar, só o
- * corpo desta função muda (grava local primeiro, sincroniza depois).
+ * Grava a análise no Supabase com id gerado no cliente + upsert. Sem
+ * conexão (ou se a rede falhar na hora H), a fila offline (lib/filaOffline.ts)
+ * guarda essa mesma linha localmente e reenvia sozinha quando a conexão
+ * voltar — o motorista não perde o cálculo por estar sem sinal na estrada.
  */
 export async function salvarAnalise(
   userId: string,
   analise: AnaliseParaSalvar,
-): Promise<{ id: string; error: string | null }> {
+): Promise<{ id: string; error: string | null; enfileirado: boolean }> {
   const id = crypto.randomUUID();
-  const { error } = await supabase.from('analise_frete').upsert(
-    {
-      id,
-      user_id: userId,
-      caminhao_perfil_id: analise.caminhaoPerfilId ?? null,
-      origem: analise.origem,
-      destino: analise.destino,
-      distancia_km: analise.distanciaKm,
-      distancia_estimada: analise.distanciaEstimada,
-      volta_vazia: analise.voltaVazia,
-      valor_frete_centavos: analise.valorFreteCentavos,
-      margem_desejada: analise.margemDesejada,
-      numero_eixos: analise.numeroEixos ?? null,
-      custos_snapshot: analise.custos,
-      resultado_snapshot: analise.resultado,
-      veredicto: analise.resultado.veredicto,
-      formula_versao: analise.resultado.formulaVersao,
-      empresa_nome: analise.empresaNome?.trim() || null,
-      contato_nome: analise.contatoNome?.trim() || null,
-      contato_telefone: analise.contatoTelefone?.trim() || null,
-      valor_a_combinar: analise.valorACombinar ?? false,
-    },
-    { onConflict: 'id' },
-  );
-  return { id, error: error?.message ?? null };
+  const linha = montarLinhaAnalise(userId, id, analise);
+  const { error, enfileirado } = await gravarOuEnfileirar('analise_frete_salvar', linha, `analise_frete_salvar:${id}`);
+  return { id, error, enfileirado };
 }
 
 /** Conselho contextual curto, mostrado junto do veredito na tela Resultado. */
@@ -246,21 +279,35 @@ export async function carregarUltimasAnalises(userId: string, limite = 3): Promi
   }));
 }
 
+interface PayloadRealizado {
+  id: string;
+  realizado: boolean;
+  realizadoEm: string | null;
+}
+
+registrarExecutor<PayloadRealizado>('analise_frete_realizado', async ({ id, realizado, realizadoEm }) => {
+  const { error } = await supabase
+    .from('analise_frete')
+    .update({ realizado, realizado_em: realizadoEm })
+    .eq('id', id);
+  return { error: error?.message ?? null };
+});
+
 /**
  * Alterna `realizado` de uma análise — botão "Realizado" na lista da
  * Garagem. Só fretes com `realizado = true` entram na soma de
- * `carregarLucroMesAtual`.
+ * `carregarLucroMesAtual`. Passa pela fila offline (mesma chave por
+ * análise — se o motorista marcar/desmarcar mais de uma vez sem sinal,
+ * só o último estado desejado é reenviado, não cada clique).
  */
 export async function alternarRealizado(
   id: string,
   realizadoAtual: boolean,
 ): Promise<{ realizado: boolean; error: string | null }> {
   const novo = !realizadoAtual;
-  const { error } = await supabase
-    .from('analise_frete')
-    .update({ realizado: novo, realizado_em: novo ? new Date().toISOString() : null })
-    .eq('id', id);
-  return { realizado: novo, error: error?.message ?? null };
+  const payload: PayloadRealizado = { id, realizado: novo, realizadoEm: novo ? new Date().toISOString() : null };
+  const { error } = await gravarOuEnfileirar('analise_frete_realizado', payload, `analise_frete_realizado:${id}`);
+  return { realizado: novo, error };
 }
 
 /** Soma do lucro (em reais) das análises REALIZADAS do mês corrente — usado na barra de meta de lucro da Garagem. */

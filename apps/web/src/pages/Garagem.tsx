@@ -21,6 +21,7 @@ import {
 } from '../lib/frete';
 import { carregarMotorista, type Motorista } from '../lib/motorista';
 import { carregarPerfil } from '../lib/frete';
+import { contarPendentes } from '../lib/filaOffline';
 import { IconeCaminhao, IconePerfil } from '../components/IconesCard';
 // PROVISÓRIO — remover esta linha e o bloco marcado abaixo quando os
 // testes de backlog com os sócios acabarem (ver components/BacklogModal.tsx).
@@ -62,6 +63,10 @@ export default function Garagem() {
   // PROVISÓRIO — remover junto com o botão/modal de backlog abaixo.
   const [backlogAberto, setBacklogAberto] = useState(false);
   const [alertaVencimentoAberto, setAlertaVencimentoAberto] = useState(false);
+  // Itens (análise salva, perfil editado, etc.) que ficaram na fila offline
+  // esperando conexão pra sincronizar — ver lib/filaOffline.ts. Atualiza
+  // sozinho quando a fila muda (item entra ou sai), sem precisar dar F5.
+  const [pendentesOffline, setPendentesOffline] = useState(0);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -101,6 +106,15 @@ export default function Garagem() {
       setCarregando(false);
     });
   }, [navigate]);
+
+  useEffect(() => {
+    const atualizar = () => {
+      contarPendentes().then(setPendentesOffline);
+    };
+    atualizar();
+    window.addEventListener('rode:fila-offline-mudou', atualizar);
+    return () => window.removeEventListener('rode:fila-offline-mudou', atualizar);
+  }, []);
 
   // Alerta de CNH/exame toxicológico vencendo em até 60 dias (ou já
   // vencidos). Hook precisa vir antes do "return null" abaixo (regra dos
@@ -192,6 +206,15 @@ export default function Garagem() {
       )}
 
       {backlogAberto && <BacklogModal onFechar={() => setBacklogAberto(false)} />}
+
+      {pendentesOffline > 0 && (
+        <p className="aviso">
+          {pendentesOffline === 1
+            ? '1 alteração aguardando conexão'
+            : `${pendentesOffline} alterações aguardando conexão`}{' '}
+          — vai sincronizar sozinho assim que voltar o sinal.
+        </p>
+      )}
 
       <div className="garagem-status">
         <span>Base: {motorista.uf_base ?? 'não informada'}</span>

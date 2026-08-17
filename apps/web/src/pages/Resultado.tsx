@@ -93,6 +93,8 @@ export default function Resultado() {
 
   const [salvando, setSalvando] = useState(false);
   const [salvo, setSalvo] = useState(false);
+  /** true quando a análise não foi pro Supabase na hora (sem sinal) e ficou guardada na fila offline — ver lib/filaOffline.ts. */
+  const [salvoOffline, setSalvoOffline] = useState(false);
   const [erroSalvar, setErroSalvar] = useState<string | null>(null);
 
   // Popup de contato (empresa/nome/telefone), aberto ao clicar "Salvar
@@ -170,7 +172,7 @@ export default function Resultado() {
         navigate('/entrar', { replace: true });
         return;
       }
-      const { error } = await salvarAnalise(userId, {
+      const { error, enfileirado } = await salvarAnalise(userId, {
         origem: resultado!.entrada.origem,
         destino: resultado!.entrada.destino,
         distanciaKm: resultado!.entrada.distanciaKm,
@@ -193,6 +195,7 @@ export default function Resultado() {
       }
       setMostrarContato(false);
       setSalvo(true);
+      setSalvoOffline(enfileirado);
     } finally {
       setSalvando(false);
     }
@@ -322,7 +325,11 @@ export default function Resultado() {
       ) : (
         <>
           {salvo ? (
-            <p className="sucesso">Análise salva.</p>
+            <p className="sucesso">
+              {salvoOffline
+                ? 'Análise salva no aparelho — sem sinal agora, vai pro Supabase sozinha assim que a conexão voltar.'
+                : 'Análise salva.'}
+            </p>
           ) : (
             <button type="button" disabled={salvando} onClick={() => setMostrarContato(true)}>
               Salvar análise
