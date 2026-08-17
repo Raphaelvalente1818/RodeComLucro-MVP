@@ -545,4 +545,16 @@ Pedido do Raphael logo em seguida, olhando a mesma tela: um botão ao lado de "�
 
 **Validação**: `tsc --noEmit` limpo em `apps/web`.
 
+## Atualização — 17/08 (3): correção do filtro "Só realizados" — busca no banco, não só no que já tava na tela
+
+Raphael testou e achou o bug: o filtro só escondia/mostrava dentro do que já tinha sido carregado por `carregarUltimasAnalises` (3 iniciais + o que veio via "Ver mais"). Um frete realizado mais antigo, ainda atrás do "Ver mais", ficava invisível pro filtro — parecia que só trazia "os realizados que estão listados".
+
+**Correção**: o filtro agora busca direto no Supabase, em vez de filtrar em memória.
+
+**`apps/web/src/lib/frete.ts`**: extraído `mapAnaliseResumo` (helper compartilhado, evita duplicar o mapeamento linha→`AnaliseResumo`) e nova `carregarAnalisesRealizadasDoMes(userId)` — mesmo critério de `carregarLucroMesAtual` (`realizado = true` + `created_at` dentro do mês corrente), sem paginação, porque a meta é exatamente isso: todos os realizados do mês, não só uma amostra.
+
+**`apps/web/src/pages/Garagem.tsx`**: `apenasRealizados` (o toggle) agora dispara `alternarFiltroRealizados()`, que busca `carregarAnalisesRealizadasDoMes` só ao ligar o filtro (estado `analisesRealizadas` guarda o resultado; `carregandoRealizados` mostra "Carregando…" no botão e esconde a lista por um instante). `analisesExibidas` passa a ser `analisesRealizadas` (quando ligado) em vez de um `.filter()` sobre `analises`. O botão "Ver mais" some enquanto o filtro está ligado (não faz sentido paginar uma lista que já veio inteira do banco). Marcar/desmarcar "Realizado" com o filtro ligado também refaz essa busca, pra tirar/incluir o item certo na hora.
+
+**Validação**: `tsc --noEmit` limpo em `apps/web`.
+
 Ainda não commitado/pushado.

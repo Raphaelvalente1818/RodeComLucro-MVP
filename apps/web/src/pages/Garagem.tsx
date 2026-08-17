@@ -14,6 +14,7 @@ import { decodeClaims } from '../lib/claims';
 import { fmtBRL } from '@rode/calc';
 import {
   carregarUltimasAnalises,
+  carregarAnalisesRealizadasDoMes,
   carregarLucroMesAtual,
   alternarRealizado,
   tempoRelativo,
@@ -70,10 +71,14 @@ export default function Garagem() {
   // duplicados enquanto a busca está em andamento.
   const [temMaisAnalises, setTemMaisAnalises] = useState(false);
   const [carregandoMais, setCarregandoMais] = useState(false);
-  // Filtro visual da lista já carregada — não refaz a busca no Supabase,
-  // só esconde quem não é `realizado` (o que Raphael pediu: ver de cara só
-  // o que já entrou no cálculo da meta de lucro do mês).
+  // Filtro "Só realizados": busca direto no banco (não só filtra o que já
+  // tinha sido paginado em `analises`) — senão um realizado mais antigo,
+  // ainda escondido atrás do "Ver mais", não aparecia. Mesmo critério de
+  // carregarLucroMesAtual (realizado + mês corrente), pra bater exatamente
+  // com o que compõe a meta.
   const [apenasRealizados, setApenasRealizados] = useState(false);
+  const [analisesRealizadas, setAnalisesRealizadas] = useState<AnaliseResumo[]>([]);
+  const [carregandoRealizados, setCarregandoRealizados] = useState(false);
   const [lucroMes, setLucroMes] = useState(0);
   // PROVISÓRIO — remover junto com o botão/modal de backlog abaixo.
   const [backlogAberto, setBacklogAberto] = useState(false);
@@ -171,11 +176,16 @@ export default function Garagem() {
   // Botão "Realizado" na lista de análises: só fretes marcados como
   // realmente executados (não só calculados/salvos) entram na soma do
   // "lucro do mês" — daí recarregar carregarLucroMesAtual() ao alternar.
+  // Se o filtro "Só realizados" estiver ligado, refaz a busca dele também
+  // (não só o toggle local), pra tirar/incluir o item certo na hora.
   async function alternarRealizadoEAtualizarLucro(a: AnaliseResumo) {
     setAnalises((prev) => prev.map((x) => (x.id === a.id ? { ...x, realizado: !x.realizado } : x)));
     const { error } = await alternarRealizado(a.id, a.realizado);
     if (!error) {
       setLucroMes(await carregarLucroMesAtual(motorista!.id));
+      if (apenasRealizados && userId) {
+        setAnalisesRealizadas(await carregarAnalisesRealizadasDoMes(userId));
+      }
     }
   }
 
@@ -191,7 +201,21 @@ export default function Garagem() {
     setCarregandoMais(false);
   }
 
-  const analisesExibidas = apenasRealizados ? analises.filter((a) => a.realizado) : analises;
+  // Liga/desliga o filtro. Ao ligar, busca no banco TODOS os realizados do
+  // mês (não só filtra o que já estava na tela) — é o que corrige o bug
+  // relatado: antes, um realizado que ainda não tinha sido paginado ficava
+  // invisível pro filtro.
+  async function alternarFiltroRealizados() {
+    const ligando = !apenasRealizados;
+    setApenasRealizados(ligando);
+    if (ligando && userId) {
+      setCarregandoRealizados(true);
+      setAnalisesRealizadas(await carregarAnalisesRealizadasDoMes(userId));
+      setCarregandoRealizados(false);
+    }
+  }
+
+  const analisesExibidas = apenasRealizados ? analisesRealizadas : analises;
 
   const primeiroNome = motorista.nome?.trim() ? motorista.nome.trim().split(' ')[0] : null;
   const metaReais = motorista.meta_alvo_centavos != null ? motorista.meta_alvo_centavos / 100 : null;
@@ -299,16 +323,19 @@ export default function Garagem() {
           <button
             type="button"
             className={apenasRealizados ? 'filtro-realizados-on' : 'filtro-realizados-off'}
-            onClick={() => setApenasRealizados((v) => !v)}
+            onClick={alternarFiltroRealizados}
+            disabled={carregandoRealizados}
           >
-            {apenasRealizados ? '✓ Só realizados' : 'Só realizados'}
+            {carregandoRealizados ? 'Carregando…' : apenasRealizados ? '✓ Só realizados' : 'Só realizados'}
           </button>
         </div>
 
         {analises.length === 0 ? (
           <p className="aviso">Você ainda não analisou nenhum frete.</p>
-        ) : analisesExibidas.length === 0 ? (
-          <p className="aviso">Nenhum frete realizado ainda nas análises carregadas.</p>
+        ) : carregandoRealizados ? null : analisesExibidas.length === 0 ? (
+          <p className="aviso">
+            {apenasRealizados ? 'Nenhum frete realizado neste mês ainda.' : 'Você ainda não analisou nenhum frete.'}
+          </p>
         ) : (
           <ul className="lista-analises">
             {analisesExibidas.map((a) => (
@@ -341,7 +368,7 @@ export default function Garagem() {
           </ul>
         )}
 
-        {temMaisAnalises && (
+        {!apenasRealizados && temMaisAnalises && (
           <button
             type="button"
             className="link-secundario"

@@ -254,6 +254,21 @@ export interface AnaliseResumo {
   valorACombinar: boolean;
 }
 
+const COLUNAS_ANALISE_RESUMO = 'id, origem, destino, valor_frete_centavos, veredicto, created_at, realizado, valor_a_combinar';
+
+function mapAnaliseResumo(r: Record<string, unknown>): AnaliseResumo {
+  return {
+    id: r.id as string,
+    origem: r.origem as string,
+    destino: r.destino as string,
+    valorFreteCentavos: r.valor_frete_centavos as number,
+    veredicto: r.veredicto as AnaliseResumo['veredicto'],
+    createdAt: r.created_at as string,
+    realizado: Boolean(r.realizado),
+    valorACombinar: Boolean(r.valor_a_combinar),
+  };
+}
+
 /**
  * Últimas N análises do motorista, mais recentes primeiro — usado no bloco
  * "Últimas análises" da Garagem. `offset` permite paginar (botão "Ver
@@ -263,7 +278,7 @@ export interface AnaliseResumo {
 export async function carregarUltimasAnalises(userId: string, limite = 3, offset = 0): Promise<AnaliseResumo[]> {
   const { data, error } = await supabase
     .from('analise_frete')
-    .select('id, origem, destino, valor_frete_centavos, veredicto, created_at, realizado, valor_a_combinar')
+    .select(COLUNAS_ANALISE_RESUMO)
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .range(offset, offset + limite - 1);
@@ -272,16 +287,35 @@ export async function carregarUltimasAnalises(userId: string, limite = 3, offset
     console.error('carregarUltimasAnalises', error);
     return [];
   }
-  return (data ?? []).map((r) => ({
-    id: r.id as string,
-    origem: r.origem as string,
-    destino: r.destino as string,
-    valorFreteCentavos: r.valor_frete_centavos as number,
-    veredicto: r.veredicto as AnaliseResumo['veredicto'],
-    createdAt: r.created_at as string,
-    realizado: Boolean(r.realizado),
-    valorACombinar: Boolean(r.valor_a_combinar),
-  }));
+  return (data ?? []).map(mapAnaliseResumo);
+}
+
+/**
+ * TODOS os fretes realizados do mês corrente, mais recentes primeiro —
+ * mesmo critério de `carregarLucroMesAtual` (realizado = true + created_at
+ * dentro do mês atual). Usado pelo filtro "Só realizados" da Garagem: ao
+ * contrário de `carregarUltimasAnalises` (paginada), busca direto no banco
+ * em vez de filtrar só o que já tinha sido carregado na tela — senão um
+ * realizado mais antigo, ainda não paginado, ficava escondido do filtro.
+ */
+export async function carregarAnalisesRealizadasDoMes(userId: string): Promise<AnaliseResumo[]> {
+  const inicioMes = new Date();
+  inicioMes.setDate(1);
+  inicioMes.setHours(0, 0, 0, 0);
+
+  const { data, error } = await supabase
+    .from('analise_frete')
+    .select(COLUNAS_ANALISE_RESUMO)
+    .eq('user_id', userId)
+    .eq('realizado', true)
+    .gte('created_at', inicioMes.toISOString())
+    .order('created_at', { ascending: false });
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error('carregarAnalisesRealizadasDoMes', error);
+    return [];
+  }
+  return (data ?? []).map(mapAnaliseResumo);
 }
 
 interface PayloadRealizado {
