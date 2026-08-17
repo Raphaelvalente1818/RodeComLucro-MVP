@@ -525,4 +525,14 @@ Antes de codar, perguntei o alcance: só a fila de "Salvar análise" (o que o pr
 
 **Fora do escopo desta rodada, decisão explícita**: login/OTP (sempre precisa de rede, não faz sentido enfileirar) e as buscas de FIPE/distância (route-cost) — já tinham fallback manual antes desta sessão, funcionam diferente de uma fila de gravação pendente. Cache de leitura ficou só no Perfil do caminhão (o que afeta a correção do cálculo); não estendi pra `motoristas`/Garagem (nome, meta, últimas análises) — isso é sobre a tela abrir com algo pra mostrar, não sobre calcular errado, então fica como possível próximo passo se o Raphael quiser.
 
+## Atualização — 17/08: paginação "Ver mais" nas Últimas análises
+
+Pedido do Raphael, a partir de um print da Garagem em produção: a lista "Últimas análises" sempre mostrava só 3 e não dava pra ver fretes mais antigos. Adicionado um botão "Ver mais" que busca mais 5 por clique, acrescentando à lista já carregada (sem recarregar as 3 primeiras, sem paginação por página separada).
+
+**`apps/web/src/lib/frete.ts`**: `carregarUltimasAnalises(userId, limite, offset)` ganhou o parâmetro `offset` (default 0) e trocou `.limit(limite)` por `.range(offset, offset + limite - 1)` — mesma query, agora capaz de pular o que já foi mostrado.
+
+**`apps/web/src/pages/Garagem.tsx`**: carga inicial continua pedindo 3 (`TAMANHO_LOTE_INICIAL`); guarda `userId` (precisa pra paginar depois) e `temMaisAnalises` (true se a última leva veio cheia — sinal de que pode ter mais no banco). Botão "Ver mais" aparece só quando `temMaisAnalises`, some sozinho quando uma leva de 5 (`TAMANHO_LOTE_SEGUINTE`) volta incompleta (chegou ao fim). `carregarMaisAnalises()` busca com offset = `analises.length` e concatena ao estado existente; `carregandoMais` evita duplo clique.
+
+**Validação**: `tsc --noEmit` limpo em `apps/web`.
+
 Ainda não commitado/pushado.

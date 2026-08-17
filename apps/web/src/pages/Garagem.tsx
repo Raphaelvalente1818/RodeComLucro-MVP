@@ -53,12 +53,23 @@ function fmtDataBR(iso: string): string {
   return `${dia}/${mes}/${ano}`;
 }
 
+/** Primeira leva de "Últimas análises" — igual ao valor de sempre, pra não mudar o visual padrão da Garagem. */
+const TAMANHO_LOTE_INICIAL = 3;
+/** Quantas a mais o botão "Ver mais" busca por clique — pedido do Raphael. */
+const TAMANHO_LOTE_SEGUINTE = 5;
+
 export default function Garagem() {
   const navigate = useNavigate();
   const [carregando, setCarregando] = useState(true);
   const [motorista, setMotorista] = useState<Motorista | null>(null);
   const [proximaTrocaOleo, setProximaTrocaOleo] = useState<string | null>(null);
   const [analises, setAnalises] = useState<AnaliseResumo[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
+  // Controla o botão "Ver mais": só aparece se a última leva veio cheia
+  // (indício de que pode ter mais no banco); carregandoMais evita cliques
+  // duplicados enquanto a busca está em andamento.
+  const [temMaisAnalises, setTemMaisAnalises] = useState(false);
+  const [carregandoMais, setCarregandoMais] = useState(false);
   const [lucroMes, setLucroMes] = useState(0);
   // PROVISÓRIO — remover junto com o botão/modal de backlog abaixo.
   const [backlogAberto, setBacklogAberto] = useState(false);
@@ -78,7 +89,7 @@ export default function Garagem() {
       const claims = decodeClaims(data.session!.access_token);
       const [m, ultimas, lucro, perfil] = await Promise.all([
         carregarMotorista(uid),
-        carregarUltimasAnalises(uid, 3),
+        carregarUltimasAnalises(uid, TAMANHO_LOTE_INICIAL),
         carregarLucroMesAtual(uid),
         carregarPerfil(uid),
       ]);
@@ -102,6 +113,8 @@ export default function Garagem() {
         },
       );
       setAnalises(ultimas);
+      setUserId(uid);
+      setTemMaisAnalises(ultimas.length === TAMANHO_LOTE_INICIAL);
       setLucroMes(lucro);
       setCarregando(false);
     });
@@ -160,6 +173,18 @@ export default function Garagem() {
     if (!error) {
       setLucroMes(await carregarLucroMesAtual(motorista!.id));
     }
+  }
+
+  // Botão "Ver mais": busca a partir de onde a lista já parou (analises.length
+  // como offset), sempre em lotes de TAMANHO_LOTE_SEGUINTE. Se voltar menos
+  // que o lote pedido, é porque acabou — some o botão.
+  async function carregarMaisAnalises() {
+    if (!userId || carregandoMais) return;
+    setCarregandoMais(true);
+    const novas = await carregarUltimasAnalises(userId, TAMANHO_LOTE_SEGUINTE, analises.length);
+    setAnalises((prev) => [...prev, ...novas]);
+    setTemMaisAnalises(novas.length === TAMANHO_LOTE_SEGUINTE);
+    setCarregandoMais(false);
   }
 
   const primeiroNome = motorista.nome?.trim() ? motorista.nome.trim().split(' ')[0] : null;
@@ -299,6 +324,17 @@ export default function Garagem() {
               </li>
             ))}
           </ul>
+        )}
+
+        {temMaisAnalises && (
+          <button
+            type="button"
+            className="link-secundario"
+            onClick={carregarMaisAnalises}
+            disabled={carregandoMais}
+          >
+            {carregandoMais ? 'Carregando…' : 'Ver mais'}
+          </button>
         )}
       </section>
     </main>

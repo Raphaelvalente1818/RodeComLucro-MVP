@@ -254,14 +254,19 @@ export interface AnaliseResumo {
   valorACombinar: boolean;
 }
 
-/** Últimas N análises do motorista, mais recentes primeiro — usado no bloco "Últimas análises" da Garagem. */
-export async function carregarUltimasAnalises(userId: string, limite = 3): Promise<AnaliseResumo[]> {
+/**
+ * Últimas N análises do motorista, mais recentes primeiro — usado no bloco
+ * "Últimas análises" da Garagem. `offset` permite paginar (botão "Ver
+ * mais": carrega mais `limite` a partir de onde parou, sem repetir o que
+ * já foi mostrado).
+ */
+export async function carregarUltimasAnalises(userId: string, limite = 3, offset = 0): Promise<AnaliseResumo[]> {
   const { data, error } = await supabase
     .from('analise_frete')
     .select('id, origem, destino, valor_frete_centavos, veredicto, created_at, realizado, valor_a_combinar')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
-    .limit(limite);
+    .range(offset, offset + limite - 1);
   if (error) {
     // eslint-disable-next-line no-console
     console.error('carregarUltimasAnalises', error);
