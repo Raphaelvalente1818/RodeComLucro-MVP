@@ -453,25 +453,39 @@ Validado com `tsc --noEmit` limpo em `apps/web`. Ainda não commitado/pushado.
 
 Pedido rápido do Raphael, print da tela Analisar: texto do botão principal trocado de "Calcular" pra "Analisar Frete" (`Analisar.tsx`, linha do botão de submit). `tsc --noEmit` limpo. Ainda não commitado/pushado.
 
-## Onde paramos — 12/08, fim de sessão (Raphael vai trocar de projeto)
+## Onde paramos — 13/08, fim de sessão
 
-Resumo do estado atual, pra retomar sem perder contexto:
+> Substitui a seção "Onde paramos — 12/08" abaixo (mantida só como histórico) — tudo que estava pendente lá já foi resolvido nesta sessão.
 
-**Já commitado e no GitHub** (commit `c79804f`, feature de carga máxima): `Docs/status-sessao.md`, `apps/web/src/lib/frete.ts`, `apps/web/src/pages/Analisar.tsx`, `apps/web/src/pages/BuscarFrete.tsx`, `apps/web/src/pages/Perfil.tsx`, `supabase/migrations/20260812150000_caminhao_perfil_carga_maxima.sql`. Esse commit é o que quebrou o build no Vercel (ver próximo item).
+### O que fizemos (nesta sessão, 12-13/08, em ordem)
 
-**Bug descoberto e corrigido no código, mas AINDA NÃO COMMITADO/PUSHADO** — é o que está bloqueando o deploy agora:
-- O commit anterior desta sessão (correção do `tipo_valor`, feito numa sessão passada) nunca incluiu de fato `apps/web/src/lib/fretesPublicados.ts` nem a migração `supabase/migrations/20260812120000_fretes_publicados_tipo_valor.sql` — ficaram só como mudança local, nunca comitados. Como o commit `c79804f` (carga máxima) depende do campo `tipoValor` desse arquivo, o build do Vercel quebrou (`Property 'tipoValor' does not exist on type 'FretePublicado'`).
-- Também nesta sessão: borda (`.chip-secao` em `index.css`) nos grupos "Tipo de veículo"/"Tipo de carroceria" do Perfil, pedido do Raphael pra deixar claro que são campos únicos (multi-chip), não itens soltos.
-- **Comandos passados ao Raphael pra rodar localmente (fora do Cowork, terminal próprio) e ainda sem confirmação de execução:**
-  ```
-  cd D:\RodeComLucro-MVP
-  del .git\index.lock
-  git add apps/web/src/lib/fretesPublicados.ts supabase/migrations/20260812120000_fretes_publicados_tipo_valor.sql apps/web/src/index.css Docs/status-sessao.md
-  git commit -m "fix: tipoValor faltante + borda nos grupos de chip do Perfil"
-  git push origin main
-  ```
+1. **Carga máxima do caminhão** (Perfil) — fecha o ciclo do frete "por tonelada": card de Buscar Frete mostra valor total estimado (taxa × carga máxima), botão "Analisar Frete" pré-preenche o valor em vez de forçar "A negociar".
+2. **Borda visual** nos grupos de chip "Tipo de veículo"/"Tipo de carroceria" no Perfil (deixar claro que cada bloco é um único campo).
+3. **Bug de build corrigido**: um commit de sessão anterior nunca tinha incluído de fato `lib/fretesPublicados.ts` nem a migração `tipo_valor` — ficaram só como mudança local, quebrando o deploy do Vercel quando o commit seguinte passou a depender desse campo. Corrigido e commitado.
+4. **Botão "Calcular" → "Analisar Frete"** na tela Analisar (texto).
+5. **"Próxima troca de óleo"** no Perfil do caminhão — alerta na Garagem uma semana antes de vencer (mesmo padrão visual do alerta de CNH/exame toxicológico, mas com janela de 7 dias e apontando pra "Meu Caminhão" em vez de "Meu Perfil").
+6. **Fecha o TODO da Fase 0**: piso ANTT agora cobre os 5 tipos de carga da Tabela A (carga geral, granel sólido, granel líquido, frigorificada, conteinerizada) — coeficientes conferidos direto na fonte oficial (anttlegis.antt.gov.br, Resolução 6.084/2026), não em resumo de terceiro (que trazia um número errado). Tabela `antt_piso_tabela` criada no Supabase como espelho versionado; o motor `@rode/calc` continua puro (lê de constante em memória, não do banco).
+7. **Liga `tipo_carroceria` → tipo de carga automaticamente**: `tipoCargaPorCarroceria()` novo em `@rode/calc`, mapeia as 18 carrocerias já cadastradas pros 5 tipos ANTT (ex.: Tanque→granel líquido, Baú Frigorífico→frigorificada). Sem campo novo em tela nenhuma — a tela Analisar mostra um aviso de transparência, e o Resultado mostra o tipo usado no KPI do piso ANTT.
 
-**Próximo passo assim que essa sessão retomar**: confirmar com o Raphael se ele rodou esses comandos e se o deploy do Vercel passou limpo depois do push. Se ainda não rodou, isso é prioridade — o site em produção está com o último deploy quebrado até esse push acontecer.
+### Estado atual (conferido agora, não presumido)
+
+**Tudo commitado E publicado** — `git fetch` + comparação `origin/main...HEAD` deu 0 à frente / 0 atrás, ou seja, a pasta local, o GitHub e (presumivelmente) o deploy do Vercel estão sincronizados no commit `1704731`. Não consegui confirmar o status do deploy pela API da Vercel nesta sessão (a integração MCP disponível aqui está ligada a outro projeto, `tacorrei-app`, não ao `rode-com-lucro-mvp`) — vale um olhar rápido no [painel Vercel](https://vercel.com/rode-com-lucro/rode-com-lucro-mvp/deployments) pra confirmar visualmente que o build do commit `1704731` passou limpo.
+
+**Testes**: 32/32 passando em `@rode/calc` (`npx vitest run`). `tsc --noEmit` limpo em `apps/web` e `packages/rode-calc`.
+
+**Testado ao vivo pelo Raphael**: só a borda dos chips (viu print). Carga máxima, troca de óleo, botão "Analisar Frete" e o piso ANTT por tipo de carga foram implementados e validados por tipo/build, mas ainda não conferidos na tela pelo Raphael.
+
+### Para onde vamos (retomando o mapeamento de gaps do MVP, feito em 12/08)
+
+Da Fase 0 (fundação), só falta official-check periódico do reajuste ANTT (não existe processo automático — combinar se isso é um lembrete manual recorrente ou algo a automatizar depois). Fora isso, Fase 0 está fechada.
+
+Prioridades em aberto, sem ordem definida ainda — retomar com o Raphael:
+- **Fase 1 (calc-app)**: falta a fila offline-first (IndexedDB) — hoje tudo grava direto no Supabase, sem funcionar sem internet.
+- **Fase 2 (calc-wpp)**: não iniciada. Maior risco de prazo é a aprovação de templates HSM pela Meta — vale começar a submissão cedo, antes mesmo do resto estar pronto.
+- **Fase 3 (portal + find-app)**: só a leitura existe (Buscar Frete), com dado de teste da Fretebras. Portal de empresas (cadastro, aprovação manual, CRUD de oportunidades) não foi iniciado.
+- **Admin/instrumentação**: nenhum módulo chama `analytics_event`/`track()` ainda — dívida que cresce com o tempo.
+
+## Onde paramos — 12/08, fim de sessão (histórico, já resolvido — ver seção acima)
 
 **Funcionalidade nova pendente de validação visual**: campo "Carga máxima (toneladas)" no Perfil e o valor total estimado (`≈ R$ X total`) no card de frete "por tonelada" em Buscar Frete — implementados e com `tsc --noEmit` limpo, mas o Raphael ainda não viu/testou ao vivo (só viu print da borda dos chips).
 
