@@ -605,4 +605,33 @@ Pedido do Raphael: campo "Relevância" ao lado de "Só o meu veículo", com opç
 
 **Validação**: `tsc --noEmit` limpo em `apps/web`.
 
+## Atualização — 18/08 (5): início da Fase 2 (calc-wpp) — esqueleto do wa-webhook
+
+Perguntei ao Raphael se dava pra seguir com o calc-wpp mesmo com a chave da Meta (WhatsApp Cloud API) ainda sendo providenciada. Sim: só o envio de mensagem de verdade e a submissão dos templates HSM dependem dela — o resto (webhook recebendo e processando, gravação no banco, auditoria) não. Ele escolheu começar pelo esqueleto do `wa-webhook` + os intents `VINCULAR`/`DESVINCULAR` do módulo identidade (que o roadmap já apontava como primeira peça da Fase 2, por serem pré-requisito dos demais intents -wpp).
+
+Segui à risca o contrato já escrito em `Docs/PRD-tecnico-identidade.html` (seção "wa-webhook" e "Vínculo app<->WhatsApp") — não improvisei o formato.
+
+**Decisão-chave pra não travar na chave**: `enviarMensagemWhatsapp()` é uma função separada — se `WA_ACCESS_TOKEN`/`WA_PHONE_NUMBER_ID` não estiverem configurados (que é o caso agora), ela só loga em vez de chamar a API da Meta, sem lançar erro. Todo o resto do fluxo (validar assinatura, casar o intent, gravar em `motoristas`/`wa_vinculo`/`identidade_audit`/`consentimento`) roda normal e sem depender disso. Quando a chave chegar, é só configurar as duas variáveis de ambiente — nenhum código muda.
+
+**Nova tabela `wa_mensagem_recebida`** (migration `20260818121738_wa_mensagem_recebida_schema.sql`): idempotência genérica por `wa_message_id` (PK) — a Meta reentrega webhook em timeout/erro; sem isso, uma reentrega reprocessaria o mesmo intent. Dedup acontece uma vez só, no topo do webhook, antes de rotear pro intent — pensado pra já servir os intents do calc-wpp quando entrarem, não só VINCULAR/DESVINCULAR.
+
+**Novo `supabase/functions/wa-webhook/index.ts`**:
+- `GET` — handshake de verificação da Meta (`hub.mode`/`hub.verify_token`/`hub.challenge`), comparado contra `WA_WEBHOOK_VERIFY_TOKEN`.
+- `POST` — lê o corpo cru (a assinatura é sobre os bytes exatos, por isso `.text()` antes de `JSON.parse`), valida `X-Hub-Signature-256` (HMAC-SHA256 com `WA_APP_SECRET`) — sem assinatura válida, 403 sem tocar em nada (fail-closed: sem `WA_APP_SECRET` configurado, todo POST é rejeitado, então o endpoint só aceita tráfego de verdade depois que o segredo real da Meta entrar).
+- `extrairMensagens()` — parser puro do formato `entry[].changes[].value.messages[]` da Meta; ignora webhooks de só-status (sem mensagem) e mensagens não-texto.
+- `detectarIntent()` — regex `VINCULAR <código de 6 dígitos>` / `DESVINCULAR`, case-insensitive, sem custo de LLM (o NLU do calc-wpp entra depois, só pro que não bater nenhum desses).
+- `tratarVincular()` — casa o código (SHA-256, sem pepper — código de curta duração já protegido por TTL de 10min + limite de 5 tentativas) com um `wa_vinculo` pendente; só confirma (`telefone_verificado=true`, `canal_wa_ativo=true`, grava consentimento `canal_whatsapp`, audita `wa_vinculado`) se o número que mandou a mensagem for o mesmo dono do código. Número divergente incrementa tentativas (revoga na 5ª); código expirado ou inexistente orienta reiniciar pelo app.
+- `tratarDesvincular()` — zera `telefone_verificado`/`canal_wa_ativo` do motorista dono do número, audita `wa_desvinculado`.
+
+**Validação**: sem `deno` disponível neste ambiente, testei as funções puras (`assinaturaValida`, `extrairMensagens`, `detectarIntent` — 20 asserções) via Node/tsx, com o import da Meta trocado por um stub local numa cópia temporária do arquivo (apagada depois) — mesmo approach do smoke test da fila offline (13/08). Todas passaram. `tratarVincular`/`tratarDesvincular` (que tocam o banco) foram revisadas linha a linha contra o PRD, mas não testadas automaticamente — não tenho como rodar `deno test` nem simular o Postgres aqui. `tsc --noEmit` limpo em `apps/web` (não afeta o Edge Function, que é Deno, mas confirma que nada mais quebrou). Suíte do `@rode/calc` continua 32/32.
+
+**Deploy**: função publicada no Supabase (`wa-webhook`, `verify_jwt: false` — importante: precisa ser `false` porque a Meta não manda JWT do Supabase, autentica só por HMAC; as outras functions do projeto têm `verify_jwt: true` porque são chamadas pelo próprio app logado). Não consegui testar ao vivo com `curl` daqui (rede do sandbox não alcança `*.supabase.co`) — só a validação local das funções puras.
+
+**Pendente de configuração** (Supabase → Edge Functions → Secrets), nenhuma delas bloqueada pela chave da Meta ainda faltando:
+- `WA_WEBHOOK_VERIFY_TOKEN` — qualquer string escolhida por nós, usada nos dois lados (aqui e no painel da Meta).
+- `WA_APP_SECRET` — esse sim precisa vir da Meta (segredo do App) — sem ele, o endpoint rejeita tudo com 403 (comportamento correto até lá).
+- `WA_ACCESS_TOKEN` / `WA_PHONE_NUMBER_ID` — a "chave" propriamente dita, pendente. Sem elas, `enviarMensagemWhatsapp()` só loga.
+
+**Fora do escopo desta rodada, decisão explícita**: Edge Function `wa-vincular` (gera o código de 6 dígitos + deep link `wa.me/...`) ainda não existe — sem ela, o fluxo só é testável inserindo um `wa_vinculo` de fixture direto no banco (mesma estratégia de teste que o próprio PRD descreve: "fixtures de webhook assinadas"). NLU/extração de frete do calc-wpp também não entrou — todo texto que não for VINCULAR/DESVINCULAR cai num TODO que só loga, sem responder nada ainda.
+
 Ainda não commitado/pushado.
