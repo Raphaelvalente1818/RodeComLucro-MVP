@@ -55,6 +55,12 @@ export default function Perfil() {
   const [salvo, setSalvo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
+  // "Apagar dados do caminhão" — pra quando o motorista troca de caminhão.
+  // Reseta o perfil pra PERFIL_DEFAULT (mesmo estado de um perfil novo),
+  // com confirmação antes de executar (ação irreversível).
+  const [confirmarApagar, setConfirmarApagar] = useState(false);
+  const [apagando, setApagando] = useState(false);
+
   const [form, setForm] = useState<FormPerfil>(PERFIL_DEFAULT);
 
   // Autocomplete marca -> modelo -> ano via FIPE. Booleans só controlam
@@ -277,6 +283,37 @@ export default function Perfil() {
       return;
     }
     setSalvo(true);
+  }
+
+  /**
+   * Reseta o perfil pra PERFIL_DEFAULT (mesmo estado de um caminhão novo,
+   * nunca cadastrado) — usado quando o motorista troca de caminhão. Não
+   * apaga a linha do banco (mantém o mesmo `perfilId`), só limpa os
+   * valores: análises já salvas guardam seu próprio custos_snapshot, então
+   * não são afetadas por isso. As sugestões de marca/modelo/ano (Tabela
+   * FIPE) continuam funcionando normalmente pra cadastrar o caminhão novo
+   * — não dependem do que foi apagado aqui.
+   */
+  async function apagarDados() {
+    if (!userId) return;
+    setApagando(true);
+    setErro(null);
+    const { error } = await salvarPerfil(userId, PERFIL_DEFAULT, perfilId);
+    setApagando(false);
+    if (error) {
+      setErro(error);
+      return;
+    }
+    setForm(PERFIL_DEFAULT);
+    setMarcaConfirmada(false);
+    setModeloConfirmado(false);
+    setManutencaoEditadaManualmente(false);
+    setValorEditadoManualmente(false);
+    setDepreciacaoEditadaManualmente(false);
+    setEixosEditadoManualmente(false);
+    setFipeMesReferencia(null);
+    setConfirmarApagar(false);
+    setSalvo(false);
   }
 
   if (carregando) return null;
@@ -597,9 +634,34 @@ export default function Perfil() {
       {salvo && <p className="sucesso">Perfil salvo.</p>}
       {erro && <p className="aviso-erro">Não foi possível salvar: {erro}</p>}
 
+      <button type="button" className="botao-perigo" onClick={() => setConfirmarApagar(true)}>
+        Apagar dados do caminhão
+      </button>
+      <p className="aviso">Use ao trocar de caminhão — limpa marca, modelo, custos e demais dados deste perfil.</p>
+
       <button type="button" className="link-secundario" onClick={() => navigate('/')}>
         Voltar
       </button>
+
+      {confirmarApagar && (
+        <div className="modal-overlay" onClick={() => !apagando && setConfirmarApagar(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <h2>Apagar dados do caminhão?</h2>
+            <p className="aviso" style={{ margin: 0 }}>
+              Isso limpa marca, modelo, ano, valor, tipo de veículo/carroceria, consumo e custos por km deste
+              perfil — como se fosse um caminhão novo. Suas análises já salvas não são afetadas. Essa ação não
+              tem volta.
+            </p>
+            {erro && <p className="aviso-erro">Não foi possível apagar: {erro}</p>}
+            <button type="button" className="botao-perigo" disabled={apagando} onClick={apagarDados}>
+              {apagando ? 'Apagando...' : 'Apagar dados do caminhão'}
+            </button>
+            <button type="button" className="link-secundario" disabled={apagando} onClick={() => setConfirmarApagar(false)}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

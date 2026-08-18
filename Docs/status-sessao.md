@@ -577,4 +577,14 @@ Segui o padrão que o Raphael pediu e completei com o que faltava pra fechar o f
 
 **Validação**: `tsc --noEmit` limpo em `apps/web`.
 
+## Atualização — 18/08 (2): botão "Apagar dados do caminhão" no Perfil
+
+Pedido do Raphael: botão no Perfil do caminhão pra limpar os dados quando o motorista trocar de caminhão, com confirmação antes de executar. Ele adiantou que "os dados pré-preenchidos vão continuar aparecendo depois da tela limpa" — confirmei olhando o código: as sugestões de marca/modelo/ano vêm ao vivo da Tabela FIPE (`lib/fipe.ts` + cache `fipe_cache`, tabela à parte, não ligada ao perfil do usuário), então nada precisa ser feito à parte — o autocomplete continua funcionando normal pro caminhão novo depois de limpar.
+
+**Decisão de escopo**: "apagar" reseta o perfil pra `PERFIL_DEFAULT` — a mesma constante já usada quando o motorista nunca cadastrou um caminhão. Optei por isso em vez de tentar separar campo por campo o que é "do caminhão" vs "preferência do motorista" (ex.: margem desejada, alimentação/dia): `PERFIL_DEFAULT` já é o estado "zerado" testado e usado no resto do app, reaproveitar evita inventar uma política nova de reset parcial.
+
+**`apps/web/src/pages/Perfil.tsx`**: novo botão vermelho "Apagar dados do caminhão" (classe `.botao-perigo`, nova em `index.css`) abaixo de "Salvar perfil". Ao clicar, abre modal de confirmação (reaproveita `.modal-overlay`/`.modal-card`, mesmo padrão do popup de contato em `Resultado.tsx`) explicando o que é limpo e que análises salvas não são afetadas (o `custos_snapshot` de cada análise é uma cópia própria, independente do perfil atual). Confirmando, `apagarDados()` chama `salvarPerfil(userId, PERFIL_DEFAULT, perfilId)` — mesma linha do banco (mesmo `id`), sem apagar de fato a linha — e reseta o form local e as flags de "editado manualmente" (marca/modelo/valor/depreciação/eixos), pra o form voltar a se comportar como um cadastro novo (autofill de novo ativo).
+
+**Validação**: `tsc --noEmit` limpo em `apps/web`.
+
 Ainda não commitado/pushado.
