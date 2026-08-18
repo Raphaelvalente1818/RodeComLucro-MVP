@@ -408,18 +408,35 @@ export default function Analisar() {
         />
       </label>
 
-      <label>
-        Dias de viagem
-        <input
-          type="number"
-          min={0}
-          value={dias}
-          onChange={(e) => {
-            setDias(Number(e.target.value));
-            setDiasEditadoManual(true);
-          }}
-        />
-      </label>
+      <div className="linha-campos">
+        <label>
+          Dias de viagem
+          <input
+            type="number"
+            min={0}
+            value={dias}
+            onChange={(e) => {
+              setDias(Number(e.target.value));
+              setDiasEditadoManual(true);
+            }}
+          />
+        </label>
+
+        <label>
+          Preço diesel (R$/L)
+          <input
+            type="number"
+            step="0.01"
+            value={dieselPreco}
+            onChange={(e) => setDieselPreco(Number(e.target.value))}
+          />
+        </label>
+      </div>
+      {/* Fora do "Ajustar parâmetros" de propósito: é o custo que mais varia de
+          viagem pra viagem (muda por região/posto) e mais pesa no total — o
+          Raphael pediu que ficasse visível, não escondido, pra não esquecer
+          de atualizar antes de calcular. */}
+      <p className="aviso">Confira o preço do diesel na região antes de calcular — ele pesa bastante no custo total.</p>
 
       <button type="button" className="link-secundario" onClick={() => setMostrarAvancado((v) => !v)}>
         {mostrarAvancado ? 'Ocultar' : 'Ajustar'} parâmetros do caminhão e custos
@@ -439,10 +456,6 @@ export default function Analisar() {
           <label>
             Consumo diesel (km/L)
             <input type="number" step="0.1" value={dieselKmPorLt} onChange={(e) => setDieselKmPorLt(Number(e.target.value))} />
-          </label>
-          <label>
-            Preço diesel (R$/L)
-            <input type="number" step="0.01" value={dieselPreco} onChange={(e) => setDieselPreco(Number(e.target.value))} />
           </label>
           <label>
             Consumo ARLA 32 (km/L)

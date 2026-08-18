@@ -587,4 +587,12 @@ Pedido do Raphael: botão no Perfil do caminhão pra limpar os dados quando o mo
 
 **Validação**: `tsc --noEmit` limpo em `apps/web`.
 
+## Atualização — 18/08 (3): preço do diesel visível na tela Analisar
+
+Pedido do Raphael: o "Preço diesel (R$/L)" pesa muito no custo total, mas estava escondido dentro do accordion "Ajustar parâmetros do caminhão e custos" — fácil de esquecer de atualizar antes de calcular (o diesel muda de preço por região/posto, viagem a viagem).
+
+**`apps/web/src/pages/Analisar.tsx`**: campo "Preço diesel (R$/L)" saiu de dentro do accordion e passou a ficar direto no fluxo principal, lado a lado com "Dias de viagem" (mesmo layout `.linha-campos` já usado em Distância/Pedágio). Adicionei um aviso logo abaixo lembrando de conferir o preço antes de calcular. "Consumo diesel (km/L)" continua no accordion — isso é característica do caminhão (muda pouco), diferente do preço por litro (muda toda hora).
+
+**Validação**: `tsc --noEmit` limpo em `apps/web`.
+
 Ainda não commitado/pushado.
