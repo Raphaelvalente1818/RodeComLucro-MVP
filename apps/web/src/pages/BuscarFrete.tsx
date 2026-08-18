@@ -56,6 +56,21 @@ function valorTotalEstimadoCentavos(f: FretePublicado, cargaMaximaToneladas: num
   return Math.round(f.valorFreteCentavos * cargaMaximaToneladas);
 }
 
+/**
+ * Valor "comparável" pra ordenar por "Valor do frete": fretes fixos usam o
+ * valor direto; fretes por tonelada usam o total estimado (taxa × carga
+ * máxima do Perfil) — comparar a taxa por tonelada crua com um valor fixo
+ * não faria sentido. Sem carga máxima cadastrada (ou frete "a combinar"),
+ * não dá pra comparar — null, e esses vão pro fim da lista na ordenação.
+ */
+function valorComparavelCentavos(f: FretePublicado, cargaMaximaToneladas: number | null): number | null {
+  if (f.valorACombinar || f.valorFreteCentavos == null) return null;
+  if (f.tipoValor === 'por_tonelada') return valorTotalEstimadoCentavos(f, cargaMaximaToneladas);
+  return f.valorFreteCentavos;
+}
+
+type Relevancia = 'distancia' | 'valor';
+
 interface FreteComDistancia extends FretePublicado {
   distancia: number | null;
 }
@@ -74,6 +89,10 @@ export default function BuscarFrete() {
 
   const [destinoUf, setDestinoUf] = useState('');
   const [soMeuTipo, setSoMeuTipo] = useState(false);
+  // Ordem de exibição da lista — pedido do Raphael pro caminhoneiro
+  // escolher o que pesa mais na hora de decidir: o frete mais perto ou o
+  // que paga mais. "distancia" é o padrão (mesmo comportamento de antes).
+  const [relevancia, setRelevancia] = useState<Relevancia>('distancia');
 
   const [carregando, setCarregando] = useState(true);
   const [fretes, setFretes] = useState<FretePublicado[]>([]);
@@ -141,11 +160,25 @@ export default function BuscarFrete() {
           ? distanciaKm(cidadeSelecionada.latitude, cidadeSelecionada.longitude, f.origemLat, f.origemLng)
           : null,
     }));
-    if (!cidadeSelecionada) return comDistancia;
-    return comDistancia
-      .filter((f) => f.distancia != null && f.distancia <= raioKm)
-      .sort((a, b) => (a.distancia ?? 0) - (b.distancia ?? 0));
-  }, [fretes, cidadeSelecionada, raioKm]);
+    const filtrada = cidadeSelecionada
+      ? comDistancia.filter((f) => f.distancia != null && f.distancia <= raioKm)
+      : comDistancia;
+
+    if (relevancia === 'valor') {
+      return [...filtrada].sort((a, b) => {
+        const va = valorComparavelCentavos(a, cargaMaximaPerfil);
+        const vb = valorComparavelCentavos(b, cargaMaximaPerfil);
+        if (va == null && vb == null) return 0;
+        if (va == null) return 1;
+        if (vb == null) return -1;
+        return vb - va; // maior valor primeiro
+      });
+    }
+    // relevancia === 'distancia' (padrão): sem cidade selecionada, todo
+    // mundo tem distancia null — mantém a ordem que veio do banco.
+    if (!cidadeSelecionada) return filtrada;
+    return [...filtrada].sort((a, b) => (a.distancia ?? 0) - (b.distancia ?? 0));
+  }, [fretes, cidadeSelecionada, raioKm, relevancia, cargaMaximaPerfil]);
 
   const semLocalizacao = cidadeSelecionada
     ? fretes.filter((f) => f.origemLat == null || f.origemLng == null).length
@@ -253,6 +286,13 @@ export default function BuscarFrete() {
             Só o meu veículo ({tipoVeiculoPerfil})
           </button>
         )}
+        <label>
+          Relevância
+          <select value={relevancia} onChange={(e) => setRelevancia(e.target.value as Relevancia)}>
+            <option value="distancia">Distância da minha cidade</option>
+            <option value="valor">Valor do frete</option>
+          </select>
+        </label>
       </div>
 
       {!cidadeSelecionada && (

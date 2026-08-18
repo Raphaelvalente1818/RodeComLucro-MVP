@@ -595,4 +595,14 @@ Pedido do Raphael: o "Preço diesel (R$/L)" pesa muito no custo total, mas estav
 
 **Validação**: `tsc --noEmit` limpo em `apps/web`.
 
+## Atualização — 18/08 (4): campo "Relevância" em Buscar Frete
+
+Pedido do Raphael: campo "Relevância" ao lado de "Só o meu veículo", com opções pro caminhoneiro escolher a ordem da lista — exemplos dados: "Distância da minha cidade", "Valor do Frete".
+
+**Decisão de escopo**: implementei como um select de critério único ("ordenar por"), não uma lista de prioridades arrastável — os dois exemplos dados são naturalmente excludentes como critério de ordenação (a lista é ordenada por um dos dois de cada vez), e é consistente com os outros filtros da tela (Raio, Destino), que já são selects simples.
+
+**`apps/web/src/pages/BuscarFrete.tsx`**: novo select "Relevância" com "Distância da minha cidade" (padrão — mesmo comportamento de sempre) e "Valor do frete" (maior primeiro). Nova `valorComparavelCentavos()`: fretes fixos usam o valor direto; fretes "por tonelada" usam o total estimado (taxa × carga máxima do Perfil) em vez da taxa crua, pra não comparar grandezas diferentes; sem carga máxima cadastrada (ou frete "a combinar"), o frete fica sem valor comparável e vai pro fim da lista nessa ordenação. Filtro por raio (quando a cidade está preenchida) continua se aplicando igual, independente da relevância escolhida — só muda a ordem de exibição.
+
+**Validação**: `tsc --noEmit` limpo em `apps/web`.
+
 Ainda não commitado/pushado.
