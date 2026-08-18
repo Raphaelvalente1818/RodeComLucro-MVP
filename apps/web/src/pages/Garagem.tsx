@@ -27,6 +27,8 @@ import { IconeCaminhao, IconePerfil } from '../components/IconesCard';
 // PROVISÓRIO — remover esta linha e o bloco marcado abaixo quando os
 // testes de backlog com os sócios acabarem (ver components/BacklogModal.tsx).
 import BacklogModal from '../components/BacklogModal';
+// PROVISÓRIO — mesma marcação do Backlog acima (ver components/TestesModal.tsx).
+import TestesModal from '../components/TestesModal';
 
 function classeVeredicto(v: AnaliseResumo['veredicto']): string {
   if (v === 'BOM') return 'badge-veredicto badge-bom';
@@ -82,6 +84,8 @@ export default function Garagem() {
   const [lucroMes, setLucroMes] = useState(0);
   // PROVISÓRIO — remover junto com o botão/modal de backlog abaixo.
   const [backlogAberto, setBacklogAberto] = useState(false);
+  // PROVISÓRIO — mesma marcação acima (ver components/TestesModal.tsx).
+  const [testesAberto, setTestesAberto] = useState(false);
   const [alertaVencimentoAberto, setAlertaVencimentoAberto] = useState(false);
   // Itens (análise salva, perfil editado, etc.) que ficaram na fila offline
   // esperando conexão pra sincronizar — ver lib/filaOffline.ts. Atualiza
@@ -238,11 +242,17 @@ export default function Garagem() {
             )}
           </h1>
         </div>
-        {/* PROVISÓRIO — botão de backlog para os sócios testando o app.
-            Remover junto com components/BacklogModal.tsx e lib/backlog.ts. */}
-        <button type="button" className="backlog-botao" onClick={() => setBacklogAberto(true)}>
-          Backlog
-        </button>
+        {/* PROVISÓRIO — botões de teste/backlog para os sócios testando o
+            app. Remover junto com components/TestesModal.tsx,
+            components/BacklogModal.tsx, lib/testes.ts e lib/backlog.ts. */}
+        <div className="garagem-header-botoes-provisorios">
+          <button type="button" className="testes-botao" onClick={() => setTestesAberto(true)}>
+            Testes
+          </button>
+          <button type="button" className="backlog-botao" onClick={() => setBacklogAberto(true)}>
+            Backlog
+          </button>
+        </div>
       </header>
 
       {alertaVencimentoAberto && alertasVencimento.length > 0 && (
@@ -261,6 +271,7 @@ export default function Garagem() {
       )}
 
       {backlogAberto && <BacklogModal onFechar={() => setBacklogAberto(false)} />}
+      {testesAberto && <TestesModal onFechar={() => setTestesAberto(false)} />}
 
       {pendentesOffline > 0 && (
         <p className="aviso">

@@ -557,4 +557,24 @@ Raphael testou e achou o bug: o filtro só escondia/mostrava dentro do que já t
 
 **Validação**: `tsc --noEmit` limpo em `apps/web`.
 
+## Atualização — 18/08: botão "Testes" (provisório) — mural de casos de teste
+
+Pedido do Raphael, olhando o botão "Backlog" já existente: um segundo botão, "Testes", pra registrar o que precisa ser testado e depois o resultado. Mesmo espírito do Backlog (mural comum entre os sócios, PROVISÓRIO — remover antes de produção), mas com um fluxo em duas etapas por pessoas diferentes: alguém cadastra o caso; o testador escolhe um pendente, executa e registra o resultado.
+
+Segui o padrão que o Raphael pediu e completei com o que faltava pra fechar o fluxo:
+- **Cadastro** (como pedido): Tela, Funcionalidade, Obs para o teste — mais **Nome de quem cadastrou** (pra saber quem pediu o teste, mesmo padrão de accountability do campo "Nome" do Backlog).
+- **Resultado** (como pedido): Resultado do Teste, Observação do teste, Aprovado — mais **Nome de quem testou** e a data/hora do teste (`testado_em`), pelo mesmo motivo.
+- **Aprovado** virou um campo `boolean | null`: `null` enquanto pendente, `true`/`false` depois de testado — reprovado é tratado como resultado válido (o Raphael notou que o teste "pode não ser positivo, indicando ponto a melhorar"), não como erro.
+- Adicionei também **"Reabrir"** num teste já feito — volta pra fila de pendentes, útil depois de corrigir algo e querer testar de novo, sem precisar cadastrar tudo de novo.
+
+**Nova tabela `testes_provisorio`** (migration `20260818140000_testes_provisorio_schema.sql`, aplicada via MCP do Supabase): mesma RLS "mural comum" do `backlog_provisorio` (select/insert/update/delete liberado pra qualquer autenticado, sem filtro por usuário).
+
+**Novo `apps/web/src/lib/testes.ts`**: `listarTestes()` (pendentes primeiro, mais antigos primeiro — testar na ordem que entrou; testados depois), `criarTeste()`, `registrarResultadoTeste()`, `reabrirTeste()`.
+
+**Novo `apps/web/src/components/TestesModal.tsx`**: modal com formulário de cadastro (colapsado por padrão, "+ Cadastrar o que precisa ser testado"), lista dividida em "A testar" e "Testados". Cada pendente tem um botão "Testar" que abre um formulário inline (resultado, observação, Aprovado/Reprovado como dois botões, nome) — só um por vez. Reaproveita boa parte do visual/classes do BacklogModal (`.backlog-overlay`, `.backlog-modal`, `.backlog-item`, `.backlog-form`), com um bloco novo de CSS só pro que é específico do fluxo de teste.
+
+**`apps/web/src/pages/Garagem.tsx`**: botão "Testes" empilhado em cima do "Backlog" no header (`.garagem-header-botoes-provisorios`, coluna com os dois).
+
+**Validação**: `tsc --noEmit` limpo em `apps/web`.
+
 Ainda não commitado/pushado.

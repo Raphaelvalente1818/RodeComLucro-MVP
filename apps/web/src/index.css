@@ -360,6 +360,16 @@ button:disabled {
   justify-content: space-between;
 }
 
+/* PROVISÓRIO — empilha "Testes" em cima de "Backlog" no header da
+   Garagem. Remover junto com o resto dos blocos "PROVISÓRIO" quando os
+   testes acabarem. */
+.garagem-header-botoes-provisorios {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
 .garagem-eyebrow {
   font-size: 12px;
   text-transform: uppercase;
@@ -850,4 +860,77 @@ button:disabled {
   font-size: 11px;
   color: #6b7280;
   margin: 2px 0 0;
+}
+
+/* =====================================================================
+   PROVISÓRIO — mural de testes internos (os sócios testando o MVP).
+   Reaproveita boa parte do visual do backlog acima (.backlog-overlay,
+   .backlog-modal, .backlog-item, .backlog-form, etc.) — só o que é
+   específico do fluxo de teste (seções, botão "Testar", escolha
+   aprovado/reprovado) fica aqui. Remover este bloco inteiro junto com
+   components/TestesModal.tsx, lib/testes.ts, o botão na Garagem.tsx e a
+   migration 20260818140000_testes_provisorio_schema.sql quando os testes
+   acabarem.
+   ===================================================================== */
+
+.testes-botao {
+  width: auto;
+  background: #1f2937;
+  color: #cbd5e1;
+  border: 1px dashed #6b7280;
+  font-size: 12px;
+  padding: 8px 12px;
+}
+
+.testes-secao-titulo {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin: 4px 0 -2px;
+}
+
+.testes-form-botoes {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.testes-testar-botao {
+  width: auto;
+  align-self: flex-start;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #1d4ed8;
+  color: white;
+}
+
+.testes-resultado-form {
+  border-top: 1px dashed #374151;
+  padding-top: 10px;
+  margin-top: 4px;
+}
+
+.testes-aprovado-escolha {
+  display: flex;
+  gap: 8px;
+}
+
+.testes-aprovado-escolha button {
+  flex: 1;
+}
+
+.testes-reprovado-on {
+  width: auto;
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #3a1414;
+  color: #f87171;
+  border: 1px solid #dc2626;
 }
