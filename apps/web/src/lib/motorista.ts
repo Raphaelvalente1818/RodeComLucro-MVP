@@ -134,3 +134,39 @@ export async function salvarMotorista(
   const { error } = await gravarOuEnfileirar('motoristas_editar', payload, `motoristas_editar:${userId}`);
   return { error };
 }
+
+export interface VinculoWhatsapp {
+  /** Deep link pro WhatsApp oficial, já com "VINCULAR <código>" preenchido — só abrir e enviar. */
+  waLink: string;
+  /** ISO — o código vale por 10 minutos (ver supabase/functions/wa-vincular). */
+  expiraEm: string;
+}
+
+/**
+ * Gera o código de vínculo do WhatsApp (Edge Function wa-vincular) — não
+ * passa pela fila offline de propósito: precisa de resposta imediata (o
+ * link) pra mostrar na tela, e só funciona online mesmo (é uma chamada à
+ * Meta por trás). Quem confirma de verdade é o wa-webhook, quando a
+ * mensagem "VINCULAR <código>" chegar no número oficial.
+ */
+export async function iniciarVinculoWhatsapp(): Promise<{ vinculo: VinculoWhatsapp | null; erro: string | null }> {
+  const { data, error } = await supabase.functions.invoke('wa-vincular');
+  if (error) {
+    // supabase-js expoe o status HTTP do erro em error.context quando disponivel (mesmo padrão de Entrada.tsx/otp-solicitar).
+    const status = (error as { context?: { status?: number } }).context?.status;
+    if (status === 429) {
+      return { vinculo: null, erro: 'Muitos pedidos de código seguidos — aguarde um pouco e tente de novo.' };
+    }
+    if (status === 503) {
+      return { vinculo: null, erro: 'Vínculo por WhatsApp ainda não está disponível. Tente mais tarde.' };
+    }
+    if (status === 401) {
+      return { vinculo: null, erro: 'Sessão expirada — saia e entre de novo pra tentar.' };
+    }
+    return { vinculo: null, erro: 'Não foi possível gerar o código agora. Tente de novo.' };
+  }
+  if (!data?.wa_link) {
+    return { vinculo: null, erro: 'Resposta inesperada do servidor.' };
+  }
+  return { vinculo: { waLink: data.wa_link as string, expiraEm: data.expira_em as string }, erro: null };
+}

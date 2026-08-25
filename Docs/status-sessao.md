@@ -634,4 +634,46 @@ Segui à risca o contrato já escrito em `Docs/PRD-tecnico-identidade.html` (se�
 
 **Fora do escopo desta rodada, decisão explícita**: Edge Function `wa-vincular` (gera o código de 6 dígitos + deep link `wa.me/...`) ainda não existe — sem ela, o fluxo só é testável inserindo um `wa_vinculo` de fixture direto no banco (mesma estratégia de teste que o próprio PRD descreve: "fixtures de webhook assinadas"). NLU/extração de frete do calc-wpp também não entrou — todo texto que não for VINCULAR/DESVINCULAR cai num TODO que só loga, sem responder nada ainda.
 
+Commitado e publicado (`c4deaec`).
+
+## Onde paramos — 18/08, fim de sessão
+
+**Tudo commitado E publicado** — `git fetch` + `origin/main...HEAD` deu 0 à frente / 0 atrás no commit `c4deaec`. `tsc --noEmit` limpo (`apps/web`), 32/32 testes do `@rode/calc` passando.
+
+**O que foi feito hoje, em ordem** (detalhes de cada um nas seções "Atualização — 18/08 (N)" acima):
+
+1. **Fechei a Fase 1 (offline-first)** — fila de gravação via IndexedDB (`lib/filaOffline.ts`) plugada em `salvarAnalise`, `alternarRealizado`, `salvarPerfil`, `salvarMotorista`, `salvarCidadeAtual`; cache de leitura do perfil do caminhão (`lib/cacheLocal.ts`) pra calculadora não cair em custos genéricos sem sinal; indicador de pendência + reenvio automático na Garagem.
+2. **Paginação "Ver mais"** nas Últimas análises da Garagem (carrega 5 por vez).
+3. **Filtro "Só realizados"** nas Últimas análises — corrigido no mesmo dia pra buscar do banco (todos os realizados do mês) em vez de só filtrar o que já tava paginado na tela.
+4. **Botão "Testes" (provisório)** — mural de casos de teste pros sócios (cadastro + resultado), mesmo espírito do Backlog, pra remover antes de produção.
+5. **Botão "Apagar dados do caminhão"** no Perfil, com confirmação — reseta pra `PERFIL_DEFAULT`, pra quando o motorista trocar de caminhão.
+6. **Preço do diesel** saiu do accordion "Ajustar parâmetros" e ficou visível direto na tela Analisar, ao lado de "Dias de viagem".
+7. **Campo "Relevância"** em Buscar Frete — ordenar por distância ou por valor do frete.
+8. **Comecei a Fase 2 (calc-wpp)**: esqueleto do `wa-webhook` publicado no Supabase (handshake da Meta, verificação de assinatura HMAC, idempotência, intents `VINCULAR`/`DESVINCULAR` do módulo identidade) — funciona sem a chave da Meta ainda não provisionada; só o envio de confirmação por WhatsApp fica em modo log até ela chegar.
+
+**Incidente do meio do dia, resolvido**: uma migration minha (`testes_provisorio`) tinha nome de arquivo local diferente da versão que o Supabase realmente registrou — isso derrubou uma checagem do GitHub (ficou parecendo "problema no GitHub") e, coincidentemente, a Vercel também não pegou aquele push (webhook perdido, sem relação direta). Corrigido renomeando o arquivo pra bater com a versão real; documentado em detalhe na seção "Atualização — 18/08 (correção)" acima, pra não repetir o mesmo erro (sempre conferir a versão exata que o `apply_migration` do Supabase atribuiu antes de nomear o arquivo local).
+
+## Atualização — 18/08 (6): wa-vincular + botão "Vincular WhatsApp" no app
+
+Raphael avisou que já tem uma chave provisória da Meta (a ser configurada no Supabase depois) e pediu pra seguir. Completei o outro lado do fluxo de vínculo: até aqui só o `wa-webhook` sabia CONFIRMAR um `VINCULAR <código>`; faltava quem GERA esse código — sem isso, só dava pra testar inserindo fixture direto no banco.
+
+**Novo `supabase/functions/wa-vincular/index.ts`** (`verify_jwt: true` — diferente do wa-webhook, este é chamado pelo próprio app logado, não pela Meta): motorista autenticado pede um vínculo, a function gera um código de 6 dígitos, grava `wa_vinculo` pendente (TTL 10min, revogando qualquer pendente anterior — só o último código vale), aplica rate-limit próprio (5 pedidos/hora por motorista) e devolve `{wa_link, expira_em}`. `motorista_id` vem sempre do claim `sub` do JWT (decodificado direto, sem round-trip ao GoTrue — a plataforma já validou assinatura/expiração antes de invocar a function) — nunca do body, pra ninguém gerar código pra conta alheia. Precisa de `NUMERO_OFICIAL_WA` configurado (E.164 sem "+") pra montar o link — sem isso, responde 503 (config pendente, não erro).
+
+**`apps/web/src/lib/motorista.ts`**: nova `iniciarVinculoWhatsapp()`, chama a function e trata os erros (429 limite, 503 não configurado, 401 sessão expirada) no mesmo padrão já usado em `Entrada.tsx`/`otp-solicitar` (status HTTP em `error.context`).
+
+**`apps/web/src/pages/Motorista.tsx`** ("Meu Perfil"): quando `canal_wa_ativo` é falso, aparece "Vincular WhatsApp" — ao clicar, gera o código e troca pelo botão "Abrir WhatsApp e enviar código" (link `wa.me` com a mensagem pronta) + aviso do horário de expiração + opção de gerar outro código.
+
+**Validação**: testei as funções puras do wa-vincular (extração do `sub` do JWT, geração do código de 6 dígitos, hash) via Node/tsx — 10 asserções, todas passando, mesma estratégia do wa-webhook (stub do import da Meta, apagado depois). `tsc --noEmit` limpo em `apps/web`. Não testei o fluxo ponta a ponta de verdade (precisa da Meta configurada) — isso fica pra quando `WA_APP_SECRET`/`WA_WEBHOOK_VERIFY_TOKEN`/`NUMERO_OFICIAL_WA`/`WA_ACCESS_TOKEN`/`WA_PHONE_NUMBER_ID` forem configurados no Supabase (combinado que o Raphael faz isso "no final").
+
+**Fora do escopo**: "Desvincular" pelo app (o PRD prevê os dois caminhos — pelo WhatsApp, já funciona via `wa-webhook`; pelo app, precisaria de uma function própria já que `canal_wa_ativo` só muda via service_role) não entrou nesta rodada.
+
 Ainda não commitado/pushado.
+
+### Para retomar amanhã (atualizado depois do wa-vincular)
+
+Nada quebrado, nada pendente de decisão — é só continuar. Pontas soltas, se quiser puxar por aí:
+- **calc-wpp**: os dois lados do vínculo WhatsApp estão prontos (`wa-vincular` gera o código, `wa-webhook` confirma) mas não testados ponta a ponta de verdade — falta configurar no Supabase `WA_WEBHOOK_VERIFY_TOKEN`, `WA_APP_SECRET`, `NUMERO_OFICIAL_WA`, `WA_ACCESS_TOKEN`, `WA_PHONE_NUMBER_ID` (a chave provisória do Raphael) e testar o fluxo real: abrir "Meu Perfil" → "Vincular WhatsApp" → mandar a mensagem → conferir se o badge vira "vinculado". Depois disso, falta "Desvincular" pelo app (hoje só funciona mandando DESVINCULAR pelo WhatsApp) e o NLU/extração de frete por texto do calc-wpp em si.
+- **Templates HSM da Meta**: ainda não rascunhados — vale começar o texto mesmo sem a aprovação, pra não perder tempo depois.
+- **Admin/instrumentação**: `analytics_event`/`track()` continua em zero, dívida que só cresce.
+- **Fase 3 (portal + find-app)**: não iniciada.
+- **Acesso da Vercel**: a integração do Cowork só enxerga o projeto `aferimais`, não o `rode-com-lucro-mvp` — tentamos reconectar hoje e não resolveu; sem isso não dá pra checar deploy/build direto por aqui, só pelo painel manualmente.

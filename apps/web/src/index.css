@@ -178,6 +178,15 @@ button:disabled {
   border: 1px solid #dc2626;
 }
 
+/* Bloco de vínculo do WhatsApp (Meu Perfil) — botão "Vincular" some no
+   lugar do link "Abrir WhatsApp" assim que o código é gerado. */
+.vinculo-whatsapp {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
 .checkbox {
   display: flex;
   gap: 8px;

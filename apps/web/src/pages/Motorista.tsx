@@ -13,8 +13,14 @@ import {
   carregarMotorista,
   salvarMotorista,
   motoristaParaForm,
+  iniciarVinculoWhatsapp,
   type FormMotorista,
+  type VinculoWhatsapp,
 } from '../lib/motorista';
+
+function fmtHoraBR(iso: string): string {
+  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
 
 const FORM_VAZIO: FormMotorista = {
   nome: '',
@@ -34,6 +40,13 @@ export default function Motorista() {
   const [erro, setErro] = useState<string | null>(null);
   const [telefoneVerificado, setTelefoneVerificado] = useState(false);
   const [canalWaAtivo, setCanalWaAtivo] = useState(false);
+
+  // Vínculo do WhatsApp: gera um código de uso único (10min) e o link
+  // pronto pra abrir o WhatsApp já com a mensagem — ver lib/motorista.ts
+  // (iniciarVinculoWhatsapp) e supabase/functions/wa-vincular.
+  const [vinculo, setVinculo] = useState<VinculoWhatsapp | null>(null);
+  const [gerandoVinculo, setGerandoVinculo] = useState(false);
+  const [erroVinculo, setErroVinculo] = useState<string | null>(null);
 
   const [form, setForm] = useState<FormMotorista>(FORM_VAZIO);
 
@@ -71,6 +84,18 @@ export default function Motorista() {
       return;
     }
     setSalvo(true);
+  }
+
+  async function vincularWhatsapp() {
+    setGerandoVinculo(true);
+    setErroVinculo(null);
+    const { vinculo: novo, erro: err } = await iniciarVinculoWhatsapp();
+    setGerandoVinculo(false);
+    if (err) {
+      setErroVinculo(err);
+      return;
+    }
+    setVinculo(novo);
   }
 
   if (carregando) return null;
@@ -138,6 +163,30 @@ export default function Motorista() {
           WhatsApp {canalWaAtivo ? 'vinculado' : 'não vinculado'}
         </span>
       </div>
+
+      {!canalWaAtivo && (
+        <div className="vinculo-whatsapp">
+          {!vinculo ? (
+            <button type="button" className="link-secundario" disabled={gerandoVinculo} onClick={vincularWhatsapp}>
+              {gerandoVinculo ? 'Gerando código...' : 'Vincular WhatsApp'}
+            </button>
+          ) : (
+            <>
+              <a href={vinculo.waLink} target="_blank" rel="noreferrer" className="btn-frete-analisar">
+                Abrir WhatsApp e enviar código
+              </a>
+              <p className="aviso">
+                Toque no botão acima — o WhatsApp abre com a mensagem pronta, é só enviar. Código válido até
+                as {fmtHoraBR(vinculo.expiraEm)}.
+              </p>
+              <button type="button" className="link-secundario" disabled={gerandoVinculo} onClick={vincularWhatsapp}>
+                Gerar outro código
+              </button>
+            </>
+          )}
+          {erroVinculo && <p className="aviso-erro">{erroVinculo}</p>}
+        </div>
+      )}
 
       <button type="button" disabled={salvando} onClick={salvar}>
         {salvando ? 'Salvando...' : 'Salvar perfil'}
