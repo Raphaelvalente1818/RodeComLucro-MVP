@@ -677,3 +677,30 @@ Nada quebrado, nada pendente de decisão — é só continuar. Pontas soltas, se
 - **Admin/instrumentação**: `analytics_event`/`track()` continua em zero, dívida que só cresce.
 - **Fase 3 (portal + find-app)**: não iniciada.
 - **Acesso da Vercel**: a integração do Cowork só enxerga o projeto `aferimais`, não o `rode-com-lucro-mvp` — tentamos reconectar hoje e não resolveu; sem isso não dá pra checar deploy/build direto por aqui, só pelo painel manualmente.
+
+## Atualização — 25/08: vínculo WhatsApp ao vivo + calc-wpp (NLU via IA)
+
+Raphael configurou os 5 secrets da Meta no Supabase (`WA_WEBHOOK_VERIFY_TOKEN`, `WA_APP_SECRET`, `NUMERO_OFICIAL_WA`, `WA_ACCESS_TOKEN`, `WA_PHONE_NUMBER_ID`). Testamos o fluxo real de ponta a ponta pela primeira vez hoje.
+
+**Dois bugs reais encontrados e corrigidos no caminho:**
+1. **Handshake de verificação da Meta voltava 403** mesmo com o `WA_WEBHOOK_VERIFY_TOKEN` certo configurado — causa: a function já estava com uma instância "quente" rodando com o valor antigo (ou vazio) da env var em memória; secrets novos só entram numa instância nova. Corrigido republicando a function (mesmo código, forçando um cold start) — confirmado via `query_logs`: `GET 200` na tentativa seguinte da Meta.
+2. **`WA_APP_SECRET` divergente** — todo `POST` (mensagem real chegando) caía com 403 "assinatura inválida", mesmo depois do handshake ok. O valor salvo no Supabase não batia com a "Chave secreta do aplicativo" real da Meta (Configurações do app → Básico → precisa clicar "Mostrar"). Raphael reconferiu e resalvou o valor certo — próxima mensagem (`VINCULAR 959377`) processou com sucesso: `wa_vinculo` marcado `verificado` às 20:27, confirmado direto no banco.
+
+**Bug secundário, não bloqueante**: o link `wa.me` gerado pelo app dava 404 no navegador do computador — o `NUMERO_OFICIAL_WA` tinha sido salvo com espaços (`"1 555 677 1876"`) em vez de só dígitos (`"15556771876"`). Não afeta o WhatsApp do celular (resolve mesmo com espaço), só o link web. Raphael corrigiu o secret.
+
+**calc-wpp — NLU de texto livre (pedido explícito do Raphael pra começar a codificar agora, decisão de arquitetura via pergunta direta: texto livre com IA, não comando estruturado nem fluxo guiado passo a passo).**
+
+Até aqui, qualquer mensagem que não fosse `VINCULAR`/`DESVINCULAR` só caía num TODO que logava e não respondia nada. Isso foi fechado:
+
+- **`supabase/functions/wa-webhook/calc.ts`** (novo): cópia isomórfica fiel do motor `@rode/calc` (`calcularFrete`, `calcularPisoANTT`, `tipoCargaPorCarroceria`, `fmtBRL`/`fmtPct`, `diasPorFaixaKm`) pro runtime Deno — o pacote workspace-local não é importável direto numa Edge Function (não está publicado nem servido via esm.sh). Validei que a cópia bate 100% com o pacote original rodando a mesma entrada nos dois e comparando a saída (`custoTotal`, `lucro`, `pisoANTT`, `veredicto` idênticos).
+- **`supabase/functions/wa-webhook/extracao.ts`** (novo): `extrairFreteDeTexto()` chama a API da Anthropic (Claude Haiku 4.5) com "tool use" (function calling) — a IA só preenche um JSON validado (`origem`, `destino`, `valor_frete_reais`, `volta_vazia`, `e_pedido_de_frete`, confiança 0-1 por campo), nunca decide o veredito nem executa nada; o motor de cálculo continua sendo a única fonte de verdade do resultado. Sem `ANTHROPIC_API_KEY` configurada, retorna `null` (mesmo padrão "no-op logado" do `enviarMensagemWhatsapp()` sem chave da Meta) — não bloqueia nada, só fica pendente.
+- **`supabase/functions/wa-webhook/index.ts`**: nova `tratarPedidoDeCalculo()` no lugar do TODO — extrai via IA; se não for pedido de frete (saudação, outro assunto), só loga como antes; se for, exige motorista vinculado (`canal_wa_ativo`), depois origem+destino+valor completos, depois confiança mínima (0.6) em cada campo — qualquer coisa faltando ou incerta responde orientando o motorista em vez de chutar um cálculo. Passando em tudo isso: busca o `caminhao_perfil` do motorista (cai no mesmo `PERFIL_DEFAULT` do app se não tiver cadastro), chama a Edge Function `route-cost` (function-to-function, service role key como Bearer) pra distância/pedágio, roda `calcularFrete()` e responde por WhatsApp com o resultado (custo, lucro, margem, piso ANTT, veredito).
+- **Nova tabela `wa_freight_query`** (migration `20260825203627_wa_freight_query_schema.sql`): audita toda tentativa de cálculo — texto recebido, JSON extraído pela IA, status (`calculado`/`confirmacao_pendente`/`dado_faltando`/`erro_extracao`/`nao_vinculado`), resultado. RLS habilitado, sem policy pra `authenticated` (só service_role), mesmo padrão de `wa_mensagem_recebida`.
+
+**Custo da IA**: Claude Haiku 4.5 (~$1/milhão tokens entrada, $5/milhão saída) — cada extração fica bem abaixo de 1 centavo de real por pedido, mensagem curta + JSON pequeno de resposta.
+
+**Validação**: `calc.ts` comparado lado a lado com `packages/rode-calc/src` (mesma entrada, mesma saída, via `tsx`). `index.ts`/`extracao.ts`/`calc.ts` typecheckados juntos com `tsc --strict` usando um shim local do `Deno` global e um stub do import do supabase-js (sem `deno` instalado neste ambiente, mesma limitação de sempre) — limpo, sem erros. Não testei o fluxo de IA ao vivo (precisa da `ANTHROPIC_API_KEY`, ainda não configurada) nem `route-cost`/banco de verdade (sem acesso de rede a `*.supabase.co` daqui) — revisão manual linha a linha contra o PRD calc-wpp e contra `Analisar.tsx`/`lib/frete.ts` (mesma fórmula de ajuste de pedágio carro→caminhão, mesmo `PERFIL_DEFAULT`, mesma regra de dias por faixa de km).
+
+**Pendente**: configurar `ANTHROPIC_API_KEY` no Supabase (Edge Functions → Secrets) pra ativar de fato — até lá, qualquer mensagem sem intent reconhecido continua só logando, como estava antes. Depois disso, testar o fluxo real: mandar algo como "frete de Sorocaba pra Curitiba, 8 mil reais" pro WhatsApp vinculado e conferir a resposta.
+
+Ainda não commitado/pushado.

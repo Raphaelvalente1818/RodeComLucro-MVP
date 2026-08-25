@@ -26,8 +26,14 @@
 //   WA_ACCESS_TOKEN / WA_PHONE_NUMBER_ID — pendentes (a "chave" sendo
 //     providenciada). Opcionais por enquanto: sem eles, o envio de
 //     confirmação vira só um log.
+//   ANTHROPIC_API_KEY — usada por extracao.ts (Claude Haiku) pra
+//     interpretar pedidos de cálculo de frete em texto livre. Opcional:
+//     sem ela, qualquer mensagem sem intent reconhecido (VINCULAR/
+//     DESVINCULAR) só é logada, igual era antes do calc-wpp existir.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { calcularFrete, tipoCargaPorCarroceria, fmtBRL, fmtPct, diasPorFaixaKm, type Custos } from "./calc.ts";
+import { extrairFreteDeTexto, type ExtracaoFrete } from "./extracao.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -142,7 +148,8 @@ export function extrairMensagens(payload: unknown): MensagemRecebida[] {
 // ---------------------------------------------------------------------
 // Intents roteados ANTES do NLU (sem custo de LLM — match por regex).
 // Qualquer coisa que não bater um desses é "desconhecido": cai pro NLU do
-// calc-wpp, ainda não implementado (TODO) — por enquanto só loga.
+// calc-wpp (tratarPedidoDeCalculo, ver abaixo), que decide via IA se é ou
+// não um pedido de cálculo de frete.
 // ---------------------------------------------------------------------
 const RE_VINCULAR = /^vincular\s+(\d{6})$/i;
 const RE_DESVINCULAR = /^desvincular$/i;
@@ -262,6 +269,245 @@ async function tratarDesvincular(fromE164: string, waMessageId: string): Promise
   await enviarMensagemWhatsapp(fromE164, "Número desvinculado. Pra usar de novo, vincule pelo app.");
 }
 
+// ---------------------------------------------------------------------
+// Pipeline de cálculo de frete (calc-wpp) — entra quando a mensagem não
+// bate VINCULAR/DESVINCULAR. Reaproveita o mesmo perfil de custos do
+// caminhão que o app usa em Analisar.tsx (packages/rode-calc via
+// calc.ts) e a mesma Edge Function route-cost pra distância/pedágio —
+// só origem/destino/valor/volta-vazia vêm da mensagem (via extracao.ts).
+// ---------------------------------------------------------------------
+
+const CONFIANCA_MINIMA = 0.6;
+
+const PERFIL_CUSTO_DEFAULT: PerfilCusto = {
+  numero_eixos: 5,
+  diesel_km_por_lt: 2.5,
+  diesel_preco_por_litro: 6.1,
+  arla_km_por_lt: 20,
+  arla_preco_por_litro: 4.5,
+  manutencao_por_km: 0.35,
+  pneus_por_km: 0.12,
+  depreciacao_por_km: 0.25,
+  alimentacao_dia: 90,
+  pernoite_dia: 0,
+  estacionamento_padrao: 0,
+  chapa_padrao: 0,
+  margem_desejada: 20,
+  tipo_carroceria: null,
+};
+
+interface PerfilCusto {
+  numero_eixos: number;
+  diesel_km_por_lt: number;
+  diesel_preco_por_litro: number;
+  arla_km_por_lt: number;
+  arla_preco_por_litro: number;
+  manutencao_por_km: number;
+  pneus_por_km: number;
+  depreciacao_por_km: number;
+  alimentacao_dia: number;
+  pernoite_dia: number;
+  estacionamento_padrao: number;
+  chapa_padrao: number;
+  margem_desejada: number;
+  tipo_carroceria: string | null;
+}
+
+/** Sem perfil cadastrado ainda, cai no mesmo PERFIL_DEFAULT do app (apps/web/src/lib/frete.ts) — nunca bloqueia o cálculo por falta de cadastro. */
+async function buscarPerfilOuDefault(motoristaId: string): Promise<PerfilCusto> {
+  const { data } = await supabase
+    .from("caminhao_perfil")
+    .select(
+      "numero_eixos, diesel_km_por_lt, diesel_preco_por_litro, arla_km_por_lt, arla_preco_por_litro, manutencao_por_km, pneus_por_km, depreciacao_por_km, alimentacao_dia, pernoite_dia, estacionamento_padrao, chapa_padrao, margem_desejada, tipo_carroceria",
+    )
+    .eq("user_id", motoristaId)
+    .maybeSingle();
+  return (data as PerfilCusto | null) ?? PERFIL_CUSTO_DEFAULT;
+}
+
+/** Mesma conversão de apps/web/src/lib/frete.ts (perfilParaCustos) — pedagio já vem pronto em reais (truck), não em centavos (carro). */
+function perfilParaCustos(perfil: PerfilCusto, dias: number, pedagioReais: number): Custos {
+  return {
+    dieselKmPorLt: perfil.diesel_km_por_lt,
+    dieselPrecoPorLitro: perfil.diesel_preco_por_litro,
+    arlaKmPorLt: perfil.arla_km_por_lt,
+    arlaPrecoPorLitro: perfil.arla_preco_por_litro,
+    pedagio: pedagioReais,
+    alimentacao: perfil.alimentacao_dia * dias,
+    pernoite: perfil.pernoite_dia * dias,
+    estacionamento: perfil.estacionamento_padrao,
+    chapa: perfil.chapa_padrao,
+    manutencaoPorKm: perfil.manutencao_por_km,
+    pneusPorKm: perfil.pneus_por_km,
+    depreciacaoPorKm: perfil.depreciacao_por_km,
+  };
+}
+
+interface RotaResultado {
+  distanciaKm: number;
+  pedagioCentavos: number | null;
+  distanciaEstimada: boolean;
+}
+
+/** Chama a Edge Function route-cost (function-to-function, mesmo projeto) — service role key como Bearer satisfaz o verify_jwt=true dela. */
+async function chamarRouteCost(origem: string, destino: string): Promise<RotaResultado | null> {
+  try {
+    const resp = await fetch(`${SUPABASE_URL}/functions/v1/route-cost`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+        apikey: SERVICE_ROLE_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ origem, destino }),
+    });
+    if (!resp.ok) return null;
+    const dados = await resp.json();
+    if (typeof dados.distanciaKm !== "number") return null;
+    return {
+      distanciaKm: dados.distanciaKm,
+      pedagioCentavos: typeof dados.pedagioCentavos === "number" ? dados.pedagioCentavos : null,
+      distanciaEstimada: Boolean(dados.distanciaEstimada),
+    };
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error("[wa-webhook] chamada a route-cost falhou", e);
+    return null;
+  }
+}
+
+async function registrarTentativaFrete(params: {
+  waMessageId: string;
+  motoristaId: string | null;
+  fromE164: string;
+  texto: string;
+  extracao: ExtracaoFrete | null;
+  status: "calculado" | "confirmacao_pendente" | "dado_faltando" | "erro_extracao" | "nao_vinculado";
+  resultado?: unknown;
+}): Promise<void> {
+  const { error } = await supabase.from("wa_freight_query").insert({
+    wa_message_id: params.waMessageId,
+    motorista_id: params.motoristaId,
+    from_e164: params.fromE164,
+    texto_recebido: params.texto,
+    extracao_snapshot: params.extracao ?? null,
+    status: params.status,
+    resultado_snapshot: params.resultado ?? null,
+  });
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("[wa-webhook] falha ao gravar wa_freight_query, seguindo mesmo assim", error);
+  }
+}
+
+/**
+ * Fallback de qualquer mensagem que não bateu VINCULAR/DESVINCULAR —
+ * tenta interpretar como pedido de cálculo de frete (calc-wpp). Só
+ * calcula de fato quando: (1) a IA classifica como pedido de frete de
+ * verdade, (2) origem/destino/valor foram todos extraídos, (3) a
+ * confiança de cada campo bate o mínimo, (4) o número já está vinculado
+ * a um motorista. Qualquer coisa fora disso responde orientando o
+ * motorista, sem chutar um cálculo em cima de dado incerto.
+ */
+async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageId: string): Promise<void> {
+  const extracao = await extrairFreteDeTexto(texto);
+  if (!extracao || !extracao.ePedidoDeFrete) {
+    // Sem chave da IA configurada, extração falhou, ou não é um pedido
+    // de frete de verdade (saudação, outro assunto etc.) — mesmo
+    // comportamento de antes do calc-wpp existir: só loga, sem responder.
+    // eslint-disable-next-line no-console
+    console.log(`[wa-webhook] mensagem sem intent reconhecido de ${fromE164}: "${texto}"`);
+    return;
+  }
+
+  const { data: motorista } = await supabase
+    .from("motoristas")
+    .select("id, canal_wa_ativo")
+    .eq("telefone_e164", fromE164)
+    .maybeSingle();
+
+  if (!motorista?.canal_wa_ativo) {
+    await registrarTentativaFrete({ waMessageId, motoristaId: motorista?.id ?? null, fromE164, texto, extracao, status: "nao_vinculado" });
+    await enviarMensagemWhatsapp(
+      fromE164,
+      "Pra calcular fretes por aqui, primeiro vincule seu WhatsApp pelo app (Meu perfil → Vincular WhatsApp).",
+    );
+    return;
+  }
+
+  const faltando: string[] = [];
+  if (!extracao.origem) faltando.push("origem");
+  if (!extracao.destino) faltando.push("destino");
+  if (extracao.valorFreteReais == null) faltando.push("valor do frete");
+  if (faltando.length > 0) {
+    await registrarTentativaFrete({ waMessageId, motoristaId: motorista.id, fromE164, texto, extracao, status: "dado_faltando" });
+    await enviarMensagemWhatsapp(
+      fromE164,
+      `Faltou informar: ${faltando.join(", ")}. Manda de novo com origem, destino e valor do frete (ex.: "frete de Sorocaba pra Curitiba, 8 mil reais").`,
+    );
+    return;
+  }
+
+  // Narrowing explícito pro TS — a checagem de `faltando` acima já garante
+  // que os três campos estão preenchidos, mas TS não propaga isso pra
+  // propriedades de objeto através de `await`s seguintes.
+  const origem = extracao.origem as string;
+  const destino = extracao.destino as string;
+  const valorFreteReais = extracao.valorFreteReais as number;
+
+  const confiancaMinima = Math.min(extracao.confiancaOrigem, extracao.confiancaDestino, extracao.confiancaValor);
+  if (confiancaMinima < CONFIANCA_MINIMA) {
+    await registrarTentativaFrete({ waMessageId, motoristaId: motorista.id, fromE164, texto, extracao, status: "confirmacao_pendente" });
+    await enviarMensagemWhatsapp(
+      fromE164,
+      `Não entendi direito — origem "${origem}", destino "${destino}", valor R$ ${valorFreteReais}. Se estiver certo, manda de novo mais claro (ex.: "frete de ${origem} pra ${destino}, R$ ${valorFreteReais}").`,
+    );
+    return;
+  }
+
+  const rota = await chamarRouteCost(origem, destino);
+  if (!rota) {
+    await registrarTentativaFrete({ waMessageId, motoristaId: motorista.id, fromE164, texto, extracao, status: "erro_extracao" });
+    await enviarMensagemWhatsapp(fromE164, "Não consegui calcular a distância dessa rota agora. Tenta de novo em instantes ou use o app.");
+    return;
+  }
+
+  const perfil = await buscarPerfilOuDefault(motorista.id);
+  const dias = diasPorFaixaKm(rota.distanciaKm);
+  // Mesmo ajuste carro->caminhão de Analisar.tsx: tarifa_caminhão = tarifa_carro × (eixos/2).
+  const pedagioReais = rota.pedagioCentavos != null ? Math.round(rota.pedagioCentavos * (perfil.numero_eixos / 2)) / 100 : 0;
+  const custos = perfilParaCustos(perfil, dias, pedagioReais);
+  const tipoCarga = tipoCargaPorCarroceria(perfil.tipo_carroceria);
+
+  const resultado = calcularFrete({
+    origem,
+    destino,
+    distanciaKm: rota.distanciaKm,
+    valorFrete: valorFreteReais,
+    voltaVazia: extracao.voltaVazia,
+    margemDesejada: perfil.margem_desejada,
+    custos,
+    distanciaEstimada: rota.distanciaEstimada,
+    numeroEixos: perfil.numero_eixos,
+    tipoCarga,
+  });
+
+  await registrarTentativaFrete({ waMessageId, motoristaId: motorista.id, fromE164, texto, extracao, status: "calculado", resultado });
+
+  const emoji = resultado.veredicto === "BOM" ? "✅" : resultado.veredicto === "ACEITÁVEL" ? "🟡" : "🔴";
+  const avisoPiso = resultado.abaixoPisoANTT ? "\n⚠️ Valor abaixo do piso mínimo ANTT." : "";
+  const resposta =
+    `📦 ${origem} → ${destino} (${rota.distanciaKm.toFixed(0)} km${rota.distanciaEstimada ? ", estimado" : ""})\n` +
+    `Valor ofertado: ${fmtBRL(valorFreteReais)}\n` +
+    `Custo estimado: ${fmtBRL(resultado.custoTotal)}\n` +
+    `Lucro estimado: ${fmtBRL(resultado.lucro)} (margem ${fmtPct(resultado.margemReal)})\n` +
+    `Piso ANTT: ${fmtBRL(resultado.pisoANTT)}${avisoPiso}\n\n` +
+    `${emoji} Veredito: ${resultado.veredicto}\n\n` +
+    `(estimativa com base no seu perfil cadastrado no app — ${dias} dia${dias > 1 ? "s" : ""} de viagem)`;
+
+  await enviarMensagemWhatsapp(fromE164, resposta);
+}
+
 Deno.serve(async (req: Request) => {
   // Handshake de verificação da Meta (configurado uma vez, no painel do
   // WhatsApp Business — GET com hub.mode/hub.verify_token/hub.challenge).
@@ -314,9 +560,7 @@ Deno.serve(async (req: Request) => {
     } else if (intent.tipo === "desvincular") {
       await tratarDesvincular(msg.fromE164, msg.waMessageId);
     } else {
-      // TODO(calc-wpp): NLU/extração de frete ainda não implementado.
-      // eslint-disable-next-line no-console
-      console.log(`[wa-webhook] mensagem sem intent reconhecido de ${msg.fromE164}: "${msg.texto}"`);
+      await tratarPedidoDeCalculo(msg.fromE164, msg.texto, msg.waMessageId);
     }
   }
 
