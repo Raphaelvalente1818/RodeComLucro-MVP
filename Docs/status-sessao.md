@@ -704,3 +704,25 @@ Até aqui, qualquer mensagem que não fosse `VINCULAR`/`DESVINCULAR` só caía n
 **Pendente**: configurar `ANTHROPIC_API_KEY` no Supabase (Edge Functions → Secrets) pra ativar de fato — até lá, qualquer mensagem sem intent reconhecido continua só logando, como estava antes. Depois disso, testar o fluxo real: mandar algo como "frete de Sorocaba pra Curitiba, 8 mil reais" pro WhatsApp vinculado e conferir a resposta.
 
 Ainda não commitado/pushado.
+
+## Atualização — 26/08: calc-wpp ao vivo — cálculo funciona, envio da resposta bloqueado pela Meta
+
+Raphael configurou a `ANTHROPIC_API_KEY` (Anthropic Console) e testou o fluxo real pela primeira vez. O cálculo funcionou perfeitamente desde a primeira tentativa (extração via IA, `route-cost`, `calcularFrete`, tudo certo — confirmado por linhas em `wa_freight_query` com `status: "calculado"` e `resultado_snapshot` completo), mas nenhuma resposta chegava no WhatsApp do motorista. Dois problemas em sequência:
+
+**1. `WA_PHONE_NUMBER_ID` estava com o valor errado.** Todo envio (inclusive a confirmação de VINCULAR) falhava com erro da Graph API: `"Object with ID '3395526617320804' does not exist..."` (code 100, subcode 33). O valor configurado era o **WhatsApp Business Account ID (WABA ID)**, não o **Phone Number ID** — a Meta mostra os dois na mesma tela (API Setup) e são fáceis de confundir. Raphael corrigiu pro valor certo (`1278342878694005`) e reconferiu o `WA_ACCESS_TOKEN` (chegou a aparecer um 401 "cannot parse access token" no Postman por espaço extra colado no valor). Republiquei a function pra forçar um cold start pegar os secrets novos.
+
+  *Nota de segurança*: o Raphael colou o `WA_ACCESS_TOKEN` em texto puro no chat duas vezes durante esse diagnóstico. Já usado, mas fica registrado aqui: **recomendo regenerar esse token na Meta quando os testes terminarem**, já que ficou exposto no histórico da conversa.
+
+  *Incidente à parte, já corrigido na hora*: numa tentativa de forçar o redeploy pra pegar os secrets novos, publiquei sem querer uma versão da function com conteúdo placeholder (sem handler de verdade) — percebi na hora, conferi que os arquivos originais no disco estavam intactos e republiquei o código certo em seguida. Sem impacto real, mas registrando pela transparência.
+
+**2. Depois de corrigir o Phone Number ID, o envio parou de dar erro — mas a mensagem continuava não chegando no celular, sem nenhum erro logado no momento do envio.** A causa só apareceu depois: o webhook não tinha visibilidade sobre o *status de entrega* (delivered/failed), só sobre o resultado imediato da chamada HTTP à Graph API (que retornava sucesso). Adicionei `extrairStatuses()` em `wa-webhook/index.ts` — os status de entrega chegam pelo mesmo campo `messages` do webhook já assinado (dentro de `value.statuses[]`, não existe um campo separado tipo "message_status" pra assinar à parte, como cheguei a supor errado antes de conferir com o Raphael). Republicando com esse log, o próximo teste revelou o erro real:
+
+  **Erro 130497 — "Business account is restricted from messaging users in this country."** A Meta está bloqueando o envio de mensagens pro Brasil nessa conta, independente de ser número de teste ou não (não tem relação com o limite de 5 números do modo desenvolvimento, que já estava resolvido). Causa mais comum: perfil incompleto no Business Manager (endereço/telefone/site) ou necessidade de verificação da empresa. Raphael já completou o perfil do Business Manager, mas o erro **persistiu num novo teste (14:04h)** — a mensagem que a Meta mostrou avisa que a reavaliação pode levar de 1 a 2 dias. Combinado: ele vai testando de vez em quando enquanto isso não resolve sozinho.
+
+**Estado atual**: pipeline de cálculo 100% funcional (extração IA → rota → cálculo → auditoria em `wa_freight_query`) — só a etapa final de envio da resposta por WhatsApp está bloqueada, por restrição de país da Meta, não por bug de código. `index.ts` tem uma versão nova (log de status de entrega) já publicada no Supabase (v25) mas **ainda não commitada/pushada**.
+
+**Pendente**:
+- Aguardar a Meta liberar o envio pro Brasil (1-2 dias, checando de vez em quando) e então confirmar entrega ponta a ponta de verdade.
+- Se não desbloquear sozinho, iniciar verificação da empresa (Business Verification, CNPJ) no Business Manager.
+- Regenerar `WA_ACCESS_TOKEN` (exposto em texto puro no chat) depois que os testes terminarem.
+- Commitar/pushar o `index.ts` novo (log de status de entrega via `extrairStatuses()`).

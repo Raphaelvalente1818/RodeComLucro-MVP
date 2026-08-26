@@ -146,6 +146,37 @@ export function extrairMensagens(payload: unknown): MensagemRecebida[] {
 }
 
 // ---------------------------------------------------------------------
+// Status de entrega (sent/delivered/read/failed) — vem no MESMO campo
+// "messages" do webhook (não existe um campo separado pra assinar),
+// dentro de value.statuses[] em vez de value.messages[]. Só usado pra
+// diagnóstico por enquanto (console.log/error) — não altera nenhum
+// estado no banco.
+// ---------------------------------------------------------------------
+interface StatusRecebido {
+  waMessageId: string;
+  status: string;
+  recipientId: string;
+  erro?: unknown;
+}
+
+export function extrairStatuses(payload: unknown): StatusRecebido[] {
+  const statuses: StatusRecebido[] = [];
+  const entradas = (payload as { entry?: unknown[] })?.entry ?? [];
+  for (const entrada of entradas) {
+    const changes = (entrada as { changes?: unknown[] })?.changes ?? [];
+    for (const change of changes) {
+      const st = (change as { value?: { statuses?: unknown[] } })?.value?.statuses ?? [];
+      for (const s of st) {
+        const item = s as { id?: string; status?: string; recipient_id?: string; errors?: unknown };
+        if (!item.id || !item.status) continue;
+        statuses.push({ waMessageId: item.id, status: item.status, recipientId: item.recipient_id ?? "", erro: item.errors });
+      }
+    }
+  }
+  return statuses;
+}
+
+// ---------------------------------------------------------------------
 // Intents roteados ANTES do NLU (sem custo de LLM — match por regex).
 // Qualquer coisa que não bater um desses é "desconhecido": cai pro NLU do
 // calc-wpp (tratarPedidoDeCalculo, ver abaixo), que decide via IA se é ou
@@ -535,6 +566,20 @@ Deno.serve(async (req: Request) => {
     payload = JSON.parse(corpoCru);
   } catch {
     return json({ erro: "body_invalido" }, 400);
+  }
+
+  // Diagnóstico: status de entrega (sent/delivered/read/failed) de
+  // mensagens que NÓS enviamos — não tem relação com processar mensagem
+  // recebida, só loga pra dar visibilidade de falha de envio (ver
+  // extrairStatuses acima).
+  for (const s of extrairStatuses(payload)) {
+    if (s.status === "failed") {
+      // eslint-disable-next-line no-console
+      console.error("[wa-webhook] status=failed", JSON.stringify(s));
+    } else {
+      // eslint-disable-next-line no-console
+      console.log(`[wa-webhook] status=${s.status} wa_message_id=${s.waMessageId} para=${s.recipientId}`);
+    }
   }
 
   const mensagens = extrairMensagens(payload);
