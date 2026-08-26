@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { calcularFrete, fmtBRL, parseNumeroPtBR, tipoCargaPorCarroceria, TIPO_CARGA_LABEL, type FreteResultado } from '@rode/calc';
 import { supabase } from '../lib/supabaseClient';
+import { track } from '../lib/track';
 import {
   carregarPerfil,
   diasPorFaixaKm,
@@ -272,6 +273,20 @@ export default function Analisar() {
       distanciaEstimada,
       numeroEixos,
       tipoCarga,
+    });
+
+    void track('simulation_run', {
+      origem,
+      destino,
+      distancia_km: km,
+      valor_frete: valor,
+      veredicto: resultado.veredicto,
+      margem_desejada: margemDesejada,
+      a_negociar: aNegociar,
+      piso_antt: resultado.pisoANTT,
+      abaixo_piso_antt: resultado.abaixoPisoANTT,
+      lucro: resultado.lucro,
+      caminhao_perfil_id: perfil?.id ?? null,
     });
 
     navigate('/resultado', {

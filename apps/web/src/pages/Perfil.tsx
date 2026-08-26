@@ -20,6 +20,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { carregarPerfil, salvarPerfil, PERFIL_DEFAULT, type CaminhaoPerfil } from '../lib/frete';
+import { track } from '../lib/track';
 import type { ModeloCaminhao, TipoVeiculo, TipoCarroceria } from '@rode/calc';
 import { VEICULOS, CARROCERIAS, eixosPorCarroceria } from '@rode/calc';
 import {
@@ -276,12 +277,21 @@ export default function Perfil() {
     if (!userId) return;
     setSalvando(true);
     setErro(null);
+    const primeiroCadastro = !perfilId;
     const { error } = await salvarPerfil(userId, form, perfilId);
     setSalvando(false);
     if (error) {
       setErro(error);
       return;
     }
+    void track('truck_profile_saved', {
+      primeiro_cadastro: primeiroCadastro,
+      tipo_veiculo: form.tipo_veiculo,
+      tipo_carroceria: form.tipo_carroceria,
+      marca: form.marca,
+      modelo: form.modelo,
+      ano: form.ano,
+    });
     setSalvo(true);
   }
 

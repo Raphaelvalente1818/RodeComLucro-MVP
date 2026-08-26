@@ -23,6 +23,7 @@ import { listarFretesAbertos, UFS_BRASIL, type FretePublicado, type FiltrosFrete
 import { carregarMotorista, salvarCidadeAtual } from '../lib/motorista';
 import { carregarPerfil } from '../lib/frete';
 import { buscarMunicipios, distanciaKm, RAIOS_KM, type Municipio } from '../lib/municipios';
+import { track } from '../lib/track';
 
 function primeiroNome(nome: string | null | undefined): string | null {
   const t = nome?.trim();
@@ -149,6 +150,14 @@ export default function BuscarFrete() {
     listarFretesAbertos(filtros).then((r) => {
       setFretes(r);
       setCarregando(false);
+      // Dispara na carga inicial também (destinoUf/soMeuTipo ainda no
+      // default) — aceitável pro MVP: o admin quer volume de uso da tela,
+      // não só busca com filtro explícito.
+      void track('freight_search', {
+        destino_uf: filtros.destinoUf,
+        tipo_veiculo: filtros.tipoVeiculo,
+        resultados: r.length,
+      });
     });
   }, [destinoUf, soMeuTipo, tipoVeiculoPerfil]);
 
@@ -202,6 +211,15 @@ export default function BuscarFrete() {
     const totalEstimado = valorTotalEstimadoCentavos(f, cargaMaximaPerfil);
     const semValor = f.valorACombinar || f.valorFreteCentavos == null || (f.tipoValor === 'por_tonelada' && totalEstimado == null);
     const valorFrete = semValor ? null : totalEstimado != null ? totalEstimado / 100 : f.valorFreteCentavos! / 100;
+    void track('opportunity_engaged', {
+      frete_id: f.id,
+      acao: 'analisar',
+      empresa_nome: f.empresaNome,
+      origem: `${f.origemCidade}/${f.origemUf}`,
+      destino: `${f.destinoCidade}/${f.destinoUf}`,
+      valor_frete_centavos: f.valorFreteCentavos,
+      valor_a_combinar: f.valorACombinar,
+    });
     navigate('/analisar', {
       state: {
         origem: `${f.origemCidade}/${f.origemUf}`,
@@ -352,7 +370,12 @@ export default function BuscarFrete() {
                 </button>
                 {f.contatoTelefone && (
                   <p className="contato-frete-linha">
-                    <a href={`tel:${f.contatoTelefone.replace(/\D/g, '')}`}>Ligar</a>
+                    <a
+                      href={`tel:${f.contatoTelefone.replace(/\D/g, '')}`}
+                      onClick={() => void track('opportunity_engaged', { frete_id: f.id, acao: 'ligar', empresa_nome: f.empresaNome })}
+                    >
+                      Ligar
+                    </a>
                     {' · '}
                     <a
                       href={`https://wa.me/55${f.contatoTelefone.replace(/\D/g, '')}?text=${encodeURIComponent(
@@ -360,6 +383,7 @@ export default function BuscarFrete() {
                       )}`}
                       target="_blank"
                       rel="noreferrer"
+                      onClick={() => void track('opportunity_engaged', { frete_id: f.id, acao: 'whatsapp', empresa_nome: f.empresaNome })}
                     >
                       WhatsApp
                     </a>

@@ -23,6 +23,7 @@ import {
 import { carregarMotorista, type Motorista } from '../lib/motorista';
 import { carregarPerfil } from '../lib/frete';
 import { contarPendentes } from '../lib/filaOffline';
+import { track } from '../lib/track';
 import { IconeCaminhao, IconePerfil } from '../components/IconesCard';
 // PROVISÓRIO — remover esta linha e o bloco marcado abaixo quando os
 // testes de backlog com os sócios acabarem (ver components/BacklogModal.tsx).
@@ -184,7 +185,18 @@ export default function Garagem() {
   // (não só o toggle local), pra tirar/incluir o item certo na hora.
   async function alternarRealizadoEAtualizarLucro(a: AnaliseResumo) {
     setAnalises((prev) => prev.map((x) => (x.id === a.id ? { ...x, realizado: !x.realizado } : x)));
+    const marcandoComoRealizado = !a.realizado; // a.realizado é o valor ANTES do toggle.
     const { error } = await alternarRealizado(a.id, a.realizado);
+    if (!error && marcandoComoRealizado) {
+      void track('freight_accepted', {
+        analise_id: a.id,
+        origem: a.origem,
+        destino: a.destino,
+        valor_frete_centavos: a.valorFreteCentavos,
+        veredicto: a.veredicto,
+        valor_a_combinar: a.valorACombinar,
+      });
+    }
     if (!error) {
       setLucroMes(await carregarLucroMesAtual(motorista!.id));
       if (apenasRealizados && userId) {

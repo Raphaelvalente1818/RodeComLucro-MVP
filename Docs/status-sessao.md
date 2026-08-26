@@ -726,3 +726,31 @@ Raphael configurou a `ANTHROPIC_API_KEY` (Anthropic Console) e testou o fluxo re
 - Se não desbloquear sozinho, iniciar verificação da empresa (Business Verification, CNPJ) no Business Manager.
 - Regenerar `WA_ACCESS_TOKEN` (exposto em texto puro no chat) depois que os testes terminarem.
 - Commitar/pushar o `index.ts` novo (log de status de entrega via `extrairStatuses()`).
+- **Nova pista, ainda não investigada**: log das 21:04h mostra um erro diferente do 130497 — `"envio falhou 401 {Authentication Error, code 190, OAuthException}"`. Isso é token inválido/expirado (diferente de bloqueio de país) — vale conferir se o `WA_ACCESS_TOKEN` provisório expirou (tokens de teste da Meta costumam durar ~24h) antes de assumir que o problema todo é só o 130497.
+
+## Atualização — 26/08 (2): início do painel admin — camada de instrumentação (track/analytics_event)
+
+Raphael perguntou se dava pra avançar pro painel admin (Docs/PRD-tecnico-admin.html) enquanto o desbloqueio do WhatsApp na Meta não resolve. Sim: são frentes independentes, e não tinha mais nada a fazer no calc-wpp até a Meta responder. Alinhei que "ir pro admin" não significa construir as 11 telas do dashboard agora — o próprio PRD deixa isso pra depois ("dashboard fechado por último"); o primeiro passo real é a camada de instrumentação (`track()`/`analytics_event`), que está zerada desde a Fase 1 e é pré-requisito de tudo que o admin vai mostrar.
+
+**Versão MVP simplificada em relação ao PRD**: sem particionamento mensal, sem `journey_definition`/rollups/pg_cron ainda — só a captura de eventos, que precisa rodar desde já pra existir histórico quando o resto for construído.
+
+**Migration `20260826210825_analytics_event_schema.sql`**: tabela `analytics_event` (event_name, actor_id, source app|whatsapp, props jsonb, idempotency_key opcional, occurred_at/created_at) + índices por (event_name, occurred_at) e (actor_id, occurred_at). RLS habilitada, mesmo padrão de `caminhao_perfil`/`analise_frete` (`0008_calc_app_schema.sql`): usuário autenticado só insere evento em nome de si mesmo (`actor_id = auth.uid()`); sem policy de select pra `authenticated` — só service_role lê (é o painel admin, via Edge Function, que vai consumir isso depois).
+
+**`apps/web/src/lib/track.ts`** (novo): SDK fino, `track(eventName, props)`. Diferente das gravações de negócio (`lib/frete.ts`, fila offline), analytics é fire-and-forget — nunca `await` bloqueando UI, falha em silêncio (só `console.error`) se der erro. Catálogo de eventos (`EventName`) segue a seção 11 do PRD: `signup_completed`, `truck_profile_saved`, `freight_search`, `simulation_run`, `freight_accepted`, `opportunity_engaged`. (`expense_logged` do PRD não entrou — não existe funcionalidade de lançamento de gasto avulso no app hoje, confirmei por busca no código antes de instrumentar algo que não existe.)
+
+**Pontos instrumentados no app web** (mapeados um por um antes de editar, comparando contra o PRD que foi escrito pra um protótipo mockado com nomes de arquivo diferentes dos reais):
+- `Verificacao.tsx` (`confirmar`) — `signup_completed`, só quando `auth.users.created_at` é muito recente (< 15s), pra distinguir conta nova de login de retorno (a API não devolve essa flag direto).
+- `Perfil.tsx` (`salvar`) — `truck_profile_saved`, com `primeiro_cadastro` calculado a partir de `perfilId`. Não instrumentei `apagarDados()` (mesma função `salvarPerfil` por baixo) pra não contar reset como cadastro novo.
+- `BuscarFrete.tsx` — `freight_search` no `useEffect` que busca (dispara também na carga inicial, aceitável pro MVP); `opportunity_engaged` em `abrirAnalise()` (ação `analisar`) e nos links "Ligar"/"WhatsApp" (ação `ligar`/`whatsapp`).
+- `Analisar.tsx` (`calcularEIr`) — `simulation_run` logo após `calcularFrete()`, antes do `navigate` — captura toda simulação calculada, mesmo as que o motorista não salva.
+- `Garagem.tsx` (`alternarRealizadoEAtualizarLucro`) — `freight_accepted`, só quando o toggle está *marcando* como realizado (não ao desmarcar).
+
+**Canal WhatsApp**: `wa-webhook/index.ts` ganhou `registrarEventoAnalytics()`, chamado só em `simulation_run` (dentro de `tratarPedidoDeCalculo`, no mesmo ponto onde grava `wa_freight_query`), com `source: "whatsapp"`. Decisão explícita: **não** disparei `signup_completed` no VINCULAR — o motorista já existe (foi criado no cadastro via app), então contar o vínculo como "cadastro" infringiria o dado do funil, duplicando alguém que já apareceu pelo app.
+
+**Erro meu, corrigido na hora**: ao montar o payload do primeiro deploy do `wa-webhook` instrumentado, digitei errado o catch de `extracao.ts` (troquei `console.error("...", e)` por uma referência a `resp.text()` fora de escopo — `resp` não existe se o próprio `fetch` lançar exceção, o que quebraria esse catch em produção). O arquivo local sempre esteve correto; o erro foi só no conteúdo que mandei pro deploy (v27). Percebi comparando com o arquivo em disco, corrigi e republiquei (v28) com o conteúdo certo.
+
+**Validação**: `npx tsc --noEmit` limpo em `apps/web`. `wa-webhook` (`index.ts`+`calc.ts`+`extracao.ts`) validado com o mesmo shim local de sempre (`Deno` global + stub do supabase-js) rodando `tsc --strict` — limpo, sem erros, repetido depois da correção do v28.
+
+**Estado atual**: instrumentação publicada e ativa (Supabase, `wa-webhook` v28) e presente localmente no app web — ainda não commitada/pushada. Sem tráfego real ainda pra confirmar eventos chegando em `analytics_event` (mas a mesma lógica de RLS/insert já é usada em outras tabelas do projeto, baixo risco).
+
+**Pendente**: telas do painel admin em si (as 11 views, RLS por papel, rollups/pg_cron) ficam pra uma etapa seguinte — combinado que instrumentação vem primeiro pra já existir dado quando o dashboard for construído.

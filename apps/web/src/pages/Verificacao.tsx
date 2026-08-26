@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import { track } from '../lib/track';
 
 interface EstadoRota {
   telefoneE164?: string;
@@ -63,7 +64,7 @@ export default function Verificacao() {
     setCarregando(true);
     setErro(null);
     try {
-      const { error } = await supabase.auth.verifyOtp({
+      const { data, error } = await supabase.auth.verifyOtp({
         phone: `+${telefoneE164}`,
         token,
         type: 'sms',
@@ -72,6 +73,12 @@ export default function Verificacao() {
         setErro('Codigo invalido ou expirado. Confira e tente de novo.');
         return;
       }
+      // Sem flag explícita de "conta nova" no retorno do verifyOtp — usamos
+      // created_at de auth.users vs agora: diferença pequena (poucos
+      // segundos) indica que o trigger acabou de criar o usuário agora,
+      // não um login de retorno de alguém já cadastrado.
+      const contaNova = data.user != null && Date.now() - new Date(data.user.created_at).getTime() < 15000;
+      if (contaNova) void track('signup_completed', { telefone_e164: telefoneE164, canal: canal ?? 'sms' });
       navigate('/', { replace: true });
     } finally {
       setCarregando(false);

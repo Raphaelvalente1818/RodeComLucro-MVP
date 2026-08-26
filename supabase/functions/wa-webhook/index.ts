@@ -87,6 +87,33 @@ export async function assinaturaValida(
 }
 
 // ---------------------------------------------------------------------
+// Instrumentação (Docs/PRD-tecnico-admin.html) — mesmo catálogo de
+// event_name usado no app web (lib/track.ts), com source="whatsapp" pra
+// diferenciar o canal. Só "simulation_run" por aqui: o VINCULAR não é um
+// cadastro novo (o motorista já existe, criado via app na Fase 1 —
+// disparar signup_completed aqui infringiria o dado, contando de novo
+// alguém que já apareceu no funil pelo app). Fire-and-forget (não bloqueia
+// a resposta ao motorista nem falha o webhook): erro aqui só loga, nunca
+// interrompe o fluxo principal (o cálculo já aconteceu de verdade).
+// ---------------------------------------------------------------------
+async function registrarEventoAnalytics(
+  eventName: "simulation_run",
+  actorId: string,
+  props: Record<string, unknown>,
+): Promise<void> {
+  const { error } = await supabase.from("analytics_event").insert({
+    event_name: eventName,
+    actor_id: actorId,
+    source: "whatsapp",
+    props,
+  });
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("[wa-webhook] falha ao gravar analytics_event, seguindo mesmo assim", error);
+  }
+}
+
+// ---------------------------------------------------------------------
 // Envio pro WhatsApp — no-op logado enquanto a chave da Meta não chega.
 // ---------------------------------------------------------------------
 async function enviarMensagemWhatsapp(paraE164: string, texto: string): Promise<void> {
@@ -524,6 +551,19 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
   });
 
   await registrarTentativaFrete({ waMessageId, motoristaId: motorista.id, fromE164, texto, extracao, status: "calculado", resultado });
+  await registrarEventoAnalytics("simulation_run", motorista.id, {
+    origem,
+    destino,
+    distancia_km: rota.distanciaKm,
+    valor_frete: valorFreteReais,
+    veredicto: resultado.veredicto,
+    margem_desejada: perfil.margem_desejada,
+    a_negociar: false,
+    piso_antt: resultado.pisoANTT,
+    abaixo_piso_antt: resultado.abaixoPisoANTT,
+    lucro: resultado.lucro,
+    caminhao_perfil_id: null,
+  });
 
   const emoji = resultado.veredicto === "BOM" ? "✅" : resultado.veredicto === "ACEITÁVEL" ? "🟡" : "🔴";
   const avisoPiso = resultado.abaixoPisoANTT ? "\n⚠️ Valor abaixo do piso mínimo ANTT." : "";
