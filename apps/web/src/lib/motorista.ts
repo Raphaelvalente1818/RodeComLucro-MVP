@@ -14,6 +14,12 @@
 // aqui — são preenchidos pela tela Buscar Frete (lib/municipios.ts), pra
 // resolver o raio de busca. Ficam na mesma tabela por serem dado do
 // motorista, mas o formulário desta tela (Meu Perfil) não mexe neles.
+//
+// cidade_base/cidade_base_lat/cidade_base_lng (28/08) ampliam a antiga "UF
+// base" (só sigla) pra uma cidade completa, com o mesmo autocomplete de
+// lib/municipios.ts usado em Buscar Frete — dá pra saber a localização do
+// motorista (com coordenadas) desde o cadastro, sem depender dele ter
+// usado Buscar Frete pelo menos uma vez pra existir cidade_atual.
 
 import { supabase } from './supabaseClient';
 import { centsToReais, reaisToCents } from '@rode/calc';
@@ -23,6 +29,10 @@ export interface Motorista {
   id: string;
   nome: string | null;
   uf_base: string | null;
+  /** Cidade do endereço base (onde mora) — par de uf_base, com coordenadas pra poder ser usada como origem de busca. */
+  cidade_base: string | null;
+  cidade_base_lat: number | null;
+  cidade_base_lng: number | null;
   meta_alvo_centavos: number | null;
   media_lucro_frete_centavos: number | null;
   canal_wa_ativo: boolean;
@@ -41,6 +51,10 @@ export interface Motorista {
 export interface FormMotorista {
   nome: string;
   uf_base: string;
+  /** Nome da cidade base (sem UF) — preenchido junto com uf_base ao escolher uma sugestão do autocomplete. */
+  cidade_base: string;
+  cidade_base_lat: number | null;
+  cidade_base_lng: number | null;
   /** Meta de lucro mensal, em reais (a UI trabalha em reais; o banco persiste em centavos). */
   metaAlvoReais: number | null;
   cnhNumero: string;
@@ -53,6 +67,9 @@ export function motoristaParaForm(m: Motorista): FormMotorista {
   return {
     nome: m.nome ?? '',
     uf_base: m.uf_base ?? '',
+    cidade_base: m.cidade_base ?? '',
+    cidade_base_lat: m.cidade_base_lat,
+    cidade_base_lng: m.cidade_base_lng,
     metaAlvoReais: m.meta_alvo_centavos != null ? centsToReais(m.meta_alvo_centavos) : null,
     cnhNumero: m.cnh_numero ?? '',
     cnhVencimento: m.cnh_vencimento ?? '',
@@ -64,7 +81,7 @@ export async function carregarMotorista(userId: string): Promise<Motorista | nul
   const { data, error } = await supabase
     .from('motoristas')
     .select(
-      'id, nome, uf_base, meta_alvo_centavos, media_lucro_frete_centavos, canal_wa_ativo, telefone_verificado, cnh_numero, cnh_vencimento, exame_toxicologico_vencimento, cidade_atual, uf_atual, cidade_atual_lat, cidade_atual_lng',
+      'id, nome, uf_base, cidade_base, cidade_base_lat, cidade_base_lng, meta_alvo_centavos, media_lucro_frete_centavos, canal_wa_ativo, telefone_verificado, cnh_numero, cnh_vencimento, exame_toxicologico_vencimento, cidade_atual, uf_atual, cidade_atual_lat, cidade_atual_lng',
     )
     .eq('id', userId)
     .maybeSingle();
@@ -116,6 +133,9 @@ registrarExecutor<PayloadMotorista>('motoristas_editar', async ({ userId, form }
     .update({
       nome: form.nome.trim() || null,
       uf_base: form.uf_base.trim().toUpperCase() || null,
+      cidade_base: form.cidade_base.trim() || null,
+      cidade_base_lat: form.cidade_base_lat,
+      cidade_base_lng: form.cidade_base_lng,
       meta_alvo_centavos: form.metaAlvoReais != null ? reaisToCents(form.metaAlvoReais) : null,
       cnh_numero: form.cnhNumero.trim() || null,
       cnh_vencimento: form.cnhVencimento || null,

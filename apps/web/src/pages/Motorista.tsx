@@ -17,6 +17,7 @@ import {
   type FormMotorista,
   type VinculoWhatsapp,
 } from '../lib/motorista';
+import { buscarMunicipios, type Municipio } from '../lib/municipios';
 
 function fmtHoraBR(iso: string): string {
   return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -25,6 +26,9 @@ function fmtHoraBR(iso: string): string {
 const FORM_VAZIO: FormMotorista = {
   nome: '',
   uf_base: '',
+  cidade_base: '',
+  cidade_base_lat: null,
+  cidade_base_lng: null,
   metaAlvoReais: null,
   cnhNumero: '',
   cnhVencimento: '',
@@ -50,6 +54,12 @@ export default function Motorista() {
 
   const [form, setForm] = useState<FormMotorista>(FORM_VAZIO);
 
+  // Cidade base: mesmo autocomplete de lib/municipios.ts usado em Buscar
+  // Frete (cidade "onde estou agora") — aqui é "onde moro/sou baseado".
+  const [cidadeTexto, setCidadeTexto] = useState('');
+  const [cidadeSelecionada, setCidadeSelecionada] = useState<Municipio | null>(null);
+  const [sugestoesCidade, setSugestoesCidade] = useState<Municipio[]>([]);
+
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
       const uid = data.session?.user.id;
@@ -63,10 +73,38 @@ export default function Motorista() {
         setForm(motoristaParaForm(m));
         setTelefoneVerificado(m.telefone_verificado);
         setCanalWaAtivo(m.canal_wa_ativo);
+        if (m.cidade_base && m.cidade_base_lat != null && m.cidade_base_lng != null) {
+          setCidadeTexto(`${m.cidade_base}/${m.uf_base ?? ''}`);
+          setCidadeSelecionada({ nome: m.cidade_base, uf: m.uf_base ?? '', latitude: m.cidade_base_lat, longitude: m.cidade_base_lng });
+        } else if (m.uf_base) {
+          // Cadastro antigo, só com UF (sem cidade) — mostra o que tem, mas
+          // sem marcar como "selecionado" (precisa escolher uma cidade da
+          // lista pra preencher lat/lng e ficar completo).
+          setCidadeTexto(m.uf_base);
+        }
       }
       setCarregando(false);
     });
   }, [navigate]);
+
+  useEffect(() => {
+    if (cidadeSelecionada && cidadeTexto === `${cidadeSelecionada.nome}/${cidadeSelecionada.uf}`) {
+      setSugestoesCidade([]);
+      return;
+    }
+    const handle = setTimeout(() => {
+      buscarMunicipios(cidadeTexto).then(setSugestoesCidade);
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [cidadeTexto, cidadeSelecionada]);
+
+  function selecionarCidadeBase(m: Municipio) {
+    setCidadeSelecionada(m);
+    setCidadeTexto(`${m.nome}/${m.uf}`);
+    setSugestoesCidade([]);
+    setForm((f) => ({ ...f, cidade_base: m.nome, uf_base: m.uf, cidade_base_lat: m.latitude, cidade_base_lng: m.longitude }));
+    setSalvo(false);
+  }
 
   function campo<K extends keyof FormMotorista>(chave: K, valor: FormMotorista[K]) {
     setForm((f) => ({ ...f, [chave]: valor }));
@@ -110,14 +148,27 @@ export default function Motorista() {
       </label>
 
       <label>
-        UF base
+        Cidade base
         <input
-          value={form.uf_base}
-          maxLength={2}
-          onChange={(e) => campo('uf_base', e.target.value.toUpperCase())}
-          placeholder="Ex.: SP"
+          value={cidadeTexto}
+          onChange={(e) => {
+            setCidadeTexto(e.target.value);
+            setCidadeSelecionada(null);
+          }}
+          placeholder="Ex.: São Bernardo do Campo/SP"
         />
       </label>
+      {sugestoesCidade.length > 0 && (
+        <ul className="sugestoes-box">
+          {sugestoesCidade.map((m) => (
+            <li key={`${m.nome}-${m.uf}`}>
+              <button type="button" className="sugestao-item" onClick={() => selecionarCidadeBase(m)}>
+                {m.nome}/{m.uf}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
 
       <label>
         Meta de lucro mensal (R$)

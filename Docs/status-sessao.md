@@ -768,3 +768,21 @@ O bloqueio de país continuou depois da verificação da empresa (Business Verif
 **Estado do calc-wpp**: pipeline completo (extração IA → rota → cálculo → resposta por WhatsApp) agora ponta a ponta funcional, incluindo a entrega. Falta só confirmar um teste com pedido de cálculo de verdade (ex.: "frete de Sorocaba pra Curitiba, 8 mil reais") pra fechar a validação — o último teste enviado ("Tem frete para mim?") não é um pedido de frete, então corretamente não gerou resposta (caiu em "sem intent reconhecido", comportamento esperado).
 
 **Pendente**: regenerar `WA_ACCESS_TOKEN` antigo (foi exposto em texto puro no chat, já trocado pelo token de 60 dias do System User — mas o valor antigo nunca foi formalmente revogado na Meta). Investigar se o erro 401 "Authentication Error" (code 190) do dia 26/08 era só o token temporário vencendo, ou algo mais — não deve mais acontecer com o token de System User de 60 dias, mas vale monitorar.
+
+## Atualização — 28/08: cidade base do motorista (pré-requisito pra busca de frete via WhatsApp)
+
+Raphael pediu pra planejarmos "buscar frete pelo WhatsApp" (lista de até 3 fretes compatíveis com o caminhão/perfil, clicáveis, mais um botão de abrir o app — sempre incentivando ir pro app sem obrigar). Antes de codar, levantei considerações (duplicação de lógica de filtro/distância no wa-webhook, mensagem de lista vs botão de link são tipos diferentes no WhatsApp, precisa reconhecer uma 3ª intenção via IA além de calcular/nada, o que fazer quando falta perfil/cidade). Duas decisões confirmadas com o Raphael: (1) uma mensagem só, lista com 4º item "Abrir app" (mais simples, ainda que o toque nesse item não abra link direto); (2) se faltar perfil do caminhão ou cidade base, só orienta a cadastrar — não tenta buscar sem filtro.
+
+No meio dessa conversa, surgiu uma lacuna: `cidade_atual` (usada hoje pro raio de busca em Buscar Frete) só existe depois que o motorista usa aquela tela pelo menos uma vez — não tem de onde vir uma localização pra quem nunca abriu Buscar Frete, o que enfraquecia o gate "cadastre no app" da busca por WhatsApp. Raphael pediu pra resolver isso primeiro: trocar o campo "UF base" (só sigla, digitado à mão) do cadastro do motorista por uma "cidade base" completa (nome + UF + lat/lng), usando o mesmo autocomplete de cidade que já existe em Buscar Frete — assim a localização já vem preenchida desde o cadastro inicial, sem depender de nenhuma outra tela.
+
+**Migration `20260828123654_motoristas_cidade_base.sql`**: `motoristas` ganha `cidade_base text`, `cidade_base_lat numeric`, `cidade_base_lng numeric` — mesmo padrão de nome já usado por `cidade_atual`/`uf_atual`/etc. (`20260811160200_motoristas_cidade_atual.sql`). `uf_base` (já existente, `char(2)`) continua sendo gravada junto, pra não quebrar quem já lia só ela (ex.: `Garagem.tsx`).
+
+**`apps/web/src/lib/motorista.ts`**: `Motorista`/`FormMotorista` ganham os 3 campos novos; `motoristaParaForm`, `carregarMotorista` (select) e o executor `motoristas_editar` (update) atualizados em conjunto.
+
+**`apps/web/src/pages/Motorista.tsx`**: campo "UF base" (input de texto livre, 2 letras) virou "Cidade base" — mesmo autocomplete debounced de `BuscarFrete.tsx` (`buscarMunicipios` de `lib/municipios.ts`), reaproveitando as classes CSS `sugestoes-box`/`sugestao-item` já existentes. Cadastro antigo (só com `uf_base`, sem cidade) mostra a UF no campo mas não marca como "selecionado" — precisa escolher uma cidade da lista pra completar com lat/lng.
+
+**`apps/web/src/pages/Garagem.tsx`**: exibição da base atualizada de `Base: {uf_base}` pra `Base: {cidade_base} - {uf_base}` quando a cidade estiver cadastrada (fallback pro comportamento antigo se só tiver UF).
+
+**Validação**: `npx tsc --noEmit` limpo em `apps/web`.
+
+**Pendente**: a busca de frete via WhatsApp em si (a feature que motivou essa mudança) ainda não foi codificada — combinado que primeiro fechamos a cidade base, agora a base pra localização (preferindo `cidade_atual` se existir — mais recente/precisa — com fallback pra `cidade_base` quando não) fica pronta pra ser usada por ela. Ainda não commitado/pushado.

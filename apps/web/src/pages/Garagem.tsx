@@ -113,6 +113,9 @@ export default function Garagem() {
           id: uid,
           nome: null,
           uf_base: null,
+          cidade_base: null,
+          cidade_base_lat: null,
+          cidade_base_lng: null,
           meta_alvo_centavos: null,
           media_lucro_frete_centavos: null,
           canal_wa_ativo: Boolean(claims.telefone_verificado) && false,
@@ -295,7 +298,9 @@ export default function Garagem() {
       )}
 
       <div className="garagem-status">
-        <span>Base: {motorista.uf_base ?? 'não informada'}</span>
+        <span>
+          Base: {motorista.cidade_base ? `${motorista.cidade_base} - ${motorista.uf_base}` : motorista.uf_base ?? 'não informada'}
+        </span>
         <span className={motorista.canal_wa_ativo ? 'sucesso' : 'aviso'}>
           {motorista.canal_wa_ativo ? 'WhatsApp vinculado' : 'WhatsApp não vinculado'}
         </span>
