@@ -754,3 +754,17 @@ Raphael perguntou se dava pra avançar pro painel admin (Docs/PRD-tecnico-admin.
 **Estado atual**: instrumentação publicada e ativa (Supabase, `wa-webhook` v28) e presente localmente no app web — ainda não commitada/pushada. Sem tráfego real ainda pra confirmar eventos chegando em `analytics_event` (mas a mesma lógica de RLS/insert já é usada em outras tabelas do projeto, baixo risco).
 
 **Pendente**: telas do painel admin em si (as 11 views, RLS por papel, rollups/pg_cron) ficam pra uma etapa seguinte — combinado que instrumentação vem primeiro pra já existir dado quando o dashboard for construído.
+
+## Atualização — 27/08: causa raiz do bloqueio 130497 encontrada — número americano vs. destinatário brasileiro
+
+O bloqueio de país continuou depois da verificação da empresa (Business Verification concluída em 26/08) — o que descartou a hipótese de "falta verificar" e obrigou a investigar mais fundo.
+
+**Causa raiz confirmada** (via fórum oficial de desenvolvedores da Meta, resposta de um BSP parceiro — 360dialog): a Meta tem uma restrição deliberada de mensageria cross-country — números de WhatsApp Business registrados nos **EUA (+1)** são bloqueados de enviar mensagem pra usuários no **Brasil (+55)**, a menos que a conta atinja um volume de ~100 mil conversas iniciadas pela empresa em 24h (inviável nessa fase do projeto). O `NUMERO_OFICIAL_WA`/`WA_PHONE_NUMBER_ID` configurado era um número americano (`+15556771876`) tentando mandar mensagem pro celular brasileiro do Raphael — exatamente o cenário do bug relatado por outros desenvolvedores no mesmo fórum. Isso explica por que nem a correção do `WA_PHONE_NUMBER_ID`/WABA-ID nem a verificação da empresa resolveram: nenhum dos dois tinha relação com a causa real.
+
+**Solução**: registrar um número de telefone **brasileiro** como número oficial do WhatsApp Business, em vez do americano. Raphael optou por um chip novo dedicado à empresa (nunca teve WhatsApp pessoal ativo) em vez do celular pessoal, pra não perder o WhatsApp normal desse número. Passo a passo dado: WhatsApp Manager → Números de telefone → Adicionar número → verificação por SMS/ligação → novo Phone Number ID gerado → atualizar `WA_PHONE_NUMBER_ID`/`NUMERO_OFICIAL_WA` no Supabase.
+
+**Confirmado funcionando**: log das 19:57 mostra `status=sent` seguido de `status=delivered` pro número de teste (5511997510976) — primeira entrega bem-sucedida desde o início dessa investigação. Nenhum erro 130497 depois da troca de número.
+
+**Estado do calc-wpp**: pipeline completo (extração IA → rota → cálculo → resposta por WhatsApp) agora ponta a ponta funcional, incluindo a entrega. Falta só confirmar um teste com pedido de cálculo de verdade (ex.: "frete de Sorocaba pra Curitiba, 8 mil reais") pra fechar a validação — o último teste enviado ("Tem frete para mim?") não é um pedido de frete, então corretamente não gerou resposta (caiu em "sem intent reconhecido", comportamento esperado).
+
+**Pendente**: regenerar `WA_ACCESS_TOKEN` antigo (foi exposto em texto puro no chat, já trocado pelo token de 60 dias do System User — mas o valor antigo nunca foi formalmente revogado na Meta). Investigar se o erro 401 "Authentication Error" (code 190) do dia 26/08 era só o token temporário vencendo, ou algo mais — não deve mais acontecer com o token de System User de 60 dias, mas vale monitorar.
