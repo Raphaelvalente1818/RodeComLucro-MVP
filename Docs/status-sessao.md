@@ -1,6 +1,6 @@
 # Status da sessão — RODE COM LUCRO
 
-> Última atualização: 2026-08-12. A sessão anterior (17/07) foi perdida num reset — este arquivo e `sequencia-construcao.md` foram o que permitiu retomar o contexto. Manter este hábito daqui pra frente.
+> Última atualização: 2026-08-28. A sessão anterior (17/07) foi perdida num reset — este arquivo e `sequencia-construcao.md` foram o que permitiu retomar o contexto. Manter este hábito daqui pra frente.
 
 ## O que já está pronto (confirmado lendo o repo em 04/08)
 
@@ -786,3 +786,27 @@ No meio dessa conversa, surgiu uma lacuna: `cidade_atual` (usada hoje pro raio d
 **Validação**: `npx tsc --noEmit` limpo em `apps/web`.
 
 **Pendente**: a busca de frete via WhatsApp em si (a feature que motivou essa mudança) ainda não foi codificada — combinado que primeiro fechamos a cidade base, agora a base pra localização (preferindo `cidade_atual` se existir — mais recente/precisa — com fallback pra `cidade_base` quando não) fica pronta pra ser usada por ela. Ainda não commitado/pushado.
+
+## Atualização — 28/08 (2): busca de frete via WhatsApp (busca-wpp) — feature completa, publicada (v33)
+
+Com a cidade base pronta, implementei a feature em si: motorista manda "BUSCAR" (ou "FRETES", ou linguagem natural tipo "tem frete pra SP?") e recebe uma lista de até 3 fretes compatíveis com o caminhão dele, clicáveis, mais um 4º item "Abrir o app" — igual combinado nas duas decisões da conversa anterior (mensagem única com lista; sem cadastro completo, só orienta e não busca nada degradado).
+
+**`supabase/functions/wa-webhook/extracao.ts`**: `ExtracaoFrete` ganhou `ePedidoDeBusca: boolean`, mutuamente exclusivo com `ePedidoDeFrete` — mesmo campo do tool schema/system prompt do Claude Haiku já usado pra classificar pedidos de cálculo, sem custo de IA extra (mesma chamada). Cobre a linguagem natural que o atalho por regex não pega (ex.: "tem frete pra Curitiba?").
+
+**`supabase/functions/wa-webhook/index.ts`**:
+- `detectarIntent()` ganhou o atalho `RE_BUSCAR` (/^(buscar|buscar frete|fretes?)$/i) — zero custo de IA pros gatilhos mais comuns, cai no NLU só pra frases mais soltas.
+- `tratarBuscaDeFrete()`: busca o motorista (precisa `canal_wa_ativo`), o `tipo_veiculo` do `caminhao_perfil`, e a localização (`cidade_atual_lat/lng` com fallback pra `cidade_base_lat/lng`). Se faltar tipo de veículo OU localização, manda mensagem explicando a vantagem de cadastrar no app (fretes já filtrados pro caminhão específico, a partir da cidade base, no raio de preferência) e **não busca nada** — sem fallback degradado, decisão já confirmada antes. Com os dois presentes, busca `fretes_publicados` (status=aberto), filtra por `tipos_veiculo_aceitos` (compatível se a lista aceitar o tipo do motorista ou estiver vazia), calcula distância até a origem de cada frete com uma cópia isomórfica de `distanciaKm` (mesma fórmula de haversine de `apps/web/src/lib/municipios.ts` — Edge Function não importa do app), ordena por distância e pega os 3 mais próximos.
+- `enviarListaFretes()`: novo tipo de envio (`enviarMensagemWhatsapp` só mandava texto puro) — mensagem `interactive`/`list` com até 4 linhas (3 fretes + "Abrir o app"), respeitando os limites de tamanho da Cloud API (title ≤24 caracteres, description ≤72) via `truncar()`.
+- `extrairInteracoesLista()`: novo parser pro payload de resposta de lista (`type: "interactive"`, `interactive.type: "list_reply"`) — extrai o `id` da linha clicada (UUID do frete, ou `"abrir_app"`).
+- `tratarRespostaLista()`: trata o clique. `"abrir_app"` responde só com o link do app. Um UUID reverifica `status='aberto'` no banco (pode ter fechado entre o envio da lista e o clique) e calcula o frete de verdade — reaproveitando a mesma cauda de `tratarPedidoDeCalculo` (route-cost, perfil de custos, `calcularFrete`, resposta formatada), agora extraída pra uma função compartilhada `calcularEResponderFrete()`. Fretes com `tipo_valor='por_tonelada'` seguem a mesma regra do app (`BuscarFrete.tsx`): só calcula o total se o motorista tiver `carga_maxima_toneladas` cadastrada no perfil — sem isso, orienta a cadastrar em vez de usar a taxa crua (que nunca pode entrar em `calcularFrete` como se fosse o valor total).
+- `Deno.serve`: processa mensagens de texto (fluxo já existente) e, separadamente, as interações de lista — cada uma com sua própria checagem de idempotência em `wa_mensagem_recebida` (mesmo padrão, `intent: "buscar"` ou `"lista_resposta"`).
+
+**Sem migration nova**: só reaproveita colunas que já existiam (`motoristas.cidade_base*`/`cidade_atual*`, `caminhao_perfil.tipo_veiculo`/`carga_maxima_toneladas`, `fretes_publicados.*`).
+
+**URL do app**: fixei `https://rode-com-lucro-mvp.vercel.app` como constante (`URL_APP`) no `index.ts` — não existe hoje nenhuma env var pra isso, só estava documentada aqui no status-sessao.md.
+
+**Validação**: `wa-webhook` (`index.ts`+`extracao.ts`+`calc.ts`) validado com o mesmo shim local de sempre (`Deno` global + stub encadeável do supabase-js, ajustado pra implementar `PromiseLike` de verdade — a versão anterior do shim não tipava `await` corretamente) rodando `tsc --strict` — limpo, sem erros.
+
+**Publicado**: `wa-webhook` v33 (deploy direto via MCP do Supabase, mesmo padrão das correções do calc-wpp — `verify_jwt=false`, igual já estava). Ainda não testado com tráfego real (precisa de um motorista vinculado com `tipo_veiculo` e cidade cadastrados, e de fretes reais compatíveis em `fretes_publicados` pra aparecer algo na lista).
+
+**Pendente**: teste ponta a ponta real (mandar "BUSCAR" pelo WhatsApp vinculado e conferir a lista/clique); código local (`extracao.ts`/`index.ts`) ainda não commitado/pushado — comandos abaixo.

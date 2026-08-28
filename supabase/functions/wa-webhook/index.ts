@@ -144,6 +144,58 @@ async function enviarMensagemWhatsapp(paraE164: string, texto: string): Promise<
 }
 
 // ---------------------------------------------------------------------
+// Lista interativa (busca de frete) — a Cloud API só aceita texto puro em
+// enviarMensagemWhatsapp(); listas são um tipo à parte ("interactive"/
+// "list"), com limites rígidos de tamanho por campo (title ≤24, row
+// description ≤72, button ≤20) — daí o truncar() abaixo.
+// ---------------------------------------------------------------------
+function truncar(s: string, max: number): string {
+  return s.length <= max ? s : `${s.slice(0, max - 1)}…`;
+}
+
+interface LinhaListaFrete {
+  id: string;
+  title: string;
+  description: string;
+}
+
+async function enviarListaFretes(paraE164: string, linhas: LinhaListaFrete[], totalCompativeis: number): Promise<void> {
+  if (!WA_ACCESS_TOKEN || !WA_PHONE_NUMBER_ID) {
+    // eslint-disable-next-line no-console
+    console.log(`[wa-webhook] envio de lista pulado (chave da Meta pendente) para=${paraE164}: ${JSON.stringify(linhas)}`);
+    return;
+  }
+  try {
+    const resp = await fetch(`https://graph.facebook.com/v20.0/${WA_PHONE_NUMBER_ID}/messages`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${WA_ACCESS_TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to: paraE164,
+        type: "interactive",
+        interactive: {
+          type: "list",
+          body: {
+            text: `Encontrei ${totalCompativeis} frete${totalCompativeis > 1 ? "s" : ""} compatível${totalCompativeis > 1 ? "eis" : ""} com seu caminhão perto de você. Toque numa opção pra ver o cálculo completo:`,
+          },
+          action: {
+            button: "Ver opções",
+            sections: [{ title: "Fretes compatíveis", rows: linhas }],
+          },
+        },
+      }),
+    });
+    if (!resp.ok) {
+      // eslint-disable-next-line no-console
+      console.error("[wa-webhook] envio de lista falhou", resp.status, await resp.text());
+    }
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error("[wa-webhook] envio de lista lançou exceção", e);
+  }
+}
+
+// ---------------------------------------------------------------------
 // Payload da Meta: entry[].changes[].value.messages[] — pode vir vazio
 // (ex.: webhook de status de entrega, sem mensagem nova) ou com mais de
 // uma mensagem no mesmo POST. Função pura, sem I/O — dá pra testar com
@@ -170,6 +222,43 @@ export function extrairMensagens(payload: unknown): MensagemRecebida[] {
     }
   }
   return mensagens;
+}
+
+// ---------------------------------------------------------------------
+// Resposta de lista interativa (busca de frete, ver tratarBuscaDeFrete) —
+// vem no mesmo campo value.messages[], mas com type="interactive" em vez
+// de "text". row.id é o UUID do frete escolhido, ou "abrir_app" (4º item
+// fixo da lista). Função separada (em vez de estender MensagemRecebida)
+// pra não misturar os dois formatos de payload num único tipo.
+// ---------------------------------------------------------------------
+export interface InteracaoLista {
+  waMessageId: string;
+  fromE164: string;
+  rowId: string;
+}
+
+export function extrairInteracoesLista(payload: unknown): InteracaoLista[] {
+  const interacoes: InteracaoLista[] = [];
+  const entradas = (payload as { entry?: unknown[] })?.entry ?? [];
+  for (const entrada of entradas) {
+    const changes = (entrada as { changes?: unknown[] })?.changes ?? [];
+    for (const change of changes) {
+      const msgs = (change as { value?: { messages?: unknown[] } })?.value?.messages ?? [];
+      for (const m of msgs) {
+        const msg = m as {
+          id?: string;
+          from?: string;
+          type?: string;
+          interactive?: { type?: string; list_reply?: { id?: string } };
+        };
+        if (!msg.id || !msg.from || msg.type !== "interactive") continue;
+        const rowId = msg.interactive?.list_reply?.id;
+        if (msg.interactive?.type !== "list_reply" || !rowId) continue;
+        interacoes.push({ waMessageId: msg.id, fromE164: msg.from, rowId });
+      }
+    }
+  }
+  return interacoes;
 }
 
 // ---------------------------------------------------------------------
@@ -211,10 +300,15 @@ export function extrairStatuses(payload: unknown): StatusRecebido[] {
 // ---------------------------------------------------------------------
 const RE_VINCULAR = /^vincular\s+(\d{6})$/i;
 const RE_DESVINCULAR = /^desvincular$/i;
+// Atalho sem custo de IA pros gatilhos mais comuns de busca de frete
+// ("BUSCAR", "FRETES", "BUSCAR FRETE") — linguagem natural mais solta (ex.:
+// "tem frete pra SP?") cai no NLU (extracao.ts, campo e_pedido_de_busca).
+const RE_BUSCAR = /^(buscar|buscar\s+frete|fretes?)$/i;
 
 export type IntentDetectado =
   | { tipo: "vincular"; codigo: string }
   | { tipo: "desvincular" }
+  | { tipo: "buscar" }
   | { tipo: "desconhecido" };
 
 export function detectarIntent(texto: string): IntentDetectado {
@@ -222,6 +316,7 @@ export function detectarIntent(texto: string): IntentDetectado {
   const vincular = t.match(RE_VINCULAR);
   if (vincular) return { tipo: "vincular", codigo: vincular[1] };
   if (RE_DESVINCULAR.test(t)) return { tipo: "desvincular" };
+  if (RE_BUSCAR.test(t)) return { tipo: "buscar" };
   return { tipo: "desconhecido" };
 }
 
@@ -469,12 +564,19 @@ async function registrarTentativaFrete(params: {
  */
 async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageId: string): Promise<void> {
   const extracao = await extrairFreteDeTexto(texto);
-  if (!extracao || !extracao.ePedidoDeFrete) {
+  if (!extracao || (!extracao.ePedidoDeFrete && !extracao.ePedidoDeBusca)) {
     // Sem chave da IA configurada, extração falhou, ou não é um pedido
-    // de frete de verdade (saudação, outro assunto etc.) — mesmo
+    // de frete nem de busca (saudação, outro assunto etc.) — mesmo
     // comportamento de antes do calc-wpp existir: só loga, sem responder.
     // eslint-disable-next-line no-console
     console.log(`[wa-webhook] mensagem sem intent reconhecido de ${fromE164}: "${texto}"`);
+    return;
+  }
+
+  // Linguagem natural de busca que o atalho por regex (detectarIntent) não
+  // pegou — ex.: "tem frete pra SP?". Mesmo handler do gatilho direto.
+  if (extracao.ePedidoDeBusca && !extracao.ePedidoDeFrete) {
+    await tratarBuscaDeFrete(fromE164, waMessageId);
     return;
   }
 
@@ -523,14 +625,48 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
     return;
   }
 
+  await calcularEResponderFrete({
+    fromE164,
+    motoristaId: motorista.id,
+    origem,
+    destino,
+    valorFreteReais,
+    voltaVazia: extracao.voltaVazia,
+    waMessageId,
+    texto,
+    extracao,
+  });
+}
+
+/**
+ * Cauda comum de tratarPedidoDeCalculo (texto livre) e tratarRespostaLista
+ * (clique num frete da busca, ver tratarBuscaDeFrete) — a partir daqui os
+ * dois fluxos convergem: já se sabe origem/destino/valor, só falta
+ * calcular (route-cost + perfil de custos) e responder. `extracao`/`texto`
+ * ficam null/placeholder no fluxo de lista (não veio texto livre nem
+ * passou pela IA) — só usados pra auditoria em wa_freight_query.
+ */
+async function calcularEResponderFrete(params: {
+  fromE164: string;
+  motoristaId: string;
+  origem: string;
+  destino: string;
+  valorFreteReais: number;
+  voltaVazia: boolean;
+  waMessageId: string;
+  texto: string;
+  extracao: ExtracaoFrete | null;
+}): Promise<void> {
+  const { fromE164, motoristaId, origem, destino, valorFreteReais, voltaVazia, waMessageId, texto, extracao } = params;
+
   const rota = await chamarRouteCost(origem, destino);
   if (!rota) {
-    await registrarTentativaFrete({ waMessageId, motoristaId: motorista.id, fromE164, texto, extracao, status: "erro_extracao" });
+    await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao, status: "erro_extracao" });
     await enviarMensagemWhatsapp(fromE164, "Não consegui calcular a distância dessa rota agora. Tenta de novo em instantes ou use o app.");
     return;
   }
 
-  const perfil = await buscarPerfilOuDefault(motorista.id);
+  const perfil = await buscarPerfilOuDefault(motoristaId);
   const dias = diasPorFaixaKm(rota.distanciaKm);
   // Mesmo ajuste carro->caminhão de Analisar.tsx: tarifa_caminhão = tarifa_carro × (eixos/2).
   const pedagioReais = rota.pedagioCentavos != null ? Math.round(rota.pedagioCentavos * (perfil.numero_eixos / 2)) / 100 : 0;
@@ -542,7 +678,7 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
     destino,
     distanciaKm: rota.distanciaKm,
     valorFrete: valorFreteReais,
-    voltaVazia: extracao.voltaVazia,
+    voltaVazia,
     margemDesejada: perfil.margem_desejada,
     custos,
     distanciaEstimada: rota.distanciaEstimada,
@@ -550,8 +686,8 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
     tipoCarga,
   });
 
-  await registrarTentativaFrete({ waMessageId, motoristaId: motorista.id, fromE164, texto, extracao, status: "calculado", resultado });
-  await registrarEventoAnalytics("simulation_run", motorista.id, {
+  await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao, status: "calculado", resultado });
+  await registrarEventoAnalytics("simulation_run", motoristaId, {
     origem,
     destino,
     distancia_km: rota.distanciaKm,
@@ -577,6 +713,231 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
     `(estimativa com base no seu perfil cadastrado no app — ${dias} dia${dias > 1 ? "s" : ""} de viagem)`;
 
   await enviarMensagemWhatsapp(fromE164, resposta);
+}
+
+// ---------------------------------------------------------------------
+// Busca de frete via WhatsApp (busca-wpp) — gatilho "BUSCAR"/"FRETES"
+// (detectarIntent) ou linguagem natural (extracao.ts, ePedidoDeBusca).
+// Sempre incentiva o app: se faltar tipo de veículo ou localização,
+// orienta a cadastrar (com o motivo) e NÃO busca nada — sem fallback
+// degradado, pra não ensinar o motorista a ignorar o cadastro no app.
+// Copia isomórfica de distanciaKm (apps/web/src/lib/municipios.ts) e do
+// filtro de compatibilidade por tipo_veiculo (BuscarFrete.tsx) — Edge
+// Function não importa de apps/web, mesmo padrão já usado por calc.ts.
+// ---------------------------------------------------------------------
+
+const RAIO_BUSCA_MAX_RESULTADOS = 3;
+const URL_APP = "https://rode-com-lucro-mvp.vercel.app";
+
+function distanciaKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+/** Mesma decisão de texto de montarMensagemWhatsapp (BuscarFrete.tsx), versão curta pra caber na lista. */
+function textoValorCurto(valorACombinar: boolean, valorFreteCentavos: number | null, tipoValor: string | null): string {
+  if (valorACombinar || valorFreteCentavos == null) return "A combinar";
+  const valor = fmtBRL(valorFreteCentavos / 100);
+  return tipoValor === "por_tonelada" ? `${valor}/ton` : valor;
+}
+
+interface MotoristaBusca {
+  id: string;
+  canal_wa_ativo: boolean;
+  cidade_atual: string | null;
+  uf_atual: string | null;
+  cidade_atual_lat: number | null;
+  cidade_atual_lng: number | null;
+  cidade_base: string | null;
+  uf_base: string | null;
+  cidade_base_lat: number | null;
+  cidade_base_lng: number | null;
+}
+
+async function tratarBuscaDeFrete(fromE164: string, waMessageId: string): Promise<void> {
+  const { data: motorista } = await supabase
+    .from("motoristas")
+    .select(
+      "id, canal_wa_ativo, cidade_atual, uf_atual, cidade_atual_lat, cidade_atual_lng, cidade_base, uf_base, cidade_base_lat, cidade_base_lng",
+    )
+    .eq("telefone_e164", fromE164)
+    .maybeSingle<MotoristaBusca>();
+
+  if (!motorista?.canal_wa_ativo) {
+    await enviarMensagemWhatsapp(
+      fromE164,
+      "Pra buscar fretes por aqui, primeiro vincule seu WhatsApp pelo app (Meu perfil → Vincular WhatsApp).",
+    );
+    return;
+  }
+
+  const { data: perfil } = await supabase
+    .from("caminhao_perfil")
+    .select("tipo_veiculo")
+    .eq("user_id", motorista.id)
+    .maybeSingle();
+  const tipoVeiculo = (perfil?.tipo_veiculo as string | null) ?? null;
+
+  // cidade_atual (onde o motorista está agora, só existe se ele já usou o
+  // Buscar Frete no app) tem prioridade sobre cidade_base (onde mora,
+  // cadastrada no Meu perfil) — mesma preferência combinada com o usuário.
+  const lat = motorista.cidade_atual_lat ?? motorista.cidade_base_lat;
+  const lng = motorista.cidade_atual_lng ?? motorista.cidade_base_lng;
+  const cidadeOrigem = motorista.cidade_atual ?? motorista.cidade_base;
+  const ufOrigem = motorista.uf_atual ?? motorista.uf_base;
+
+  if (!tipoVeiculo || lat == null || lng == null) {
+    const faltando: string[] = [];
+    if (!tipoVeiculo) faltando.push("o tipo do seu caminhão (Meu caminhão)");
+    if (lat == null || lng == null) faltando.push("sua cidade base (Meu perfil)");
+    await enviarMensagemWhatsapp(
+      fromE164,
+      `Pra eu buscar fretes compatíveis com você, falta cadastrar no app: ${faltando.join(" e ")}.\n\n` +
+        "Vale a pena: pelo app os fretes já vêm filtrados pro seu caminhão específico, a partir da cidade que você escolher como base, no raio de atuação que você preferir — sem precisar digitar nada toda vez.\n\n" +
+        `Cadastre e me chama de novo (${URL_APP}) 🚛`,
+    );
+    return;
+  }
+
+  const { data: fretesRaw, error } = await supabase
+    .from("fretes_publicados")
+    .select(
+      "id, origem_cidade, origem_uf, origem_lat, origem_lng, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, tipos_veiculo_aceitos",
+    )
+    .eq("status", "aberto")
+    .order("created_at", { ascending: false })
+    .limit(300);
+
+  if (error || !fretesRaw) {
+    // eslint-disable-next-line no-console
+    console.error("[wa-webhook] falha ao buscar fretes_publicados", error);
+    await enviarMensagemWhatsapp(fromE164, "Não consegui buscar os fretes agora. Tenta de novo em instantes ou use o app.");
+    return;
+  }
+
+  const compativeis = (fretesRaw as Array<Record<string, unknown>>)
+    .filter((f) => {
+      const tipos = (f.tipos_veiculo_aceitos as string[] | null) ?? [];
+      return tipos.length === 0 || tipos.includes(tipoVeiculo);
+    })
+    .filter((f) => f.origem_lat != null && f.origem_lng != null)
+    .map((f) => ({
+      id: f.id as string,
+      origemCidade: f.origem_cidade as string,
+      origemUf: f.origem_uf as string,
+      destinoCidade: f.destino_cidade as string,
+      destinoUf: f.destino_uf as string,
+      valorFreteCentavos: f.valor_frete_centavos as number | null,
+      valorACombinar: Boolean(f.valor_a_combinar),
+      tipoValor: (f.tipo_valor as "fixo" | "por_tonelada" | null) ?? null,
+      distanciaOrigemKm: distanciaKm(lat, lng, f.origem_lat as number, f.origem_lng as number),
+    }))
+    .sort((a, b) => a.distanciaOrigemKm - b.distanciaOrigemKm)
+    .slice(0, RAIO_BUSCA_MAX_RESULTADOS);
+
+  if (compativeis.length === 0) {
+    await enviarMensagemWhatsapp(
+      fromE164,
+      `Não encontrei fretes compatíveis com seu ${tipoVeiculo} perto de ${cidadeOrigem}/${ufOrigem} agora. Abra o app pra ver o raio completo ou tenta de novo mais tarde: ${URL_APP}`,
+    );
+    return;
+  }
+
+  const linhas: LinhaListaFrete[] = compativeis.map((f) => ({
+    id: f.id,
+    title: truncar(`${f.origemCidade}/${f.origemUf} → ${f.destinoCidade}/${f.destinoUf}`, 24),
+    description: truncar(
+      `${textoValorCurto(f.valorACombinar, f.valorFreteCentavos, f.tipoValor)} · ${f.distanciaOrigemKm.toFixed(0)} km daqui`,
+      72,
+    ),
+  }));
+  linhas.push({ id: "abrir_app", title: "Abrir o app", description: "Ver todos os fretes e mais detalhes" });
+
+  await enviarListaFretes(fromE164, linhas, compativeis.length);
+}
+
+/**
+ * Resposta a um clique na lista enviada por tratarBuscaDeFrete. "abrir_app"
+ * é o 4º item fixo; qualquer outro id é o UUID de um fretes_publicados.
+ * Reverifica status="aberto" (pode ter fechado entre o envio da lista e o
+ * clique) antes de calcular — evita responder um cálculo de frete que já
+ * saiu do ar.
+ */
+async function tratarRespostaLista(fromE164: string, rowId: string, waMessageId: string): Promise<void> {
+  if (rowId === "abrir_app") {
+    await enviarMensagemWhatsapp(fromE164, `Abra o app pra ver todos os fretes e mais detalhes: ${URL_APP}`);
+    return;
+  }
+
+  const { data: motorista } = await supabase
+    .from("motoristas")
+    .select("id, canal_wa_ativo")
+    .eq("telefone_e164", fromE164)
+    .maybeSingle();
+  if (!motorista?.canal_wa_ativo) return; // defensivo — só quem está vinculado recebe a lista.
+
+  const { data: frete } = await supabase
+    .from("fretes_publicados")
+    .select("id, origem_cidade, origem_uf, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, status")
+    .eq("id", rowId)
+    .maybeSingle();
+
+  if (!frete || frete.status !== "aberto") {
+    await enviarMensagemWhatsapp(fromE164, 'Esse frete não está mais disponível. Manda "BUSCAR" de novo pra ver as opções atuais.');
+    return;
+  }
+
+  const origem = `${frete.origem_cidade}/${frete.origem_uf}`;
+  const destino = `${frete.destino_cidade}/${frete.destino_uf}`;
+
+  if (frete.valor_a_combinar || frete.valor_frete_centavos == null) {
+    await enviarMensagemWhatsapp(
+      fromE164,
+      `📦 ${origem} → ${destino}\nValor a combinar — abra o app pra ver os detalhes e negociar: ${URL_APP}`,
+    );
+    return;
+  }
+
+  // Fretes por tonelada: mesma regra do app (BuscarFrete.tsx) — só dá pra
+  // estimar o total com a carga máxima do perfil do caminhão cadastrada;
+  // sem isso, a taxa por tonelada crua NUNCA entra em calcularFrete().
+  let valorFreteReais: number;
+  if (frete.tipo_valor === "por_tonelada") {
+    const { data: perfilCarga } = await supabase
+      .from("caminhao_perfil")
+      .select("carga_maxima_toneladas")
+      .eq("user_id", motorista.id)
+      .maybeSingle();
+    const cargaMaxima = (perfilCarga?.carga_maxima_toneladas as number | null) ?? null;
+    if (!cargaMaxima) {
+      await enviarMensagemWhatsapp(
+        fromE164,
+        `📦 ${origem} → ${destino}\nEsse frete é por tonelada (${fmtBRL(frete.valor_frete_centavos / 100)}/ton) — cadastre a carga máxima do seu caminhão no app (Meu caminhão) pra eu calcular o valor total. Enquanto isso, abra o app pra negociar esse frete: ${URL_APP}`,
+      );
+      return;
+    }
+    valorFreteReais = Math.round(frete.valor_frete_centavos * cargaMaxima) / 100;
+  } else {
+    valorFreteReais = frete.valor_frete_centavos / 100;
+  }
+
+  await calcularEResponderFrete({
+    fromE164,
+    motoristaId: motorista.id,
+    origem,
+    destino,
+    valorFreteReais,
+    voltaVazia: false,
+    waMessageId,
+    texto: `[busca] ${origem} -> ${destino}`,
+    extracao: null,
+  });
 }
 
 Deno.serve(async (req: Request) => {
@@ -644,13 +1005,31 @@ Deno.serve(async (req: Request) => {
       await tratarVincular(msg.fromE164, intent.codigo, msg.waMessageId);
     } else if (intent.tipo === "desvincular") {
       await tratarDesvincular(msg.fromE164, msg.waMessageId);
+    } else if (intent.tipo === "buscar") {
+      await tratarBuscaDeFrete(msg.fromE164, msg.waMessageId);
     } else {
       await tratarPedidoDeCalculo(msg.fromE164, msg.texto, msg.waMessageId);
     }
   }
 
+  // Respostas de lista (clique num frete da busca ou em "Abrir o app") —
+  // mesmo payload de mensagens, tipo "interactive" em vez de "text", por
+  // isso um laço separado com sua própria checagem de idempotência.
+  const interacoes = extrairInteracoesLista(payload);
+  for (const it of interacoes) {
+    const { error: dupError } = await supabase
+      .from("wa_mensagem_recebida")
+      .insert({ wa_message_id: it.waMessageId, from_e164: it.fromE164, intent: "lista_resposta" });
+    if (dupError) {
+      if (dupError.code === "23505") continue; // já processada
+      // eslint-disable-next-line no-console
+      console.error("[wa-webhook] falha ao registrar idempotência (lista), processando mesmo assim", dupError);
+    }
+    await tratarRespostaLista(it.fromE164, it.rowId, it.waMessageId);
+  }
+
   // A Meta espera 200 rápido — se demorar ou der erro, ela reentrega.
   // Sempre 200 aqui, mesmo pra mensagem sem intent: já é o comportamento
   // esperado (cai pro NLU depois), não uma falha do webhook.
-  return json({ recebido: mensagens.length });
+  return json({ recebido: mensagens.length + interacoes.length });
 });

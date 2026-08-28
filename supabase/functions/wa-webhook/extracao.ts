@@ -18,6 +18,8 @@ const MODELO = "claude-haiku-4-5";
 
 export interface ExtracaoFrete {
   ePedidoDeFrete: boolean;
+  /** Pedido pra VER fretes disponíveis (busca), sem oferta concreta em mãos — mutuamente exclusivo com ePedidoDeFrete. Ver detectarIntent() em index.ts pro atalho por regex (sem custo de IA) dos gatilhos mais comuns ("BUSCAR"/"FRETES"); este campo cobre a linguagem natural que o regex não pega. */
+  ePedidoDeBusca: boolean;
   origem: string | null;
   destino: string | null;
   valorFreteReais: number | null;
@@ -27,23 +29,28 @@ export interface ExtracaoFrete {
   confiancaValor: number;
 }
 
-const SYSTEM_PROMPT = `Você extrai dados de pedidos de cálculo de frete rodoviário que motoristas brasileiros mandam por WhatsApp em português coloquial, para o app "Rode com Lucro".
+const SYSTEM_PROMPT = `Você extrai dados de pedidos de motoristas brasileiros sobre frete rodoviário, mandados por WhatsApp em português coloquial, para o app "Rode com Lucro". Há dois tipos de pedido possíveis, mutuamente exclusivos:
+(1) calcular/avaliar uma oferta de frete concreta que o motorista já tem em mãos (rota + valor);
+(2) buscar/ver fretes disponíveis, sem oferta concreta ainda.
 
 Responda SEMPRE usando a ferramenta "extrair_frete".
 
-- e_pedido_de_frete: true só se a mensagem for claramente um pedido pra calcular/avaliar um frete (rota + valor, mesmo que informal). false pra saudação, dúvida, reclamação, ou qualquer outro assunto — nesses casos pode deixar os demais campos vazios/zerados.
+- e_pedido_de_frete: true só se a mensagem for claramente um pedido do tipo (1) — calcular/avaliar uma oferta concreta (rota + valor, mesmo que informal). false caso contrário.
+- e_pedido_de_busca: true só se a mensagem for claramente um pedido do tipo (2) — ex.: "tem frete pra SP?", "quero ver os fretes disponíveis", "buscar frete", "tem carga saindo daqui pra Curitiba?". false caso contrário. Nunca marque e_pedido_de_frete e e_pedido_de_busca como true ao mesmo tempo.
+- Se nenhum dos dois for o caso (saudação, dúvida, reclamação, outro assunto), deixe ambos false e os demais campos vazios/zerados.
 - origem/destino: nome da cidade (e UF se mencionada), como o motorista escreveu — não invente UF se não foi dita.
 - valor_frete_reais: converta valores em português pro número em reais (ex.: "8 mil" -> 8000, "R$ 4.500" -> 4500, "3500 reais" -> 3500). null se nenhum valor foi mencionado.
 - volta_vazia: true SÓ se o motorista mencionar explicitamente que vai voltar vazio/sem carga/sem frete de volta.
-- confianca_origem/confianca_destino/confianca_valor: de 0 a 1, refletindo o quão claro e inequívoco cada campo foi no texto (baixa confiança se ambíguo, abreviado demais, ou você teve que adivinhar).`;
+- confianca_origem/confianca_destino/confianca_valor: de 0 a 1, refletindo o quão claro e inequívoco cada campo foi no texto (baixa confiança se ambíguo, abreviado demais, ou você teve que adivinhar). Pra pedidos de busca (2), pode deixar em 0 — não se aplicam.`;
 
 const FERRAMENTA_EXTRACAO = {
   name: "extrair_frete",
-  description: "Registra os dados de um pedido de cálculo de frete extraídos de uma mensagem de WhatsApp.",
+  description: "Registra os dados de um pedido de cálculo ou busca de frete extraídos de uma mensagem de WhatsApp.",
   input_schema: {
     type: "object",
     properties: {
       e_pedido_de_frete: { type: "boolean" },
+      e_pedido_de_busca: { type: "boolean" },
       origem: { type: ["string", "null"] },
       destino: { type: ["string", "null"] },
       valor_frete_reais: { type: ["number", "null"] },
@@ -54,6 +61,7 @@ const FERRAMENTA_EXTRACAO = {
     },
     required: [
       "e_pedido_de_frete",
+      "e_pedido_de_busca",
       "origem",
       "destino",
       "valor_frete_reais",
@@ -68,6 +76,7 @@ const FERRAMENTA_EXTRACAO = {
 function normalizar(input: Record<string, unknown>): ExtracaoFrete {
   return {
     ePedidoDeFrete: Boolean(input.e_pedido_de_frete),
+    ePedidoDeBusca: Boolean(input.e_pedido_de_busca),
     origem: typeof input.origem === "string" && input.origem.trim() ? input.origem.trim() : null,
     destino: typeof input.destino === "string" && input.destino.trim() ? input.destino.trim() : null,
     valorFreteReais: typeof input.valor_frete_reais === "number" && input.valor_frete_reais > 0 ? input.valor_frete_reais : null,
