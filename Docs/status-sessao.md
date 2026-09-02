@@ -810,3 +810,17 @@ Com a cidade base pronta, implementei a feature em si: motorista manda "BUSCAR" 
 **Publicado**: `wa-webhook` v33 (deploy direto via MCP do Supabase, mesmo padrão das correções do calc-wpp — `verify_jwt=false`, igual já estava). Ainda não testado com tráfego real (precisa de um motorista vinculado com `tipo_veiculo` e cidade cadastrados, e de fretes reais compatíveis em `fretes_publicados` pra aparecer algo na lista).
 
 **Pendente**: teste ponta a ponta real (mandar "BUSCAR" pelo WhatsApp vinculado e conferir a lista/clique); código local (`extracao.ts`/`index.ts`) ainda não commitado/pushado — comandos abaixo.
+
+## Atualização — 02/09: dois bugs encontrados no primeiro teste real da busca de frete — corrigidos (v34)
+
+Raphael testou de verdade: os 3 fretes chegaram, mas de uma praça errada; ao clicar num frete, veio corretamente um link pro app (esse frete era "a combinar" ou "por tonelada sem carga máxima" — casos que orientam a abrir o app em vez de calcular), mas o link abriu na Garagem em vez da tela certa.
+
+**Causa 1 — praça errada**: `tratarBuscaDeFrete` estava priorizando `cidade_atual` sobre `cidade_base`, copiando a mesma prioridade que `BuscarFrete.tsx` usa no app. Investigando os dados do motorista de teste (`SELECT` direto no Supabase), `cidade_atual` estava em "Caxias do Sul/RS" — resto de algum teste antigo na tela Buscar Frete do app — enquanto `cidade_base` (cadastro real, Meu perfil) era "Ribeirão Preto/SP". Como `cidade_atual` não tem timestamp/expiração nenhuma (confirmado: a tabela `motoristas` só tem um `updated_at` de linha inteira, não por coluna), esse valor ficou "preso" indefinidamente e nunca foi visível pro motorista que estava desatualizado. Isso também diverge do que foi pedido originalmente ("partindo da cidade que ele cadastrou como base"). **Correção**: `tratarBuscaDeFrete` agora usa só `cidade_base` — nunca `cidade_atual`. Documentado como decisão consciente: se no futuro quisermos usar "onde o motorista está agora" via WhatsApp, o jeito certo é dar uma data de validade pra esse campo (ou perguntar a localização a cada busca), não reaproveitar o campo do app como está hoje.
+
+**Causa 2 — link caindo na Garagem**: `URL_APP` era só o domínio raiz (`https://rode-com-lucro-mvp.vercel.app`), sem rota — por isso todo link caía na tela inicial (`/`, Garagem). **Correção**: cada mensagem agora aponta pra rota certa — `/buscar-frete` (ver todos os fretes / negociar "a combinar" / clique no "Abrir o app"), `/perfil` (cadastrar carga máxima pra fretes por tonelada, ou tipo do caminhão), `/motorista` (cadastrar cidade base).
+
+**Validação**: mesmo shim local (`Deno` global + stub encadeável do supabase-js) rodando `tsc --strict` — limpo.
+
+**Publicado**: `wa-webhook` v34.
+
+**Pendente**: novo teste real (BUSCAR → conferir se os fretes agora batem com Ribeirão Preto/SP → clicar num frete e conferir os links); código local ainda não commitado/pushado — comandos abaixo (substituem os da seção anterior, que ainda não tinham sido rodados).

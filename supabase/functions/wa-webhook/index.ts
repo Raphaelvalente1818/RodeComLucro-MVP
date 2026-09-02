@@ -750,10 +750,6 @@ function textoValorCurto(valorACombinar: boolean, valorFreteCentavos: number | n
 interface MotoristaBusca {
   id: string;
   canal_wa_ativo: boolean;
-  cidade_atual: string | null;
-  uf_atual: string | null;
-  cidade_atual_lat: number | null;
-  cidade_atual_lng: number | null;
   cidade_base: string | null;
   uf_base: string | null;
   cidade_base_lat: number | null;
@@ -763,9 +759,7 @@ interface MotoristaBusca {
 async function tratarBuscaDeFrete(fromE164: string, waMessageId: string): Promise<void> {
   const { data: motorista } = await supabase
     .from("motoristas")
-    .select(
-      "id, canal_wa_ativo, cidade_atual, uf_atual, cidade_atual_lat, cidade_atual_lng, cidade_base, uf_base, cidade_base_lat, cidade_base_lng",
-    )
+    .select("id, canal_wa_ativo, cidade_base, uf_base, cidade_base_lat, cidade_base_lng")
     .eq("telefone_e164", fromE164)
     .maybeSingle<MotoristaBusca>();
 
@@ -784,23 +778,29 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string): Promis
     .maybeSingle();
   const tipoVeiculo = (perfil?.tipo_veiculo as string | null) ?? null;
 
-  // cidade_atual (onde o motorista está agora, só existe se ele já usou o
-  // Buscar Frete no app) tem prioridade sobre cidade_base (onde mora,
-  // cadastrada no Meu perfil) — mesma preferência combinada com o usuário.
-  const lat = motorista.cidade_atual_lat ?? motorista.cidade_base_lat;
-  const lng = motorista.cidade_atual_lng ?? motorista.cidade_base_lng;
-  const cidadeOrigem = motorista.cidade_atual ?? motorista.cidade_base;
-  const ufOrigem = motorista.uf_atual ?? motorista.uf_base;
+  // Sempre a cidade_base (cadastrada em Meu perfil) — igual ao pedido
+  // original ("partindo da cidade que ele cadastrou como base"). NÃO usa
+  // cidade_atual: esse campo só existe se o motorista já usou o Buscar
+  // Frete no app, não tem timestamp/expiração, e fica "preso" na última
+  // cidade digitada indefinidamente — testado e confirmado que isso gera
+  // busca na praça errada quando o motorista testou uma cidade qualquer
+  // uma vez e nunca mais atualizou.
+  const lat = motorista.cidade_base_lat;
+  const lng = motorista.cidade_base_lng;
+  const cidadeOrigem = motorista.cidade_base;
+  const ufOrigem = motorista.uf_base;
 
   if (!tipoVeiculo || lat == null || lng == null) {
+    // Cada campo mora numa tela diferente: tipo de veículo é do caminhão
+    // (Perfil, /perfil), cidade base é do motorista (Meu perfil, /motorista)
+    // — manda o link certo pra cada um em vez de jogar tudo no domínio raiz.
     const faltando: string[] = [];
-    if (!tipoVeiculo) faltando.push("o tipo do seu caminhão (Meu caminhão)");
-    if (lat == null || lng == null) faltando.push("sua cidade base (Meu perfil)");
+    if (!tipoVeiculo) faltando.push(`o tipo do seu caminhão (Meu caminhão: ${URL_APP}/perfil)`);
+    if (lat == null || lng == null) faltando.push(`sua cidade base (Meu perfil: ${URL_APP}/motorista)`);
     await enviarMensagemWhatsapp(
       fromE164,
-      `Pra eu buscar fretes compatíveis com você, falta cadastrar no app: ${faltando.join(" e ")}.\n\n` +
-        "Vale a pena: pelo app os fretes já vêm filtrados pro seu caminhão específico, a partir da cidade que você escolher como base, no raio de atuação que você preferir — sem precisar digitar nada toda vez.\n\n" +
-        `Cadastre e me chama de novo (${URL_APP}) 🚛`,
+      `Pra eu buscar fretes compatíveis com você, falta cadastrar: ${faltando.join(" e ")}.\n\n` +
+        "Vale a pena: pelo app os fretes já vêm filtrados pro seu caminhão específico, a partir da cidade que você escolher como base, no raio de atuação que você preferir — sem precisar digitar nada toda vez. 🚛",
     );
     return;
   }
@@ -844,7 +844,7 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string): Promis
   if (compativeis.length === 0) {
     await enviarMensagemWhatsapp(
       fromE164,
-      `Não encontrei fretes compatíveis com seu ${tipoVeiculo} perto de ${cidadeOrigem}/${ufOrigem} agora. Abra o app pra ver o raio completo ou tenta de novo mais tarde: ${URL_APP}`,
+      `Não encontrei fretes compatíveis com seu ${tipoVeiculo} perto de ${cidadeOrigem}/${ufOrigem} agora. Abra o app pra ver o raio completo ou tenta de novo mais tarde: ${URL_APP}/buscar-frete`,
     );
     return;
   }
@@ -871,7 +871,7 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string): Promis
  */
 async function tratarRespostaLista(fromE164: string, rowId: string, waMessageId: string): Promise<void> {
   if (rowId === "abrir_app") {
-    await enviarMensagemWhatsapp(fromE164, `Abra o app pra ver todos os fretes e mais detalhes: ${URL_APP}`);
+    await enviarMensagemWhatsapp(fromE164, `Abra o app pra ver todos os fretes e mais detalhes: ${URL_APP}/buscar-frete`);
     return;
   }
 
@@ -899,7 +899,7 @@ async function tratarRespostaLista(fromE164: string, rowId: string, waMessageId:
   if (frete.valor_a_combinar || frete.valor_frete_centavos == null) {
     await enviarMensagemWhatsapp(
       fromE164,
-      `📦 ${origem} → ${destino}\nValor a combinar — abra o app pra ver os detalhes e negociar: ${URL_APP}`,
+      `📦 ${origem} → ${destino}\nValor a combinar — abra o app pra ver os detalhes e negociar: ${URL_APP}/buscar-frete`,
     );
     return;
   }
@@ -918,7 +918,7 @@ async function tratarRespostaLista(fromE164: string, rowId: string, waMessageId:
     if (!cargaMaxima) {
       await enviarMensagemWhatsapp(
         fromE164,
-        `📦 ${origem} → ${destino}\nEsse frete é por tonelada (${fmtBRL(frete.valor_frete_centavos / 100)}/ton) — cadastre a carga máxima do seu caminhão no app (Meu caminhão) pra eu calcular o valor total. Enquanto isso, abra o app pra negociar esse frete: ${URL_APP}`,
+        `📦 ${origem} → ${destino}\nEsse frete é por tonelada (${fmtBRL(frete.valor_frete_centavos / 100)}/ton) — cadastre a carga máxima do seu caminhão pra eu calcular o valor total: ${URL_APP}/perfil\nEnquanto isso, abra o app pra negociar esse frete: ${URL_APP}/buscar-frete`,
       );
       return;
     }
