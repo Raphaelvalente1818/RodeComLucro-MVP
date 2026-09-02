@@ -730,7 +730,11 @@ async function calcularEResponderFrete(params: {
     `Lucro estimado: ${fmtBRL(resultado.lucro)} (margem ${fmtPct(resultado.margemReal)})\n` +
     `Piso ANTT: ${fmtBRL(resultado.pisoANTT)}${avisoPiso}\n\n` +
     `${emoji} Veredito: ${resultado.veredicto}\n\n` +
-    `(estimativa com base no seu perfil cadastrado no app — ${dias} dia${dias > 1 ? "s" : ""} de viagem)`;
+    `(estimativa com base no seu perfil cadastrado no app — ${dias} dia${dias > 1 ? "s" : ""} de viagem)\n\n` +
+    // Toda resposta de cálculo (texto livre ou clique na lista de busca)
+    // sempre reforça o link do app — pedido explícito: o motorista precisa
+    // ter essa porta sempre visível, não só quando falta cadastro.
+    `📲 Veja o histórico completo e mais fretes no app: ${URL_APP}/buscar-frete`;
 
   await enviarMensagemWhatsapp(fromE164, resposta);
 }

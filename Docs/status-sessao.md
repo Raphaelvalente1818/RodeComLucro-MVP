@@ -874,3 +874,11 @@ Confirmei isso rodando a mesma query em SQL direto: com o recorte de 300, um tes
 Publicado como `wa-webhook` v36. Validado localmente (tsc --noEmit --strict) antes do deploy.
 
 **Pendente**: pedir pro David testar "BUSCAR" de novo — agora deve trazer opções perto de Guarulhos/São Paulo, não mais Ribeirão Preto.
+
+## Atualização — 02/09 (5): link do app em toda resposta de cálculo (v37/v38)
+
+Pedido do Raphael: toda resposta de cálculo de frete (texto livre tipo "frete de X pra Y, R$ Z" ou clique num item da lista de busca) deveria terminar com o link do app, pra o motorista sempre ter essa porta visível — não só nas mensagens de "faltou cadastro".
+
+Adicionada uma linha final em `calcularEResponderFrete` (função compartilhada pelos dois fluxos) com `📲 Veja o histórico completo e mais fretes no app: {URL_APP}/buscar-frete`.
+
+**Nota de qualidade**: publiquei isso primeiro como v37, mas errei uma colagem no `extracao.ts` (bloco `catch` referenciando uma variável fora de escopo, o que quebraria silenciosamente a extração por IA sempre que a chamada à API desse erro de rede). Percebi antes de reportar como concluído, corrigi e republiquei como v38 com o `extracao.ts` correto. v37 nunca foi comunicada como pronta — v38 é a versão válida.
