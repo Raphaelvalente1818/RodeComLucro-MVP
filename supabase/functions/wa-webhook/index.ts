@@ -825,6 +825,18 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string): Promis
     return;
   }
 
+  // O limit aqui precisa cobrir TODOS os fretes "aberto" (hoje ~800), não um
+  // recorte arbitrário: o filtro por distância roda em memória DEPOIS dessa
+  // busca, então se o banco tiver mais fretes "aberto" que o limit, alguns
+  // ficam de fora ANTES de serem comparados por distância. Bug real
+  // encontrado em teste (02/09): com limit(300) e ~800 fretes "aberto"
+  // compartilhando o mesmo created_at (import em lote), o Postgres não
+  // garante uma ordem estável pra desempatar o ORDER BY created_at — cada
+  // chamada podia trazer um recorte diferente dos 300, às vezes sem os
+  // fretes de fato mais próximos do motorista (ex.: motorista em Guarulhos
+  // recebendo só opções de Ribeirão Preto, porque os fretes perto de
+  // Guarulhos simplesmente não entraram nesse recorte). 2000 dá folga
+  // confortável acima do volume atual.
   const { data: fretesRaw, error } = await supabase
     .from("fretes_publicados")
     .select(
@@ -832,7 +844,7 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string): Promis
     )
     .eq("status", "aberto")
     .order("created_at", { ascending: false })
-    .limit(300);
+    .limit(2000);
 
   if (error || !fretesRaw) {
     // eslint-disable-next-line no-console

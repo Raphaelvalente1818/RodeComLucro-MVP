@@ -860,3 +860,17 @@ Validado localmente (tsc --noEmit --strict, shim Deno) antes de publicar. Public
 **Não corroborado tecnicamente**: o relato de que a mesma frase funcionava pro David — não achei nenhum log de "mensagem sem intent reconhecido" pro número dele na janela investigada. Não tenho uma explicação confirmada pra essa diferença; a correção acima resolve o problema pro caso comprovado (Emerson) e deve cobrir frases genéricas parecidas de qualquer motorista.
 
 **Pendente**: pedir pro Emerson testar de novo "Tem frete para mim?" (e variações parecidas) depois do deploy, pra confirmar na prática.
+
+## Atualização — 02/09 (4): busca ainda trazia Ribeirão Preto pro David mesmo com cidade_base=Guarulhos — causa real encontrada (v36)
+
+Depois da correção anterior (usar `cidade_base`), o David testou de novo já com `cidade_base` = Guarulhos/SP (confirmado no banco) e a busca voltou a trazer fretes de Ribeirão Preto — o mesmo sintoma, mas com a causa raiz anterior já eliminada. Precisei investigar mais fundo.
+
+**Causa raiz real**: a query de `tratarBuscaDeFrete` busca os fretes "aberto" (`order by created_at desc, limit 300`) e só DEPOIS, em memória, filtra por compatibilidade de veículo e ordena por distância até o motorista. O banco tem ~800 fretes "aberto" hoje, todos importados em poucos lotes que compartilham o mesmo `created_at` (mesmo timestamp, até o microssegundo). Quando muitas linhas empatam no campo usado pro `ORDER BY`, o Postgres **não garante** uma ordem estável de desempate — ou seja, a cada chamada o `limit(300)` podia trazer um recorte diferente e arbitrário dos 800, e nada garantia que os fretes de fato mais próximos do motorista (nesse caso, opções perto de Guarulhos/São Paulo, a ~15-25km) entrassem nesse recorte. Quando não entravam, a distância era calculada só entre o que sobrou no recorte — e aí sim Ribeirão Preto (a ~285km) podia aparecer como "mais próximo" disponível, mesmo sem ser o mais próximo de verdade.
+
+Confirmei isso rodando a mesma query em SQL direto: com o recorte de 300, um teste trouxe fretes de São Paulo/Arujá (15-25km, os de fato mais próximos) e outro trouxe Ribeirão Preto (285km) — dependendo só de como o banco decidiu desempatar o `created_at`, sem nenhuma mudança nos dados.
+
+**Correção**: aumentei o `limit(300)` pra `limit(2000)` em `supabase/functions/wa-webhook/index.ts` (`tratarBuscaDeFrete`) — folga confortável acima do volume atual (~800), garantindo que TODOS os fretes "aberto" entrem na comparação de distância antes de escolher os 3 mais próximos. Comentário explicando o motivo deixado no código, pra não reintroduzir um limit baixo aqui no futuro sem essa ressalva.
+
+Publicado como `wa-webhook` v36. Validado localmente (tsc --noEmit --strict) antes do deploy.
+
+**Pendente**: pedir pro David testar "BUSCAR" de novo — agora deve trazer opções perto de Guarulhos/São Paulo, não mais Ribeirão Preto.
