@@ -562,12 +562,32 @@ async function registrarTentativaFrete(params: {
  * a um motorista. Qualquer coisa fora disso responde orientando o
  * motorista, sem chutar um cálculo em cima de dado incerto.
  */
+// Rede de segurança pra quando a IA classifica uma mensagem genérica de
+// busca (ex.: "tem frete pra mim?") como nem cálculo nem busca — já
+// aconteceu em teste real (log: "mensagem sem intent reconhecido" pra
+// "Tem frete para mim?"). Sem valor em reais mencionado + menciona
+// frete/carga = trata como busca em vez de ficar em silêncio total, que é
+// pior (motorista acha que o bot não respondeu/quebrou).
+const RE_MENCIONA_FRETE_OU_CARGA = /\bfretes?\b|\bcargas?\b/i;
+
 async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageId: string): Promise<void> {
   const extracao = await extrairFreteDeTexto(texto);
-  if (!extracao || (!extracao.ePedidoDeFrete && !extracao.ePedidoDeBusca)) {
-    // Sem chave da IA configurada, extração falhou, ou não é um pedido
-    // de frete nem de busca (saudação, outro assunto etc.) — mesmo
+  if (!extracao) {
+    // Sem chave da IA configurada, ou a chamada falhou de verdade — mesmo
     // comportamento de antes do calc-wpp existir: só loga, sem responder.
+    // eslint-disable-next-line no-console
+    console.log(`[wa-webhook] mensagem sem intent reconhecido de ${fromE164}: "${texto}"`);
+    return;
+  }
+
+  if (!extracao.ePedidoDeFrete && !extracao.ePedidoDeBusca) {
+    if (RE_MENCIONA_FRETE_OU_CARGA.test(texto) && extracao.valorFreteReais == null) {
+      // eslint-disable-next-line no-console
+      console.log(`[wa-webhook] fallback: tratando como busca (IA não classificou) de ${fromE164}: "${texto}"`);
+      await tratarBuscaDeFrete(fromE164, waMessageId);
+      return;
+    }
+    // De fato não é sobre frete (saudação, outro assunto etc.) — só loga.
     // eslint-disable-next-line no-console
     console.log(`[wa-webhook] mensagem sem intent reconhecido de ${fromE164}: "${texto}"`);
     return;

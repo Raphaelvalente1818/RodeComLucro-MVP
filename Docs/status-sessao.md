@@ -843,3 +843,20 @@ Confirmado com o Raphael que o **Root Directory** do projeto na Vercel é `apps/
 **Publicação**: diferente do `wa-webhook` (Edge Function, publicada via MCP do Supabase), o app web é deployado pela própria Vercel a partir do push no GitHub — não tem deploy manual meu aqui. Assim que o commit for pushado, a Vercel builda e publica sozinha.
 
 **Pendente**: confirmar que o 404 sumiu depois do push (testar abrindo `https://rode-com-lucro-mvp.vercel.app/buscar-frete` direto na URL, e o link mandado pelo WhatsApp de novo).
+
+## Atualização — 02/09 (3): busca de frete silenciosa em texto vago — corrigida (v35)
+
+Segundo teste real, com Emerson e David testando juntos: "Buscar frete" (gatilho por regex) funcionava pros dois, mas a frase natural "Tem frete para mim?" só respondia pro David — pro Emerson, nada voltava, sem erro nenhum aparente.
+
+**Causa raiz** (confirmada via logs do Supabase, `function_logs`, não por suposição): a extração por IA (Claude Haiku, `extracao.ts`) classificou a mensagem do Emerson como nem pedido de cálculo (`e_pedido_de_frete=false`) nem pedido de busca (`e_pedido_de_busca=false`) — log exato: `mensagem sem intent reconhecido de 5511997510976: "Tem frete para mim?"` às 13:55:57. Ou seja, o webhook recebeu a mensagem, processou normalmente, e decidiu (errado) que não era sobre frete — então não respondeu nada. Confirmei que os cadastros dos dois motoristas (David e Emerson) estão completos e ativos no canal, então não era problema de cadastro; a causa foi mesmo uma classificação imprecisa da IA numa frase genérica.
+
+**Correção (duas partes, ambas em `supabase/functions/wa-webhook/`)**:
+
+1. `extracao.ts` — prompt do sistema reforçado: exemplos explícitos de pedidos genéricos de busca ("tem frete pra mim?", "tem frete disponível?", "tem carga?") e uma regra de desempate — na dúvida entre "busca genérica" e "nenhum dos dois", se a mensagem menciona a palavra frete/carga, classificar como busca (silêncio total é pior que buscar e não achar nada).
+2. `index.ts` — rede de segurança adicional, sem custo extra de IA: se a IA devolver os dois campos como `false` mas o texto claramente menciona "frete"/"carga" (regex `/\bfretes?\b|\bcargas?\b/i`) sem mencionar valor em reais, trata como pedido de busca mesmo assim, em vez de ficar em silêncio.
+
+Validado localmente (tsc --noEmit --strict, shim Deno) antes de publicar. Publicado como `wa-webhook` v35 via deploy da Edge Function.
+
+**Não corroborado tecnicamente**: o relato de que a mesma frase funcionava pro David — não achei nenhum log de "mensagem sem intent reconhecido" pro número dele na janela investigada. Não tenho uma explicação confirmada pra essa diferença; a correção acima resolve o problema pro caso comprovado (Emerson) e deve cobrir frases genéricas parecidas de qualquer motorista.
+
+**Pendente**: pedir pro Emerson testar de novo "Tem frete para mim?" (e variações parecidas) depois do deploy, pra confirmar na prática.
