@@ -824,3 +824,22 @@ Raphael testou de verdade: os 3 fretes chegaram, mas de uma praça errada; ao cl
 **Publicado**: `wa-webhook` v34.
 
 **Pendente**: novo teste real (BUSCAR → conferir se os fretes agora batem com Ribeirão Preto/SP → clicar num frete e conferir os links); código local ainda não commitado/pushado — comandos abaixo (substituem os da seção anterior, que ainda não tinham sido rodados).
+
+## Atualização — 02/09 (2): 404 em /buscar-frete — faltava rewrite de SPA na Vercel
+
+Depois da correção dos links (seção anterior), Raphael testou e o link pra `/buscar-frete` deu 404. Causa: o app é uma SPA (Vite + react-router-dom, `BrowserRouter`) e a Vercel não tinha nenhum `vercel.json`/rewrite configurado — sem isso, ela tenta servir o path literal como arquivo estático (`/buscar-frete`), não encontra, e devolve 404, em vez de servir `index.html` e deixar o react-router-dom decidir a rota no navegador. Isso afeta **qualquer** link direto pra uma rota que não seja `/` (inclusive os que acabei de adicionar: `/perfil`, `/motorista`).
+
+Confirmado com o Raphael que o **Root Directory** do projeto na Vercel é `apps/web` (Settings → Build and Deployment) — por isso o `vercel.json` precisa ficar dentro de `apps/web/`, não na raiz do monorepo.
+
+**`apps/web/vercel.json`** (novo arquivo):
+```json
+{
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
+```
+
+**Publicação**: diferente do `wa-webhook` (Edge Function, publicada via MCP do Supabase), o app web é deployado pela própria Vercel a partir do push no GitHub — não tem deploy manual meu aqui. Assim que o commit for pushado, a Vercel builda e publica sozinha.
+
+**Pendente**: confirmar que o 404 sumiu depois do push (testar abrindo `https://rode-com-lucro-mvp.vercel.app/buscar-frete` direto na URL, e o link mandado pelo WhatsApp de novo).
