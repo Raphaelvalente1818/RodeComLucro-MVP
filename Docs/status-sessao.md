@@ -957,4 +957,24 @@ Primeira versão do frontend, seguindo o mockup aprovado. Decisões:
 - **Layout**: gate de validação em destaque (progresso visual até 160), 4 KPIs, funil (5 estágios, incluindo o `cadastro_conta` novo) e distribuição de veredito — tudo espelhando o mockup. CSS novo em `index.css` sob prefixo `admin-`, reaproveitando cores/classes já existentes (`badge-bom`/`badge-ruim`, `barra-progresso`) — única tela do app que não é mobile-first (`max-width: 880px`), porque quem usa é o Raphael/sócios no navegador, não motorista no celular.
 - Validado com `tsc --noEmit --strict` e `vite build` (ambos limpos).
 
-**Pendente**: só a tela "Visão geral" está pronta — as outras 10 do PRD (moderação, embarcadores, parceiros, WhatsApp, financeiro/LGPD etc.) ficam pra quando os módulos que as alimentam existirem, como já estava combinado.
+**Pendente**: só a tela "Visão geral" estava pronta neste ponto — ver próxima atualização.
+
+## Atualização — 04/09 (5): painel admin completo até onde tem dado real
+
+Pedido do Raphael: codar todas as páginas até o fim. Como o PRD original tem 11 telas e várias dependem de módulos que não existem (embarcadores/empresas, parceiros, agregados de WhatsApp, view financeira com k-anonimato, Sentry), perguntei e ele confirmou: só as telas com dado real hoje, nada de placeholder vazio.
+
+**Reestruturado**: `AdminApp.tsx` virou `AdminLayout.tsx` (guarda de acesso + navegação por abas) + `admin/pages/*.tsx` (uma por tela), evitando duplicar a checagem de `app_role`. Rotas aninhadas em `main.tsx` (`/admin`, `/admin/motoristas`, etc.).
+
+**5 telas no ar**, todas só leitura (sem RPC de escrita ainda):
+- **Visão geral** (já existia) — gate, KPIs, funil, veredito.
+- **Motoristas** — lista paginada (30/página) com busca por nome/telefone/cidade, status, WhatsApp vinculado, vencimento de CNH, último login.
+- **Fretes publicados** — lista paginada do marketplace (`fretes_publicados`, hoje só import Fretebras), busca + filtro por status.
+- **Consultas via WhatsApp** — auditoria de `wa_freight_query`, linha expansível mostrando o snapshot de extração (o que a IA entendeu) e o resultado calculado — útil pra depurar resposta errada sem abrir o banco.
+- **Administradores** — lista de `admin_user` cruzada com nome/telefone de `motoristas`. Gestão de papel continua manual (banco), sem self-service.
+- **Auditoria** — duas abas: "Jobs de rollup" (`app_log`, tem dado real dos `pg_cron`) e "Ações administrativas" (`audit_log`, hoje sempre vazio — RPCs de moderação do PRD ainda não foram construídas, só a tabela existe; a tela já avisa isso em vez de parecer quebrada).
+
+**RLS que faltava** (migration `20260904153000_rls_admin_leitura_motoristas_wa_admins.sql`): `motoristas`, `wa_freight_query` e `admin_user` só tinham policy de "ver a própria linha" — sem policy de leitura ampla pra quem é admin, nem o David/Emerson conseguiriam ver a lista de outros motoristas. Adicionadas as 3 policies faltantes (mesmo padrão `exists (select 1 from admin_user ...)` já usado nas tabelas de agregado).
+
+Validado com `tsc --noEmit --strict` e `vite build` (limpos, 115 módulos).
+
+**Pendente**: as 6 telas restantes do PRD (moderação com ação de escrita, embarcadores/empresas, parceiros, WhatsApp agregado além da auditoria, financeiro/LGPD com k-anonimato, Sentry) ficam pra quando os módulos que as alimentam existirem — decisão confirmada com o Raphael.

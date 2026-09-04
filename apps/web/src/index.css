@@ -1140,3 +1140,159 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 }
+
+/* Navegação por abas do painel admin + telas de listagem (Motoristas,
+   Fretes publicados, Consultas WhatsApp, Administradores, Auditoria). */
+
+.admin-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-bottom: 1px solid #374151;
+  padding-bottom: 10px;
+}
+
+.admin-nav-item {
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  color: #9ca3af;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.admin-nav-item-ativo {
+  background: #1f2937;
+  color: #f3f4f6;
+  font-weight: 600;
+}
+
+.admin-tela-topo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-tela-topo h1 {
+  margin: 0;
+}
+
+.admin-toolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.admin-toolbar input,
+.admin-toolbar select {
+  padding: 8px 10px;
+  font-size: 13px;
+  width: auto;
+}
+
+.admin-toolbar input {
+  flex: 1;
+  min-width: 160px;
+}
+
+.admin-tabela-wrap {
+  overflow-x: auto;
+  border: 1px solid #374151;
+  border-radius: 12px;
+}
+
+.admin-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.admin-tabela th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #9ca3af;
+  padding: 10px 12px;
+  border-bottom: 1px solid #374151;
+  white-space: nowrap;
+}
+
+.admin-tabela td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #1f2937;
+  color: #e5e7eb;
+  vertical-align: top;
+}
+
+.admin-tabela tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-tabela tbody tr.admin-linha-clicavel {
+  cursor: pointer;
+}
+
+.admin-tabela tbody tr.admin-linha-clicavel:hover {
+  background: #1a2231;
+}
+
+.admin-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #1f2937;
+  color: #cbd5e1;
+  white-space: nowrap;
+}
+
+.admin-detalhe-linha {
+  background: #0d1420;
+}
+
+.admin-detalhe-linha td {
+  padding: 12px;
+}
+
+.admin-detalhe-pre {
+  background: #05070a;
+  border: 1px solid #1f2937;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 11px;
+  color: #cbd5e1;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.admin-paginacao {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.admin-abas-secundarias {
+  display: flex;
+  gap: 6px;
+}
+
+.admin-aba-secundaria {
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #374151;
+  background: transparent;
+  color: #cbd5e1;
+}
+
+.admin-aba-secundaria-ativa {
+  background: #1f2937;
+  color: #f3f4f6;
+  border-color: #4b5563;
+}
