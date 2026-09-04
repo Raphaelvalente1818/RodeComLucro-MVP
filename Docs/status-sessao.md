@@ -922,4 +922,16 @@ create policy admin_user_select_auth_admin
 
 Validado nos logs: a partir de 14:31 (04/09) o hook passou a rodar com sucesso (`"msg":"Hook ran successfully"`) pras duas contas, sem mais erro 500. Raphael confirmou que os dois conseguiram entrar.
 
-**Pendente**: essa migration (e a `admin_auth_e_rollups` inteira, mais as correções de ambiguidade/campo `veredicto` e o agendamento do `pg_cron`) ainda não foram copiadas pra `supabase/migrations/` nem commitadas — foram todas aplicadas direto via MCP. Rodar `supabase db pull` (ou copiar os arquivos manualmente) e commitar antes de mexer em mais alguma coisa do banco, pra não perder histórico de schema.
+**Atualização**: migrations regularizadas — os 7 arquivos aplicados via MCP (`admin_auth_e_rollups`, as 3 correções, o agendamento do `pg_cron`, o seed do `admin_user` e o fix de permissão do hook) foram copiados pra `supabase/migrations/` com o nome/versão exata do banco, staged, prontos pra commit.
+
+## Atualização — 04/09 (2): evento `signup_completed` no funil (gate de validação ainda não mudou)
+
+Item que tinha ficado pendente no checkpoint de 02/09: "o cadastro do funil usa `truck_profile_saved` porque não existe `signup_completed` disparado ainda".
+
+Ao investigar pra corrigir, descobri que **isso já não era mais verdade** — o evento `signup_completed` já está implementado e é emitido de verdade em `Verificacao.tsx` desde o commit `70ec7c4` (heurística: `auth.users.created_at` menos de 15s no passado = conta nova). Só nunca tinha nenhuma linha em `analytics_event` porque nenhum cadastro novo aconteceu desde que essa instrumentação foi ao ar — os únicos motoristas de teste (David, Emerson etc.) já existiam antes disso. Não faltava código, faltava uso no funil/gate.
+
+**O que mudei** (migration `20260904150000_funil_cadastro_conta_signup.sql`):
+- Funil (`mv_funnel_daily`/`refresh_mv_funnel_diario`): acrescentei o estágio `cadastro_conta` (`signup_completed`) **antes** de `cadastro` (que passa a significar só "cadastrou o caminhão", `truck_profile_saved`) — não substituí, complementei, pra não perder a granularidade entre "criou conta" e "cadastrou o caminhão". Já rodou: hoje mostra `cadastro_conta=0`, `cadastro=1` (esperado, dado o motivo acima).
+- Gate de validação (`journey_definition`): criei a **v2**, incluindo `signup_completed` nos eventos obrigatórios — mas **deixei inativa de propósito**. Ativar agora reseta o que já contava pro gate na v1 (hoje: base=2, completos=1) pra 0, porque nenhum motorista existente tem `signup_completed`. Com só 6 motoristas cadastrados no total o impacto de ativar já é baixo, mas é decisão de negócio (o que conta como "jornada completa" do MVP), não só técnica.
+
+**Pendente**: Raphael decidir se/quando ativar a v2 do `journey_definition` (`update public.journey_definition set active = false where version = 1; update public.journey_definition set active = true where version = 2;` — a unique index já garante só uma ativa por vez).
