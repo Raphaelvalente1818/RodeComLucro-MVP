@@ -9,6 +9,7 @@ import Analisar from './pages/Analisar';
 import Resultado from './pages/Resultado';
 import Perfil from './pages/Perfil';
 import BuscarFrete from './pages/BuscarFrete';
+import AdminApp from './admin/AdminApp';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -24,6 +25,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Route path="/resultado/:id" element={<Resultado />} />
         <Route path="/perfil" element={<Perfil />} />
         <Route path="/buscar-frete" element={<BuscarFrete />} />
+        <Route path="/admin" element={<AdminApp />} />
         <Route path="*" element={<Navigate to="/entrar" replace />} />
       </Routes>
     </BrowserRouter>

@@ -935,3 +935,26 @@ Ao investigar pra corrigir, descobri que **isso já não era mais verdade** — 
 - Gate de validação (`journey_definition`): criei a **v2**, incluindo `signup_completed` nos eventos obrigatórios — mas **deixei inativa de propósito**. Ativar agora reseta o que já contava pro gate na v1 (hoje: base=2, completos=1) pra 0, porque nenhum motorista existente tem `signup_completed`. Com só 6 motoristas cadastrados no total o impacto de ativar já é baixo, mas é decisão de negócio (o que conta como "jornada completa" do MVP), não só técnica.
 
 **Pendente**: Raphael decidir se/quando ativar a v2 do `journey_definition` (`update public.journey_definition set active = false where version = 1; update public.journey_definition set active = true where version = 2;` — a unique index já garante só uma ativa por vez).
+
+Mockup mostrado de novo (com os números atuais, já incluindo `cadastro_conta`) — aprovado ("manda bala"). Partindo pro frontend do `AdminApp.tsx`.
+
+## Atualização — 04/09 (3): regressão séria no `custom_access_token_hook` — claims de motorista comum sumiram
+
+Antes de codar o frontend, revisei o hook de novo (pra entender exatamente o que `app_role` carrega) e achei um bug bem mais sério que o de permissão corrigido mais cedo hoje: a migration `20260902182345_admin_auth_e_rollups` fez `create or replace function custom_access_token_hook`, e isso **substituiu por inteiro** a função original (`0004_identidade_access_token_hook.sql`), que injeta `app_role='driver'`, `driver_id`, `telefone_verificado` e `quarentena` no JWT de **todo motorista**, não só admins — `apps/web/src/pages/Garagem.tsx` lê `claims.telefone_verificado` de verdade ao montar o cache local.
+
+Ou seja: desde 02/09, todo motorista comum (não-admin) vem recebendo um JWT sem essas 4 claims, silenciosamente — a função não quebra, só não seta mais isso. Corrigido (migration `20260904151500_corrigir_regressao_hook_claims_motorista.sql`) juntando as duas responsabilidades numa função só: claims de motorista pra todo mundo (como antes) + `app_role` de `admin_user` por cima, quando existir.
+
+Aproveitei o mesmo lote pra corrigir 2 achados do advisor de segurança (`get_advisors`) que vieram do trabalho do painel admin: `v_journey_completion` sem `security_invoker=true` (rodava com privilégio do dono, ignorando RLS se algum dia ganhasse GRANT pra anon/authenticated — hoje não tinha, mas ficou certo) e as 4 funções `refresh_*` com EXECUTE aberto pra `anon`/`authenticated` por padrão (revogado — só o `pg_cron`, que roda como `postgres`, precisa chamar).
+
+**Lição**: `create or replace function` em nome de função pré-existente substitui a definição inteira — preciso checar se já existe algo com aquele nome antes de reescrever, não só assumir que é novo.
+
+## Atualização — 04/09 (4): frontend do painel admin — `AdminApp.tsx` (tela Visão geral)
+
+Primeira versão do frontend, seguindo o mockup aprovado. Decisões:
+
+- **Sem camada de Edge Function `/admin/*`** como o PRD original desenha — o painel lê direto via cliente Supabase (`apps/web/src/data/admin.ts`), a RLS de cada tabela (`admin_user` ativo) já resolve a autorização. Revisitar só se o painel ganhar ações de escrita (moderação) que precisem de auditoria centralizada além do `audit_log`.
+- **Rota `/admin`** (`apps/web/src/admin/AdminApp.tsx`), registrada em `main.tsx`. Guarda de acesso: decodifica `app_role` do JWT (`decodeClaims`, já existente) e só carrega dados se for `admin`/`operacao`/`suporte` — sem papel válido, mostra "Acesso restrito" sem nem tentar buscar dado nenhum.
+- **Layout**: gate de validação em destaque (progresso visual até 160), 4 KPIs, funil (5 estágios, incluindo o `cadastro_conta` novo) e distribuição de veredito — tudo espelhando o mockup. CSS novo em `index.css` sob prefixo `admin-`, reaproveitando cores/classes já existentes (`badge-bom`/`badge-ruim`, `barra-progresso`) — única tela do app que não é mobile-first (`max-width: 880px`), porque quem usa é o Raphael/sócios no navegador, não motorista no celular.
+- Validado com `tsc --noEmit --strict` e `vite build` (ambos limpos).
+
+**Pendente**: só a tela "Visão geral" está pronta — as outras 10 do PRD (moderação, embarcadores, parceiros, WhatsApp, financeiro/LGPD etc.) ficam pra quando os módulos que as alimentam existirem, como já estava combinado.

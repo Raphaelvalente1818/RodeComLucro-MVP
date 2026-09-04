@@ -951,3 +951,192 @@ button:disabled {
   color: #f87171;
   border: 1px solid #dc2626;
 }
+
+/* ===================================================================
+   Painel admin (/admin) — desktop, não mobile-first como o resto do
+   app: motorista usa celular, admin (Raphael/sócios) usa navegador.
+   =================================================================== */
+
+.tela-admin {
+  max-width: 880px;
+  gap: 16px;
+}
+
+.admin-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-atualizado-em {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 2px 0 0;
+}
+
+.admin-papel-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #1f2937;
+  color: #cbd5e1;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.admin-card {
+  border: 1px solid #374151;
+  border-radius: 12px;
+  padding: 16px 18px;
+  background: #111827;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-card-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-card-titulo {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f3f4f6;
+}
+
+.admin-card-nota {
+  font-size: 11px;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.admin-gate-numero {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.admin-gate-numero-atual {
+  font-size: 32px;
+  font-weight: 800;
+  color: #f3f4f6;
+  line-height: 1;
+}
+
+.admin-gate-numero-meta {
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+.admin-barra-gate {
+  background: #f87171;
+}
+
+.admin-grid-kpi {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.admin-kpi {
+  padding: 12px 14px;
+  gap: 4px;
+}
+
+.admin-kpi-label {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.admin-kpi-valor {
+  font-size: 22px;
+  font-weight: 700;
+  color: #f3f4f6;
+}
+
+.admin-grid-2 {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 12px;
+}
+
+.admin-funil {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-funil-linha-topo {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #cbd5e1;
+  margin-bottom: 3px;
+}
+
+.admin-barra-funil {
+  height: 6px;
+}
+
+.admin-veredito-barra {
+  display: flex;
+  height: 14px;
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.admin-veredito-segmento {
+  height: 100%;
+}
+
+.admin-veredito-bom {
+  background: #4ade80;
+}
+
+.admin-veredito-aceitável,
+.admin-veredito-aceitavel {
+  background: #fbbf24;
+}
+
+.admin-veredito-ruim {
+  background: #f87171;
+}
+
+.admin-veredito-legenda {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.admin-veredito-legenda-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #cbd5e1;
+}
+
+.admin-veredito-legenda-item b {
+  margin-left: auto;
+  color: #f3f4f6;
+}
+
+.admin-veredito-bolinha {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+@media (max-width: 720px) {
+  .admin-grid-kpi {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .admin-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
