@@ -875,6 +875,26 @@ Publicado como `wa-webhook` v36. Validado localmente (tsc --noEmit --strict) ant
 
 **Pendente**: pedir pro David testar "BUSCAR" de novo — agora deve trazer opções perto de Guarulhos/São Paulo, não mais Ribeirão Preto.
 
+## Checkpoint — 02/09: início do painel admin (backend fase 1 pronto, aguardando aprovação do mockup)
+
+Ponto exato onde paramos, salvo a pedido do Raphael pra retomar depois:
+
+Backend está no ar: `admin_user`/`audit_log`/`app_log`, o hook de `app_role` no JWT, `journey_definition` (gate 160), e os rollups de KPI/funil/veredito já rodando de verdade e agendados via `pg_cron` (15-30 min). Os números do mockup mostrado (visual, não neste arquivo) são reais, direto do banco.
+
+Dois pontos antes de seguir pro frontend de verdade:
+
+Primeiro, o mockup — é essa a direção (cartões de KPI + gate de validação em destaque + funil + veredito)? Pode ajustar layout, densidade, cores antes de virar código de verdade.
+
+Segundo, um detalhe descoberto construindo isso: o "cadastro" do funil hoje usa `truck_profile_saved` (cadastrar o caminhão), porque não existe evento de `signup_completed` disparado ainda — e por isso a jornada completa (`journey_definition` v1) também não inclui esse passo. Isso significa que o gate de 160 está calibrado só com o que já existe. No futuro dá pra adicionar um evento de cadastro de conta pra deixar o funil mais fiel.
+
+Falta ainda: habilitar o hook `custom_access_token_hook` nas configurações de Auth do Supabase (é um passo manual no painel — Authentication → Hooks —, não dá pra fazer via SQL/MCP).
+
+**Atualização**: `admin_user` já populada — 11997510976 (David) e 11991143035 (Emerson) cadastrados como papel `admin` (acesso total, a pedido do Raphael). Só falta o passo manual do hook acima pra esse papel aparecer de fato no JWT deles.
+
+**Migrations aplicadas nesta fase** (ainda não commitadas/pushadas — rodar `supabase db pull` ou copiar as migrations locais antes do próximo commit, já que foram aplicadas direto via MCP): `admin_auth_e_rollups` (admin_user, audit_log, app_log, custom_access_token_hook, journey_definition, v_journey_completion, agg_validation, agg_kpi_daily, mv_funnel_daily, agg_veredito + funções refresh_*), correções de ambiguidade de coluna no funil e do nome do campo `veredicto` (não `veredito`), e o agendamento de 4 jobs `pg_cron`.
+
+**Próximo passo ao retomar**: mostrar este texto de novo pro Raphael, esperar feedback do mockup, resolver os dois pendentes (hook no painel + admin_user), só então começar o frontend (`src/admin/AdminApp.tsx` do zero — não existe ainda neste código, diferente do que o PRD original supõe).
+
 ## Atualização — 02/09 (5): link do app em toda resposta de cálculo (v37/v38)
 
 Pedido do Raphael: toda resposta de cálculo de frete (texto livre tipo "frete de X pra Y, R$ Z" ou clique num item da lista de busca) deveria terminar com o link do app, pra o motorista sempre ter essa porta visível — não só nas mensagens de "faltou cadastro".
@@ -882,3 +902,24 @@ Pedido do Raphael: toda resposta de cálculo de frete (texto livre tipo "frete d
 Adicionada uma linha final em `calcularEResponderFrete` (função compartilhada pelos dois fluxos) com `📲 Veja o histórico completo e mais fretes no app: {URL_APP}/buscar-frete`.
 
 **Nota de qualidade**: publiquei isso primeiro como v37, mas errei uma colagem no `extracao.ts` (bloco `catch` referenciando uma variável fora de escopo, o que quebraria silenciosamente a extração por IA sempre que a chamada à API desse erro de rede). Percebi antes de reportar como concluído, corrigi e republiquei como v38 com o `extracao.ts` correto. v37 nunca foi comunicada como pronta — v38 é a versão válida.
+
+## Atualização — 04/09: bug real no `custom_access_token_hook` quebrando login do David e do Emerson (corrigido)
+
+Depois de habilitado o hook (passo manual no painel, já feito pelo Raphael), David e Emerson relataram login falhando: código "expirado" mesmo digitado na hora, e numa segunda tentativa o SMS "nem foi enviado".
+
+**Causa raiz**: erro meu na migration `admin_auth_e_rollups` — o `custom_access_token_hook` roda como o papel `supabase_auth_admin` (chamado internamente pelo GoTrue), mas eu só cobri o RLS/GRANT de `admin_user` pro papel `authenticated`. Sem permissão de leitura, o hook quebrava em **toda** emissão/renovação de token (login novo e refresh) com `permission denied for table admin_user (SQLSTATE 42501)`, e o Auth respondia HTTP 500 em `/token` e `/verify`. Confirmado nos logs (`auth_logs`): dezenas de falhas em loop apertado pras duas contas entre 12h e 14h30 (04/09) — o loop de retry provavelmente também esgotou o limite de reenvio de SMS, explicando o "código nem enviado" na segunda tentativa.
+
+**Correção** (migration `corrigir_permissao_hook_admin_user`, aplicada via MCP):
+```sql
+grant usage on schema public to supabase_auth_admin;
+grant select on public.admin_user to supabase_auth_admin;
+
+create policy admin_user_select_auth_admin
+  on public.admin_user for select
+  to supabase_auth_admin
+  using (true);
+```
+
+Validado nos logs: a partir de 14:31 (04/09) o hook passou a rodar com sucesso (`"msg":"Hook ran successfully"`) pras duas contas, sem mais erro 500. Raphael confirmou que os dois conseguiram entrar.
+
+**Pendente**: essa migration (e a `admin_auth_e_rollups` inteira, mais as correções de ambiguidade/campo `veredicto` e o agendamento do `pg_cron`) ainda não foram copiadas pra `supabase/migrations/` nem commitadas — foram todas aplicadas direto via MCP. Rodar `supabase db pull` (ou copiar os arquivos manualmente) e commitar antes de mexer em mais alguma coisa do banco, pra não perder histórico de schema.
