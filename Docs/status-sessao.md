@@ -1072,3 +1072,21 @@ Motivação: Raphael mostrou o painel admin de outra aplicação (PDF, "Painel a
 **Validado**: os 4 arquivos de Edge Function passaram no shim local de `tsc --strict` (Deno global + stub de `supabase-js`); `tsc --noEmit --strict` e `vite build` do `apps/web` limpos (bundle principal ~506KB, dentro do esperado). `get_advisors` (security) não trouxe nenhum achado novo além do padrão já existente e aceito (`SECURITY DEFINER` executável por `authenticated`, mesmo grupo de `is_admin_ativo()` e as funções de refresh).
 
 **Pendente**: as Edge Functions só têm o código instrumentado no repo — ainda não foram reimplantadas (deploy). Sem o deploy, `logErro()` não roda de verdade em produção ainda; o card de "erros técnicos" vai ficar vazio até lá (comportamento correto, só não tem dado histórico).
+
+## DECISÃO DE PRODUTO PENDENTE — 08/09: onboarding de motorista novo via WhatsApp compartilhado
+
+**Contexto levantado pelo Raphael**: a estratégia de crescimento do app é viral por WhatsApp — mas não por link, e sim pelo próprio contato do nosso número de WhatsApp Business passando de mão em mão entre motoristas (um motorista já cadastrado compartilha o contato com um colega, o colega salva achando que é "um app" e manda algo tipo "Calcula um frete pra mim?"). Pergunta: temos um plano pra guiar esse motorista novo até o cadastro?
+
+**Resposta hoje (confirmado no código, `supabase/functions/wa-webhook/index.ts`)**: NÃO tem diferenciação nenhuma entre "número existe em `motoristas` mas não vinculou WhatsApp" e "número nunca existiu no sistema". Os dois casos caem exatamente na mesma mensagem, tanto em `tratarPedidoDeCalculo` (linhas ~624-637) quanto em `tratarBuscaDeFrete` (linhas ~804-817):
+> "Pra calcular fretes por aqui, primeiro vincule seu WhatsApp pelo app (Meu perfil → Vincular WhatsApp)."
+
+Essa mensagem pressupõe que a pessoa já tem conta — pra um número totalmente novo ela não faz sentido nenhum (não explica o que é o app, não dá link de cadastro). Se a mensagem recebida não bate com nenhum intent reconhecido pela IA, o comportamento é pior ainda: silêncio total (só `console.log`, nenhuma resposta enviada).
+
+**Achado técnico relevante**: o motor de cálculo NÃO exige perfil de caminhão customizado — existe um `PERFIL_CUSTO_DEFAULT` (linhas ~454-469) usado quando o motorista está vinculado mas não cadastrou o caminhão. Ou seja, tecnicamente já dá pra gerar uma estimativa sem dado de veículo real. O que falta é só destravar isso pra quem nem tem `motoristaId` ainda.
+
+**Duas estratégias propostas, aguardando decisão do Raphael**:
+- **A — Boas-vindas + link de cadastro.** Detectar "número não existe em `motoristas`" (diferente de "existe mas não vinculado") e responder com mensagem explicando o que é o Rode com Lucro + link direto de cadastro (`URL_APP`, hoje hardcoded como `https://rode-com-lucro-mvp.vercel.app`, linha ~775). Sem cálculo nessa primeira interação. Mais rápido de construir, sem risco de estimativa errada passar desconfiança.
+- **B — Deixar experimentar 1x antes de pedir cadastro.** Se a mensagem já veio com dados de frete completos (origem/destino/valor), devolve uma estimativa com o perfil padrão de caminhão, deixando claro que é genérico ("cadastre o seu caminhão pra ter o valor exato"), e só depois convida pro cadastro. Potencial de conversão maior, mas mais trabalho (tratar fluxo anônimo sem quebrar auditoria/`wa_freight_query`/analytics) e risco de a estimativa genérica não bater com o caminhão real da pessoa.
+- Havia uma terceira opção oferecida (ver as duas mensagens em mockup antes de decidir) — não escolhida ainda.
+
+**Raphael ainda não escolheu entre A e B** (pausou a conversa pra trocar de projeto, mas pediu explicitamente pra não perder esse ponto). Retomar essa decisão antes de codar qualquer coisa — não implementar nada aqui sem confirmação, é uma escolha de produto com trade-off real (fricção vs. risco de má impressão).
