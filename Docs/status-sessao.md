@@ -1032,3 +1032,17 @@ Depois de conversar sobre o próximo passo (construir o lado "empresas" que publ
 **Detalhe técnico**: a lib inflava o bundle principal em ~340kB pra todo mundo (inclusive motorista no celular) — resolvido com `React.lazy()`, só carrega quando alguém abre `/admin/importar-fretes`.
 
 Validado com `tsc --noEmit --strict` e `vite build` (limpos — só um aviso normal de tamanho de chunk, sem erro).
+
+## Atualização — 08/09 (3): bug real no primeiro teste de importação — `fonte` fora do enum aceito
+
+Raphael testou importando as 2 linhas de exemplo da própria planilha modelo e deu "Falha ao gravar no banco" (mensagem genérica, sem detalhe — falha minha de não propagar o erro real do Postgres pra tela).
+
+**Causa raiz**: `fretes_publicados` tem uma CHECK constraint (`fretes_publicados_fonte_check`) que só aceita `fonte` = `RODE_DIRETO` ou `MANUAL`. Escrevi o importador gravando `fonte: 'importacao_planilha'`, um valor que não existe nesse enum — toda linha violava a constraint e o insert inteiro falhava (o `insert()` em lote do Supabase é tudo-ou-nada por padrão).
+
+Aproveitei e achei um segundo bug relacionado, ainda não testado na prática: `tipos_veiculo_aceitos`/`tipos_carroceria_aceitos` são colunas `NOT NULL` (default `'{}'::text[]`, vazio = aceita qualquer tipo) — meu código mandava `null` quando a célula estava em branco, o que também violaria a constraint pra qualquer linha sem esses campos preenchidos (as duas linhas de exemplo têm ambos preenchidos, por isso esse não foi o que travou o teste do Raphael, mas travaria no primeiro frete real sem essa info).
+
+**Correção**: `fonte` trocado pra `'MANUAL'`; `tipos_veiculo_aceitos`/`tipos_carroceria_aceitos` agora mandam `[]` em vez de `null` quando vazios. Também melhorei a mensagem de erro da tela (`ImportarFretes.tsx`) pra mostrar o texto real do erro do Postgres, não só um genérico — assim um problema parecido no futuro já vem com a causa na tela, sem precisar me chamar pra investigar do zero.
+
+Validado com `tsc --noEmit --strict` e `vite build` (limpos).
+
+**Pendente**: Raphael reimportar as 2 linhas de teste pra confirmar que funcionou — e depois eu apago essas 2 linhas fictícias do banco (Transportes Silva Ltda / Agro Exportadora Cerrado), combinado antes do teste.

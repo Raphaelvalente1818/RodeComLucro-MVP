@@ -46,11 +46,11 @@ export interface FreteParaInserir {
   distancia_km: number | null;
   data_coleta: string | null;
   pedagio_por_conta_de: string | null;
-  tipos_veiculo_aceitos: string[] | null;
-  tipos_carroceria_aceitos: string[] | null;
+  tipos_veiculo_aceitos: string[];
+  tipos_carroceria_aceitos: string[];
   observacoes: string | null;
   status: 'aberto';
-  fonte: 'importacao_planilha';
+  fonte: 'MANUAL';
 }
 
 export interface LinhaImportada {
@@ -90,14 +90,17 @@ function dataOuNull(v: unknown): string | null {
   return `${aaaa}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
 }
 
-function listaOuNull(v: unknown, validos: Set<string>, erros: string[], campo: string): string[] | null {
+// tipos_veiculo_aceitos/tipos_carroceria_aceitos são NOT NULL na tabela
+// (default '{}'::text[], "vazio" = aceita qualquer tipo) — por isso
+// devolve [] em vez de null quando a célula está em branco.
+function listaOuVazia(v: unknown, validos: Set<string>, erros: string[], campo: string): string[] {
   const s = textoOuNull(v);
-  if (!s) return null;
+  if (!s) return [];
   const itens = s.split(',').map((x) => x.trim()).filter(Boolean);
   const invalidos = itens.filter((x) => !validos.has(x));
   if (invalidos.length) {
     erros.push(`${campo}: valor(es) desconhecido(s) — ${invalidos.join(', ')}`);
-    return null;
+    return [];
   }
   return itens;
 }
@@ -145,8 +148,8 @@ function validarLinha(raw: Record<string, unknown>, linha: number): LinhaImporta
     erros.push(`pedagio_por_conta_de inválido: ${pedagio} (use empresa ou motorista)`);
   }
 
-  const tiposVeiculo = listaOuNull(raw.tipos_veiculo_aceitos, VEICULOS_VALIDOS, erros, 'tipos_veiculo_aceitos');
-  const tiposCarroceria = listaOuNull(raw.tipos_carroceria_aceitos, CARROCERIAS_VALIDAS, erros, 'tipos_carroceria_aceitos');
+  const tiposVeiculo = listaOuVazia(raw.tipos_veiculo_aceitos, VEICULOS_VALIDOS, erros, 'tipos_veiculo_aceitos');
+  const tiposCarroceria = listaOuVazia(raw.tipos_carroceria_aceitos, CARROCERIAS_VALIDAS, erros, 'tipos_carroceria_aceitos');
 
   const resumo = {
     origem: origemCidade && origemUf ? `${origemCidade}/${origemUf}` : origemCidade ?? '—',
@@ -182,7 +185,7 @@ function validarLinha(raw: Record<string, unknown>, linha: number): LinhaImporta
       tipos_carroceria_aceitos: tiposCarroceria,
       observacoes: textoOuNull(raw.observacoes),
       status: 'aberto',
-      fonte: 'importacao_planilha',
+      fonte: 'MANUAL',
     },
   };
 }

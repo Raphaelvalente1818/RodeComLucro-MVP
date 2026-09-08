@@ -51,7 +51,8 @@ export default function ImportarFretes() {
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error('[admin] falha ao importar fretes', e);
-      setErro('Falha ao gravar no banco. Nenhuma linha adicional foi perdida — tente novamente.');
+      const detalhe = e instanceof Error ? e.message : typeof e === 'object' && e && 'message' in e ? String((e as { message: unknown }).message) : null;
+      setErro(`Falha ao gravar no banco${detalhe ? `: ${detalhe}` : ''}. Nenhuma linha adicional foi perdida — tente novamente.`);
     } finally {
       setImportando(false);
     }
