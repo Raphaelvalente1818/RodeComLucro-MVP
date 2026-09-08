@@ -1016,3 +1016,19 @@ Raphael reportou em produção: (1) erro "infinite recursion detected in policy 
 **Lição**: nunca fazer uma policy RLS consultar a própria tabela em que ela está definida via subquery direta — sempre passar por uma função `SECURITY DEFINER` que bypassa RLS por dentro. Devia ter percebido isso ao escrever `admin_user_select_admin` ontem.
 
 **Pendente**: Raphael precisa recarregar a página e confirmar que salvar perfil e as telas do admin voltaram a funcionar — ainda não validado em produção no momento desta nota (só validado estruturalmente: policies reescritas sem auto-referência, função com `BYPASSRLS` confirmado).
+
+**Confirmado indiretamente**: no print que o Raphael mandou depois (perguntando sobre o "1/160"), a Visão geral já aparecia completa de novo — gate, KPIs, funil e veredito todos renderizando. Recursão corrigida de fato, não só estruturalmente.
+
+## Atualização — 08/09 (2): importação de fretes via planilha Excel
+
+Depois de conversar sobre o próximo passo (construir o lado "empresas" que publicam frete), sugeri um meio-termo mais barato que um portal completo pra empresa: importação em lote via Excel dentro do próprio admin, reaproveitando a auth/RLS que já existe — sem autenticação nova pra terceiros. Raphael aprovou, só Excel (sem o formato texto que eu tinha sugerido como bônus).
+
+**Modelo de planilha** (`apps/web/public/templates/planilha-fretes-modelo.xlsx`, servido estático pelo app em `/templates/...`): aba "Fretes" com cabeçalho fixo (16 colunas: empresa, contato, origem/destino cidade+UF, valor, tipo_valor, peso, distância, data de coleta, pedágio por conta de quem, tipos de veículo/carroceria aceitos, observações), 2 linhas de exemplo (uma com valor fixo, outra "a combinar"), dropdowns de validação (UF, tipo_valor, pedágio) e uma aba "Instruções" com a lista de valores válidos de veículo/carroceria (os mesmos do cadastro do caminhão, `@rode/calc`). Baixável direto pela tela "Importar fretes" do admin.
+
+**Fluxo**: `apps/web/src/admin/importarFretesPlanilha.ts` lê o arquivo no navegador (lib `xlsx`/SheetJS), valida cada linha (campos obrigatórios, UF válida, tipo_valor coerente com valor preenchido, veículo/carroceria batendo com a lista de opções válidas, data no formato certo) e só então a tela `admin/pages/ImportarFretes.tsx` mostra uma prévia — linhas válidas vão pra contagem de "prontas pra importar", linhas com erro aparecem numa tabela com o motivo, sem gravar nada até o admin clicar em confirmar. Grava em lotes de 200 via `insert()` direto (RLS nova, `fretes_publicados_insert_admin`, só libera pra quem é admin).
+
+**Nota de segurança, registrada com transparência**: a lib `xlsx` (SheetJS) tem duas CVEs conhecidas sem correção publicada no npm (prototype pollution + ReDoS) — a versão corrigida só existe no CDN próprio do SheetJS, bloqueado nesta rede pra instalar. Testei alternativa (`exceljs`) e ela tinha vulnerabilidade equivalente (também 1 crítica) via dependência transitiva, então não trocava o problema, só mudava de lugar. Mitigação: parsing roda 100% no navegador do admin (não em servidor), nunca é injetado em HTML nem usado como objeto dinâmico — cada campo é validado e convertido pra tipo primitivo explícito antes de qualquer uso, e é feature só pra quem já é admin. Reavaliar se esse fluxo crescer pra além de uso interno (ex.: abrir upload direto pra empresas de fora, sem admin no meio).
+
+**Detalhe técnico**: a lib inflava o bundle principal em ~340kB pra todo mundo (inclusive motorista no celular) — resolvido com `React.lazy()`, só carrega quando alguém abre `/admin/importar-fretes`.
+
+Validado com `tsc --noEmit --strict` e `vite build` (limpos — só um aviso normal de tamanho de chunk, sem erro).

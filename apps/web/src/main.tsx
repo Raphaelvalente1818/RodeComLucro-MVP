@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Entrada from './pages/Entrada';
@@ -18,6 +18,11 @@ import Administradores from './admin/pages/Administradores';
 import Auditoria from './admin/pages/Auditoria';
 import './index.css';
 
+// Lazy: a lib de leitura de Excel (xlsx) é pesada (~300kB minificado) e só
+// essa tela usa — carregar de cara pra todo mundo (inclusive motorista no
+// celular) inflaria o bundle principal à toa.
+const ImportarFretes = lazy(() => import('./admin/pages/ImportarFretes'));
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
@@ -35,6 +40,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route index element={<VisaoGeral />} />
           <Route path="motoristas" element={<Motoristas />} />
           <Route path="fretes" element={<FretesPublicados />} />
+          <Route
+            path="importar-fretes"
+            element={
+              <Suspense fallback={<p className="aviso">Carregando…</p>}>
+                <ImportarFretes />
+              </Suspense>
+            }
+          />
           <Route path="whatsapp" element={<ConsultasWhatsapp />} />
           <Route path="admins" element={<Administradores />} />
           <Route path="auditoria" element={<Auditoria />} />

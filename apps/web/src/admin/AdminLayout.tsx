@@ -21,6 +21,7 @@ const ABAS: { rota: string; label: string }[] = [
   { rota: '', label: 'Visão geral' },
   { rota: 'motoristas', label: 'Motoristas' },
   { rota: 'fretes', label: 'Fretes publicados' },
+  { rota: 'importar-fretes', label: 'Importar fretes' },
   { rota: 'whatsapp', label: 'Consultas WhatsApp' },
   { rota: 'admins', label: 'Administradores' },
   { rota: 'auditoria', label: 'Auditoria' },
