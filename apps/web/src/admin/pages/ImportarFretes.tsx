@@ -3,7 +3,10 @@
 // Tela de importação em lote de fretes via planilha Excel (modelo em
 // /templates/planilha-fretes-modelo.xlsx). Fluxo: escolher arquivo →
 // prévia com validação linha a linha (sem gravar nada ainda) → admin
-// confirma → grava só as linhas válidas.
+// confirma → grava só as linhas válidas e não-duplicadas (duplicata =
+// mesma empresa+rota+valor+data já "aberta" no banco, ou repetida na
+// própria planilha — checagem adicionada depois que uma planilha de
+// teste foi importada duas vezes sem querer).
 
 import { useState } from 'react';
 import { parseArquivoFretes, inserirFretes, type LinhaImportada } from '../importarFretesPlanilha';
@@ -15,6 +18,10 @@ export default function ImportarFretes() {
   const [importando, setImportando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [resultado, setResultado] = useState<number | null>(null);
+  // Duplicatas ficam de fora da importação por padrão — o admin marca
+  // aqui as que decidiu importar mesmo assim (ex.: frete legítimo
+  // repetido, mesmo valor de novo).
+  const [duplicatasLiberadas, setDuplicatasLiberadas] = useState<Set<number>>(new Set());
 
   async function onArquivoSelecionado(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -23,6 +30,7 @@ export default function ImportarFretes() {
     setErro(null);
     setResultado(null);
     setLinhas(null);
+    setDuplicatasLiberadas(new Set());
     setNomeArquivo(file.name);
     setProcessando(true);
     try {
@@ -37,14 +45,23 @@ export default function ImportarFretes() {
     }
   }
 
+  function alternarDuplicataLiberada(linha: number) {
+    setDuplicatasLiberadas((prev) => {
+      const novo = new Set(prev);
+      if (novo.has(linha)) novo.delete(linha);
+      else novo.add(linha);
+      return novo;
+    });
+  }
+
   async function confirmarImportacao() {
     if (!linhas) return;
-    const validas = linhas.filter((l) => l.valido && l.dado);
-    if (validas.length === 0) return;
+    const prontas = linhas.filter((l) => l.valido && l.dado && (!l.duplicata || duplicatasLiberadas.has(l.linha)));
+    if (prontas.length === 0) return;
     setImportando(true);
     setErro(null);
     try {
-      const n = await inserirFretes(validas.map((l) => l.dado!));
+      const n = await inserirFretes(prontas.map((l) => l.dado!));
       setResultado(n);
       setLinhas(null);
       setNomeArquivo(null);
@@ -58,8 +75,10 @@ export default function ImportarFretes() {
     }
   }
 
-  const validas = linhas?.filter((l) => l.valido) ?? [];
+  const validasNovas = linhas?.filter((l) => l.valido && !l.duplicata) ?? [];
+  const duplicadas = linhas?.filter((l) => l.valido && l.duplicata) ?? [];
   const invalidas = linhas?.filter((l) => !l.valido) ?? [];
+  const totalProntas = validasNovas.length + duplicatasLiberadas.size;
 
   return (
     <>
@@ -85,7 +104,7 @@ export default function ImportarFretes() {
         {nomeArquivo && <p className="admin-card-nota">Arquivo: {nomeArquivo}</p>}
       </section>
 
-      {processando && <p className="aviso">Lendo planilha…</p>}
+      {processando && <p className="aviso">Lendo planilha e checando duplicatas…</p>}
       {erro && <p className="aviso-erro">{erro}</p>}
       {resultado != null && <p className="sucesso">{resultado} frete(s) importado(s) com sucesso.</p>}
 
@@ -94,10 +113,51 @@ export default function ImportarFretes() {
           <div className="admin-card-topo">
             <span className="admin-card-titulo">3. Confira antes de importar</span>
             <span>
-              <span className="sucesso">{validas.length} válida(s)</span>
+              <span className="sucesso">{validasNovas.length} nova(s)</span>
+              {duplicadas.length > 0 && <span className="aviso"> · {duplicadas.length} duplicada(s)</span>}
               {invalidas.length > 0 && <span className="aviso-erro"> · {invalidas.length} com erro</span>}
             </span>
           </div>
+
+          {duplicadas.length > 0 && (
+            <>
+              <p className="admin-card-nota">
+                Estas linhas parecem repetir um frete já "aberto" no banco (mesma empresa, rota, valor e data) — ou aparecem
+                duplicadas dentro da própria planilha. Ficam de fora da importação por padrão; marque a caixa se quiser importar
+                mesmo assim.
+              </p>
+              <div className="admin-tabela-wrap">
+                <table className="admin-tabela">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th>Linha</th>
+                      <th>Empresa</th>
+                      <th>Rota</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {duplicadas.map((l) => (
+                      <tr key={l.linha}>
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={duplicatasLiberadas.has(l.linha)}
+                            onChange={() => alternarDuplicataLiberada(l.linha)}
+                          />
+                        </td>
+                        <td>{l.linha}</td>
+                        <td>{l.resumo.empresa}</td>
+                        <td>
+                          {l.resumo.origem} → {l.resumo.destino}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
 
           {invalidas.length > 0 && (
             <div className="admin-tabela-wrap">
@@ -132,8 +192,8 @@ export default function ImportarFretes() {
             </p>
           )}
 
-          <button type="button" className="cta-primaria" disabled={validas.length === 0 || importando} onClick={confirmarImportacao}>
-            <span className="cta-titulo">{importando ? 'Importando…' : `Importar ${validas.length} frete(s)`}</span>
+          <button type="button" className="cta-primaria" disabled={totalProntas === 0 || importando} onClick={confirmarImportacao}>
+            <span className="cta-titulo">{importando ? 'Importando…' : `Importar ${totalProntas} frete(s)`}</span>
           </button>
         </section>
       )}

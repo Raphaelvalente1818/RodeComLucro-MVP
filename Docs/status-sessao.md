@@ -1045,4 +1045,14 @@ Aproveitei e achei um segundo bug relacionado, ainda não testado na prática: `
 
 Validado com `tsc --noEmit --strict` e `vite build` (limpos).
 
-**Pendente**: Raphael reimportar as 2 linhas de teste pra confirmar que funcionou — e depois eu apago essas 2 linhas fictícias do banco (Transportes Silva Ltda / Agro Exportadora Cerrado), combinado antes do teste.
+Raphael confirmou que funcionou — testou de propósito importando a mesma planilha duas vezes, e reparou que entraram os 2 fretes de teste duplicados no banco (sem checagem de duplicidade ainda, que eu tinha citado como ideia no comentário inicial mas não cheguei a implementar). Apaguei as 4 linhas fictícias resultantes (2 originais + 2 duplicadas).
+
+## Atualização — 08/09 (4): checagem de duplicidade na importação de fretes
+
+Pedido do Raphael depois do teste acima: evitar reimportar o mesmo frete sem querer.
+
+**O que mudou** (`importarFretesPlanilha.ts`): depois de validar as linhas, uma nova função `marcarDuplicatas()` busca no banco todo frete "aberto" das mesmas empresas presentes na planilha e compara por uma chave (empresa + rota + valor + data — normalizada, minúsculo). Marca duplicata em dois níveis: contra o que já está aberto no banco, e contra outra linha igual dentro da própria planilha (a partir da 2ª ocorrência). Não bloqueia nada sozinho — só marca.
+
+**Tela** (`ImportarFretes.tsx`): a prévia agora separa em 3 grupos — novas (contam pra importar por padrão), duplicadas (ficam de fora por padrão, mas o admin pode marcar uma checkbox por linha pra importar mesmo assim — útil se for de propósito, tipo o mesmo frete valendo de novo) e com erro (nunca importam). O botão de confirmar mostra a soma real do que vai ser gravado.
+
+Validado com `tsc --noEmit --strict` e `vite build` (limpos).

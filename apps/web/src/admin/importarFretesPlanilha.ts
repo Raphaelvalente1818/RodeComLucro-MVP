@@ -60,6 +60,21 @@ export interface LinhaImportada {
   dado: FreteParaInserir | null;
   // Campos brutos só pra exibir na prévia (não usados na gravação).
   resumo: { origem: string; destino: string; empresa: string };
+  /** true se já existe um frete "aberto" idêntico (no banco ou repetido na própria planilha). */
+  duplicata: boolean;
+}
+
+/** Chave de "mesmo frete" — empresa+rota+valor+data. Usada só pra detectar duplicata, não gravada. */
+function chaveDuplicata(d: FreteParaInserir): string {
+  return [
+    d.empresa_nome.trim().toLowerCase(),
+    d.origem_cidade.trim().toLowerCase(),
+    d.origem_uf,
+    d.destino_cidade.trim().toLowerCase(),
+    d.destino_uf,
+    d.valor_frete_centavos ?? 'combinar',
+    d.data_coleta ?? 'sem_data',
+  ].join('|');
 }
 
 function textoOuNull(v: unknown): string | null {
@@ -158,7 +173,7 @@ function validarLinha(raw: Record<string, unknown>, linha: number): LinhaImporta
   };
 
   if (erros.length || !empresaNome || !origemCidade || !origemUf || !destinoCidade || !destinoUf) {
-    return { linha, valido: false, erros, dado: null, resumo };
+    return { linha, valido: false, erros, dado: null, resumo, duplicata: false };
   }
 
   return {
@@ -166,6 +181,7 @@ function validarLinha(raw: Record<string, unknown>, linha: number): LinhaImporta
     valido: true,
     erros: [],
     resumo,
+    duplicata: false, // preenchido depois, em marcarDuplicatas() — precisa do arquivo inteiro pra comparar
     dado: {
       empresa_nome: empresaNome,
       contato_nome: textoOuNull(raw.contato_nome),
@@ -190,6 +206,43 @@ function validarLinha(raw: Record<string, unknown>, linha: number): LinhaImporta
   };
 }
 
+/**
+ * Marca duplicata em dois níveis: (1) contra fretes "aberto" já no banco
+ * pra mesma empresa (ver chaveDuplicata) — evita reimportar a mesma
+ * planilha duas vezes sem querer, que foi o caso real que motivou isso;
+ * (2) contra outra linha igual dentro da própria planilha (a partir da
+ * 2ª ocorrência). Só marca — quem decide se importa mesmo assim é o
+ * admin, na tela.
+ */
+async function marcarDuplicatas(linhas: LinhaImportada[]): Promise<LinhaImportada[]> {
+  const validas = linhas.filter((l) => l.valido && l.dado);
+  if (validas.length === 0) return linhas;
+
+  const empresas = Array.from(new Set(validas.map((l) => l.dado!.empresa_nome)));
+  const { data: existentes, error } = await supabase
+    .from('fretes_publicados')
+    .select('empresa_nome, origem_cidade, origem_uf, destino_cidade, destino_uf, valor_frete_centavos, data_coleta')
+    .eq('status', 'aberto')
+    .in('empresa_nome', empresas);
+
+  if (error) {
+    // Falha ao checar duplicata não deve travar a prévia — só fica sem o aviso.
+    // eslint-disable-next-line no-console
+    console.error('[admin] falha ao checar duplicatas', error);
+  }
+
+  const chavesNoBanco = new Set((existentes ?? []).map((r) => chaveDuplicata(r as unknown as FreteParaInserir)));
+  const vistasNaPlanilha = new Set<string>();
+
+  return linhas.map((l) => {
+    if (!l.valido || !l.dado) return l;
+    const chave = chaveDuplicata(l.dado);
+    const duplicata = chavesNoBanco.has(chave) || vistasNaPlanilha.has(chave);
+    vistasNaPlanilha.add(chave);
+    return { ...l, duplicata };
+  });
+}
+
 export async function parseArquivoFretes(file: File): Promise<LinhaImportada[]> {
   const buffer = await file.arrayBuffer();
   const wb = XLSX.read(buffer, { type: 'array' });
@@ -202,7 +255,8 @@ export async function parseArquivoFretes(file: File): Promise<LinhaImportada[]> 
     throw new Error(`Planilha com mais de ${MAX_LINHAS} linhas — divida em arquivos menores.`);
   }
 
-  return linhasBrutas.map((raw, i) => validarLinha(raw, i + 2)); // +2: linha 1 é cabeçalho
+  const linhas = linhasBrutas.map((raw, i) => validarLinha(raw, i + 2)); // +2: linha 1 é cabeçalho
+  return marcarDuplicatas(linhas);
 }
 
 /** Insere em lotes de 200 pra não estourar o tamanho de uma única requisição. */
