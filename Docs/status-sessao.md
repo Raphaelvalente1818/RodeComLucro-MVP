@@ -978,3 +978,41 @@ Pedido do Raphael: codar todas as páginas até o fim. Como o PRD original tem 1
 Validado com `tsc --noEmit --strict` e `vite build` (limpos, 115 módulos).
 
 **Pendente**: as 6 telas restantes do PRD (moderação com ação de escrita, embarcadores/empresas, parceiros, WhatsApp agregado além da auditoria, financeiro/LGPD com k-anonimato, Sentry) ficam pra quando os módulos que as alimentam existirem — decisão confirmada com o Raphael.
+
+## Checkpoint — 04/09: painel admin com 6 telas no ar, backend + frontend prontos
+
+Ponto exato onde paramos, salvo a pedido do Raphael pra retomar depois.
+
+**Estado do painel admin**: backend (rollups, auth por papel, RLS) e frontend (6 telas) prontos e commitados. Rota `/admin` no app web, protegida por `app_role` (JWT). Telas: Visão geral, Motoristas, Fretes publicados, Consultas via WhatsApp, Administradores, Auditoria (jobs de rollup + ações administrativas). Todas só leitura — nenhuma ação de escrita/moderação ainda, porque as RPCs do PRD original (suspender motorista, derrubar frete etc.) não foram construídas nesta fase.
+
+**Bugs reais corrigidos ao longo do dia** (todos documentados em detalhe nas seções acima, datadas de hoje):
+1. `custom_access_token_hook` sem permissão de leitura em `admin_user` pro papel `supabase_auth_admin` — causava erro 500 em todo login/refresh de token do David e do Emerson.
+2. O mesmo hook tinha **sobrescrito por inteiro** o hook original de identidade (`app_role='driver'`, `driver_id`, `telefone_verificado`, `quarentena`) — todo motorista comum (não só admin) ficou sem essas claims desde 02/09. Corrigido juntando as duas responsabilidades numa função só.
+3. Dois achados do advisor de segurança (view sem `security_invoker`, funções de refresh com EXECUTE aberto pra qualquer usuário logado) — corrigidos.
+4. RLS de leitura faltando em `motoristas`, `wa_freight_query` e `admin_user` pra quem é admin — sem isso as telas novas não mostrariam nada.
+
+**Estado do git**: os 4 commits desta fase (`c23a11e` migrations regularizadas, `c0933ee` funil+gate v2, `bba367f` fix hook+segurança+Visão geral, `9b3d528` 5 telas novas+RLS) já foram commitados e — assumindo que o Raphael rodou os `git push` que dei — empurrados. Uma sobra ficou pra trás: `apps/web/src/admin/AdminApp.tsx` (arquivo antigo, substituído por `AdminLayout.tsx` + `admin/pages/*.tsx` na refatoração da navegação em abas) tinha sido apagado via `rm` mas nunca commitado — já stageei a exclusão (`git rm` efetivo via `git add`), só falta o Raphael commitar:
+```
+git commit -m "chore: remove AdminApp.tsx antigo, substituido por AdminLayout + admin/pages"
+git push
+```
+
+**Pendente / próximos passos possíveis, em ordem de prioridade**:
+1. Testar as 5 telas novas na prática (login como David/Emerson, navegar pelas abas) — ainda não foi validado com uso real, só `tsc`/`vite build` localmente.
+2. Decidir quando ativar a v2 do `journey_definition` (inclui `signup_completed` no gate) — hoje inativa de propósito, ver seção "04/09 (2)" acima.
+3. Se/quando quiser avançar o painel: próximas telas dependem de módulos que ainda não existem (moderação com ação de escrita, embarcadores/empresas, parceiros, WhatsApp agregado, financeiro/LGPD com k-anonimato, Sentry) — não é só codar frontend, precisa desenhar o backend de cada uma primeiro.
+4. Revogação formal do `WA_ACCESS_TOKEN` antigo exposto (item antigo, ainda não feito, baixa urgência).
+
+Não há nenhum bug conhecido em aberto no momento — os 4 encontrados hoje foram todos corrigidos e validados.
+
+## Atualização — 08/09: recursão infinita em RLS quebrando perfil do motorista E o painel admin
+
+Raphael reportou em produção: (1) erro "infinite recursion detected in policy for relation admin_user" ao salvar o próprio perfil (Emerson) — dado não se perdeu (confirmado direto no banco), só a gravação falhou; (2) tela "Visão geral" do admin voltou a mostrar só o essencial, sem KPI/gate/funil; (3) "Não foi possível carregar a lista" na maioria das telas novas do painel.
+
+**Causa raiz**: a policy `admin_user_select_admin` (criada ontem, 04/09) tem uma subquery que consulta a própria tabela `admin_user` — `exists (select 1 from admin_user au where au.user_id = auth.uid() and au.ativo)`. Toda vez que o Postgres precisa resolver RLS em `admin_user`, ele reavalia essa mesma policy, que consulta `admin_user` de novo — recursão infinita. E como `motoristas_select_admin`/`wa_freight_query_select_admin` (mesma leva) também consultam `admin_user`, a recursão vazou pra **qualquer** SELECT em `motoristas`, inclusive o motorista lendo/salvando o próprio perfil, sem nada a ver com o painel admin.
+
+**Correção** (migration `20260908120000_corrigir_recursao_infinita_rls_admin_user.sql`): função `public.is_admin_ativo()` `SECURITY DEFINER` (dona `postgres`, que tem `BYPASSRLS` no Supabase — confirmado via `pg_roles`) — a consulta a `admin_user` dentro dela não reavalia RLS daquela tabela, então não recursiona. Todas as 10 policies "é admin?" (as 3 de ontem + as 7 de agregado/auditoria de 02/09, que não recursionavam mas usavam o mesmo padrão de risco) foram trocadas pra usar essa função.
+
+**Lição**: nunca fazer uma policy RLS consultar a própria tabela em que ela está definida via subquery direta — sempre passar por uma função `SECURITY DEFINER` que bypassa RLS por dentro. Devia ter percebido isso ao escrever `admin_user_select_admin` ontem.
+
+**Pendente**: Raphael precisa recarregar a página e confirmar que salvar perfil e as telas do admin voltaram a funcionar — ainda não validado em produção no momento desta nota (só validado estruturalmente: policies reescritas sem auto-referência, função com `BYPASSRLS` confirmado).
