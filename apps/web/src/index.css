@@ -1248,6 +1248,26 @@ button:disabled {
   white-space: nowrap;
 }
 
+.admin-tag-bom {
+  background: #14301f;
+  color: #4ade80;
+}
+
+.admin-tag-ruim {
+  background: #3a1414;
+  color: #f87171;
+}
+
+.admin-lista-simples {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: #f87171;
+}
+
 .admin-detalhe-linha {
   background: #0d1420;
 }

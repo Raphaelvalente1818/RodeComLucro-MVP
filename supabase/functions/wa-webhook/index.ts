@@ -55,6 +55,19 @@ function json(body: unknown, status = 200) {
   });
 }
 
+// Grava em public.app_log (mesma tabela que os jobs de rollup usam) pra
+// a aba "Saúde do sistema" do admin conseguir mostrar erro técnico sem
+// precisar de acesso aos logs de infraestrutura (edge_logs), que só a
+// Management API do Supabase enxerga — não dá pra consultar via SQL nem
+// pelo app. Nunca deixa uma falha AQUI derrubar o fluxo principal.
+async function logErro(source: string, message: string, context: Record<string, unknown> = {}) {
+  try {
+    await supabase.from("app_log").insert({ nivel: "erro", source, message, context });
+  } catch {
+    // melhor perder um log do que quebrar o webhook por causa dele.
+  }
+}
+
 async function sha256Hex(texto: string): Promise<string> {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(texto));
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -134,12 +147,15 @@ async function enviarMensagemWhatsapp(paraE164: string, texto: string): Promise<
       }),
     });
     if (!resp.ok) {
+      const detalhe = await resp.text();
       // eslint-disable-next-line no-console
-      console.error("[wa-webhook] envio falhou", resp.status, await resp.text());
+      console.error("[wa-webhook] envio falhou", resp.status, detalhe);
+      await logErro("wa-webhook.enviarMensagemWhatsapp", "Envio de WhatsApp falhou", { status: resp.status, detalhe, para: paraE164 });
     }
   } catch (e) {
     // eslint-disable-next-line no-console
     console.error("[wa-webhook] envio lançou exceção", e);
+    await logErro("wa-webhook.enviarMensagemWhatsapp", "Envio de WhatsApp lançou exceção", { erro: String(e), para: paraE164 });
   }
 }
 
@@ -186,12 +202,15 @@ async function enviarListaFretes(paraE164: string, linhas: LinhaListaFrete[], to
       }),
     });
     if (!resp.ok) {
+      const detalhe = await resp.text();
       // eslint-disable-next-line no-console
-      console.error("[wa-webhook] envio de lista falhou", resp.status, await resp.text());
+      console.error("[wa-webhook] envio de lista falhou", resp.status, detalhe);
+      await logErro("wa-webhook.enviarListaFretes", "Envio de lista WhatsApp falhou", { status: resp.status, detalhe, para: paraE164 });
     }
   } catch (e) {
     // eslint-disable-next-line no-console
     console.error("[wa-webhook] envio de lista lançou exceção", e);
+    await logErro("wa-webhook.enviarListaFretes", "Envio de lista WhatsApp lançou exceção", { erro: String(e), para: paraE164 });
   }
 }
 
@@ -525,6 +544,7 @@ async function chamarRouteCost(origem: string, destino: string): Promise<RotaRes
   } catch (e) {
     // eslint-disable-next-line no-console
     console.error("[wa-webhook] chamada a route-cost falhou", e);
+    await logErro("wa-webhook.chamarRouteCost", "Chamada a route-cost lançou exceção", { erro: String(e), origem, destino });
     return null;
   }
 }
@@ -550,6 +570,7 @@ async function registrarTentativaFrete(params: {
   if (error) {
     // eslint-disable-next-line no-console
     console.error("[wa-webhook] falha ao gravar wa_freight_query, seguindo mesmo assim", error);
+    await logErro("wa-webhook.registrarTentativaFrete", "Falha ao gravar wa_freight_query", { erro: error.message, waMessageId: params.waMessageId });
   }
 }
 
@@ -977,6 +998,22 @@ async function tratarRespostaLista(fromE164: string, rowId: string, waMessageId:
 }
 
 Deno.serve(async (req: Request) => {
+  try {
+    return await tratarRequisicao(req);
+  } catch (e) {
+    // Rede de segurança: qualquer exceção não tratada em algum ponto do
+    // fluxo acima virava um 500 sem deixar rastro (edge_logs não é
+    // consultável nem por SQL nem pelo app — só pela Management API).
+    // Agora pelo menos fica registrado em app_log pra aparecer na aba
+    // "Saúde do sistema" do admin.
+    // eslint-disable-next-line no-console
+    console.error("[wa-webhook] exceção não tratada no handler", e);
+    await logErro("wa-webhook.handler", "Exceção não tratada no handler", { erro: String(e) });
+    return json({ erro: "erro_interno" }, 500);
+  }
+});
+
+async function tratarRequisicao(req: Request): Promise<Response> {
   // Handshake de verificação da Meta (configurado uma vez, no painel do
   // WhatsApp Business — GET com hub.mode/hub.verify_token/hub.challenge).
   if (req.method === "GET") {
@@ -1013,6 +1050,7 @@ Deno.serve(async (req: Request) => {
     if (s.status === "failed") {
       // eslint-disable-next-line no-console
       console.error("[wa-webhook] status=failed", JSON.stringify(s));
+      await logErro("wa-webhook.statusEntrega", "Meta reportou falha de entrega", { status: s });
     } else {
       // eslint-disable-next-line no-console
       console.log(`[wa-webhook] status=${s.status} wa_message_id=${s.waMessageId} para=${s.recipientId}`);
@@ -1068,4 +1106,4 @@ Deno.serve(async (req: Request) => {
   // Sempre 200 aqui, mesmo pra mensagem sem intent: já é o comportamento
   // esperado (cai pro NLU depois), não uma falha do webhook.
   return json({ recebido: mensagens.length + interacoes.length });
-});
+}

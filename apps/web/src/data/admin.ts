@@ -390,3 +390,119 @@ export async function carregarAppLog(nivel: string, pagina: number, porPagina = 
 
   return { linhas, total: count ?? linhas.length };
 }
+
+// ---------------------------------------------------------------------
+// Saúde do sistema — 4 sinais: erros técnicos recentes (app_log, agora
+// alimentado pelas Edge Functions via logErro), status dos jobs de
+// rollup (pg_cron), tamanho/conexões do banco, e alertas abertos
+// (bloqueios OTP ativos + jobs atrasados + erros recentes acima de um
+// limiar). Todas as leituras aqui passam pelas funções SECURITY DEFINER
+// criadas em 20260908150000_saude_do_sistema_funcoes_e_rls.sql — RLS
+// comum não alcançaria cron.* nem pg_stat_activity.
+// ---------------------------------------------------------------------
+
+export interface AdminErroPorFonte {
+  source: string;
+  qtd: number;
+}
+
+export interface AdminJobRollup {
+  jobname: string;
+  schedule: string;
+  ativo: boolean;
+  ultimaExecucao: string | null;
+  ultimoStatus: string | null;
+  atrasado: boolean;
+}
+
+export interface AdminSaudeBanco {
+  tamanhoBytes: number;
+  conexoesAtivas: number;
+}
+
+export interface AdminBloqueioAtivo {
+  escopo: string;
+  chave: string;
+  nivel: number;
+  bloqueadoAte: string;
+  motivo: string;
+}
+
+export interface AdminSaudeSistema {
+  errosUltimas24h: AdminErroPorFonte[];
+  totalErrosUltimas24h: number;
+  jobs: AdminJobRollup[];
+  banco: AdminSaudeBanco | null;
+  bloqueiosAtivos: AdminBloqueioAtivo[];
+}
+
+export async function carregarSaudeSistema(): Promise<AdminSaudeSistema> {
+  const desde24h = new Date(Date.now() - 24 * 60 * 60_000).toISOString();
+
+  const [errosRes, jobsRes, bancoRes, bloqueiosRes] = await Promise.all([
+    supabase.from('app_log').select('source').eq('nivel', 'erro').gte('created_at', desde24h),
+    supabase.rpc('saude_jobs_rollup'),
+    supabase.rpc('saude_banco'),
+    supabase
+      .from('otp_bloqueio')
+      .select('escopo, chave, nivel, bloqueado_ate, motivo')
+      .gt('bloqueado_ate', new Date().toISOString())
+      .order('bloqueado_ate', { ascending: false }),
+  ]);
+
+  if (errosRes.error) throw errosRes.error;
+  if (jobsRes.error) throw jobsRes.error;
+  if (bancoRes.error) throw bancoRes.error;
+  if (bloqueiosRes.error) throw bloqueiosRes.error;
+
+  const contagemPorFonte = new Map<string, number>();
+  for (const r of (errosRes.data ?? []) as { source: string }[]) {
+    contagemPorFonte.set(r.source, (contagemPorFonte.get(r.source) ?? 0) + 1);
+  }
+  const errosUltimas24h: AdminErroPorFonte[] = Array.from(contagemPorFonte.entries())
+    .map(([source, qtd]) => ({ source, qtd }))
+    .sort((a, b) => b.qtd - a.qtd);
+
+  const jobs: AdminJobRollup[] = ((jobsRes.data ?? []) as {
+    jobname: string;
+    schedule: string;
+    ativo: boolean;
+    ultima_execucao: string | null;
+    ultimo_status: string | null;
+    atrasado: boolean;
+  }[]).map((j) => ({
+    jobname: j.jobname,
+    schedule: j.schedule,
+    ativo: j.ativo,
+    ultimaExecucao: j.ultima_execucao,
+    ultimoStatus: j.ultimo_status,
+    atrasado: j.atrasado,
+  }));
+
+  const bancoLinha = ((bancoRes.data ?? []) as { tamanho_bytes: number; conexoes_ativas: number }[])[0];
+  const banco: AdminSaudeBanco | null = bancoLinha
+    ? { tamanhoBytes: Number(bancoLinha.tamanho_bytes), conexoesAtivas: bancoLinha.conexoes_ativas }
+    : null;
+
+  const bloqueiosAtivos: AdminBloqueioAtivo[] = ((bloqueiosRes.data ?? []) as {
+    escopo: string;
+    chave: string;
+    nivel: number;
+    bloqueado_ate: string;
+    motivo: string;
+  }[]).map((b) => ({
+    escopo: b.escopo,
+    chave: b.chave,
+    nivel: b.nivel,
+    bloqueadoAte: b.bloqueado_ate,
+    motivo: b.motivo,
+  }));
+
+  return {
+    errosUltimas24h,
+    totalErrosUltimas24h: errosUltimas24h.reduce((soma, e) => soma + e.qtd, 0),
+    jobs,
+    banco,
+    bloqueiosAtivos,
+  };
+}

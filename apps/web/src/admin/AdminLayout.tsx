@@ -25,6 +25,7 @@ const ABAS: { rota: string; label: string }[] = [
   { rota: 'whatsapp', label: 'Consultas WhatsApp' },
   { rota: 'admins', label: 'Administradores' },
   { rota: 'auditoria', label: 'Auditoria' },
+  { rota: 'saude', label: 'Saúde do sistema' },
 ];
 
 export default function AdminLayout() {

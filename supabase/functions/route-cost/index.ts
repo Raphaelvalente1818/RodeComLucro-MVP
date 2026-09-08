@@ -32,6 +32,15 @@ function json(body: unknown, status = 200) {
   });
 }
 
+// Ver mesmo comentário em wa-webhook/index.ts.
+async function logErro(source: string, message: string, context: Record<string, unknown> = {}) {
+  try {
+    await supabase.from("app_log").insert({ nivel: "erro", source, message, context });
+  } catch {
+    // melhor perder um log do que quebrar o fluxo por causa dele.
+  }
+}
+
 function normalizar(endereco: string) {
   return endereco.trim().toLowerCase().replace(/\s+/g, " ");
 }
@@ -52,6 +61,16 @@ function pedagioParaCentavos(precos: PrecoMoeda[] | undefined): number | null {
 }
 
 Deno.serve(async (req: Request) => {
+  try {
+    return await tratarRequisicao(req);
+  } catch (e) {
+    console.error("[route-cost] exceção não tratada no handler", e);
+    await logErro("route-cost.handler", "Exceção não tratada no handler", { erro: String(e) });
+    return json({ erro: "erro_interno" }, 500);
+  }
+});
+
+async function tratarRequisicao(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ erro: "method_not_allowed" }, 405);
 
@@ -121,12 +140,14 @@ Deno.serve(async (req: Request) => {
     });
   } catch (err) {
     console.error("route_cost_fetch_error", err);
+    await logErro("route-cost.computeRoutes", "Falha de conexão com Google Routes", { erro: String(err), origem, destino });
     return json({ erro: "falha_conexao_google" }, 502);
   }
 
   if (!resposta.ok) {
     const detalhe = await resposta.text();
     console.error("route_cost_google_error", resposta.status, detalhe);
+    await logErro("route-cost.computeRoutes", "Google Routes retornou erro", { status: resposta.status, detalhe, origem, destino });
     return json({ erro: "falha_google_routes" }, 502);
   }
 
@@ -160,4 +181,4 @@ Deno.serve(async (req: Request) => {
     distanciaEstimada: false,
     fonte: "google_routes",
   });
-});
+}

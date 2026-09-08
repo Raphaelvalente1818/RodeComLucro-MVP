@@ -41,6 +41,15 @@ function json(body: unknown, status = 200) {
   });
 }
 
+// Ver mesmo comentário em wa-webhook/index.ts.
+async function logErro(source: string, message: string, context: Record<string, unknown> = {}) {
+  try {
+    await supabase.from("app_log").insert({ nivel: "erro", source, message, context });
+  } catch {
+    // melhor perder um log do que quebrar o fluxo por causa dele.
+  }
+}
+
 /**
  * Lê o motorista_id direto do claim "sub" do JWT, sem chamar o GoTrue de
  * novo — a plataforma (verify_jwt=true) já validou assinatura/expiração
@@ -72,6 +81,17 @@ export async function sha256Hex(texto: string): Promise<string> {
 }
 
 Deno.serve(async (req: Request) => {
+  try {
+    return await tratarRequisicao(req);
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error("[wa-vincular] exceção não tratada no handler", e);
+    await logErro("wa-vincular.handler", "Exceção não tratada no handler", { erro: String(e) });
+    return json({ erro: "erro_interno" }, 500);
+  }
+});
+
+async function tratarRequisicao(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ erro: "method_not_allowed" }, 405);
 
@@ -119,6 +139,7 @@ Deno.serve(async (req: Request) => {
   if (error) {
     // eslint-disable-next-line no-console
     console.error("[wa-vincular] falha ao gravar wa_vinculo", error);
+    await logErro("wa-vincular.gravarVinculo", "Falha ao gravar wa_vinculo", { erro: error.message, motoristaId });
     return json({ erro: "falha_gravar" }, 500);
   }
 
@@ -126,4 +147,4 @@ Deno.serve(async (req: Request) => {
   // hash fica salvo, conforme o comentário da coluna codigo_hash).
   const waLink = `https://wa.me/${NUMERO_OFICIAL_WA}?text=${encodeURIComponent(`VINCULAR ${codigo}`)}`;
   return json({ wa_link: waLink, expira_em: expiraEm });
-});
+}

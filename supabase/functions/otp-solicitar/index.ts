@@ -31,6 +31,16 @@ function json(body: unknown, status = 200) {
   });
 }
 
+// Ver mesmo comentário em wa-webhook/index.ts — grava em app_log pra
+// alimentar a aba "Saúde do sistema" do admin.
+async function logErro(source: string, message: string, context: Record<string, unknown> = {}) {
+  try {
+    await supabase.from("app_log").insert({ nivel: "erro", source, message, context });
+  } catch {
+    // melhor perder um log do que quebrar o fluxo por causa dele.
+  }
+}
+
 async function hashTelefone(telefoneE164: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     "raw",
@@ -86,6 +96,11 @@ async function registrarBloqueio(escopo: "telefone" | "ip" | "global", chave: st
     // melhor bloquear 15min do que nao bloquear nada.
     // eslint-disable-next-line no-console
     console.error("registrar_bloqueio_otp falhou, aplicando fallback nivel 1", error);
+    await logErro("otp-solicitar.registrarBloqueio", "RPC registrar_bloqueio_otp falhou, usando fallback nível 1", {
+      erro: error?.message ?? String(error),
+      escopo,
+      chave,
+    });
     const bloqueadoAte = new Date(Date.now() + NIVEL_MINUTOS[1] * 60_000).toISOString();
     await supabase.from("otp_bloqueio").upsert(
       { escopo, chave, nivel: 1, bloqueado_ate: bloqueadoAte, motivo },
@@ -123,6 +138,17 @@ async function contarEnviosPorIp(ip: string, desde: Date) {
 }
 
 Deno.serve(async (req: Request) => {
+  try {
+    return await tratarRequisicao(req);
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error("[otp-solicitar] exceção não tratada no handler", e);
+    await logErro("otp-solicitar.handler", "Exceção não tratada no handler", { erro: String(e) });
+    return json({ erro: "erro_interno" }, 500);
+  }
+});
+
+async function tratarRequisicao(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ erro: "method_not_allowed" }, 405);
 
@@ -261,8 +287,9 @@ Deno.serve(async (req: Request) => {
   });
 
   if (otpError) {
+    await logErro("otp-solicitar.enviarOtp", "GoTrue falhou ao enviar OTP", { erro: otpError.message, canal: canalEfetivo });
     return json({ enviado: false, erro: "falha_envio" }, 502);
   }
 
   return json({ enviado: true, canal_efetivo: canalEfetivo, proximo_reenvio_s: 60 });
-});
+}

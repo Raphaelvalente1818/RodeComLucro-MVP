@@ -16,6 +16,7 @@ import FretesPublicados from './admin/pages/FretesPublicados';
 import ConsultasWhatsapp from './admin/pages/ConsultasWhatsapp';
 import Administradores from './admin/pages/Administradores';
 import Auditoria from './admin/pages/Auditoria';
+import SaudeSistema from './admin/pages/SaudeSistema';
 import './index.css';
 
 // Lazy: a lib de leitura de Excel (xlsx) é pesada (~300kB minificado) e só
@@ -51,6 +52,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="whatsapp" element={<ConsultasWhatsapp />} />
           <Route path="admins" element={<Administradores />} />
           <Route path="auditoria" element={<Auditoria />} />
+          <Route path="saude" element={<SaudeSistema />} />
         </Route>
         <Route path="*" element={<Navigate to="/entrar" replace />} />
       </Routes>
