@@ -110,10 +110,14 @@ export async function assinaturaValida(
 // interrompe o fluxo principal (o cálculo já aconteceu de verdade).
 // ---------------------------------------------------------------------
 async function registrarEventoAnalytics(
-  eventName: "simulation_run",
-  actorId: string,
+  eventName: "simulation_run" | "simulation_run_anonimo",
+  actorId: string | null,
   props: Record<string, unknown>,
 ): Promise<void> {
+  // actor_id null (evento anônimo, trial via WhatsApp sem cadastro) não
+  // entra no gate de validação do MVP — v_journey_completion já filtra
+  // "actor_id is not null" antes de contar jornada completa, então não
+  // corrompe o funil de 160 jornadas mesmo usando o mesmo event_name.
   const { error } = await supabase.from("analytics_event").insert({
     event_name: eventName,
     actor_id: actorId,
@@ -555,7 +559,7 @@ async function registrarTentativaFrete(params: {
   fromE164: string;
   texto: string;
   extracao: ExtracaoFrete | null;
-  status: "calculado" | "confirmacao_pendente" | "dado_faltando" | "erro_extracao" | "nao_vinculado";
+  status: "calculado" | "confirmacao_pendente" | "dado_faltando" | "erro_extracao" | "nao_vinculado" | "calculado_anonimo" | "nao_cadastrado";
   resultado?: unknown;
 }): Promise<void> {
   const { error } = await supabase.from("wa_freight_query").insert({
@@ -627,8 +631,14 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
     .eq("telefone_e164", fromE164)
     .maybeSingle();
 
-  if (!motorista?.canal_wa_ativo) {
-    await registrarTentativaFrete({ waMessageId, motoristaId: motorista?.id ?? null, fromE164, texto, extracao, status: "nao_vinculado" });
+  // Tem conta mas ainda não vinculou o WhatsApp — pede pra vincular antes
+  // de mais nada. Comportamento inalterado: essa pessoa já sabe o que é o
+  // app, só falta um passo dentro dele. NÃO cai no trial abaixo (o trial é
+  // só pra quem não tem conta nenhuma — pra quem já tem conta, empurrar
+  // pra vincular é o caminho mais curto, não faz sentido dar estimativa
+  // anônima de novo).
+  if (motorista && !motorista.canal_wa_ativo) {
+    await registrarTentativaFrete({ waMessageId, motoristaId: motorista.id, fromE164, texto, extracao, status: "nao_vinculado" });
     await enviarMensagemWhatsapp(
       fromE164,
       "Pra calcular fretes por aqui, primeiro vincule seu WhatsApp pelo app (Meu perfil → Vincular WhatsApp).",
@@ -640,6 +650,41 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
   if (!extracao.origem) faltando.push("origem");
   if (!extracao.destino) faltando.push("destino");
   if (extracao.valorFreteReais == null) faltando.push("valor do frete");
+
+  // Número sem conta nenhuma — provavelmente chegou aqui porque alguém
+  // compartilhou o contato do nosso WhatsApp (estratégia de crescimento
+  // viral, ver Docs/status-sessao.md 10/09: "estratégia B" aprovada pelo
+  // Raphael). Se o pedido já veio completo e confiável, calcula na hora
+  // com um perfil de caminhão padrão e convida pro cadastro logo depois
+  // do resultado — é quando a pessoa está mais interessada. Se faltou
+  // dado, explica o que é o bot antes de pedir de novo (mensagem de
+  // "vincule seu WhatsApp" não faz sentido pra quem nunca teve conta).
+  if (!motorista) {
+    const confiancaMinima =
+      faltando.length === 0 ? Math.min(extracao.confiancaOrigem, extracao.confiancaDestino, extracao.confiancaValor) : 0;
+    if (faltando.length > 0 || confiancaMinima < CONFIANCA_MINIMA) {
+      await registrarTentativaFrete({ waMessageId, motoristaId: null, fromE164, texto, extracao, status: "nao_cadastrado" });
+      await enviarMensagemWhatsapp(
+        fromE164,
+        `Oi! Aqui é o Rode com Lucro 🚛 — calculadora de frete pra caminhoneiro. Me manda a origem, o destino e o valor do frete que eu calculo se vale a pena (ex.: "frete de Sorocaba pra Curitiba, 8 mil reais").\n\n` +
+          `Quer usar sempre, com o cálculo certinho pro SEU caminhão? Cadastre-se grátis: ${URL_APP}/entrar`,
+      );
+      return;
+    }
+    await calcularEResponderFrete({
+      fromE164,
+      motoristaId: null,
+      origem: extracao.origem as string,
+      destino: extracao.destino as string,
+      valorFreteReais: extracao.valorFreteReais as number,
+      voltaVazia: extracao.voltaVazia,
+      waMessageId,
+      texto,
+      extracao,
+    });
+    return;
+  }
+
   if (faltando.length > 0) {
     await registrarTentativaFrete({ waMessageId, motoristaId: motorista.id, fromE164, texto, extracao, status: "dado_faltando" });
     await enviarMensagemWhatsapp(
@@ -686,10 +731,17 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
  * calcular (route-cost + perfil de custos) e responder. `extracao`/`texto`
  * ficam null/placeholder no fluxo de lista (não veio texto livre nem
  * passou pela IA) — só usados pra auditoria em wa_freight_query.
+ *
+ * `motoristaId: null` é o caso do TRIAL (estratégia B, Docs/status-sessao.md
+ * 10/09): número sem conta nenhuma que já mandou um pedido de frete
+ * completo — calcula com o mesmo PERFIL_CUSTO_DEFAULT usado por motorista
+ * vinculado sem perfil, sem tentar buscar em `caminhao_perfil` (não existe
+ * user_id pra buscar), e troca o rodapé da resposta por um CTA de
+ * cadastro em vez do link de histórico (que não existe sem conta).
  */
 async function calcularEResponderFrete(params: {
   fromE164: string;
-  motoristaId: string;
+  motoristaId: string | null;
   origem: string;
   destino: string;
   valorFreteReais: number;
@@ -699,6 +751,7 @@ async function calcularEResponderFrete(params: {
   extracao: ExtracaoFrete | null;
 }): Promise<void> {
   const { fromE164, motoristaId, origem, destino, valorFreteReais, voltaVazia, waMessageId, texto, extracao } = params;
+  const anonimo = motoristaId == null;
 
   const rota = await chamarRouteCost(origem, destino);
   if (!rota) {
@@ -707,7 +760,11 @@ async function calcularEResponderFrete(params: {
     return;
   }
 
-  const perfil = await buscarPerfilOuDefault(motoristaId);
+  // Checa `motoristaId == null` direto (em vez de usar a variável `anonimo`)
+  // de propósito: é o que permite o TS estreitar `motoristaId` pra `string`
+  // no branch do buscarPerfilOuDefault (ele não propaga a narrowing através
+  // de uma variável booleana calculada separadamente).
+  const perfil = motoristaId == null ? PERFIL_CUSTO_DEFAULT : await buscarPerfilOuDefault(motoristaId);
   const dias = diasPorFaixaKm(rota.distanciaKm);
   // Mesmo ajuste carro->caminhão de Analisar.tsx: tarifa_caminhão = tarifa_carro × (eixos/2).
   const pedagioReais = rota.pedagioCentavos != null ? Math.round(rota.pedagioCentavos * (perfil.numero_eixos / 2)) / 100 : 0;
@@ -727,8 +784,16 @@ async function calcularEResponderFrete(params: {
     tipoCarga,
   });
 
-  await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao, status: "calculado", resultado });
-  await registrarEventoAnalytics("simulation_run", motoristaId, {
+  await registrarTentativaFrete({
+    waMessageId,
+    motoristaId,
+    fromE164,
+    texto,
+    extracao,
+    status: anonimo ? "calculado_anonimo" : "calculado",
+    resultado,
+  });
+  await registrarEventoAnalytics(anonimo ? "simulation_run_anonimo" : "simulation_run", motoristaId, {
     origem,
     destino,
     distancia_km: rota.distanciaKm,
@@ -744,6 +809,17 @@ async function calcularEResponderFrete(params: {
 
   const emoji = resultado.veredicto === "BOM" ? "✅" : resultado.veredicto === "ACEITÁVEL" ? "🟡" : "🔴";
   const avisoPiso = resultado.abaixoPisoANTT ? "\n⚠️ Valor abaixo do piso mínimo ANTT." : "";
+  // Rodapé muda conforme quem pediu: motorista com conta vê o link de
+  // histórico de sempre; número anônimo (trial) vê o convite de cadastro
+  // logo depois do resultado — é o momento de maior interesse dele.
+  const rodape = anonimo
+    ? `(estimativa com um caminhão padrão — cadastre o seu em instantes pra ter o valor exato do SEU caminhão)\n\n` +
+      `🚀 Gostou? Cadastre-se grátis: ${URL_APP}/entrar`
+    : `(estimativa com base no seu perfil cadastrado no app — ${dias} dia${dias > 1 ? "s" : ""} de viagem)\n\n` +
+      // Toda resposta de cálculo (texto livre ou clique na lista de busca)
+      // sempre reforça o link do app — pedido explícito: o motorista precisa
+      // ter essa porta sempre visível, não só quando falta cadastro.
+      `📲 Veja o histórico completo e mais fretes no app: ${URL_APP}/buscar-frete`;
   const resposta =
     `📦 ${origem} → ${destino} (${rota.distanciaKm.toFixed(0)} km${rota.distanciaEstimada ? ", estimado" : ""})\n` +
     `Valor ofertado: ${fmtBRL(valorFreteReais)}\n` +
@@ -751,11 +827,7 @@ async function calcularEResponderFrete(params: {
     `Lucro estimado: ${fmtBRL(resultado.lucro)} (margem ${fmtPct(resultado.margemReal)})\n` +
     `Piso ANTT: ${fmtBRL(resultado.pisoANTT)}${avisoPiso}\n\n` +
     `${emoji} Veredito: ${resultado.veredicto}\n\n` +
-    `(estimativa com base no seu perfil cadastrado no app — ${dias} dia${dias > 1 ? "s" : ""} de viagem)\n\n` +
-    // Toda resposta de cálculo (texto livre ou clique na lista de busca)
-    // sempre reforça o link do app — pedido explícito: o motorista precisa
-    // ter essa porta sempre visível, não só quando falta cadastro.
-    `📲 Veja o histórico completo e mais fretes no app: ${URL_APP}/buscar-frete`;
+    rodape;
 
   await enviarMensagemWhatsapp(fromE164, resposta);
 }
