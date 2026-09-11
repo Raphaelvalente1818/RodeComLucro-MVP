@@ -60,8 +60,15 @@ set search_path = public
 as $$
 declare
   v_novo_status text;
+  v_role text;
 begin
-  if not is_admin_ativo() then
+  -- Mesma checagem do is_admin_ativo(), mas trazendo o papel real
+  -- (admin/operacao/suporte) pra gravar no audit_log.
+  select au.role into v_role
+    from admin_user au
+   where au.user_id = auth.uid() and au.ativo;
+
+  if v_role is null then
     raise exception 'nao_autorizado' using errcode = '42501';
   end if;
 
@@ -88,7 +95,7 @@ begin
   insert into audit_log (actor_user_id, role, action, target_type, target_id, reason)
   values (
     auth.uid(),
-    'admin',
+    v_role,
     case when p_decisao = 'approve' then 'approve_freight' else 'reject_freight' end,
     'frete_publicado',
     p_frete_id,
