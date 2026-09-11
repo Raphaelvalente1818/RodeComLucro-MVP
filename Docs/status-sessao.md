@@ -1118,3 +1118,26 @@ Essa mensagem pressupõe que a pessoa já tem conta — pra um número totalment
 **PENDENTE — 11/09: teste ponta a ponta adiado.** O número oficial do WhatsApp Business (Meta) ainda está em parametrização — sem ele configurado (`WA_ACCESS_TOKEN`/`WA_PHONE_NUMBER_ID` do lado de envio, e o número em si do lado da Meta), não dá pra mandar mensagem de teste de verdade pro fluxo do trial de cálculo (nem pro resto do wa-webhook). Código e deploy já estão prontos (ver acima) — só falta essa peça de infraestrutura externa (fora do nosso controle direto) pra validar o fluxo ponta a ponta. Retomar o teste assim que o número estiver parametrizado.
 
 **Se abrir uma sessão/conversa nova**: essa seção tem tudo que precisa pra retomar sem perder contexto — é só pedir pra continuar a partir daqui ("retomar o checkpoint de 10/09: falta só o deploy das Edge Functions").
+
+## PLANEJAMENTO — 11/09: módulo de empresas (embarcadores) publicando fretes direto
+
+**Contexto**: Raphael quer começar a construir o app/fluxo pelo qual empresas se cadastram e publicam fretes diretamente, substituindo (ou complementando) a importação manual via Excel que o admin faz hoje. Pedi pra pesquisar o estado atual antes de recomendar por onde começar.
+
+**Achado importante**: o plano pra isso já estava parcialmente desenhado antes, só não construído:
+- `fretes_publicados.company_id` já existe como coluna, sem FK (comentário na migration `20260811150000_fretes_publicados_schema.sql` diz explicitamente que a tabela `companies` ainda não existe).
+- `audit_log.action` (migration `admin_auth_e_rollups`) já tem as ações `approve_company`/`reject_company` pré-provisionadas no CHECK constraint.
+- `Docs/PRD-tecnico-admin.html` já especifica um fluxo de moderação B2B: `admin_moderate_company(target, decision, reason)`, endpoint `/admin/companies/{id}/reveal-contact` (revela contato da empresa, rate-limited 10/min, auditado), e menção a um "Portal Empresa (/empresa)" como superfície irmã do portal do motorista.
+- Ou seja: o desenho original já previa aprovação de empresa ANTES dela poder publicar — não é uma decisão nova, é retomar esse plano.
+
+**Recomendação dada (3 pré-requisitos antes de construir a tela de cadastro/postagem da empresa)**:
+1. **Moderação antes de auto-serviço, não depois.** Hoje `fretes_publicados.status` só tem `aberto/negociando/fechado/expirado` — sem nenhum gate (o admin insere e já sai no ar, porque é agente interno confiável). Precisa de um `pendente_aprovacao` antes de virar `aberto`, com fila de aprovação no admin — senão vira porta aberta pra spam/frete falso assim que empresa de fora puder postar sozinha.
+2. **Identidade da empresa com verificação mínima.** Estender o `custom_access_token_hook` (mesmo padrão do `app_role` de admin) pra um terceiro papel `empresa`, com tabela `companies`/`empresa_user` nova e validação de CNPJ no cadastro — sem isso, "empresa" continua sendo só texto livre digitado, e a moderação do item 1 fica sem base real (aprovar o quê, se não sabe quem é a empresa de verdade?).
+3. **Reaproveitar a validação que já existe.** A lógica de validação do import Excel (`apps/web/src/admin/importarFretesPlanilha.ts`, função `validarLinha`) já está desacoplada do parsing de arquivo (recebe um `Record<string, unknown>` genérico) — dá pra extrair pra uma função compartilhada e usar tanto no import do admin quanto no formulário novo da empresa, sem duplicar regra de UF/tipo de valor/duplicidade em dois lugares que podem divergir.
+
+Rate-limit de postagem por empresa (mesmo padrão do `otp_bloqueio`) também foi sugerido, mas marcado como não-bloqueante pro MVP dessa feature — pode entrar depois.
+
+**Pergunta de acompanhamento do Raphael**: a validação dos fretes vai ter regra automática no futuro? Resposta dada — abordagem em duas camadas:
+- **Validação estrutural (automática desde o dia 1)**: campos obrigatórios, UF válida, enums, duplicidade — já existe, só reaproveitar (item 3 acima).
+- **Validação de risco/confiança (automatiza aos poucos, com dado real)**: comparar valor ofertado contra o piso ANTT (`calcularPisoANTT`, já existe em `@rode/calc`) pra sinalizar frete anormalmente abaixo do piso; bloquear telefone/empresa já rejeitada antes (mesmo padrão do `otp_bloqueio`). Recomendação: começar como SINALIZADOR (frete ainda passa pelo admin, só marcado como suspeito) em vez de bloqueio automático direto, até esses sinais serem validados com fretes reais. Depois, com histórico suficiente, evoluir pra reputação: empresa com X fretes aprovados sem problema passa a publicar automatico (sem fila), só empresa nova/histórico ruim continua manual.
+
+**Nada foi codado ainda** — isso é planejamento/decisão de arquitetura, registrado aqui pra não perder o raciocínio quando formos começar a construir de verdade. Próximo passo em aberto: Raphael decidir modelo de negócio (empresa paga pra postar? cadastro gratuito com aprovação manual?) antes de eu desenhar a migration de `companies` + `pendente_aprovacao`.
