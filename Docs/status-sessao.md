@@ -1,6 +1,6 @@
 # Status da sessão — RODE COM LUCRO
 
-> Última atualização: 2026-08-28. A sessão anterior (17/07) foi perdida num reset — este arquivo e `sequencia-construcao.md` foram o que permitiu retomar o contexto. Manter este hábito daqui pra frente.
+> Última atualização: 2026-09-11 — ver "CHECKPOINT — 11/09 (fim de sessão)" no final do arquivo. A sessão anterior (17/07) foi perdida num reset — este arquivo e `sequencia-construcao.md` foram o que permitiu retomar o contexto. Manter este hábito daqui pra frente.
 
 ## O que já está pronto (confirmado lendo o repo em 04/08)
 
@@ -1168,3 +1168,23 @@ Raphael decidiu começar pela recomendação #1 acima. Implementado e já no ar 
   e, se limpo, os comandos de commit/push de sempre (`git add`, `git commit`, `git push`) na raiz do repo.
 
 - **Próximo passo em aberto**: pré-requisito #2 (identidade/CNPJ da empresa, terceiro `app_role`) e #3 (extrair `validarLinha` pra validação compartilhada) — ainda não iniciados, como já estava registrado acima.
+
+## CHECKPOINT — 11/09 (fim de sessão): moderação de fretes pronta, TESTE DE PONTA A PONTA PENDENTE
+
+**Estado exato ao pausar (Raphael foi mudar de projeto e volta depois):**
+
+- Código de moderação commitado e pushado por Raphael (`tsc` local limpo). Depois disso fiz um ajuste na RPC (`admin_moderar_frete` grava o papel real do admin — `admin/operacao/suporte` — no `audit_log.role` em vez de `'admin'` fixo). Já aplicado no banco de produção e na migration do repo (`20260911130000_moderacao_fretes_publicados.sql`). **Verificar se esse segundo commit foi feito**: `git status` na raiz — se a migration aparecer como modificada, falta `git add -A && git commit -m "fix: admin_moderar_frete grava papel real no audit_log" && git push`.
+
+- Verificado por mim direto no banco: novos status no CHECK, coluna `motivo_rejeicao`, ações `approve_freight`/`reject_freight`, policy `fretes_publicados_update_admin`, e permissões da RPC (`anon` não executa, `authenticated` executa). O que NÃO consegui testar daqui: executar a RPC de verdade (meu acesso SQL via MCP é `supabase_read_only_user`) e rodar `tsc` (sandbox de execução continua travado pelo bug do Windows update de 08/09).
+
+- **2 fretes de teste já inseridos** por Raphael via SQL Editor, com `dado_teste=true` e `status='pendente_aprovacao'`:
+  - `38b9279d-33b9-453e-9c59-d13e3b525989` — "Teste Moderação A" (SP→Curitiba)
+  - `66740d70-6c0e-4f2a-868a-a0b4927d3e42` — "Teste Moderação B" (Campinas→BH)
+
+**AO RETOMAR, o teste é:**
+1. Painel admin → Fretes publicados → filtro `pendente_aprovacao` → os 2 fretes devem aparecer com botões Aprovar/Rejeitar na coluna "Moderação".
+2. Aprovar o A; Rejeitar o B com um motivo qualquer.
+3. Conferir no banco: `select id, status, motivo_rejeicao from fretes_publicados where dado_teste and empresa_nome like 'Teste Moderação%'` → A deve estar `aberto`, B `rejeitado` com o motivo. E `select * from audit_log` → deve ter 1 linha `approve_freight` + 1 `reject_freight` (serão as PRIMEIRAS linhas da tabela — nunca teve escrita antes).
+4. Se tudo ok: apagar os 2 fretes de teste (`delete from fretes_publicados where empresa_nome like 'Teste Moderação%' and dado_teste`) e seguir pro pré-requisito #2 ou #3 do módulo de empresas.
+
+**Se der erro no botão**: abrir o console do navegador — a mensagem da RPC vem no erro (`nao_autorizado`, `frete_nao_esta_pendente_de_aprovacao`, `motivo_obrigatorio_para_rejeicao`).
