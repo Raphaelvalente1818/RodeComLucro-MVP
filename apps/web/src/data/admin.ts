@@ -202,6 +202,7 @@ export interface AdminFretePublicado {
   dadoTeste: boolean;
   dataColeta: string | null;
   createdAt: string;
+  motivoRejeicao: string | null;
 }
 
 export async function carregarFretesPublicados(
@@ -213,7 +214,7 @@ export async function carregarFretesPublicados(
   let query = supabase
     .from('fretes_publicados')
     .select(
-      'id, empresa_nome, origem_cidade, origem_uf, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, status, fonte, dado_teste, data_coleta, created_at',
+      'id, empresa_nome, origem_cidade, origem_uf, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, status, fonte, dado_teste, data_coleta, created_at, motivo_rejeicao',
       { count: 'exact' },
     )
     .order('created_at', { ascending: false })
@@ -243,9 +244,30 @@ export async function carregarFretesPublicados(
     dadoTeste: Boolean(f.dado_teste),
     dataColeta: f.data_coleta,
     createdAt: f.created_at,
+    motivoRejeicao: f.motivo_rejeicao ?? null,
   }));
 
   return { linhas, total: count ?? linhas.length };
+}
+
+/**
+ * Aprova ou rejeita um frete em status 'pendente_aprovacao' — chama a RPC
+ * admin_moderar_frete (SECURITY DEFINER), que faz o UPDATE do status e o
+ * INSERT em audit_log numa transação só. Ver
+ * 20260911130000_moderacao_fretes_publicados.sql. motivo é obrigatório
+ * pra rejeição (a RPC valida isso do lado do banco também).
+ */
+export async function moderarFrete(
+  freteId: string,
+  decisao: 'approve' | 'reject',
+  motivo?: string,
+): Promise<void> {
+  const { error } = await supabase.rpc('admin_moderar_frete', {
+    p_frete_id: freteId,
+    p_decisao: decisao,
+    p_motivo: motivo ?? null,
+  });
+  if (error) throw error;
 }
 
 // ---------------------------------------------------------------------

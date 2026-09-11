@@ -1141,3 +1141,30 @@ Rate-limit de postagem por empresa (mesmo padrão do `otp_bloqueio`) também foi
 - **Validação de risco/confiança (automatiza aos poucos, com dado real)**: comparar valor ofertado contra o piso ANTT (`calcularPisoANTT`, já existe em `@rode/calc`) pra sinalizar frete anormalmente abaixo do piso; bloquear telefone/empresa já rejeitada antes (mesmo padrão do `otp_bloqueio`). Recomendação: começar como SINALIZADOR (frete ainda passa pelo admin, só marcado como suspeito) em vez de bloqueio automático direto, até esses sinais serem validados com fretes reais. Depois, com histórico suficiente, evoluir pra reputação: empresa com X fretes aprovados sem problema passa a publicar automatico (sem fila), só empresa nova/histórico ruim continua manual.
 
 **Nada foi codado ainda** — isso é planejamento/decisão de arquitetura, registrado aqui pra não perder o raciocínio quando formos começar a construir de verdade. Próximo passo em aberto: Raphael decidir modelo de negócio (empresa paga pra postar? cadastro gratuito com aprovação manual?) antes de eu desenhar a migration de `companies` + `pendente_aprovacao`.
+
+## RESOLVIDO — 11/09: pré-requisito 1 (moderação antes de auto-serviço) construído e aplicado
+
+Raphael decidiu começar pela recomendação #1 acima. Implementado e já no ar no banco de produção (`gastwloozlzthpqhxnzr`):
+
+- **Migration `20260911130000_moderacao_fretes_publicados.sql`** (aplicada via `apply_migration`, salva no repo):
+  - `fretes_publicados.status` agora aceita também `pendente_aprovacao` e `rejeitado` (além de `aberto/negociando/fechado/expirado` que já existiam).
+  - Nova coluna `fretes_publicados.motivo_rejeicao` (nullable, só preenchida quando `status='rejeitado'`).
+  - `audit_log.action` agora aceita também `approve_freight`/`reject_freight` (as pré-provisionadas `approve_company`/`reject_company` continuam sem uso — são pro pré-requisito #2, ainda não construído).
+  - Nova RLS `fretes_publicados_update_admin` (UPDATE, admin-only) — antes não existia NENHUMA policy de UPDATE nessa tabela.
+  - Nova RPC `admin_moderar_frete(p_frete_id uuid, p_decisao text, p_motivo text default null)` — `SECURITY DEFINER`, mesmo padrão atômico do `registrar_bloqueio_otp` (update do status + insert no audit_log numa transação só). Valida internamente `is_admin_ativo()`, exige motivo não-vazio pra rejeição, e só age se o frete estiver `pendente_aprovacao` (senão dá erro `frete_nao_esta_pendente_de_aprovacao`). `EXECUTE` revogado de `public`/`anon`, concedido só a `authenticated` (o advisor de segurança do Supabase acusou a concessão default a `anon` — corrigido).
+  - **Nada muda na prática hoje**: o único caminho de INSERT em `fretes_publicados` continua sendo o admin (`fretes_publicados_insert_admin`), que já é confiável. Isso é só o preparo de schema/RPC pro dia em que existir um segundo caminho de INSERT (self-service de empresa, pré-requisito #2/#3 ainda não construídos) — aí sim os novos fretes vão nascer `pendente_aprovacao` em vez de `aberto`.
+
+- **Frontend** (`apps/web/src/admin/pages/FretesPublicados.tsx` + `apps/web/src/data/admin.ts`):
+  - Corrigido bug pré-existente: `STATUS_OPCOES` tinha `'removido'` (nunca existiu no banco) e faltava `'negociando'`/`'fechado'`. Agora reflete o CHECK real, incluindo os dois novos valores.
+  - Nova coluna "Moderação" na tabela: quando `status='pendente_aprovacao'`, mostra botões Aprovar/Rejeitar; Rejeitar pede o motivo via prompt (obrigatório) antes de chamar a RPC.
+  - Quando `status='rejeitado'`, mostra o `motivo_rejeicao` abaixo da tag de status.
+  - Nova função `moderarFrete(freteId, decisao, motivo?)` em `data/admin.ts`, chama a RPC via `supabase.rpc('admin_moderar_frete', ...)`.
+
+- **Validação pendente**: sandbox de execução (`mcp__workspace__bash`) continua travado pelo mesmo problema do Windows update (08/09) — não rodei `tsc --noEmit` nem `git` aqui. Raphael precisa rodar localmente:
+  ```
+  cd apps\web
+  npx tsc --noEmit --strict
+  ```
+  e, se limpo, os comandos de commit/push de sempre (`git add`, `git commit`, `git push`) na raiz do repo.
+
+- **Próximo passo em aberto**: pré-requisito #2 (identidade/CNPJ da empresa, terceiro `app_role`) e #3 (extrair `validarLinha` pra validação compartilhada) — ainda não iniciados, como já estava registrado acima.

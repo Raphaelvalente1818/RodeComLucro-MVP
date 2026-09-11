@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mock — Entrada / Verificação · Identidade · RODE COM LUCRO</title>
+<style>
+  :root{--brand:#2563eb;--brand-d:#1e40af;--ink:#0f172a;--ink-6:#475569;--ink-4:#94a3b8;--line:#e2e8f0;--bg:#f1f5f9;--card:#fff;--erro:#dc2626;--erro-bg:#fef2f2;--ok:#059669;--ok-bg:#ecfdf5}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);display:flex;justify-content:center;padding:40px 16px}
+  .phone{width:100%;max-width:360px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px 20px;min-height:560px}
+  .aviso{max-width:360px;margin:0 auto 12px;font-size:12px;color:var(--ink-4);text-align:center}
+  h1{font-size:16px;margin:0}
+  .sub{font-size:13px;color:var(--ink-6);margin:0}
+  .header{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+  .avatar{width:40px;height:40px;border-radius:50%;background:#eff6ff;display:flex;align-items:center;justify-content:center;font-size:20px}
+  label.field{font-size:13px;color:var(--ink-6);display:block;margin-bottom:6px}
+  input[type=tel]{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:15px;margin-bottom:14px;outline:none}
+  input[type=tel]:focus{border-color:var(--brand)}
+  .checkbox{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--ink-6);margin-bottom:16px;cursor:pointer}
+  .checkbox input{margin-top:2px}
+  .canais{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px}
+  .canal-btn{padding:10px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:13px;font-weight:600;cursor:pointer;color:var(--ink-6)}
+  .canal-btn.ativo{border-color:var(--brand);background:#eff6ff;color:var(--brand-d)}
+  button.primario{width:100%;padding:12px;border:none;border-radius:10px;background:var(--ink);color:#fff;font-weight:700;font-size:14px;cursor:pointer}
+  button.primario:disabled{opacity:.4;cursor:not-allowed}
+  .voltar{border:none;background:none;padding:0;color:var(--ink-6);font-size:13px;margin-bottom:14px;cursor:pointer}
+  .digitos{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-bottom:14px}
+  .digitos input{width:100%;min-width:0;text-align:center;font-size:18px;padding:10px 0;border:1px solid var(--line);border-radius:10px;outline:none}
+  .digitos input:focus{border-color:var(--brand)}
+  .erro{display:none;font-size:13px;color:var(--erro);background:var(--erro-bg);border-radius:10px;padding:8px 10px;margin-bottom:14px}
+  .reenvio{font-size:13px;color:var(--ink-6)}
+  .reenvio a{color:var(--brand-d)}
+  .sucesso{display:none;text-align:center;padding:40px 0}
+  .check{width:52px;height:52px;border-radius:50%;background:var(--ok-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:26px;color:var(--ok)}
+</style>
+</head>
+<body>
+<div>
+  <p class="aviso">Protótipo mockado — sem backend real. Use o código 123456 na tela de verificação.</p>
+  <div class="phone">
+
+    <div id="step1">
+      <div class="header">
+        <div class="avatar">🚚</div>
+        <div>
+          <h1>Rode com Lucro</h1>
+          <p class="sub">Entrar com telefone</p>
+        </div>
+      </div>
+
+      <label class="field">Telefone</label>
+      <input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(62) 99999-9999" />
+
+      <label class="checkbox">
+        <input id="terms" type="checkbox" />
+        <span>Li e aceito os Termos de Uso e a Política de Privacidade</span>
+      </label>
+
+      <p class="field" style="margin-bottom:8px">Receber código por</p>
+      <div class="canais">
+        <button id="canal-wa" class="canal-btn ativo" type="button">WhatsApp</button>
+        <button id="canal-sms" class="canal-btn" type="button">SMS</button>
+      </div>
+
+      <button id="btn-enviar" class="primario" disabled>Receber código</button>
+    </div>
+
+    <div id="step2" style="display:none">
+      <button id="btn-voltar" class="voltar" type="button">&larr; Voltar</button>
+      <h1 style="margin-bottom:4px">Digite o código</h1>
+      <p id="enviado-para" class="sub" style="margin-bottom:4px">Enviamos um código de 6 dígitos</p>
+      <p class="sub" style="color:var(--ink-4);margin-bottom:18px">Mock de teste: use o código 123456</p>
+
+      <div class="digitos" id="digits">
+        <input maxlength="1" inputmode="numeric" />
+        <input maxlength="1" inputmode="numeric" />
+        <input maxlength="1" inputmode="numeric" />
+        <input maxlength="1" inputmode="numeric" />
+        <input maxlength="1" inputmode="numeric" />
+        <input maxlength="1" inputmode="numeric" />
+      </div>
+
+      <p id="erro-codigo" class="erro"></p>
+
+      <p class="reenvio">
+        <span id="reenvio-timer">Reenviar em 60s</span>
+        <a href="#" id="reenvio-link" style="display:none">Reenviar código</a>
+      </p>
+    </div>
+
+    <div id="step3" class="sucesso">
+      <div class="check">✓</div>
+      <h1>Número verificado</h1>
+      <p class="sub" style="margin:6px 0 20px">Login concluído em poucos segundos</p>
+      <button class="primario" style="background:var(--brand)">Ir para a calculadora</button>
+    </div>
+
+  </div>
+</div>
+<script>
+(function(){
+  var phone = document.getElementById('phone');
+  var terms = document.getElementById('terms');
+  var btnEnviar = document.getElementById('btn-enviar');
+  var canalSms = document.getElementById('canal-sms');
+  var canalWa = document.getElementById('canal-wa');
+  var step1 = document.getElementById('step1');
+  var step2 = document.getElementById('step2');
+  var step3 = document.getElementById('step3');
+  var digits = document.querySelectorAll('#digits input');
+  var erroCodigo = document.getElementById('erro-codigo');
+  var reenvioTimer = document.getElementById('reenvio-timer');
+  var reenvioLink = document.getElementById('reenvio-link');
+  var enviadoPara = document.getElementById('enviado-para');
+  var btnVoltar = document.getElementById('btn-voltar');
+  var canal = 'whatsapp';
+  var tentativas = 0;
+  var timerHandle = null;
+
+  phone.addEventListener('input', function(){
+    var v = phone.value.replace(/\D/g,'').slice(0,11);
+    var out = v;
+    if (v.length > 2) out = '(' + v.slice(0,2) + ') ' + v.slice(2);
+    if (v.length > 7) out = '(' + v.slice(0,2) + ') ' + v.slice(2,7) + '-' + v.slice(7);
+    phone.value = out;
+    check();
+  });
+  terms.addEventListener('change', check);
+  function check(){
+    var digitsOnly = phone.value.replace(/\D/g,'');
+    btnEnviar.disabled = !(digitsOnly.length === 11 && terms.checked);
+  }
+  function setCanal(c){
+    canal = c;
+    canalSms.classList.toggle('ativo', c === 'sms');
+    canalWa.classList.toggle('ativo', c === 'whatsapp');
+  }
+  canalSms.addEventListener('click', function(){ setCanal('sms'); });
+  canalWa.addEventListener('click', function(){ setCanal('whatsapp'); });
+
+  function startTimer(){
+    var s = 60;
+    reenvioTimer.style.display = 'inline';
+    reenvioLink.style.display = 'none';
+    reenvioTimer.textContent = 'Reenviar em ' + s + 's';
+    clearInterval(timerHandle);
+    timerHandle = setInterval(function(){
+      s--;
+      if (s <= 0) {
+        clearInterval(timerHandle);
+        reenvioTimer.style.display = 'none';
+        reenvioLink.style.display = 'inline';
+      } else {
+        reenvioTimer.textContent = 'Reenviar em ' + s + 's';
+      }
+    }, 1000);
+  }
+
+  btnEnviar.addEventListener('click', function(){
+    step1.style.display = 'none';
+    step2.style.display = 'block';
+    enviadoPara.textContent = 'Enviamos um código por ' + (canal === 'sms' ? 'SMS' : 'WhatsApp') + ' para ' + phone.value;
+    tentativas = 0;
+    erroCodigo.style.display = 'none';
+    digits.forEach(function(d){ d.value = ''; d.disabled = false; });
+    digits[0].focus();
+    startTimer();
+  });
+
+  btnVoltar.addEventListener('click', function(){
+    step2.style.display = 'none';
+    step1.style.display = 'block';
+    clearInterval(timerHandle);
+  });
+
+  reenvioLink.addEventListener('click', function(e){
+    e.preventDefault();
+    startTimer();
+  });
+
+  digits.forEach(function(d, i){
+    d.addEventListener('input', function(){
+      d.value = d.value.replace(/\D/g,'').slice(0,1);
+      if (d.value && i < digits.length - 1) digits[i+1].focus();
+      var code = Array.prototype.map.call(digits, function(x){ return x.value; }).join('');
+      if (code.length === 6) verificar(code);
+    });
+    d.addEventListener('keydown', function(e){
+      if (e.key === 'Backspace' && !d.value && i > 0) digits[i-1].focus();
+    });
+  });
+
+  function verificar(code){
+    if (code === '123456') {
+      erroCodigo.style.display = 'none';
+      clearInterval(timerHandle);
+      step2.style.display = 'none';
+      step3.style.display = 'block';
+    } else {
+      tentativas++;
+      var restantes = 5 - tentativas;
+      if (restantes <= 0) {
+        erroCodigo.textContent = 'Código bloqueado após muitas tentativas. Peça um novo código.';
+        digits.forEach(function(d){ d.disabled = true; });
+      } else {
+        erroCodigo.textContent = 'Código inválido. ' + restantes + ' tentativa(s) restante(s).';
+        digits.forEach(function(d){ d.value = ''; });
+        digits[0].focus();
+      }
+      erroCodigo.style.display = 'block';
+    }
+  }
+})();
+</script>
+</body>
+</html>

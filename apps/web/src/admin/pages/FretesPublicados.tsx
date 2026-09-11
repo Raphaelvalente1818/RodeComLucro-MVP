@@ -6,10 +6,13 @@
 
 import { useEffect, useState } from 'react';
 import { fmtBRL } from '@rode/calc';
-import { carregarFretesPublicados, type AdminFretePublicado } from '../../data/admin';
+import { carregarFretesPublicados, moderarFrete, type AdminFretePublicado } from '../../data/admin';
 
 const POR_PAGINA = 30;
-const STATUS_OPCOES = ['todos', 'aberto', 'expirado', 'removido'];
+// Valores reais do CHECK de fretes_publicados.status (ver
+// 20260911130000_moderacao_fretes_publicados.sql) — 'removido' nunca
+// existiu no banco, era um bug de digitação desta lista.
+const STATUS_OPCOES = ['todos', 'aberto', 'negociando', 'fechado', 'expirado', 'pendente_aprovacao', 'rejeitado'];
 
 function fmtDataBR(iso: string | null): string {
   if (!iso) return '—';
@@ -25,6 +28,7 @@ export default function FretesPublicados() {
   const [total, setTotal] = useState(0);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [moderando, setModerando] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -34,7 +38,7 @@ export default function FretesPublicados() {
     return () => clearTimeout(t);
   }, [termo]);
 
-  useEffect(() => {
+  function recarregar() {
     setCarregando(true);
     carregarFretesPublicados(termoDebounced, status, pagina, POR_PAGINA)
       .then(({ linhas, total }) => {
@@ -48,7 +52,39 @@ export default function FretesPublicados() {
         setErro('Não foi possível carregar a lista.');
       })
       .finally(() => setCarregando(false));
-  }, [termoDebounced, status, pagina]);
+  }
+
+  useEffect(recarregar, [termoDebounced, status, pagina]);
+
+  async function aprovar(freteId: string) {
+    setModerando(freteId);
+    try {
+      await moderarFrete(freteId, 'approve');
+      recarregar();
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('[admin] falha ao aprovar frete', e);
+      setErro('Não foi possível aprovar o frete.');
+    } finally {
+      setModerando(null);
+    }
+  }
+
+  async function rejeitar(freteId: string) {
+    const motivo = window.prompt('Motivo da rejeição (obrigatório):');
+    if (!motivo || !motivo.trim()) return;
+    setModerando(freteId);
+    try {
+      await moderarFrete(freteId, 'reject', motivo.trim());
+      recarregar();
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('[admin] falha ao rejeitar frete', e);
+      setErro('Não foi possível rejeitar o frete.');
+    } finally {
+      setModerando(null);
+    }
+  }
 
   const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
 
@@ -93,16 +129,17 @@ export default function FretesPublicados() {
               <th>Status</th>
               <th>Fonte</th>
               <th>Coleta</th>
+              <th>Moderação</th>
             </tr>
           </thead>
           <tbody>
             {carregando ? (
               <tr>
-                <td colSpan={6}>Carregando…</td>
+                <td colSpan={7}>Carregando…</td>
               </tr>
             ) : linhas.length === 0 ? (
               <tr>
-                <td colSpan={6}>Nenhum frete encontrado.</td>
+                <td colSpan={7}>Nenhum frete encontrado.</td>
               </tr>
             ) : (
               linhas.map((f) => (
@@ -121,9 +158,38 @@ export default function FretesPublicados() {
                   </td>
                   <td>
                     <span className="admin-tag">{f.status ?? '—'}</span>
+                    {f.status === 'rejeitado' && f.motivoRejeicao ? (
+                      <div className="admin-atualizado-em" title={f.motivoRejeicao}>
+                        {f.motivoRejeicao}
+                      </div>
+                    ) : null}
                   </td>
                   <td>{f.fonte ?? '—'}</td>
                   <td>{fmtDataBR(f.dataColeta)}</td>
+                  <td>
+                    {f.status === 'pendente_aprovacao' ? (
+                      <div className="admin-abas-secundarias">
+                        <button
+                          type="button"
+                          className="admin-aba-secundaria"
+                          disabled={moderando === f.id}
+                          onClick={() => aprovar(f.id)}
+                        >
+                          Aprovar
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-aba-secundaria"
+                          disabled={moderando === f.id}
+                          onClick={() => rejeitar(f.id)}
+                        >
+                          Rejeitar
+                        </button>
+                      </div>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
                 </tr>
               ))
             )}
