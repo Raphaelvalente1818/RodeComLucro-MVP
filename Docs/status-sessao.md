@@ -1194,3 +1194,13 @@ Raphael decidiu começar pela recomendação #1 acima. Implementado e já no ar 
 Raphael aprovou o frete A e rejeitou o B pelo painel (`/admin/fretes`, filtro `pendente_aprovacao`). Conferido no banco: A → `aberto`, B → `rejeitado` com motivo gravado; `audit_log` recebeu as 2 primeiras linhas da história da tabela (`approve_freight` + `reject_freight`, role `admin`). **Pré-requisito #1 do módulo de empresas está fechado.** Fretes de teste: pedido pra Raphael apagar via SQL Editor (`delete from fretes_publicados where empresa_nome like 'Teste Moderação%' and dado_teste`).
 
 **Próximo**: pré-requisito #2 (identidade da empresa — tabela `companies`, papel `empresa` no `custom_access_token_hook`, CNPJ) ou #3 (extrair `validarLinha` pra validação compartilhada). Decisão de modelo de negócio (empresa paga? cadastro grátis com aprovação?) ainda em aberto e influencia o #2.
+
+## Atualização — 12/09: pré-requisito #3 — validação de frete extraída pra módulo compartilhado
+
+Refatoração sem mudança de comportamento:
+
+- **Novo `apps/web/src/lib/validarFrete.ts`** (módulo neutro — não importa `xlsx` nem `supabase`): `validarFrete(raw)` → `{ valido, erros, dado: FreteValidado | null, resumo }`, mais `chaveDuplicataFrete()`, `textoOuNull/numeroOuNull/dataOuNull` e `UFS_VALIDAS` exportados. `FreteValidado` NÃO tem `status`/`fonte` — quem chama decide (admin → `aberto`/`MANUAL`; empresa futura → `pendente_aprovacao`/fonte própria). Dois ajustes pequenos já pensando no formulário de empresa: `dataOuNull` aceita também `aaaa-mm-dd` (formato do `<input type=date>`), e listas de veículo/carroceria aceitam array além de string separada por vírgula.
+- **`admin/importarFretesPlanilha.ts`** virou só o específico de planilha: ler `.xlsx`, numerar linhas, `marcarDuplicatas` (precisa do arquivo inteiro + banco), fixar `status`/`fonte`. `FreteParaInserir` agora é `FreteValidado & { status: 'aberto'; fonte: 'MANUAL' }`. Exports usados por `ImportarFretes.tsx` (`parseArquivoFretes`, `inserirFretes`, `LinhaImportada`) não mudaram.
+- **Validação pendente por Raphael** (sandbox continua travado): `npx tsc --noEmit --strict` em `apps/web` + teste rápido de importar uma planilha no painel pra confirmar que a prévia continua igual.
+
+**Pré-requisitos #1 e #3 do módulo de empresas fechados. Falta só o #2** (identidade/CNPJ), que depende da decisão de modelo de negócio.
