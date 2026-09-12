@@ -1188,3 +1188,9 @@ Raphael decidiu começar pela recomendação #1 acima. Implementado e já no ar 
 4. Se tudo ok: apagar os 2 fretes de teste (`delete from fretes_publicados where empresa_nome like 'Teste Moderação%' and dado_teste`) e seguir pro pré-requisito #2 ou #3 do módulo de empresas.
 
 **Se der erro no botão**: abrir o console do navegador — a mensagem da RPC vem no erro (`nao_autorizado`, `frete_nao_esta_pendente_de_aprovacao`, `motivo_obrigatorio_para_rejeicao`).
+
+## CONCLUÍDO — 12/09: teste de ponta a ponta da moderação passou
+
+Raphael aprovou o frete A e rejeitou o B pelo painel (`/admin/fretes`, filtro `pendente_aprovacao`). Conferido no banco: A → `aberto`, B → `rejeitado` com motivo gravado; `audit_log` recebeu as 2 primeiras linhas da história da tabela (`approve_freight` + `reject_freight`, role `admin`). **Pré-requisito #1 do módulo de empresas está fechado.** Fretes de teste: pedido pra Raphael apagar via SQL Editor (`delete from fretes_publicados where empresa_nome like 'Teste Moderação%' and dado_teste`).
+
+**Próximo**: pré-requisito #2 (identidade da empresa — tabela `companies`, papel `empresa` no `custom_access_token_hook`, CNPJ) ou #3 (extrair `validarLinha` pra validação compartilhada). Decisão de modelo de negócio (empresa paga? cadastro grátis com aprovação?) ainda em aberto e influencia o #2.
