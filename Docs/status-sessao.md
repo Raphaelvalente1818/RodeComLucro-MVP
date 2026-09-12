@@ -1227,4 +1227,18 @@ Ajustes extras do mesmo dia (a partir do teste real de importação do Raphael):
 
 **Pendente (Raphael, sandbox continua travado)**: `tsc --noEmit --strict`, commit/push. Teste de ponta a ponta: (1) sair/entrar no admin — confirma hook; (2) `/empresa/cadastro` com um CNPJ válido (ex.: 11.222.333/0001-81) → ver se cai em "Cadastro em análise" ou pede confirmação de e-mail; (3) admin → Empresas → Aprovar → `/empresa` mostra "Empresa aprovada"; (4) conferir `audit_log` com `approve_company`.
 
+**TESTADO — 12/09**: Raphael rodou o fluxo completo (login admin ok após o hook novo; cadastro em `/empresa/cadastro` com CNPJ 11.222.333/0001-81; aprovação na aba Empresas; `/empresa` mostrou "aprovada"). Conferido no banco: empresa "Teste" criada pelo trigger com status `aprovada`, `audit_log` com `approve_company`. **Os 3 pré-requisitos do módulo de empresas estão fechados.** A empresa "Teste" pode ficar como conta de teste pra próxima fase.
+
 **Próxima fase**: portal da empresa — formulário de publicar frete (reusa `lib/validarFrete.ts`, insere com `fonte='EMPRESA'`/`status='pendente_aprovacao'`/`company_id`), lista dos fretes da própria empresa com status. Depois: rate-limit de postagem e sinalizador de risco (preço vs. piso ANTT).
+
+## CONSTRUÍDO — 12/09: portal da empresa — publicar frete + acompanhar
+
+- **Lacuna anterior corrigida no caminho**: `origem_lat/lng` (busca por raio do motorista) só eram preenchidos por UPDATE manual — 11 fretes (incluindo os importados por planilha) estavam sem coordenada e invisíveis na busca por raio. Migration `20260912150000_fretes_publicados_geocodifica_origem.sql`: trigger BEFORE INSERT/UPDATE que preenche a partir de `municipios_brasil` (nome normalizado com `unaccent` + UF) + backfill (6 de 11 resolvidos; os 5 restantes têm grafia fora do padrão — ver comentário da migration). Vale pro import do admin e pro portal.
+- **`lib/empresa.ts`**: `carregarFretesDaEmpresa(empresaId)` e `publicarFrete(empresa, dado)` — sempre `status='pendente_aprovacao'`, `fonte='EMPRESA'`, `company_id` da empresa, `empresa_nome` = nome fantasia ou razão social (a policy `fretes_publicados_insert_empresa` rejeita qualquer outra combinação).
+- **`pages/empresa/EmpresaPublicar.tsx`** (`/empresa/publicar`, só empresa aprovada — senão volta pra `/empresa`): origem/destino com autocomplete de `municipios_brasil` (obrigatório escolher da lista, garante geocodificação), valor ou "a combinar", tipo de valor, peso, distância, data de coleta, pedágio, chips multi-seleção de veículo/carroceria (reusa classes `chip-*` do Perfil), contato (telefone pré-preenchido com o da empresa), observações. Validação via `validarFrete()` — mesma regra do import. Botão "Enviar pra aprovação".
+- **`EmpresaHome.tsx`** reescrita: botão "Publicar frete" (só aprovada), aviso "enviado pra aprovação" ao voltar do formulário, tabela "Seus fretes" com status traduzido pra empresa (em análise / publicado / não aprovado + motivo).
+- `index.css`: `textarea` ganhou o mesmo estilo de `input`.
+
+**Pendente (Raphael)**: `tsc`, commit/push. Teste: entrar como a empresa "Teste" (aprovada) → Publicar frete → ver "em análise" na lista → admin aba Fretes publicados, filtro `pendente_aprovacao` → Aprovar → voltar em `/empresa` e ver "publicado" → conferir que o frete aparece em Buscar frete no app do motorista (com coordenada, via trigger).
+
+**Depois disso, o módulo de empresas MVP está completo.** Próximos incrementos (não bloqueantes): rate-limit de postagem por empresa; sinalizador de risco na fila do admin (preço abaixo do piso ANTT via `calcularPisoANTT`); editar/encerrar frete pela empresa; e-mail de aviso quando aprovado/rejeitado.

@@ -8,6 +8,7 @@
 // aprova (status = 'aprovada').
 
 import { supabase } from './supabaseClient';
+import type { FreteValidado } from './validarFrete';
 
 export type StatusEmpresa = 'pendente' | 'aprovada' | 'rejeitada' | 'suspensa';
 
@@ -98,6 +99,68 @@ export async function entrarEmpresa(email: string, senha: string): Promise<void>
 
 export async function sairEmpresa(): Promise<void> {
   await supabase.auth.signOut();
+}
+
+// ---------------------------------------------------------------------
+// Fretes da empresa
+// ---------------------------------------------------------------------
+
+export interface FreteDaEmpresa {
+  id: string;
+  origemCidade: string;
+  origemUf: string;
+  destinoCidade: string;
+  destinoUf: string;
+  valorFreteCentavos: number | null;
+  valorACombinar: boolean;
+  tipoValor: string | null;
+  dataColeta: string | null;
+  status: string;
+  motivoRejeicao: string | null;
+  createdAt: string;
+}
+
+export async function carregarFretesDaEmpresa(empresaId: string): Promise<FreteDaEmpresa[]> {
+  const { data, error } = await supabase
+    .from('fretes_publicados')
+    .select(
+      'id, origem_cidade, origem_uf, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, data_coleta, status, motivo_rejeicao, created_at',
+    )
+    .eq('company_id', empresaId)
+    .order('created_at', { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  return (data ?? []).map((f) => ({
+    id: f.id,
+    origemCidade: f.origem_cidade,
+    origemUf: f.origem_uf,
+    destinoCidade: f.destino_cidade,
+    destinoUf: f.destino_uf,
+    valorFreteCentavos: f.valor_frete_centavos,
+    valorACombinar: Boolean(f.valor_a_combinar),
+    tipoValor: f.tipo_valor,
+    dataColeta: f.data_coleta,
+    status: f.status,
+    motivoRejeicao: f.motivo_rejeicao ?? null,
+    createdAt: f.created_at,
+  }));
+}
+
+/**
+ * Publica um frete em nome da empresa. `dado` já validado por
+ * lib/validarFrete.ts. Entra SEMPRE como pendente_aprovacao / fonte
+ * EMPRESA / company_id da empresa — a policy fretes_publicados_insert_empresa
+ * rejeita qualquer outra combinação (e exige empresa aprovada).
+ */
+export async function publicarFrete(empresa: Empresa, dado: FreteValidado): Promise<void> {
+  const { error } = await supabase.from('fretes_publicados').insert({
+    ...dado,
+    empresa_nome: empresa.nomeFantasia || empresa.razaoSocial,
+    company_id: empresa.id,
+    status: 'pendente_aprovacao',
+    fonte: 'EMPRESA',
+  });
+  if (error) throw error;
 }
 
 /** Empresa do usuário logado, ou null se a conta não é de empresa. */

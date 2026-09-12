@@ -21,6 +21,7 @@ import Empresas from './admin/pages/Empresas';
 import EmpresaCadastro from './pages/empresa/EmpresaCadastro';
 import EmpresaEntrar from './pages/empresa/EmpresaEntrar';
 import EmpresaHome from './pages/empresa/EmpresaHome';
+import EmpresaPublicar from './pages/empresa/EmpresaPublicar';
 import './index.css';
 
 // Lazy: a lib de leitura de Excel (xlsx) é pesada (~300kB minificado) e só
@@ -44,6 +45,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Route path="/empresa" element={<EmpresaHome />} />
         <Route path="/empresa/cadastro" element={<EmpresaCadastro />} />
         <Route path="/empresa/entrar" element={<EmpresaEntrar />} />
+        <Route path="/empresa/publicar" element={<EmpresaPublicar />} />
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<VisaoGeral />} />
           <Route path="motoristas" element={<Motoristas />} />

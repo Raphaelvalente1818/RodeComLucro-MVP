@@ -34,6 +34,7 @@ label {
 
 input,
 select,
+textarea,
 button {
   font-size: 16px;
   padding: 12px;
@@ -42,9 +43,15 @@ button {
 }
 
 input,
-select {
+select,
+textarea {
   background: #111827;
   color: #f3f4f6;
+}
+
+textarea {
+  font-family: inherit;
+  resize: vertical;
 }
 
 /* Select nativo herda estilo do sistema (fica claro/inconsistente no tema
