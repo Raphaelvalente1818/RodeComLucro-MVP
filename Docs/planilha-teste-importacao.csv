@@ -1,0 +1,9 @@
+﻿empresa_nome;contato_nome;contato_telefone;origem_cidade;origem_uf;destino_cidade;destino_uf;valor_frete_reais;tipo_valor;peso_kg;distancia_km;data_coleta;pedagio_por_conta_de;tipos_veiculo_aceitos;tipos_carroceria_aceitos;observacoes
+Transportes Teste Ltda;João Silva;11999990001;São Paulo;SP;Curitiba;PR;4500;fixo;25000;410;15/09/2026;empresa;Carreta, Carreta LS;Sider, Baú;Carga paletizada
+Transportes Teste Ltda;João Silva;11999990001;Campinas;SP;Belo Horizonte;MG;180;por_tonelada;30000;590;16/09/2026;motorista;Bitrem 7 eixos;Graneleiro;Soja a granel
+Agro Teste S.A.;Maria Souza;31988880002;Uberlândia;MG;Goiânia;GO;;;18000;350;;empresa;Truck;Baú Refrigerado;Valor a combinar
+Agro Teste S.A.;Maria Souza;31988880002;Ribeirão Preto;SP;Rio de Janeiro;RJ;3200;fixo;12000;;17/09/2026;;;;Sem restrição de caminhão
+Transportes Teste Ltda;João Silva;11999990001;São Paulo;SP;Curitiba;PR;4500;fixo;25000;410;15/09/2026;empresa;Carreta, Carreta LS;Sider, Baú;DUPLICATA da linha 2 — deve aparecer marcada
+Erro Teste;;;Porto Alegre;XX;Florianópolis;SC;2000;fixo;;;;;;;UF inválida — deve dar erro
+Erro Teste;;;Salvador;BA;Recife;PE;2500;;;;;;;;tipo_valor faltando com valor preenchido — deve dar erro
+Erro Teste;;;Manaus;AM;Belém;PA;1500;fixo;;;31/02/2026;;Jamanta;;data inválida + veículo desconhecido — deve dar erro

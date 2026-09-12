@@ -110,11 +110,23 @@ export function dataOuNull(v: unknown): string | null {
     return d.toISOString().slice(0, 10);
   }
   const s = String(v).trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (!m) return null;
-  const [, dd, mm, aaaa] = m;
-  return `${aaaa}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+  let iso: string;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    iso = s;
+  } else {
+    const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (!m) return null;
+    const [, dd, mm, aaaa] = m;
+    iso = `${aaaa}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+  }
+  return dataExisteNoCalendario(iso) ? iso : null;
+}
+
+/** "2026-02-31" passa no formato mas não existe — o Date normalizaria pra 03/03 em silêncio. */
+function dataExisteNoCalendario(iso: string): boolean {
+  const [a, m, d] = iso.split('-').map(Number);
+  const dt = new Date(Date.UTC(a, m - 1, d));
+  return dt.getUTCFullYear() === a && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
 }
 
 // tipos_veiculo_aceitos/tipos_carroceria_aceitos são NOT NULL na tabela
