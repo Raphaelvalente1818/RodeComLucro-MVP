@@ -1258,6 +1258,35 @@ button:disabled {
   color: #f87171;
 }
 
+/* Prévia da importação de fretes — linha e tag na mesma cor da legenda
+   (verde = nova, amarelo = duplicada, vermelho = erro). */
+.admin-tabela tbody tr.admin-linha-nova td {
+  background: rgba(74, 222, 128, 0.07);
+}
+
+.admin-tabela tbody tr.admin-linha-duplicada td {
+  background: rgba(251, 191, 36, 0.08);
+}
+
+.admin-tabela tbody tr.admin-linha-erro td {
+  background: rgba(248, 113, 113, 0.08);
+}
+
+.admin-tag-nova {
+  background: #14301f;
+  color: #4ade80;
+}
+
+.admin-tag-duplicada {
+  background: #3a2e0f;
+  color: #fbbf24;
+}
+
+.admin-tag-erro {
+  background: #3a1414;
+  color: #f87171;
+}
+
 .admin-lista-simples {
   margin: 8px 0 0;
   padding-left: 18px;

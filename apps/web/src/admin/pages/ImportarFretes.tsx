@@ -120,77 +120,59 @@ export default function ImportarFretes() {
           </div>
 
           {duplicadas.length > 0 && (
-            <>
-              <p className="admin-card-nota">
-                Estas linhas parecem repetir um frete já "aberto" no banco (mesma empresa, rota, valor e data) — ou aparecem
-                duplicadas dentro da própria planilha. Ficam de fora da importação por padrão; marque a caixa se quiser importar
-                mesmo assim.
-              </p>
-              <div className="admin-tabela-wrap">
-                <table className="admin-tabela">
-                  <thead>
-                    <tr>
-                      <th></th>
-                      <th>Linha</th>
-                      <th>Empresa</th>
-                      <th>Rota</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {duplicadas.map((l) => (
-                      <tr key={l.linha}>
-                        <td>
+            <p className="admin-card-nota">
+              Linhas em amarelo parecem repetir um frete já "aberto" no banco (mesma empresa, rota, valor e data) — ou aparecem
+              duplicadas dentro da própria planilha. Ficam de fora da importação por padrão; marque a caixa se quiser importar
+              mesmo assim.
+            </p>
+          )}
+          {invalidas.length > 0 && (
+            <p className="admin-card-nota">
+              Linhas em vermelho NÃO serão importadas. Corrija a planilha e envie de novo, ou prossiga só com as válidas.
+            </p>
+          )}
+
+          <div className="admin-tabela-wrap">
+            <table className="admin-tabela">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Linha</th>
+                  <th>Situação</th>
+                  <th>Empresa</th>
+                  <th>Rota</th>
+                  <th>Erros</th>
+                </tr>
+              </thead>
+              <tbody>
+                {linhas.map((l) => {
+                  const tipo = !l.valido ? 'erro' : l.duplicata ? 'duplicada' : 'nova';
+                  return (
+                    <tr key={l.linha} className={`admin-linha-${tipo}`}>
+                      <td>
+                        {tipo === 'duplicada' && (
                           <input
                             type="checkbox"
                             checked={duplicatasLiberadas.has(l.linha)}
                             onChange={() => alternarDuplicataLiberada(l.linha)}
                           />
-                        </td>
-                        <td>{l.linha}</td>
-                        <td>{l.resumo.empresa}</td>
-                        <td>
-                          {l.resumo.origem} → {l.resumo.destino}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-
-          {invalidas.length > 0 && (
-            <div className="admin-tabela-wrap">
-              <table className="admin-tabela">
-                <thead>
-                  <tr>
-                    <th>Linha</th>
-                    <th>Empresa</th>
-                    <th>Rota</th>
-                    <th>Erros</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invalidas.map((l) => (
-                    <tr key={l.linha}>
+                        )}
+                      </td>
                       <td>{l.linha}</td>
+                      <td>
+                        <span className={`admin-tag admin-tag-${tipo}`}>{tipo}</span>
+                      </td>
                       <td>{l.resumo.empresa}</td>
                       <td>
                         {l.resumo.origem} → {l.resumo.destino}
                       </td>
-                      <td className="aviso-erro">{l.erros.join('; ')}</td>
+                      <td className={tipo === 'erro' ? 'aviso-erro' : undefined}>{l.erros.join('; ') || '—'}</td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {invalidas.length > 0 && (
-            <p className="admin-card-nota">
-              As linhas com erro NÃO serão importadas. Corrija a planilha e envie de novo, ou prossiga só com as válidas.
-            </p>
-          )}
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
           <button type="button" className="cta-primaria" disabled={totalProntas === 0 || importando} onClick={confirmarImportacao}>
             <span className="cta-titulo">{importando ? 'Importando…' : `Importar ${totalProntas} frete(s)`}</span>
