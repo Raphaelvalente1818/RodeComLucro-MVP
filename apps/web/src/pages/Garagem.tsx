@@ -101,6 +101,12 @@ export default function Garagem() {
         return;
       }
       const claims = decodeClaims(data.session!.access_token);
+      if (claims.app_role === 'empresa') {
+        // Conta de empresa (login por e-mail) caiu na home do motorista —
+        // ex.: redirect padrão depois de confirmar o e-mail. Manda pro portal.
+        navigate('/empresa', { replace: true });
+        return;
+      }
       const [m, ultimas, lucro, perfil] = await Promise.all([
         carregarMotorista(uid),
         carregarUltimasAnalises(uid, TAMANHO_LOTE_INICIAL),

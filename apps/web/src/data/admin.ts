@@ -271,6 +271,69 @@ export async function moderarFrete(
 }
 
 // ---------------------------------------------------------------------
+// Empresas (embarcadores) — fila de aprovação
+// ---------------------------------------------------------------------
+
+export interface AdminEmpresa {
+  id: string;
+  cnpj: string;
+  razaoSocial: string;
+  nomeFantasia: string | null;
+  telefone: string | null;
+  email: string;
+  status: string;
+  motivoRejeicao: string | null;
+  createdAt: string;
+}
+
+export async function carregarEmpresas(
+  status: string,
+  pagina: number,
+  porPagina = 30,
+): Promise<{ linhas: AdminEmpresa[]; total: number }> {
+  let query = supabase
+    .from('empresas')
+    .select('id, cnpj, razao_social, nome_fantasia, telefone, email, status, motivo_rejeicao, created_at', {
+      count: 'exact',
+    })
+    .order('created_at', { ascending: false })
+    .range(pagina * porPagina, pagina * porPagina + porPagina - 1);
+
+  if (status !== 'todos') query = query.eq('status', status);
+
+  const { data, count, error } = await query;
+  if (error) throw error;
+
+  const linhas: AdminEmpresa[] = (data ?? []).map((e) => ({
+    id: e.id,
+    cnpj: e.cnpj,
+    razaoSocial: e.razao_social,
+    nomeFantasia: e.nome_fantasia,
+    telefone: e.telefone,
+    email: e.email,
+    status: e.status,
+    motivoRejeicao: e.motivo_rejeicao,
+    createdAt: e.created_at,
+  }));
+
+  return { linhas, total: count ?? linhas.length };
+}
+
+/** Chama admin_moderar_empresa (SECURITY DEFINER): status + audit_log numa transação. Motivo obrigatório pra reject/suspend. */
+export async function moderarEmpresa(
+  empresaId: string,
+  decisao: 'approve' | 'reject' | 'suspend',
+  motivo?: string,
+): Promise<void> {
+  const { error } = await supabase.rpc('admin_moderar_empresa', {
+    p_empresa_id: empresaId,
+    p_decisao: decisao,
+    p_motivo: motivo ?? null,
+  });
+  if (error) throw error;
+}
+
+// ---------------------------------------------------------------------
 // Consultas via WhatsApp (wa_freight_query)
 // ---------------------------------------------------------------------
 

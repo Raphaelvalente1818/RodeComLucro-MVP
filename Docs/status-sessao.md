@@ -1204,3 +1204,27 @@ Refatoração sem mudança de comportamento:
 - **Validação pendente por Raphael** (sandbox continua travado): `npx tsc --noEmit --strict` em `apps/web` + teste rápido de importar uma planilha no painel pra confirmar que a prévia continua igual.
 
 **Pré-requisitos #1 e #3 do módulo de empresas fechados. Falta só o #2** (identidade/CNPJ), que depende da decisão de modelo de negócio.
+
+Ajustes extras do mesmo dia (a partir do teste real de importação do Raphael): `dataOuNull` agora valida se a data existe no calendário (`31/02` era aceita); prévia da importação virou uma tabela só, com todas as linhas (as novas não apareciam) coloridas como a legenda (verde nova / amarelo duplicada / vermelho erro) — classes `admin-linha-*`/`admin-tag-*` no `index.css`. `Docs/planilha-teste-importacao.csv` (com BOM UTF-8, `;` como separador) é a planilha de teste — abrir no Excel e salvar como .xlsx.
+
+## CONSTRUÍDO — 12/09: pré-requisito #2 — identidade da empresa (embarcador)
+
+**Decisões do Raphael (12/09)**: auto-cadastro com aprovação manual do admin; grátis no MVP; login por e-mail+senha (provider Email já estava habilitado no Supabase); 1 usuário por empresa (mas `user_id` separado do `id` pra virar N depois).
+
+**Banco** — `20260912140000_empresas_identidade.sql` (aplicada em produção em duas partes: `empresas_identidade` + `empresas_trigger_cadastro_e_cnpj_disponivel`):
+- **`handle_new_auth_user` blindado**: antes criava linha em `motoristas` pra TODO usuário novo do Auth usando `new.phone` — cadastro por e-mail (sem telefone) estourava `telefone_e164 NOT NULL` e o signup inteiro falhava. Agora: sem telefone → se `raw_user_meta_data.tipo = 'empresa'`, cria a linha em `empresas` a partir dos metadados do signUp; senão não faz nada. Com telefone → fluxo do motorista igual ao de antes. Criar a empresa no trigger (e não no app depois do signUp) é o que faz funcionar com "Confirm email" ligado OU desligado — com confirmação ligada não há sessão logo após o signUp, e o app não conseguiria inserir por RLS.
+- `cnpj_valido(text)` (dígitos verificadores, imutável, usado no CHECK) e `cnpj_disponivel(text)` (checagem prévia no cadastro, anon; só diz livre/ocupado).
+- Tabela `empresas` (`id`, `user_id` unique → auth.users, `cnpj` unique+check, `razao_social`, `nome_fantasia`, `telefone`, `email`, `status` pendente/aprovada/rejeitada/suspensa, `motivo_rejeicao`). RLS: empresa vê/edita só a própria (trigger `empresas_protege_status` impede que ela mude `status`/`motivo_rejeicao`); admin vê todas.
+- **`custom_access_token_hook`** emite `app_role: 'empresa'` + `empresa_id` + `empresa_status` (admin continua prevalecendo). **Lembrete do bug de 04/09**: hook roda como `supabase_auth_admin` — grant + policy `empresas_select_auth_admin` incluídos, senão TODO login quebra. Verificado por `has_table_privilege`. Raphael precisa confirmar que o login ainda funciona (sair/entrar).
+- `empresa_aprovada_id()` (helper pra policies). `fretes_publicados.company_id` ganhou FK → `empresas`; `fonte` aceita `'EMPRESA'`; policy `fretes_publicados_insert_empresa`: empresa aprovada só insere com `company_id` = o dela, `status='pendente_aprovacao'`, `fonte='EMPRESA'` — liga com o pré-requisito #1.
+- RPC `admin_moderar_empresa(id, 'approve'|'reject'|'suspend', motivo)` — mesmo molde da `admin_moderar_frete`; usa `approve_company`/`reject_company` (suspensão grava `reject_company` com motivo). Transições: approve de pendente/suspensa/rejeitada; reject só de pendente; suspend só de aprovada.
+
+**Frontend**:
+- `lib/empresa.ts`: `cnpjValido`, `formatarCnpj`, `cnpjDisponivel`, `cadastrarEmpresa` (signUp com metadados), `entrarEmpresa`, `sairEmpresa`, `carregarMinhaEmpresa`.
+- `pages/empresa/EmpresaCadastro.tsx` (`/empresa/cadastro`), `EmpresaEntrar.tsx` (`/empresa/entrar`), `EmpresaHome.tsx` (`/empresa` — só status do cadastro nesta fase; formulário de publicar frete é a próxima fase).
+- `Garagem.tsx` redireciona `app_role='empresa'` pra `/empresa` (ex.: redirect padrão depois de confirmar e-mail cai em `/`).
+- Admin: `data/admin.ts` (`carregarEmpresas`, `moderarEmpresa`), `admin/pages/Empresas.tsx` (fila com Aprovar/Rejeitar/Suspender, filtro padrão `pendente`), aba "Empresas" no `AdminLayout`, rotas em `main.tsx`. `claims.ts` ganhou `empresa_id`/`empresa_status`.
+
+**Pendente (Raphael, sandbox continua travado)**: `tsc --noEmit --strict`, commit/push. Teste de ponta a ponta: (1) sair/entrar no admin — confirma hook; (2) `/empresa/cadastro` com um CNPJ válido (ex.: 11.222.333/0001-81) → ver se cai em "Cadastro em análise" ou pede confirmação de e-mail; (3) admin → Empresas → Aprovar → `/empresa` mostra "Empresa aprovada"; (4) conferir `audit_log` com `approve_company`.
+
+**Próxima fase**: portal da empresa — formulário de publicar frete (reusa `lib/validarFrete.ts`, insere com `fonte='EMPRESA'`/`status='pendente_aprovacao'`/`company_id`), lista dos fretes da própria empresa com status. Depois: rate-limit de postagem e sinalizador de risco (preço vs. piso ANTT).

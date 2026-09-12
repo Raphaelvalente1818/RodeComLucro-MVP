@@ -15,6 +15,9 @@ export interface ClaimsCustom {
   driver_id?: string;
   telefone_verificado?: boolean;
   quarentena?: boolean;
+  /** Só quando app_role === 'empresa' (ver custom_access_token_hook). */
+  empresa_id?: string;
+  empresa_status?: string;
 }
 
 function base64UrlDecode(segment: string): string {
