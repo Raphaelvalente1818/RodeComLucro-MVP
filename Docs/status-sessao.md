@@ -1241,4 +1241,10 @@ Ajustes extras do mesmo dia (a partir do teste real de importação do Raphael):
 
 **Pendente (Raphael)**: `tsc`, commit/push. Teste: entrar como a empresa "Teste" (aprovada) → Publicar frete → ver "em análise" na lista → admin aba Fretes publicados, filtro `pendente_aprovacao` → Aprovar → voltar em `/empresa` e ver "publicado" → conferir que o frete aparece em Buscar frete no app do motorista (com coordenada, via trigger).
 
+## CHECKPOINT — 12/09 (fim de sessão)
+
+**Estado ao pausar**: portal da empresa construído e documentado acima; migrations aplicadas em produção; **ainda não validado nem commitado** — Raphael precisa rodar `tsc` + commit/push (comandos na seção anterior) e fazer o teste de ponta a ponta descrito acima.
+
+**LEMBRETE pedido pelo Raphael pra próxima sessão**: avaliar se é o momento de **trabalhar as telas** (UI/UX) — as telas do portal da empresa (`/empresa`, `/empresa/cadastro`, `/empresa/entrar`, `/empresa/publicar`) foram feitas reaproveitando classes do app do motorista e do painel admin (`tela-entrada`, `admin-card`, `chip-*`), sem desenho próprio. Levantar a pergunta no início da próxima conversa: "é hora de cuidar das telas, ou seguimos em funcionalidade?" Se for hora, começar por um mockup (como foi feito no painel admin em 02/09) antes de codar.
+
 **Depois disso, o módulo de empresas MVP está completo.** Próximos incrementos (não bloqueantes): rate-limit de postagem por empresa; sinalizador de risco na fila do admin (preço abaixo do piso ANTT via `calcularPisoANTT`); editar/encerrar frete pela empresa; e-mail de aviso quando aprovado/rejeitado.
