@@ -40,10 +40,18 @@ interface EstadoRota {
   valorACombinar?: boolean;
 }
 
-const CORES: Record<FreteResultado['veredicto'], string> = {
-  BOM: '#059669',
-  'ACEITÁVEL': '#d97706',
-  RUIM: '#dc2626',
+/** Sufixo da classe CSS do bloco-herói (.veredicto-heroi-*) por veredito. */
+const CLASSE_VEREDICTO: Record<FreteResultado['veredicto'], string> = {
+  BOM: 'bom',
+  'ACEITÁVEL': 'aceitavel',
+  RUIM: 'ruim',
+};
+
+/** Palavra que abre o bloco-herói — fala com o motorista, não repete o rótulo técnico. */
+const PALAVRA_VEREDICTO: Record<FreteResultado['veredicto'], string> = {
+  BOM: 'Bom frete',
+  'ACEITÁVEL': 'Dá pra aceitar',
+  RUIM: 'Não compensa',
 };
 
 const RUBRICAS: Array<[keyof FreteResultado['custoDetalhado'], string]> = [
@@ -201,7 +209,19 @@ export default function Resultado() {
     }
   }
 
-  const cor = CORES[resultado.veredicto];
+  const classeVeredicto = CLASSE_VEREDICTO[resultado.veredicto];
+
+  // Rubricas ordenadas do maior custo pro menor, com a largura da barra
+  // proporcional à maior delas (não ao total) — assim a maior sempre
+  // ocupa a linha inteira e a comparação entre elas fica direta.
+  const rubricasOrdenadas = RUBRICAS.map(([chave, rotulo]) => ({
+    chave,
+    rotulo,
+    valor: resultado.custoDetalhado[chave],
+  }))
+    .filter((r) => r.valor > 0)
+    .sort((a, b) => b.valor - a.valor);
+  const maiorRubrica = rubricasOrdenadas[0]?.valor ?? 0;
 
   // Mensagem pronta pro WhatsApp da empresa: saudação (com o nome do
   // contato, se tiver) + quem é o motorista + o frete específico (rota +
@@ -255,11 +275,14 @@ export default function Resultado() {
         {resultado.entrada.origem} → {resultado.entrada.destino}
       </p>
 
-      <div className="chip-veredicto" style={{ backgroundColor: cor }}>
-        {resultado.veredicto}
+      {/* Veredito e dinheiro no mesmo bloco: é a resposta que o motorista
+          abriu o app pra ver. O resto da tela é detalhamento. */}
+      <div className={`veredicto-heroi veredicto-heroi-${classeVeredicto}`}>
+        <p className="veredicto-palavra">{PALAVRA_VEREDICTO[resultado.veredicto]}</p>
+        <p className="veredicto-rotulo">{resultado.lucro >= 0 ? 'Lucro provável' : 'Prejuízo provável'}</p>
+        <p className="veredicto-dinheiro">{fmtBRL(Math.abs(resultado.lucro))}</p>
+        <p className="conselho">{explicarVeredicto(resultado)}</p>
       </div>
-
-      <p className="conselho">{explicarVeredicto(resultado)}</p>
 
       {valorACombinar && (
         <p className="aviso">
@@ -271,10 +294,6 @@ export default function Resultado() {
         <div className="kpi">
           <span>Valor do frete{valorACombinar ? ' (a combinar)' : ''}</span>
           <b>{fmtBRL(resultado.entrada.valorFrete)}</b>
-        </div>
-        <div className="kpi">
-          <span>{resultado.lucro >= 0 ? 'Lucro provável' : 'Prejuízo provável'}</span>
-          <b>{fmtBRL(Math.abs(resultado.lucro))}</b>
         </div>
         <div className="kpi">
           <span>Custo estimado</span>
@@ -293,9 +312,10 @@ export default function Resultado() {
           </span>
           <b>{fmtBRL(resultado.pisoANTT)}</b>
         </div>
-        <div className="kpi">
+        <div className="kpi kpi-destaque">
           <span>Negocie a partir de</span>
           <b>{fmtBRL(resultado.custoTotal * (1 + resultado.entrada.margemDesejada / 100))}</b>
+          <small>custo + sua margem de {resultado.entrada.margemDesejada}%</small>
         </div>
       </div>
 
@@ -305,10 +325,18 @@ export default function Resultado() {
 
       <h2>Para onde vai o dinheiro</h2>
       <ul className="detalhamento">
-        {RUBRICAS.map(([chave, rotulo]) => (
-          <li key={chave}>
-            <span>{rotulo}</span>
-            <span>{fmtBRL(resultado.custoDetalhado[chave])}</span>
+        {rubricasOrdenadas.map((r, i) => (
+          <li key={r.chave}>
+            <div className="detalhamento-linha">
+              <span>{r.rotulo}</span>
+              <b>{fmtBRL(r.valor)}</b>
+            </div>
+            <div className="detalhamento-barra">
+              <i
+                className={i === 0 ? undefined : 'secundaria'}
+                style={{ width: `${maiorRubrica > 0 ? (r.valor / maiorRubrica) * 100 : 0}%` }}
+              />
+            </div>
           </li>
         ))}
       </ul>

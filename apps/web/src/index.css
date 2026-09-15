@@ -1,5 +1,77 @@
+/* =====================================================================
+   IDENTIDADE VISUAL — "asfalto e faixa amarela" (15/09/2026)
+   Ver Docs/mockup-app-motorista.html (proposta aprovada pelo Raphael).
+
+   Regra que organiza a paleta: o AMARELO é da marca e das ações; verde,
+   laranja e vermelho são EXCLUSIVOS do veredito e dos estados. Antes o
+   verde acumulava os dois papéis, e por isso o "BOM" não se destacava de
+   um botão qualquer.
+
+   Antes desta migração os hexadecimais estavam escritos à mão ao longo
+   de todo o arquivo (o mesmo cinza aparecia 20+ vezes), o que fazia de
+   qualquer ajuste de tom uma caça ao hexadecimal. Daqui pra frente:
+   use as variáveis, não hex solto.
+   ===================================================================== */
+
 :root {
-  font-family: system-ui, sans-serif;
+  /* Tipografia — Barlow (Jeremy Tribby), grotesca desenhada a partir da
+     sinalização pública da Califórnia: placas de rodovia e de carro.
+     A Condensed entra só em etiqueta de caixa alta. Ver index.html. */
+  --fonte: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --fonte-cond: "Barlow Condensed", "Barlow", system-ui, sans-serif;
+
+  /* Asfalto — base quente, menos azulada que o cinza anterior */
+  --bg: #0b0e0d;
+  --bg-fundo: #060807;   /* poço: bloco de código, áreas afundadas */
+  --surf: #141a18;       /* card, input */
+  --surf-2: #1c2421;     /* superfície elevada, chip inativo */
+  --surf-3: #222c29;     /* hover de linha */
+  --linha: #2a3330;
+  --linha-forte: #3d4a46;
+
+  /* Texto */
+  --txt: #f2f5f4;
+  --txt-2: #c3ceca;      /* label de campo */
+  --txt-dim: #93a29e;    /* apoio, legenda */
+  /* disclaimer, marca d'água. Calibrado pra passar AA (4.5:1) mesmo em
+     11px sobre card: no tom anterior (#6e7c78) dava 4.05 e reprovava. */
+  --txt-fraco: #7e8c88;
+
+  /* Marca — amarelo de faixa de rodovia. Só marca e ação. */
+  --marca: #f2b01e;
+  --marca-escura: #c9901a;
+  --marca-tx: #10130f;   /* texto sobre amarelo (contraste ~11:1) */
+  --marca-bg: #33260a;   /* fundo tênue pra chip/realce de marca */
+
+  /* Veredito e estados — não usar pra outra coisa */
+  --bom: #2fd46e;
+  --bom-bg: #0e2e1c;
+  --bom-borda: #1d7a45;
+
+  --atencao: #ff9f1c;
+  --atencao-bg: #33220a;
+  --atencao-borda: #8a5a14;
+
+  --ruim: #ff5a5a;
+  --ruim-bg: #331414;
+  --ruim-borda: #9e2f2f;
+
+  /* Forma */
+  --r-card: 14px;
+  --r-campo: 12px;
+
+  font-family: var(--fonte);
+}
+
+/* Dinheiro e qualquer número em coluna: dígitos de largura fixa, senão
+   os valores dançam de uma linha pra outra. */
+.num,
+.kpi b,
+.valor-frete,
+.negociar-valor,
+.linha-analise-detalhe,
+.admin-tabela td {
+  font-variant-numeric: tabular-nums;
 }
 /* build: força novo deploy real na Vercel (webhook anterior nao disparou) */
 
@@ -11,8 +83,8 @@
 
 body {
   margin: 0;
-  background: #0b0f14;
-  color: #f3f4f6;
+  background: var(--bg);
+  color: var(--txt);
 }
 
 .tela {
@@ -24,29 +96,55 @@ body {
   gap: 16px;
 }
 
+/* Escala tipográfica. A Barlow é mais estreita que a fonte do sistema,
+   então os títulos sobem um degrau sem ocupar mais largura. */
+h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+h2 {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
 label {
   display: flex;
   flex-direction: column;
   gap: 6px;
   font-size: 14px;
-  color: #cbd5e1;
+  color: var(--txt-2);
 }
 
 input,
 select,
 textarea,
 button {
+  /* sem isto os campos caem no Arial do navegador e destoam da Barlow */
+  font-family: inherit;
   font-size: 16px;
   padding: 12px;
-  border-radius: 8px;
-  border: 1px solid #374151;
+  border-radius: var(--r-campo);
+  border: 1px solid var(--linha);
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--marca);
+  outline-offset: 2px;
 }
 
 input,
 select,
 textarea {
-  background: #111827;
-  color: #f3f4f6;
+  background: var(--surf);
+  color: var(--txt);
 }
 
 textarea {
@@ -72,15 +170,20 @@ select:disabled {
 }
 
 select option {
-  background: #111827;
-  color: #f3f4f6;
+  background: var(--surf);
+  color: var(--txt);
 }
 
+/* Botão padrão = ação primária, na cor da marca (amarelo de faixa).
+   Antes era verde, a mesma cor do veredito BOM — o que fazia o "bom
+   frete" não se destacar de um botão qualquer. */
 button {
-  background: #16a34a;
-  color: white;
+  background: var(--marca);
+  color: var(--marca-tx);
   border: none;
   cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
 }
 
 button:disabled {
@@ -90,7 +193,7 @@ button:disabled {
 
 .link-secundario {
   background: none;
-  color: #9ca3af;
+  color: var(--txt-dim);
   text-decoration: underline;
 }
 
@@ -110,8 +213,8 @@ button:disabled {
 }
 
 .modal-card {
-  background: #0b0f14;
-  border: 1px solid #374151;
+  background: var(--bg);
+  border: 1px solid var(--linha);
   border-radius: 12px;
   padding: 20px;
   width: 100%;
@@ -127,8 +230,8 @@ button:disabled {
 }
 
 .contato-frete {
-  background: #111827;
-  border: 1px solid #374151;
+  background: var(--surf);
+  border: 1px solid var(--linha);
   border-radius: 8px;
   padding: 12px 14px;
   display: flex;
@@ -138,12 +241,12 @@ button:disabled {
 
 .contato-frete-linha {
   font-size: 13px;
-  color: #cbd5e1;
+  color: var(--txt-2);
   margin: 0;
 }
 
 .contato-frete-linha a {
-  color: #4ade80;
+  color: var(--bom);
 }
 
 .campo-telefone {
@@ -164,25 +267,25 @@ button:disabled {
 }
 
 .aviso-erro {
-  color: #f87171;
+  color: var(--ruim);
 }
 
 .aviso {
-  color: #fbbf24;
+  color: var(--atencao);
   font-size: 13px;
   margin: -8px 0 0;
 }
 
 .sucesso {
-  color: #4ade80;
+  color: var(--bom);
 }
 
 /* Ação destrutiva (ex.: apagar dados do caminhão no Perfil) — vermelho,
    claramente diferente do botão de salvar/confirmar. */
 .botao-perigo {
-  background: #3a1414;
-  color: #f87171;
-  border: 1px solid #dc2626;
+  background: var(--ruim-bg);
+  color: var(--ruim);
+  border: 1px solid var(--ruim-borda);
 }
 
 /* Bloco de vínculo do WhatsApp (Meu Perfil) — botão "Vincular" some no
@@ -212,22 +315,96 @@ button:disabled {
   flex-direction: column;
   gap: 12px;
   padding: 16px;
-  border: 1px solid #374151;
+  border: 1px solid var(--linha);
   border-radius: 8px;
 }
 
-.chip-veredicto {
-  align-self: flex-start;
-  padding: 8px 18px;
-  border-radius: 999px;
+/* =====================================================================
+   Bloco-herói do Resultado: veredito + dinheiro juntos.
+   Antes o veredito era um chip pequeno e o lucro era uma das seis caixas
+   iguais — a resposta que o motorista abriu o app pra ver competia com o
+   piso da ANTT. Agora ele abre e já sabe.
+   ===================================================================== */
+.veredicto-heroi {
+  border-radius: 18px;
+  padding: 20px 18px;
+  text-align: center;
+  border: 1px solid transparent;
+}
+
+.veredicto-heroi-bom {
+  background: var(--bom-bg);
+  border-color: var(--bom-borda);
+}
+
+.veredicto-heroi-aceitavel {
+  background: var(--atencao-bg);
+  border-color: var(--atencao-borda);
+}
+
+.veredicto-heroi-ruim {
+  background: var(--ruim-bg);
+  border-color: var(--ruim-borda);
+}
+
+.veredicto-palavra {
+  font-family: var(--fonte-cond);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin: 0 0 12px;
+}
+
+.veredicto-heroi-bom .veredicto-palavra {
+  color: var(--bom);
+}
+
+.veredicto-heroi-aceitavel .veredicto-palavra {
+  color: var(--atencao);
+}
+
+.veredicto-heroi-ruim .veredicto-palavra {
+  color: var(--ruim);
+}
+
+.veredicto-rotulo {
+  margin: 0 0 2px;
+  font-size: 13px;
+  color: var(--txt-dim);
+}
+
+.veredicto-dinheiro {
+  margin: 0;
+  font-size: 44px;
   font-weight: 800;
-  color: white;
-  letter-spacing: 0.03em;
+  letter-spacing: -0.025em;
+  line-height: 1.02;
+  font-variant-numeric: tabular-nums;
+}
+
+.veredicto-heroi-bom .veredicto-dinheiro {
+  color: var(--bom);
+}
+
+.veredicto-heroi-aceitavel .veredicto-dinheiro {
+  color: var(--txt);
+}
+
+.veredicto-heroi-ruim .veredicto-dinheiro {
+  color: var(--ruim);
 }
 
 .conselho {
-  color: #cbd5e1;
+  color: var(--txt-2);
   font-size: 14px;
+  line-height: 1.5;
+}
+
+.veredicto-heroi .conselho {
+  margin: 12px 0 0;
+  color: var(--txt);
+  opacity: 0.85;
 }
 
 .linha-campos {
@@ -254,8 +431,8 @@ button:disabled {
 }
 
 .kpi {
-  background: #111827;
-  border: 1px solid #374151;
+  background: var(--surf);
+  border: 1px solid var(--linha);
   border-radius: 8px;
   padding: 10px 12px;
   display: flex;
@@ -264,36 +441,91 @@ button:disabled {
 }
 
 .kpi span {
-  font-size: 11px;
-  color: #9ca3af;
-  text-transform: uppercase;
+  font-size: 12px;
+  color: var(--txt-dim);
+  letter-spacing: 0.01em;
 }
 
 .kpi b {
-  font-size: 16px;
+  font-size: 17px;
+  letter-spacing: -0.01em;
 }
 
+.kpi small {
+  font-size: 11px;
+  color: var(--txt-dim);
+}
+
+/* "Negocie a partir de" é o número acionável da tela — é com ele que o
+   motorista responde no WhatsApp. Ocupa a linha inteira, na marca. */
+.kpi-destaque {
+  grid-column: 1 / -1;
+  border-color: var(--marca);
+  background: linear-gradient(180deg, var(--marca-bg), transparent);
+}
+
+.kpi-destaque b {
+  color: var(--marca);
+  font-size: 19px;
+}
+
+/* Para onde vai o dinheiro: barra proporcional ao custo total, ordenada
+   do maior pro menor. O PRD pedia um donut e virou lista de texto; a
+   barra responde na hora "o que está comendo meu dinheiro" e dispensa
+   legenda colorida no celular. */
 .detalhamento {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 11px;
 }
 
 .detalhamento li {
+  display: block;
+}
+
+.detalhamento-linha {
   display: flex;
   justify-content: space-between;
-  font-size: 14px;
-  border-bottom: 1px solid #1f2937;
-  padding-bottom: 4px;
+  font-size: 13.5px;
+  margin-bottom: 5px;
+}
+
+.detalhamento-linha span {
+  color: var(--txt-dim);
+}
+
+.detalhamento-linha b {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.detalhamento-barra {
+  height: 7px;
+  border-radius: 99px;
+  background: var(--surf-2);
+  overflow: hidden;
+}
+
+.detalhamento-barra > i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--marca);
+  opacity: 0.9;
+}
+
+/* rubricas menores em tom frio, pra barra não virar um muro amarelo */
+.detalhamento-barra > i.secundaria {
+  background: #4e6b63;
 }
 
 .disclaimer {
   font-size: 11px;
-  color: #6b7280;
-  border-top: 1px solid #1f2937;
+  color: var(--txt-fraco);
+  border-top: 1px solid var(--surf-2);
   padding-top: 12px;
 }
 
@@ -301,7 +533,7 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  border: 1px solid #374151;
+  border: 1px solid var(--linha);
   border-radius: 12px;
   padding: 12px;
 }
@@ -322,7 +554,7 @@ button:disabled {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #9ca3af;
+  color: var(--txt-dim);
   margin: 0;
 }
 
@@ -334,18 +566,21 @@ button:disabled {
 
 .chip {
   width: auto;
-  background: #111827;
-  color: #cbd5e1;
-  border: 1px solid #374151;
+  background: var(--surf);
+  color: var(--txt-2);
+  border: 1px solid var(--linha);
   border-radius: 999px;
   font-size: 13px;
   padding: 7px 14px;
 }
 
+/* Chip marcado é SELEÇÃO (tipo de veículo, "a negociar"), não veredito —
+   por isso veste a marca, não o verde. */
 .chip-ativo {
-  background: #14301f;
-  color: #4ade80;
-  border-color: #16a34a;
+  background: var(--marca);
+  color: var(--marca-tx);
+  font-weight: 600;
+  border-color: var(--marca);
 }
 
 .frete-valor-topo {
@@ -353,12 +588,12 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   font-size: 14px;
-  color: #cbd5e1;
+  color: var(--txt-2);
 }
 
 .negociar-painel {
-  background: #111827;
-  border: 1px solid #374151;
+  background: var(--surf);
+  border: 1px solid var(--linha);
   border-radius: 8px;
   padding: 14px;
   display: flex;
@@ -368,7 +603,7 @@ button:disabled {
 
 .negociar-label {
   font-size: 13px;
-  color: #cbd5e1;
+  color: var(--txt-2);
   margin: 0;
 }
 
@@ -394,59 +629,93 @@ button:disabled {
   gap: 6px;
 }
 
+/* Etiqueta acima do título. Condensed em caixa alta, na cor da marca:
+   é o lugar onde a identidade aparece em toda tela, sem custar leitura. */
 .garagem-eyebrow {
-  font-size: 12px;
+  font-family: var(--fonte-cond);
+  font-size: 15px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #9ca3af;
-  margin: 0 0 4px;
+  letter-spacing: 0.16em;
+  color: var(--marca);
+  margin: 0 0 1px;
 }
 
-.alerta-vencimento-bolinha {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  padding: 0;
+/* Alerta de documento (CNH, exame toxicológico, troca de óleo). Âmbar
+   quando está perto de vencer, vermelho quando já venceu. Substituiu a
+   bolinha de 10px que ficava ao lado do nome. */
+.alerta-doc {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: var(--atencao-bg);
+  border: 1px solid var(--atencao-borda);
+  border-radius: var(--r-card);
+  padding: 13px 15px;
+}
+
+.alerta-doc-vencido {
+  background: var(--ruim-bg);
+  border-color: var(--ruim-borda);
+}
+
+.alerta-doc-icone {
+  flex: none;
+  width: 22px;
+  height: 22px;
   border-radius: 999px;
-  border: none;
-  vertical-align: middle;
-  margin-left: 8px;
-  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 14px;
+  background: var(--atencao);
+  color: var(--marca-tx);
 }
 
-.alerta-vencimento-bolinha.proximo {
-  background: #fbbf24;
+.alerta-doc-vencido .alerta-doc-icone {
+  background: var(--ruim);
 }
 
-.alerta-vencimento-bolinha.vencido {
-  background: #f87171;
-}
-
-.alerta-vencimento-detalhe {
-  background: #111827;
-  border: 1px solid #374151;
-  border-radius: 8px;
-  padding: 12px 14px;
+.alerta-doc-corpo {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
+  min-width: 0;
 }
 
-.alerta-vencimento-detalhe p {
+.alerta-doc-item {
   margin: 0;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--txt-2);
+}
+
+.alerta-doc-item b {
+  color: var(--txt);
+}
+
+.alerta-doc-acao {
+  align-self: flex-start;
+  margin-top: 4px;
+  background: transparent;
+  border: 1px solid var(--linha-forte);
+  color: var(--txt);
   font-size: 13px;
+  font-weight: 600;
+  padding: 7px 13px;
+  border-radius: 999px;
 }
 
 .garagem-status {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #111827;
-  border: 1px solid #374151;
+  background: var(--surf);
+  border: 1px solid var(--linha);
   border-radius: 8px;
   padding: 12px 14px;
   font-size: 13px;
-  color: #cbd5e1;
+  color: var(--txt-2);
 }
 
 .cta-primaria {
@@ -475,8 +744,21 @@ button:disabled {
   gap: 12px;
 }
 
+/* "Buscar frete" desce um nível: só "Analisar frete" fica no amarelo.
+   Antes os dois eram blocos de cor cheia (verde e azul) competindo pela
+   mesma atenção, e a tela não dizia por onde começar. */
 .cta-frete {
-  background: #1d4ed8;
+  background: var(--surf);
+  color: var(--txt);
+  border: 1px solid var(--linha);
+}
+
+.cta-frete .cta-titulo {
+  color: var(--txt);
+}
+
+.cta-frete .cta-subtitulo {
+  color: var(--txt-dim);
 }
 
 .filtro-frete {
@@ -497,9 +779,9 @@ button:disabled {
   align-items: flex-start;
   gap: 6px;
   text-align: left;
-  background: #111827;
-  color: #f3f4f6;
-  border: 1px solid #374151;
+  background: var(--surf);
+  color: var(--txt);
+  border: 1px solid var(--linha);
   padding: 14px;
 }
 
@@ -507,7 +789,7 @@ button:disabled {
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #9ca3af;
+  color: var(--txt-dim);
 }
 
 .card-titulo {
@@ -528,8 +810,8 @@ button:disabled {
 }
 
 .meta-lucro {
-  background: #111827;
-  border: 1px solid #374151;
+  background: var(--surf);
+  border: 1px solid var(--linha);
   border-radius: 8px;
   padding: 12px 14px;
   display: flex;
@@ -542,19 +824,19 @@ button:disabled {
   align-items: baseline;
   justify-content: space-between;
   font-size: 13px;
-  color: #cbd5e1;
+  color: var(--txt-2);
 }
 
 .barra-progresso {
   height: 6px;
   border-radius: 4px;
-  background: #374151;
+  background: var(--linha);
   overflow: hidden;
 }
 
 .barra-progresso-preenchida {
   height: 100%;
-  background: #3b82f6;
+  background: linear-gradient(90deg, var(--marca-escura), var(--marca));
 }
 
 .ultimas-analises-topo {
@@ -585,14 +867,14 @@ button:disabled {
 
 .filtro-realizados-off {
   background: none;
-  color: #9ca3af;
-  border: 1px dashed #6b7280;
+  color: var(--txt-dim);
+  border: 1px dashed var(--txt-fraco);
 }
 
 .filtro-realizados-on {
-  background: #14301f;
-  color: #4ade80;
-  border: 1px solid #16a34a;
+  background: var(--marca-bg);
+  color: var(--marca);
+  border: 1px solid var(--marca);
 }
 
 .lista-analises {
@@ -604,7 +886,7 @@ button:disabled {
 }
 
 .linha-analise-item {
-  border-top: 1px solid #1f2937;
+  border-top: 1px solid var(--surf-2);
   padding: 10px 0;
   display: flex;
   flex-direction: column;
@@ -627,12 +909,13 @@ button:disabled {
 .btn-frete-analisar {
   align-self: flex-start;
   width: auto;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
   border-radius: 999px;
-  background: #1d4ed8;
-  color: white;
+  background: var(--marca-bg);
+  color: var(--marca);
+  border: 1px solid var(--marca);
 }
 
 .linha-analise {
@@ -652,7 +935,7 @@ button:disabled {
 }
 
 .linha-analise:hover {
-  background: #111827;
+  background: var(--surf);
 }
 
 .realizado-toggle-on,
@@ -667,14 +950,16 @@ button:disabled {
 
 .realizado-toggle-off {
   background: none;
-  color: #9ca3af;
-  border: 1px dashed #6b7280;
+  color: var(--txt-dim);
+  border: 1px dashed var(--txt-fraco);
 }
 
+/* "✓ Realizado" é estado do frete (executado de verdade, entra no lucro
+   do mês) — esse fica no verde, não na marca. */
 .realizado-toggle-on {
-  background: #14301f;
-  color: #4ade80;
-  border: 1px solid #16a34a;
+  background: var(--bom-bg);
+  color: var(--bom);
+  border: 1px solid var(--bom-borda);
 }
 
 .linha-analise-rota {
@@ -685,38 +970,43 @@ button:disabled {
 
 .linha-analise-detalhe {
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--txt-dim);
   margin: 2px 0 0;
 }
 
+/* Selo de veredito nas listas. Condensed em caixa alta: cabe mais texto
+   na mesma largura e fica com cara de etiqueta, não de botão. */
 .badge-veredicto {
-  font-size: 11px;
+  font-family: var(--fonte-cond);
+  font-size: 14px;
   font-weight: 700;
-  padding: 3px 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  padding: 3px 11px;
   border-radius: 999px;
   white-space: nowrap;
 }
 
 .badge-bom {
-  background: #14301f;
-  color: #4ade80;
+  background: var(--bom-bg);
+  color: var(--bom);
 }
 
 .badge-aceitavel {
-  background: #3a2a10;
-  color: #fbbf24;
+  background: var(--atencao-bg);
+  color: var(--atencao);
 }
 
 .badge-ruim {
-  background: #3a1414;
-  color: #f87171;
+  background: var(--ruim-bg);
+  color: var(--ruim);
 }
 
 .sugestoes-box {
   list-style: none;
   margin: -10px 0 0;
   padding: 0;
-  border: 1px solid #16a34a;
+  border: 1px solid var(--marca);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -725,18 +1015,18 @@ button:disabled {
   display: block;
   width: 100%;
   text-align: left;
-  background: #111827;
-  color: #f3f4f6;
+  background: var(--surf);
+  color: var(--txt);
   border: none;
   border-radius: 0;
-  border-bottom: 1px solid #374151;
+  border-bottom: 1px solid var(--linha);
   padding: 10px 12px;
   font-size: 14px;
   cursor: pointer;
 }
 
 .sugestao-item:hover {
-  background: #1f2937;
+  background: var(--surf-2);
 }
 
 .sugestoes-box li:last-child .sugestao-item {
@@ -752,9 +1042,9 @@ button:disabled {
 
 .backlog-botao {
   width: auto;
-  background: #1f2937;
-  color: #cbd5e1;
-  border: 1px dashed #6b7280;
+  background: var(--surf-2);
+  color: var(--txt-2);
+  border: 1px dashed var(--txt-fraco);
   font-size: 12px;
   padding: 8px 12px;
 }
@@ -772,8 +1062,8 @@ button:disabled {
 }
 
 .backlog-modal {
-  background: #0b0f14;
-  border: 1px solid #374151;
+  background: var(--bg);
+  border: 1px solid var(--linha);
   border-radius: 12px;
   padding: 20px;
   width: 100%;
@@ -797,8 +1087,8 @@ button:disabled {
 .backlog-fechar {
   width: auto;
   background: none;
-  color: #9ca3af;
-  border: 1px solid #374151;
+  color: var(--txt-dim);
+  border: 1px solid var(--linha);
   font-size: 12px;
   padding: 6px 10px;
 }
@@ -813,9 +1103,9 @@ button:disabled {
   font-size: 16px;
   padding: 12px;
   border-radius: 8px;
-  border: 1px solid #374151;
-  background: #111827;
-  color: #f3f4f6;
+  border: 1px solid var(--linha);
+  background: var(--surf);
+  color: var(--txt);
   font-family: inherit;
   resize: vertical;
 }
@@ -824,13 +1114,13 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  border-top: 1px solid #1f2937;
+  border-top: 1px solid var(--surf-2);
   padding-top: 12px;
 }
 
 .backlog-item {
-  background: #111827;
-  border: 1px solid #374151;
+  background: var(--surf);
+  border: 1px solid var(--linha);
   border-radius: 8px;
   padding: 10px 12px;
   display: flex;
@@ -860,13 +1150,13 @@ button:disabled {
 }
 
 .backlog-toggle-aberto {
-  background: #3a2a10;
-  color: #fbbf24;
+  background: var(--atencao-bg);
+  color: var(--atencao);
 }
 
 .backlog-toggle-feito {
-  background: #14301f;
-  color: #4ade80;
+  background: var(--bom-bg);
+  color: var(--bom);
 }
 
 .backlog-item-texto {
@@ -876,13 +1166,13 @@ button:disabled {
 
 .backlog-item-obs {
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--txt-dim);
   margin: 0;
 }
 
 .backlog-item-rodape {
   font-size: 11px;
-  color: #6b7280;
+  color: var(--txt-fraco);
   margin: 2px 0 0;
 }
 
@@ -899,9 +1189,9 @@ button:disabled {
 
 .testes-botao {
   width: auto;
-  background: #1f2937;
-  color: #cbd5e1;
-  border: 1px dashed #6b7280;
+  background: var(--surf-2);
+  color: var(--txt-2);
+  border: 1px dashed var(--txt-fraco);
   font-size: 12px;
   padding: 8px 12px;
 }
@@ -909,7 +1199,7 @@ button:disabled {
 .testes-secao-titulo {
   font-size: 12px;
   font-weight: 700;
-  color: #6b7280;
+  color: var(--txt-fraco);
   text-transform: uppercase;
   letter-spacing: 0.02em;
   margin: 4px 0 -2px;
@@ -928,12 +1218,13 @@ button:disabled {
   font-weight: 700;
   padding: 6px 14px;
   border-radius: 999px;
-  background: #1d4ed8;
-  color: white;
+  background: var(--marca-bg);
+  color: var(--marca);
+  border: 1px solid var(--marca);
 }
 
 .testes-resultado-form {
-  border-top: 1px dashed #374151;
+  border-top: 1px dashed var(--linha);
   padding-top: 10px;
   margin-top: 4px;
 }
@@ -954,9 +1245,9 @@ button:disabled {
   font-weight: 700;
   padding: 4px 10px;
   border-radius: 999px;
-  background: #3a1414;
-  color: #f87171;
-  border: 1px solid #dc2626;
+  background: var(--ruim-bg);
+  color: var(--ruim);
+  border: 1px solid var(--ruim-borda);
 }
 
 /* ===================================================================
@@ -978,7 +1269,7 @@ button:disabled {
 
 .admin-atualizado-em {
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--txt-dim);
   margin: 2px 0 0;
 }
 
@@ -987,17 +1278,17 @@ button:disabled {
   font-weight: 700;
   padding: 4px 10px;
   border-radius: 999px;
-  background: #1f2937;
-  color: #cbd5e1;
+  background: var(--surf-2);
+  color: var(--txt-2);
   text-transform: capitalize;
   white-space: nowrap;
 }
 
 .admin-card {
-  border: 1px solid #374151;
+  border: 1px solid var(--linha);
   border-radius: 12px;
   padding: 16px 18px;
-  background: #111827;
+  background: var(--surf);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -1012,12 +1303,12 @@ button:disabled {
 .admin-card-titulo {
   font-size: 13px;
   font-weight: 700;
-  color: #f3f4f6;
+  color: var(--txt);
 }
 
 .admin-card-nota {
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--txt-dim);
   margin: 0;
 }
 
@@ -1030,17 +1321,17 @@ button:disabled {
 .admin-gate-numero-atual {
   font-size: 32px;
   font-weight: 800;
-  color: #f3f4f6;
+  color: var(--txt);
   line-height: 1;
 }
 
 .admin-gate-numero-meta {
   font-size: 14px;
-  color: #9ca3af;
+  color: var(--txt-dim);
 }
 
 .admin-barra-gate {
-  background: #f87171;
+  background: var(--ruim);
 }
 
 .admin-grid-kpi {
@@ -1056,13 +1347,13 @@ button:disabled {
 
 .admin-kpi-label {
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--txt-dim);
 }
 
 .admin-kpi-valor {
   font-size: 22px;
   font-weight: 700;
-  color: #f3f4f6;
+  color: var(--txt);
 }
 
 .admin-grid-2 {
@@ -1081,7 +1372,7 @@ button:disabled {
   display: flex;
   justify-content: space-between;
   font-size: 12px;
-  color: #cbd5e1;
+  color: var(--txt-2);
   margin-bottom: 3px;
 }
 
@@ -1101,16 +1392,16 @@ button:disabled {
 }
 
 .admin-veredito-bom {
-  background: #4ade80;
+  background: var(--bom);
 }
 
 .admin-veredito-aceitável,
 .admin-veredito-aceitavel {
-  background: #fbbf24;
+  background: var(--atencao);
 }
 
 .admin-veredito-ruim {
-  background: #f87171;
+  background: var(--ruim);
 }
 
 .admin-veredito-legenda {
@@ -1124,12 +1415,12 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #cbd5e1;
+  color: var(--txt-2);
 }
 
 .admin-veredito-legenda-item b {
   margin-left: auto;
-  color: #f3f4f6;
+  color: var(--txt);
 }
 
 .admin-veredito-bolinha {
@@ -1155,7 +1446,7 @@ button:disabled {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  border-bottom: 1px solid #374151;
+  border-bottom: 1px solid var(--linha);
   padding-bottom: 10px;
 }
 
@@ -1163,14 +1454,14 @@ button:disabled {
   font-size: 13px;
   padding: 6px 12px;
   border-radius: 999px;
-  color: #9ca3af;
+  color: var(--txt-dim);
   text-decoration: none;
   white-space: nowrap;
 }
 
 .admin-nav-item-ativo {
-  background: #1f2937;
-  color: #f3f4f6;
+  background: var(--surf-2);
+  color: var(--txt);
   font-weight: 600;
 }
 
@@ -1205,7 +1496,7 @@ button:disabled {
 
 .admin-tabela-wrap {
   overflow-x: auto;
-  border: 1px solid #374151;
+  border: 1px solid var(--linha);
   border-radius: 12px;
 }
 
@@ -1220,16 +1511,16 @@ button:disabled {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.02em;
-  color: #9ca3af;
+  color: var(--txt-dim);
   padding: 10px 12px;
-  border-bottom: 1px solid #374151;
+  border-bottom: 1px solid var(--linha);
   white-space: nowrap;
 }
 
 .admin-tabela td {
   padding: 10px 12px;
-  border-bottom: 1px solid #1f2937;
-  color: #e5e7eb;
+  border-bottom: 1px solid var(--surf-2);
+  color: var(--txt);
   vertical-align: top;
 }
 
@@ -1242,7 +1533,7 @@ button:disabled {
 }
 
 .admin-tabela tbody tr.admin-linha-clicavel:hover {
-  background: #1a2231;
+  background: var(--surf-3);
 }
 
 .admin-tag {
@@ -1250,19 +1541,19 @@ button:disabled {
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 999px;
-  background: #1f2937;
-  color: #cbd5e1;
+  background: var(--surf-2);
+  color: var(--txt-2);
   white-space: nowrap;
 }
 
 .admin-tag-bom {
-  background: #14301f;
-  color: #4ade80;
+  background: var(--bom-bg);
+  color: var(--bom);
 }
 
 .admin-tag-ruim {
-  background: #3a1414;
-  color: #f87171;
+  background: var(--ruim-bg);
+  color: var(--ruim);
 }
 
 /* Prévia da importação de fretes — linha e tag na mesma cor da legenda
@@ -1280,18 +1571,18 @@ button:disabled {
 }
 
 .admin-tag-nova {
-  background: #14301f;
-  color: #4ade80;
+  background: var(--bom-bg);
+  color: var(--bom);
 }
 
 .admin-tag-duplicada {
-  background: #3a2e0f;
-  color: #fbbf24;
+  background: var(--atencao-bg);
+  color: var(--atencao);
 }
 
 .admin-tag-erro {
-  background: #3a1414;
-  color: #f87171;
+  background: var(--ruim-bg);
+  color: var(--ruim);
 }
 
 .admin-lista-simples {
@@ -1301,11 +1592,11 @@ button:disabled {
   flex-direction: column;
   gap: 6px;
   font-size: 13px;
-  color: #f87171;
+  color: var(--ruim);
 }
 
 .admin-detalhe-linha {
-  background: #0d1420;
+  background: var(--surf);
 }
 
 .admin-detalhe-linha td {
@@ -1313,12 +1604,12 @@ button:disabled {
 }
 
 .admin-detalhe-pre {
-  background: #05070a;
-  border: 1px solid #1f2937;
+  background: var(--bg-fundo);
+  border: 1px solid var(--surf-2);
   border-radius: 8px;
   padding: 10px;
   font-size: 11px;
-  color: #cbd5e1;
+  color: var(--txt-2);
   white-space: pre-wrap;
   word-break: break-word;
   max-height: 260px;
@@ -1330,7 +1621,7 @@ button:disabled {
   justify-content: space-between;
   align-items: center;
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--txt-dim);
 }
 
 .admin-abas-secundarias {
@@ -1342,13 +1633,13 @@ button:disabled {
   font-size: 12px;
   padding: 6px 12px;
   border-radius: 8px;
-  border: 1px solid #374151;
+  border: 1px solid var(--linha);
   background: transparent;
-  color: #cbd5e1;
+  color: var(--txt-2);
 }
 
 .admin-aba-secundaria-ativa {
-  background: #1f2937;
-  color: #f3f4f6;
-  border-color: #4b5563;
+  background: var(--surf-2);
+  color: var(--txt);
+  border-color: var(--linha-forte);
 }

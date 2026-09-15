@@ -87,7 +87,6 @@ export default function Garagem() {
   const [backlogAberto, setBacklogAberto] = useState(false);
   // PROVISÓRIO — mesma marcação acima (ver components/TestesModal.tsx).
   const [testesAberto, setTestesAberto] = useState(false);
-  const [alertaVencimentoAberto, setAlertaVencimentoAberto] = useState(false);
   // Itens (análise salva, perfil editado, etc.) que ficaram na fila offline
   // esperando conexão pra sincronizar — ver lib/filaOffline.ts. Atualiza
   // sozinho quando a fila muda (item entra ou sai), sem precisar dar F5.
@@ -251,17 +250,7 @@ export default function Garagem() {
       <header className="garagem-header">
         <div>
           <p className="garagem-eyebrow">Garagem</p>
-          <h1>
-            Olá{primeiroNome ? `, ${primeiroNome}` : ''}
-            {alertasVencimento.length > 0 && (
-              <button
-                type="button"
-                className={`alerta-vencimento-bolinha ${alertasVencimento.some((a) => a.vencido) ? 'vencido' : 'proximo'}`}
-                aria-label="Documento vencendo — clique para ver detalhes"
-                onClick={() => setAlertaVencimentoAberto((v) => !v)}
-              />
-            )}
-          </h1>
+          <h1>Olá{primeiroNome ? `, ${primeiroNome}` : ''}</h1>
         </div>
         {/* PROVISÓRIO — botões de teste/backlog para os sócios testando o
             app. Remover junto com components/TestesModal.tsx,
@@ -276,18 +265,29 @@ export default function Garagem() {
         </div>
       </header>
 
-      {alertaVencimentoAberto && alertasVencimento.length > 0 && (
-        <div className="alerta-vencimento-detalhe">
-          {alertasVencimento.map((a) => (
-            <p key={a.label} className={a.vencido ? 'aviso-erro' : 'aviso'}>
-              {a.label}: {a.vencido ? `vencida há ${Math.abs(a.dias)} dia(s)` : `vence em ${a.dias} dia(s)`} ({fmtDataBR(a.data)})
-            </p>
-          ))}
-          {botoesAtualizarAlerta.map(([rota, texto]) => (
-            <button key={rota} type="button" className="link-secundario" onClick={() => navigate(rota)}>
-              {texto}
-            </button>
-          ))}
+      {/* Documento vencido é multa e risco de perder a carga — antes isso
+          era uma bolinha de 8px ao lado do nome, que só mostrava o prazo
+          depois de clicada. Agora o aviso fica aberto, com o prazo escrito. */}
+      {alertasVencimento.length > 0 && (
+        <div className={`alerta-doc ${alertasVencimento.some((a) => a.vencido) ? 'alerta-doc-vencido' : ''}`}>
+          <span className="alerta-doc-icone" aria-hidden="true">
+            !
+          </span>
+          <div className="alerta-doc-corpo">
+            {alertasVencimento.map((a) => (
+              <p key={a.label} className="alerta-doc-item">
+                <b>
+                  {a.label} {a.vencido ? `vencida há ${Math.abs(a.dias)} dia(s)` : `vence em ${a.dias} dia(s)`}
+                </b>
+                <span> ({fmtDataBR(a.data)})</span>
+              </p>
+            ))}
+            {botoesAtualizarAlerta.map(([rota, texto]) => (
+              <button key={rota} type="button" className="alerta-doc-acao" onClick={() => navigate(rota)}>
+                {texto}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

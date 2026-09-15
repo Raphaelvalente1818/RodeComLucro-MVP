@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rode com Lucro — proposta visual do app do motorista</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  /* =================================================================
+     PROPOSTA VISUAL — app do motorista (mockup navegável, 15/09/2026)
+     Nada aqui é código de produção: é pra Raphael aprovar ou mandar
+     refazer antes de eu mexer no app real. O conteúdo das telas segue
+     o PRD-tecnico-calc-app.html (piso ANTT, disclaimer, estados).
+     ================================================================= */
+
+  :root {
+    /* Asfalto: base quente, menos azulada que o cinza atual */
+    --bg:      #0B0E0D;
+    --surf:    #141A18;
+    --surf2:   #1C2421;
+    --line:    #2A3330;
+    --txt:     #F2F5F4;
+    --dim:     #93A29E;
+
+    /* Marca: amarelo de faixa de rodovia. Fica SÓ com a marca e as
+       ações — nunca com status, pra não brigar com o veredito. */
+    --marca:    #F2B01E;
+    --marca-tx: #10130F;
+
+    /* Status: exclusivos do veredito */
+    --bom:     #2FD46E;  --bom-bg:     #0E2E1C;
+    --atencao: #FF9F1C;  --atencao-bg: #33220A;
+    --ruim:    #FF5A5A;  --ruim-bg:    #331414;
+
+    --r-card: 14px;
+    --r-campo: 12px;
+
+    /* Barlow: grotesca de sinalização rodoviária (Jeremy Tribby, a partir
+       das placas de estrada e de carro da Califórnia). Condensed entra só
+       nas etiquetas/eyebrows, onde comprime sem custar leitura. */
+    --fonte: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --fonte-cond: "Barlow Condensed", "Barlow", system-ui, sans-serif;
+  }
+
+  * , *::before, *::after { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: #060807;
+    color: var(--txt);
+    font-family: var(--fonte);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* números de dinheiro sempre alinhados */
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* ---------- casca do mockup (não faz parte do app) ---------- */
+  .pagina { max-width: 1180px; margin: 0 auto; padding: 28px 20px 64px; }
+  .cabeca h1 { font-size: 24px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .cabeca p { margin: 0; color: var(--dim); font-size: 14px; line-height: 1.55; max-width: 62ch; }
+
+  .abas { display: flex; gap: 8px; flex-wrap: wrap; margin: 24px 0 20px; }
+  .aba {
+    background: var(--surf); color: var(--dim); border: 1px solid var(--line);
+    padding: 9px 15px; border-radius: 999px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  .aba:hover { color: var(--txt); }
+  .aba.on { background: var(--marca); color: var(--marca-tx); border-color: var(--marca); }
+
+  .palco { display: flex; gap: 36px; align-items: flex-start; flex-wrap: wrap; }
+
+  /* moldura de celular */
+  .fone {
+    width: 390px; height: 800px; flex: none;
+    background: var(--bg);
+    border: 10px solid #171d1b; border-radius: 40px;
+    box-shadow: 0 30px 70px rgba(0,0,0,.6);
+    overflow: hidden; position: relative;
+  }
+  .fone-tela { height: 100%; overflow-y: auto; scrollbar-width: thin; }
+  .fone-tela::-webkit-scrollbar { width: 5px; }
+  .fone-tela::-webkit-scrollbar-thumb { background: #2c3634; border-radius: 3px; }
+
+  .tela { display: none; padding: 22px 18px 44px; flex-direction: column; gap: 16px; }
+  .tela.on { display: flex; }
+
+  /* ---------- sistema visual (painel lateral) ---------- */
+  .sistema { flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 22px; }
+  .bloco { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r-card); padding: 18px; }
+  .bloco h3 { margin: 0 0 4px; font-size: 14px; letter-spacing: .04em; text-transform: uppercase; color: var(--dim); }
+  .bloco p.nota { margin: 8px 0 0; font-size: 13px; color: var(--dim); line-height: 1.55; }
+
+  .cores { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px,1fr)); gap: 10px; margin-top: 14px; }
+  .cor { border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
+  .cor .amostra { height: 46px; }
+  .cor .rot { padding: 7px 8px; font-size: 11px; background: var(--surf2); }
+  .cor .rot b { display: block; font-size: 11px; }
+  .cor .rot span { color: var(--dim); font-variant-numeric: tabular-nums; }
+
+  .escala > div { display: flex; align-items: baseline; gap: 12px; padding: 5px 0; border-bottom: 1px dashed var(--line); }
+  .escala > div:last-child { border-bottom: 0; }
+  .escala .tam { color: var(--dim); font-size: 11px; width: 78px; flex: none; font-variant-numeric: tabular-nums; }
+
+  /* =================================================================
+     COMPONENTES DO APP
+     ================================================================= */
+
+  /* topo com a faixa de rodovia — único lugar onde a marca aparece
+     como grafismo, pra dar cara sem custar leitura */
+  .topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .topo .eyebrow {
+    font-family: var(--fonte-cond);
+    margin: 0 0 1px; font-size: 14px; font-weight: 700; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--marca);
+  }
+  .topo h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+  .faixa {
+    height: 4px; border-radius: 2px;
+    background: repeating-linear-gradient(90deg, var(--marca) 0 22px, transparent 22px 38px);
+    opacity: .85;
+  }
+
+  .avatar {
+    width: 42px; height: 42px; border-radius: 12px; flex: none;
+    background: var(--surf2); border: 1px solid var(--line);
+    display: grid; place-items: center; font-size: 15px; font-weight: 700; color: var(--marca);
+  }
+
+  /* CTA principal — amarelo, alvo grande, a ação que o app existe pra fazer */
+  .cta {
+    width: 100%; text-align: left; border: 0; cursor: pointer; font-family: inherit;
+    background: var(--marca); color: var(--marca-tx);
+    border-radius: var(--r-card); padding: 16px 18px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    box-shadow: 0 6px 20px rgba(242,176,30,.16);
+  }
+  .cta b { display: block; font-size: 17px; letter-spacing: -0.01em; }
+  .cta .leg { display: block; font-size: 13px; opacity: .72; margin-top: 2px; }
+  .cta .seta { font-size: 22px; opacity: .55; }
+
+  .cta-2 {
+    width: 100%; text-align: left; cursor: pointer; font-family: inherit;
+    background: var(--surf); color: var(--txt); border: 1px solid var(--line);
+    border-radius: var(--r-card); padding: 15px 18px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .cta-2 b { display: block; font-size: 16px; }
+  .cta-2 .leg { display: block; font-size: 13px; color: var(--dim); margin-top: 2px; }
+  .cta-2 .seta { font-size: 22px; color: var(--dim); }
+
+  .dupla { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .atalho {
+    background: var(--surf); border: 1px solid var(--line); border-radius: var(--r-card);
+    padding: 14px; cursor: pointer; font-family: inherit; color: var(--txt);
+    display: flex; flex-direction: column; gap: 8px; align-items: flex-start; font-size: 14px; font-weight: 600;
+  }
+  .atalho svg { width: 22px; height: 22px; stroke: var(--marca); fill: none; stroke-width: 1.7; }
+
+  /* alerta de documento: card de verdade, não bolinha de 8px */
+  .alerta {
+    display: flex; gap: 12px; align-items: flex-start;
+    background: var(--ruim-bg); border: 1px solid rgba(255,90,90,.35);
+    border-radius: var(--r-card); padding: 13px 15px;
+  }
+  .alerta.ambar { background: var(--atencao-bg); border-color: rgba(255,159,28,.35); }
+  .alerta .ico { font-size: 17px; line-height: 1.2; }
+  .alerta b { font-size: 14px; display: block; margin-bottom: 2px; }
+  .alerta p { margin: 0; font-size: 13px; color: var(--dim); line-height: 1.45; }
+  .alerta a { color: var(--txt); font-size: 13px; font-weight: 600; text-decoration: underline; cursor: pointer; }
+
+  /* meta do mês */
+  .meta { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r-card); padding: 15px 16px; }
+  .meta-topo { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .meta-topo span { font-size: 13px; color: var(--dim); }
+  .meta-topo b { font-size: 15px; }
+  .meta-topo b i { font-style: normal; color: var(--dim); font-weight: 400; }
+  .barra { height: 8px; border-radius: 99px; background: var(--surf2); overflow: hidden; }
+  .barra > i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #C9901A, var(--marca)); }
+  .meta small { display: block; margin-top: 8px; font-size: 12px; color: var(--dim); }
+
+  /* seção */
+  .sec-topo { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+  .sec-topo h2 { margin: 0; font-size: 15px; letter-spacing: .01em; }
+  .filtro {
+    background: transparent; border: 1px solid var(--line); color: var(--dim);
+    border-radius: 999px; padding: 6px 12px; font-size: 12px; cursor: pointer; font-family: inherit;
+  }
+  .filtro.on { border-color: var(--marca); color: var(--marca); }
+
+  /* item de análise / frete */
+  .item {
+    background: var(--surf); border: 1px solid var(--line); border-radius: var(--r-card);
+    padding: 13px 15px; display: flex; flex-direction: column; gap: 10px; cursor: pointer;
+  }
+  .item-linha { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .rota { margin: 0 0 3px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .sub { margin: 0; font-size: 12.5px; color: var(--dim); }
+  .valor-item { font-size: 15px; font-weight: 700; white-space: nowrap; }
+
+  .selo {
+    font-family: var(--fonte-cond);
+    font-size: 14px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+    padding: 4px 11px; border-radius: 999px; white-space: nowrap;
+  }
+  .selo.bom     { background: var(--bom-bg);     color: var(--bom); }
+  .selo.atencao { background: var(--atencao-bg); color: var(--atencao); }
+  .selo.ruim    { background: var(--ruim-bg);    color: var(--ruim); }
+  .selo.neutro  { background: var(--surf2);      color: var(--dim); }
+
+  .marcar {
+    align-self: flex-start; background: transparent; border: 1px dashed var(--line);
+    color: var(--dim); border-radius: 999px; padding: 5px 11px; font-size: 12px;
+    cursor: pointer; font-family: inherit;
+  }
+  .marcar.on { border-style: solid; border-color: var(--bom); color: var(--bom); }
+
+  /* campos */
+  label.campo { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--dim); }
+  .campo input, .campo select {
+    background: var(--surf); border: 1px solid var(--line); color: var(--txt);
+    border-radius: var(--r-campo); padding: 13px 14px; font-size: 16px; font-family: inherit;
+    width: 100%;
+  }
+  .campo input::placeholder { color: #5C6B67; }
+  .campo input:focus, .campo select:focus { outline: 2px solid var(--marca); outline-offset: 1px; }
+  .linha2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .grupo { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r-card); padding: 15px; display: flex; flex-direction: column; gap: 13px; }
+  .grupo-tit { font-family: var(--fonte-cond); font-size: 14px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); margin: 0; }
+
+  .dica { margin: 0; font-size: 12.5px; color: var(--dim); line-height: 1.5; }
+  .dica.alerta-txt { color: var(--atencao); }
+
+  .chip {
+    background: var(--surf2); border: 1px solid var(--line); color: var(--dim);
+    border-radius: 999px; padding: 7px 13px; font-size: 13px; cursor: pointer; font-family: inherit;
+  }
+  .chip.on { background: var(--marca); border-color: var(--marca); color: var(--marca-tx); font-weight: 600; }
+
+  .switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; color: var(--txt); }
+  .switch .trilho { width: 46px; height: 27px; border-radius: 99px; background: var(--surf2); border: 1px solid var(--line); position: relative; cursor: pointer; flex: none; }
+  .switch .trilho i { position: absolute; top: 2px; left: 2px; width: 21px; height: 21px; border-radius: 99px; background: var(--dim); transition: .16s; }
+  .switch .trilho.on { background: rgba(242,176,30,.22); border-color: var(--marca); }
+  .switch .trilho.on i { left: 21px; background: var(--marca); }
+
+  input[type=range] { width: 100%; accent-color: var(--marca); }
+
+  /* ---------- Resultado: o herói é veredito + lucro ---------- */
+  .veredito {
+    border-radius: 18px; padding: 20px; text-align: center;
+    border: 1px solid transparent;
+  }
+  .veredito.bom     { background: var(--bom-bg);     border-color: rgba(47,212,110,.32); }
+  .veredito.atencao { background: var(--atencao-bg); border-color: rgba(255,159,28,.32); }
+  .veredito.ruim    { background: var(--ruim-bg);    border-color: rgba(255,90,90,.32); }
+
+  .veredito .palavra {
+    font-family: var(--fonte-cond);
+    font-size: 19px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; margin: 0 0 12px;
+  }
+  .veredito.bom     .palavra { color: var(--bom); }
+  .veredito.atencao .palavra { color: var(--atencao); }
+  .veredito.ruim    .palavra { color: var(--ruim); }
+
+  .veredito .rot { margin: 0 0 2px; font-size: 13px; color: var(--dim); }
+  .veredito .dinheiro { margin: 0; font-size: 44px; font-weight: 800; letter-spacing: -0.025em; line-height: 1.02; }
+  .veredito.bom     .dinheiro { color: var(--bom); }
+  .veredito.atencao .dinheiro { color: var(--txt); }
+  .veredito.ruim    .dinheiro { color: var(--ruim); }
+  .veredito .conselho { margin: 12px 0 0; font-size: 13.5px; color: var(--txt); opacity: .82; line-height: 1.5; }
+
+  .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .kpi { background: var(--surf); border: 1px solid var(--line); border-radius: var(--r-card); padding: 12px 14px; }
+  .kpi span { display: block; font-size: 12px; color: var(--dim); margin-bottom: 4px; }
+  .kpi b { font-size: 17px; letter-spacing: -0.01em; }
+  .kpi.destaque { border-color: rgba(242,176,30,.45); background: linear-gradient(180deg, rgba(242,176,30,.08), transparent); }
+  .kpi.destaque b { color: var(--marca); }
+  .kpi small { display: block; margin-top: 3px; font-size: 11px; color: var(--dim); }
+
+  /* para onde vai o dinheiro — barras proporcionais, ordenadas */
+  .custos { display: flex; flex-direction: column; gap: 11px; }
+  .custo-l { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
+  .custo-l span { color: var(--dim); }
+  .custo-b { height: 7px; border-radius: 99px; background: var(--surf2); overflow: hidden; }
+  .custo-b > i { display: block; height: 100%; border-radius: 99px; background: var(--marca); opacity: .9; }
+  .custo-b > i.frio { background: #4E6B63; }
+
+  .disclaimer { margin: 0; font-size: 11.5px; color: #6E7C78; line-height: 1.5; }
+
+  .btn-sec {
+    width: 100%; background: transparent; border: 1px solid var(--line); color: var(--txt);
+    border-radius: var(--r-campo); padding: 13px; font-size: 15px; cursor: pointer; font-family: inherit;
+  }
+  .voltar { background: none; border: 0; color: var(--dim); font-size: 14px; text-align: left; padding: 0; cursor: pointer; font-family: inherit; }
+
+  .legenda-rodape { margin-top: 26px; font-size: 13px; color: var(--dim); line-height: 1.6; max-width: 70ch; }
+  .legenda-rodape b { color: var(--txt); }
+</style>
+</head>
+<body>
+<div class="pagina">
+
+  <div class="cabeca">
+    <h1>Rode com Lucro — proposta visual do app do motorista</h1>
+    <p>
+      Clique nas abas ou navegue pelos botões dentro do celular, como no app real. No Resultado dá pra
+      trocar o veredito e ver os três estados. Conteúdo e regras seguem o PRD; o que muda aqui é
+      hierarquia, cor e tipografia.
+    </p>
+  </div>
+
+  <div class="abas">
+    <button class="aba on" data-tela="garagem">Garagem</button>
+    <button class="aba" data-tela="analisar">Analisar frete</button>
+    <button class="aba" data-tela="resultado">Resultado</button>
+    <button class="aba" data-tela="buscar">Buscar frete</button>
+  </div>
+
+  <div class="palco">
+
+    <!-- ================= CELULAR ================= -->
+    <div class="fone">
+      <div class="fone-tela">
+
+        <!-- ---------- GARAGEM ---------- -->
+        <section class="tela on" id="tela-garagem">
+          <div class="topo">
+            <div>
+              <p class="eyebrow">Garagem</p>
+              <h1>Olá, Emerson</h1>
+            </div>
+            <div class="avatar">E</div>
+          </div>
+          <div class="faixa"></div>
+
+          <div class="alerta">
+            <span class="ico">⚠</span>
+            <div>
+              <b>Exame toxicológico vencido há 4 dias</b>
+              <p>Dirigir sem o exame válido dá multa e suspensão. <a>Atualizar em Meu Perfil</a></p>
+            </div>
+          </div>
+
+          <button class="cta" data-ir="analisar">
+            <span>
+              <b>Analisar frete</b>
+              <span class="leg">Vale a pena essa carga?</span>
+            </span>
+            <span class="seta">›</span>
+          </button>
+
+          <button class="cta-2" data-ir="buscar">
+            <span>
+              <b>Buscar frete</b>
+              <span class="leg">18 cargas perto de Sinop/MT</span>
+            </span>
+            <span class="seta">›</span>
+          </button>
+
+          <div class="dupla">
+            <button class="atalho">
+              <svg viewBox="0 0 24 24"><path d="M2 16V8h11v8M13 11h4l3 3v2M2 16h2M9 16h4M20 16h2"/><circle cx="6.5" cy="17.5" r="1.9"/><circle cx="17.5" cy="17.5" r="1.9"/></svg>
+              Meu Caminhão
+            </button>
+            <button class="atalho">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c.9-3.7 4-5.6 7.5-5.6s6.6 1.9 7.5 5.6"/></svg>
+              Meu Perfil
+            </button>
+          </div>
+
+          <div class="meta">
+            <div class="meta-topo">
+              <span>Meta de lucro do mês</span>
+              <b class="num">R$ 7.240 <i>/ 12.000</i></b>
+            </div>
+            <div class="barra"><i style="width:60%"></i></div>
+            <small>Faltam R$ 4.760 — só contam os fretes marcados como realizados.</small>
+          </div>
+
+          <div class="sec-topo">
+            <h2>Últimas análises</h2>
+            <button class="filtro">Só realizados</button>
+          </div>
+
+          <div class="item" data-ir="resultado">
+            <div class="item-linha">
+              <div>
+                <p class="rota">São Paulo → Recife</p>
+                <p class="sub num">R$ 12.500 · há 2 horas</p>
+              </div>
+              <span class="selo bom">Bom</span>
+            </div>
+            <button class="marcar on">✓ Realizado</button>
+          </div>
+
+          <div class="item">
+            <div class="item-linha">
+              <div>
+                <p class="rota">Sinop → Rondonópolis</p>
+                <p class="sub num">R$ 4.200 · ontem</p>
+              </div>
+              <span class="selo atencao">Aceitável</span>
+            </div>
+            <button class="marcar">Marcar como realizado</button>
+          </div>
+
+          <div class="item">
+            <div class="item-linha">
+              <div>
+                <p class="rota">Cuiabá → Santos</p>
+                <p class="sub num">R$ 6.800 · há 3 dias</p>
+              </div>
+              <span class="selo ruim">Ruim</span>
+            </div>
+            <button class="marcar">Marcar como realizado</button>
+          </div>
+
+          <button class="voltar">Ver mais</button>
+        </section>
+
+        <!-- ---------- ANALISAR ---------- -->
+        <section class="tela" id="tela-analisar">
+          <button class="voltar" data-ir="garagem">‹ Garagem</button>
+          <div class="topo">
+            <div>
+              <p class="eyebrow">Passo 1 de 1</p>
+              <h1>Analisar frete</h1>
+            </div>
+          </div>
+          <div class="faixa"></div>
+
+          <div class="grupo">
+            <p class="grupo-tit">A rota</p>
+            <label class="campo">Origem
+              <input value="São Paulo, SP">
+            </label>
+            <label class="campo">Destino
+              <input value="Recife, PE">
+            </label>
+            <div class="linha2">
+              <label class="campo">Distância (km)
+                <input class="num" value="2.650">
+              </label>
+              <label class="campo">Pedágio de ida (R$)
+                <input class="num" value="720,00">
+              </label>
+            </div>
+            <p class="dica">Distância e pedágio vieram da consulta automática, já ajustados pros seus 5 eixos.</p>
+          </div>
+
+          <div class="grupo">
+            <p class="grupo-tit">O que estão pagando</p>
+            <label class="campo">Valor do frete (R$)
+              <input class="num" value="12.500,00" style="font-size:22px;font-weight:700">
+            </label>
+            <button class="chip" style="align-self:flex-start">A negociar</button>
+            <div class="switch">
+              <span>Volta vazia (sem carga de retorno)</span>
+              <span class="trilho"><i></i></span>
+            </div>
+          </div>
+
+          <div class="grupo">
+            <p class="grupo-tit">Sua margem</p>
+            <label class="campo">Margem desejada: <b style="color:var(--marca)">20%</b>
+              <input type="range" min="0" max="100" value="20">
+            </label>
+            <div class="linha2">
+              <label class="campo">Dias de viagem
+                <input class="num" value="4">
+              </label>
+              <label class="campo">Diesel (R$/L)
+                <input class="num" value="6,10">
+              </label>
+            </div>
+            <p class="dica alerta-txt">Confira o diesel da região antes de calcular — é o custo que mais pesa.</p>
+          </div>
+
+          <button class="btn-sec">Ajustar parâmetros do caminhão e custos</button>
+
+          <button class="cta" data-ir="resultado">
+            <span>
+              <b>Ver o resultado</b>
+              <span class="leg">Custo, lucro e piso ANTT</span>
+            </span>
+            <span class="seta">›</span>
+          </button>
+        </section>
+
+        <!-- ---------- RESULTADO ---------- -->
+        <section class="tela" id="tela-resultado">
+          <button class="voltar" data-ir="garagem">‹ Garagem</button>
+          <div class="topo">
+            <div>
+              <p class="eyebrow">Resultado</p>
+              <h1 style="font-size:19px">São Paulo → Recife</h1>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:6px">
+            <button class="chip on" data-ver="bom">Bom</button>
+            <button class="chip" data-ver="atencao">Aceitável</button>
+            <button class="chip" data-ver="ruim">Ruim</button>
+          </div>
+
+          <div class="veredito bom" id="bloco-veredito">
+            <p class="palavra" id="v-palavra">Bom frete</p>
+            <p class="rot" id="v-rot">Lucro provável</p>
+            <p class="dinheiro num" id="v-dinheiro">R$ 2.722,70</p>
+            <p class="conselho" id="v-conselho">
+              Paga todos os custos, cobre sua margem de 20% e está acima do piso da ANTT. Pode fechar.
+            </p>
+          </div>
+
+          <div class="kpis">
+            <div class="kpi">
+              <span>Valor do frete</span>
+              <b class="num" id="k-valor">R$ 12.500,00</b>
+            </div>
+            <div class="kpi">
+              <span>Custo estimado</span>
+              <b class="num">R$ 9.777,30</b>
+            </div>
+            <div class="kpi">
+              <span>Margem real</span>
+              <b class="num" id="k-margem">21,8%</b>
+            </div>
+            <div class="kpi">
+              <span>Piso mínimo ANTT</span>
+              <b class="num">R$ 7.412,50</b>
+              <small id="k-piso">R$ 5.087 acima do piso</small>
+            </div>
+            <div class="kpi destaque" style="grid-column:1/-1">
+              <span>Negocie a partir de</span>
+              <b class="num">R$ 11.732,76</b>
+              <small>custo + sua margem de 20%</small>
+            </div>
+          </div>
+
+          <div class="sec-topo"><h2>Para onde vai o dinheiro</h2></div>
+          <div class="custos">
+            <div>
+              <div class="custo-l"><span>Diesel</span><b class="num">R$ 6.466,00</b></div>
+              <div class="custo-b"><i style="width:100%"></i></div>
+            </div>
+            <div>
+              <div class="custo-l"><span>Manutenção</span><b class="num">R$ 927,50</b></div>
+              <div class="custo-b"><i style="width:14.3%"></i></div>
+            </div>
+            <div>
+              <div class="custo-l"><span>Pedágio</span><b class="num">R$ 720,00</b></div>
+              <div class="custo-b"><i style="width:11.1%"></i></div>
+            </div>
+            <div>
+              <div class="custo-l"><span>Depreciação</span><b class="num">R$ 662,50</b></div>
+              <div class="custo-b"><i class="frio" style="width:10.2%"></i></div>
+            </div>
+            <div>
+              <div class="custo-l"><span>Alimentação</span><b class="num">R$ 360,00</b></div>
+              <div class="custo-b"><i class="frio" style="width:5.6%"></i></div>
+            </div>
+            <div>
+              <div class="custo-l"><span>ARLA 32</span><b class="num">R$ 323,30</b></div>
+              <div class="custo-b"><i class="frio" style="width:5%"></i></div>
+            </div>
+            <div>
+              <div class="custo-l"><span>Pneus</span><b class="num">R$ 318,00</b></div>
+              <div class="custo-b"><i class="frio" style="width:4.9%"></i></div>
+            </div>
+          </div>
+
+          <p class="disclaimer">
+            Estimativa com base em modelo de custo transparente. O piso ANTT é referência regulatória;
+            este veredito não é aconselhamento jurídico ou financeiro.
+          </p>
+
+          <button class="cta">
+            <span><b>Salvar análise</b><span class="leg">Entra no lucro do mês</span></span>
+            <span class="seta">›</span>
+          </button>
+          <button class="btn-sec" data-ir="analisar">Nova análise</button>
+        </section>
+
+        <!-- ---------- BUSCAR FRETE ---------- -->
+        <section class="tela" id="tela-buscar">
+          <button class="voltar" data-ir="garagem">‹ Garagem</button>
+          <div class="topo">
+            <div>
+              <p class="eyebrow">Buscar frete</p>
+              <h1>Cargas perto de você</h1>
+            </div>
+          </div>
+          <div class="faixa"></div>
+
+          <div class="grupo">
+            <label class="campo">Minha cidade agora
+              <input value="Sinop/MT">
+            </label>
+            <div class="linha2">
+              <label class="campo">Raio
+                <select><option>até 150 km</option></select>
+              </label>
+              <label class="campo">Destino
+                <select><option>Todos os estados</option></select>
+              </label>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="chip on">Só o meu veículo (Carreta)</button>
+              <button class="chip">Maior valor</button>
+            </div>
+          </div>
+
+          <p class="dica">18 fretes dentro de 150 km — os mais próximos primeiro.</p>
+
+          <div class="item">
+            <div class="item-linha">
+              <div>
+                <p class="rota">Sinop/MT → Santos/SP</p>
+                <p class="sub">Carreta, Bitrem · coleta 18/09 · <b style="color:var(--bom)">a 12 km de você</b></p>
+              </div>
+              <span class="valor-item num">R$ 14.200</span>
+            </div>
+            <div class="item-linha">
+              <span class="selo neutro">Agro Marchi</span>
+              <button class="marcar">Analisar este frete ›</button>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="item-linha">
+              <div>
+                <p class="rota">Sorriso/MT → Paranaguá/PR</p>
+                <p class="sub">Graneleiro · coleta 19/09 · a 78 km de você</p>
+              </div>
+              <span class="valor-item num">R$ 190/ton</span>
+            </div>
+            <div class="item-linha">
+              <span class="selo neutro">Transportes Norte</span>
+              <button class="marcar">Analisar este frete ›</button>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="item-linha">
+              <div>
+                <p class="rota">Lucas do Rio Verde/MT → Uberlândia/MG</p>
+                <p class="sub">Qualquer carroceria · coleta 20/09 · a 131 km de você</p>
+              </div>
+              <span class="valor-item">a combinar</span>
+            </div>
+            <div class="item-linha">
+              <span class="selo neutro">É nóis Log</span>
+              <button class="marcar">Analisar este frete ›</button>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+    <!-- ================= SISTEMA VISUAL ================= -->
+    <div class="sistema">
+
+      <div class="bloco">
+        <h3>A ideia</h3>
+        <p class="nota">
+          <b style="color:var(--txt)">Asfalto e faixa amarela.</b> O fundo vira um preto quente de asfalto,
+          e o amarelo de sinalização de rodovia passa a ser a cor da marca — é o que dá identidade
+          brasileira e de estrada, sem depender de logo. O amarelo fica reservado à marca e às ações;
+          verde, laranja e vermelho ficam reservados ao veredito. Hoje o verde acumula os dois papéis,
+          e por isso o "BOM" não se destaca de um botão comum.
+        </p>
+      </div>
+
+      <div class="bloco">
+        <h3>Paleta</h3>
+        <div class="cores">
+          <div class="cor"><div class="amostra" style="background:#0B0E0D"></div><div class="rot"><b>Asfalto</b><span>#0B0E0D</span></div></div>
+          <div class="cor"><div class="amostra" style="background:#141A18"></div><div class="rot"><b>Superfície</b><span>#141A18</span></div></div>
+          <div class="cor"><div class="amostra" style="background:#F2B01E"></div><div class="rot"><b>Marca / ação</b><span>#F2B01E</span></div></div>
+          <div class="cor"><div class="amostra" style="background:#2FD46E"></div><div class="rot"><b>Bom</b><span>#2FD46E</span></div></div>
+          <div class="cor"><div class="amostra" style="background:#FF9F1C"></div><div class="rot"><b>Aceitável</b><span>#FF9F1C</span></div></div>
+          <div class="cor"><div class="amostra" style="background:#FF5A5A"></div><div class="rot"><b>Ruim</b><span>#FF5A5A</span></div></div>
+        </div>
+        <p class="nota">
+          Contraste conferido pro requisito de acessibilidade AA do PRD. Tema escuro é proposital:
+          a maior parte do uso é na cabine, de noite ou com pouca luz.
+        </p>
+      </div>
+
+      <div class="bloco escala">
+        <h3>Tipografia — Barlow</h3>
+        <div><span class="tam">44 / 800</span><b class="num" style="font-size:36px;font-weight:800;letter-spacing:-.025em">R$ 2.722,70</b></div>
+        <div><span class="tam">28 / 700</span><span style="font-size:26px;font-weight:700;letter-spacing:-.02em">Olá, Emerson</span></div>
+        <div><span class="tam">17 / 700</span><span style="font-size:17px;font-weight:700">Analisar frete</span></div>
+        <div><span class="tam">15 / 600</span><span style="font-size:15px;font-weight:600">São Paulo → Recife</span></div>
+        <div><span class="tam">13 / 400</span><span style="font-size:13px;color:var(--dim)">R$ 12.500 · há 2 horas</span></div>
+        <div><span class="tam">cond. 14</span><span class="selo bom">Bom</span></div>
+        <p class="nota">
+          <b style="color:var(--txt)">Barlow</b>, de Jeremy Tribby, nasceu do visual público da
+          Califórnia — placas de carro, placas de rodovia, ônibus e trens — e leva o nome de John Perry
+          Barlow numa referência à "estrada da informação". É uma grotesca de sinalização num app de
+          quem vive na estrada: a personalidade vem do próprio tema, não de enfeite.
+        </p>
+        <p class="nota">
+          A <b style="color:var(--txt)">Condensed</b> entra só nas etiquetas em caixa alta (eyebrow,
+          veredito, selos), onde comprimir ajuda em vez de atrapalhar. Texto e números ficam na largura
+          normal. Todo número usa <b style="color:var(--txt)">tabular-nums</b>, então os valores alinham
+          na coluna — hoje eles dançam.
+        </p>
+        <p class="nota">
+          Custo: 5 pesos, com <b style="color:var(--txt)">display:swap</b> — a tela aparece na hora com a
+          fonte do sistema e troca quando a Barlow chega, sem tela em branco. Quando o ambiente de build
+          voltar, hospedo os arquivos no próprio projeto pra funcionar offline e sem depender do Google.
+        </p>
+      </div>
+
+      <div class="bloco">
+        <h3>O que muda de verdade</h3>
+        <p class="nota">
+          <b style="color:var(--txt)">1. O veredito vira a tela.</b> Hoje é um chip pequeno e o lucro é uma
+          das seis caixas iguais. Agora veredito e dinheiro ocupam o topo juntos: o motorista abre e já sabe.
+        </p>
+        <p class="nota">
+          <b style="color:var(--txt)">2. Uma ação dominante por tela.</b> "Analisar frete" é o botão amarelo;
+          "Buscar frete" desce um nível. Hoje competem.
+        </p>
+        <p class="nota">
+          <b style="color:var(--txt)">3. Alerta de documento vira card.</b> CNH ou exame vencido é multa e
+          suspensão — hoje é uma bolinha de 8px ao lado do nome, que passa despercebida.
+        </p>
+        <p class="nota">
+          <b style="color:var(--txt)">4. "Para onde vai o dinheiro" ganha barras.</b> Ordenadas do maior pro
+          menor, com o diesel ocupando a linha inteira. O PRD pedia um donut aqui e hoje é lista de texto;
+          proponho barra porque no celular ela responde na hora "o que está comendo meu dinheiro" e mostra
+          a proporção sem precisar de legenda colorida. Se preferir o donut do PRD, eu troco.
+        </p>
+        <p class="nota">
+          <b style="color:var(--txt)">5. Formulário em blocos.</b> Analisar vira "A rota", "O que estão
+          pagando" e "Sua margem" — em vez de 12 campos soltos em sequência.
+        </p>
+      </div>
+
+      <div class="bloco">
+        <h3>Como isso entra no código</h3>
+        <p class="nota">
+          Antes de aplicar tela por tela, extraio essas cores e espaçamentos pra variáveis CSS no
+          <b style="color:var(--txt)">:root</b>. Hoje os hexadecimais estão escritos à mão em ~1.290 linhas
+          e aparecem repetidos dezenas de vezes — sem isso, cada ajuste de tom vira caça ao hexadecimal, e
+          o portal da empresa e o painel admin nunca acompanham.
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <p class="legenda-rodape">
+    Os números são reais: vêm do caso de calibração do PRD (São Paulo → Recife, 2.650 km, 5 eixos,
+    diesel a R$ 6,10) — custo de <b>R$ 9.777,30</b> detalhado rubrica por rubrica. Mudando o veredito no
+    topo do Resultado, muda o valor do frete, não o custo: <b>R$ 12.500</b> dá bom, <b>R$ 10.800</b> dá
+    aceitável e <b>R$ 8.000</b> dá prejuízo — o mesmo exemplo que está escrito nos critérios de aceite.
+  </p>
+</div>
+
+<script>
+  // navegação entre telas (abas + botões dentro do celular)
+  function irPara(id) {
+    document.querySelectorAll('.tela').forEach(function (t) { t.classList.remove('on'); });
+    document.getElementById('tela-' + id).classList.add('on');
+    document.querySelectorAll('.aba').forEach(function (a) {
+      a.classList.toggle('on', a.dataset.tela === id);
+    });
+    document.querySelector('.fone-tela').scrollTop = 0;
+  }
+  document.querySelectorAll('.aba').forEach(function (a) {
+    a.addEventListener('click', function () { irPara(a.dataset.tela); });
+  });
+  document.querySelectorAll('[data-ir]').forEach(function (b) {
+    b.addEventListener('click', function () { irPara(b.dataset.ir); });
+  });
+
+  // os três estados do veredito, com os números do PRD
+  var ESTADOS = {
+    bom: {
+      classe: 'bom', palavra: 'Bom frete', rot: 'Lucro provável', dinheiro: 'R$ 2.722,70',
+      valor: 'R$ 12.500,00', margem: '21,8%', piso: 'R$ 5.087 acima do piso',
+      conselho: 'Paga todos os custos, cobre sua margem de 20% e está acima do piso da ANTT. Pode fechar.'
+    },
+    atencao: {
+      classe: 'atencao', palavra: 'Dá pra aceitar', rot: 'Lucro provável', dinheiro: 'R$ 1.022,70',
+      valor: 'R$ 10.800,00', margem: '9,5%', piso: 'R$ 3.387 acima do piso',
+      conselho: 'Sobra dinheiro, mas abaixo da sua margem de 20%. Tente R$ 11.732 — é o seu ponto de equilíbrio com margem.'
+    },
+    ruim: {
+      classe: 'ruim', palavra: 'Não compensa', rot: 'Prejuízo provável', dinheiro: 'R$ 1.777,30',
+      valor: 'R$ 8.000,00', margem: '−22,2%', piso: 'R$ 588 acima do piso',
+      conselho: 'Esse frete não paga nem o custo da viagem. Você sai do bolso em R$ 1.777,30 — precisa de R$ 11.732 pra valer a pena.'
+    }
+  };
+
+  document.querySelectorAll('[data-ver]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var e = ESTADOS[b.dataset.ver];
+      document.querySelectorAll('[data-ver]').forEach(function (x) { x.classList.remove('on'); });
+      b.classList.add('on');
+      var bloco = document.getElementById('bloco-veredito');
+      bloco.className = 'veredito ' + e.classe;
+      document.getElementById('v-palavra').textContent = e.palavra;
+      document.getElementById('v-rot').textContent = e.rot;
+      document.getElementById('v-dinheiro').textContent = e.dinheiro;
+      document.getElementById('v-conselho').textContent = e.conselho;
+      document.getElementById('k-valor').textContent = e.valor;
+      document.getElementById('k-margem').textContent = e.margem;
+      document.getElementById('k-piso').textContent = e.piso;
+    });
+  });
+
+  // toggles decorativos do mockup
+  document.querySelectorAll('.trilho').forEach(function (t) {
+    t.addEventListener('click', function () { t.classList.toggle('on'); });
+  });
+  document.querySelectorAll('.marcar, .filtro').forEach(function (b) {
+    b.addEventListener('click', function (ev) { ev.stopPropagation(); b.classList.toggle('on'); });
+  });
+</script>
+</body>
+</html>

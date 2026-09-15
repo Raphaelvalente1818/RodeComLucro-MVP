@@ -3,7 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0B0E0D" />
     <title>Rode com Lucro</title>
+    <!--
+      Barlow (Jeremy Tribby): grotesca desenhada a partir da sinalização
+      pública da Califórnia — placas de rodovia e de carro. Escolhida de
+      propósito pro app de quem vive na estrada. A Condensed entra só nas
+      etiquetas em caixa alta (eyebrow, veredito, selos).
+
+      display=swap: a tela renderiza na hora com a fonte do sistema e
+      troca quando a Barlow chega — sem tela em branco em rede de posto,
+      que é o cenário do PRD (LCP < 2,5s em 4G). TODO: hospedar os .woff2
+      no próprio projeto (public/fontes) pra funcionar offline no PWA e
+      não depender do Google — pendente do ambiente de build voltar.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <div id="root"></div>

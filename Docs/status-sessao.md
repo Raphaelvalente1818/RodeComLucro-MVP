@@ -1247,4 +1247,30 @@ Ajustes extras do mesmo dia (a partir do teste real de importação do Raphael):
 
 **LEMBRETE pedido pelo Raphael pra próxima sessão**: avaliar se é o momento de **trabalhar as telas** (UI/UX) — as telas do portal da empresa (`/empresa`, `/empresa/cadastro`, `/empresa/entrar`, `/empresa/publicar`) foram feitas reaproveitando classes do app do motorista e do painel admin (`tela-entrada`, `admin-card`, `chip-*`), sem desenho próprio. Levantar a pergunta no início da próxima conversa: "é hora de cuidar das telas, ou seguimos em funcionalidade?" Se for hora, começar por um mockup (como foi feito no painel admin em 02/09) antes de codar.
 
+## IDENTIDADE VISUAL — 15/09: "asfalto e faixa amarela" (app do motorista)
+
+**Contexto**: os 3 pré-requisitos e o portal da empresa foram testados e aprovados (12/09). Raphael escolheu partir pras telas, e pediu: personalidade acima de velocidade, sem prejudicar a usabilidade mínima.
+
+**O PRD não define visual** — conferido: `PRD-tecnico-calc-app.html` especifica fluxo, campos, componentes e obrigações (disclaimer ANTT, contraste AA, inputmode), mas nenhuma paleta, tipografia ou wireframe. Então o visual foi proposto por mim e aprovado; o PRD segue como régua do que não pode faltar.
+
+**Proposta**: `Docs/mockup-app-motorista.html` — mockup navegável (4 telas, os 3 estados do veredito, painel com paleta e tipografia). Vale como referência de implementação.
+
+**A regra que organiza a paleta**: amarelo = marca e ações; verde/laranja/vermelho = exclusivos do veredito. Antes o verde acumulava os dois papéis (era a cor do botão primário E do veredito BOM), e por isso o "bom frete" não se destacava de um botão qualquer.
+
+**Tipografia**: Barlow (Jeremy Tribby) — grotesca desenhada a partir da sinalização pública da Califórnia (placas de rodovia e de carro), batizada em homenagem a John Perry Barlow numa referência à "estrada da informação". Barlow Condensed nas etiquetas em caixa alta (eyebrow, veredito, selos). Carregada do Google Fonts com `display=swap`. **TODO**: hospedar os `.woff2` em `public/fontes` pra funcionar offline no PWA e não depender do Google.
+
+**Implementado**:
+- `index.html`: Barlow + `theme-color`.
+- `index.css`: camada de tokens no `:root` (cores, fonte, raios). **Todos os hexadecimais do arquivo foram migrados pra variáveis** — antes o mesmo cinza aparecia 20+ vezes escrito à mão, e hoje só existe hex dentro do `:root`. Daqui pra frente: usar as variáveis, não hex solto.
+- Botão primário, chip selecionado, barra de meta e caixa de sugestões passaram pro amarelo; "✓ Realizado" ficou no verde (é status, não seleção); "Buscar frete" desceu pra superfície neutra (antes era um bloco azul competindo com o verde do "Analisar frete").
+- `Resultado.tsx`: bloco-herói novo (`.veredicto-heroi`) juntando veredito + lucro em destaque; "Negocie a partir de" virou KPI de largura inteira na marca; "Para onde vai o dinheiro" virou barras proporcionais ordenadas do maior custo pro menor (o PRD pedia donut e estava como lista de texto — barra escolhida por responder na hora no celular, sem legenda colorida).
+- `Garagem.tsx`: alerta de CNH/exame/óleo virou card sempre visível com o prazo escrito (era uma bolinha de 10px ao lado do nome, que só mostrava o prazo depois de clicada).
+
+**Verificado (o sandbox de execução voltou a funcionar em 15/09)**:
+- Contraste calculado programaticamente em todos os pares da paleta: todos passam AA. O `--txt-fraco` do disclaimer reprovava (4.05 sobre card) e foi clareado pra `#7e8c88`.
+- `tsc --noEmit --strict` com o `@rode/calc` mapeado pro fonte: **0 erros**. (Rodar direto no sandbox acusa dezenas de erros de `Cannot find module '@rode/calc'` — é artefato do `node_modules` do workspace só existir na máquina do Raphael, não erro real.)
+- Varredura automática das classes usadas nos `.tsx` contra as definidas no CSS: nenhuma classe órfã.
+
+**Pendente**: commit/push e olhar no deploy. Depois: aplicar a mesma identidade em Analisar, Buscar frete, Perfil, Entrada/Verificação, e no portal da empresa (que hoje reaproveita as classes do motorista, então já herda parte).
+
 **Depois disso, o módulo de empresas MVP está completo.** Próximos incrementos (não bloqueantes): rate-limit de postagem por empresa; sinalizador de risco na fila do admin (preço abaixo do piso ANTT via `calcularPisoANTT`); editar/encerrar frete pela empresa; e-mail de aviso quando aprovado/rejeitado.
