@@ -90,6 +90,9 @@ export default function EmpresaLayout() {
                   Publicar frete
                 </NavLink>
               )}
+              <NavLink to="/empresa/dados" className={({ isActive }) => (isActive ? 'ativo' : undefined)}>
+                Meus dados
+              </NavLink>
             </nav>
           )}
 

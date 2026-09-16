@@ -1288,6 +1288,8 @@ Ajustes extras do mesmo dia (a partir do teste real de importação do Raphael):
 - Telas: labels passaram a envolver os inputs (senão no grid label e input viram células separadas); Entrar/Cadastro/Publicar usam `.empresa-form`; Publicar ganhou seções Rota / Valor / Veículo / Contato; Home virou "Seus fretes" com CNPJ no eyebrow e sem botão Sair (está no cabeçalho); textos "Portal da empresa" viraram "Sofrete · Empresas". Frase de venda no login: "Publique cargas direto pros motoristas do Rode com Lucro" (fácil de tirar se não quiserem citar a outra marca).
 - `tsc` limpo (0 erros com `@rode/calc` mapeado).
 
-**Pendente**: commit/push, olhar no deploy nos dois temas; conferir o comportamento em celular (grid vira 1 coluna abaixo de 640px, nav some — sem menu hambúrguer ainda).
+**"Meus dados" (16/09, pedido do Raphael)**: estava no nav do mockup mas nunca tinha existido como tela; eu tinha deixado o link fora do cabeçalho real sem avisar. Construída: `pages/empresa/EmpresaDados.tsx` (`/empresa/dados`) — CNPJ e razão social travados (identidade aprovada), nome fantasia / telefone / e-mail de contato editáveis via `atualizarMinhaEmpresa()` em `lib/empresa.ts` (UPDATE na própria linha; status/motivo bloqueados pelo trigger). Situação do cadastro em selo, com motivo. Nota: o e-mail de contato NÃO muda o e-mail de login (troca de senha/login ainda não existe — pendência).
+
+**Pendente**: commit/push, olhar no deploy nos dois temas; conferir o comportamento em celular (grid vira 1 coluna abaixo de 640px, nav some — sem menu hambúrguer ainda). Troca de senha / "esqueci a senha" no portal.
 
 **Depois disso, o módulo de empresas MVP está completo.** Próximos incrementos (não bloqueantes): rate-limit de postagem por empresa; sinalizador de risco na fila do admin (preço abaixo do piso ANTT via `calcularPisoANTT`); editar/encerrar frete pela empresa; e-mail de aviso quando aprovado/rejeitado.

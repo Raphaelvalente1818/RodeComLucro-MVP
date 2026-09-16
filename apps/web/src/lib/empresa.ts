@@ -163,6 +163,27 @@ export async function publicarFrete(empresa: Empresa, dado: FreteValidado): Prom
   if (error) throw error;
 }
 
+/**
+ * Edita os dados que a empresa pode mudar sozinha. CNPJ e razão social
+ * ficam de fora de propósito: são a identidade que o admin aprovou —
+ * mudar exigiria nova aprovação. Status/motivo são bloqueados no banco
+ * pelo trigger empresas_protege_status.
+ */
+export async function atualizarMinhaEmpresa(
+  empresaId: string,
+  dados: { nomeFantasia: string; telefone: string; email: string },
+): Promise<void> {
+  const { error } = await supabase
+    .from('empresas')
+    .update({
+      nome_fantasia: dados.nomeFantasia.trim() || null,
+      telefone: somenteDigitos(dados.telefone) || null,
+      email: dados.email.trim(),
+    })
+    .eq('id', empresaId);
+  if (error) throw error;
+}
+
 /** Empresa do usuário logado, ou null se a conta não é de empresa. */
 export async function carregarMinhaEmpresa(): Promise<Empresa | null> {
   const { data: sessao } = await supabase.auth.getSession();
