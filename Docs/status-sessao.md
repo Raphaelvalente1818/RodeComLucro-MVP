@@ -1294,6 +1294,19 @@ Ajustes extras do mesmo dia (a partir do teste real de importação do Raphael):
 
 **Logo na entrada do motorista (16/09)**: Raphael mandou o logotipo (caminhão preto + "RODECOMLUCRO" com "LUCRO" em amarelo, fundo #0b1014 — praticamente o nosso asfalto, então entra sem recorte). Salvo otimizado em `apps/web/public/img/logo-rode-com-lucro.jpg` (720px, 89 KB). `Entrada.tsx` redesenhada: hero sangrado com o logo e um fade pro fundo, tagline, card do formulário (eyebrow "Entrar", título, nota "sem senha pra decorar", telefone, aceite, CTA amarelo com o canal escolhido, alternador SMS/WhatsApp), e três mini-cards de benefício (Lucro real / Piso ANTT / Fretes perto). `Verificacao.tsx` ganhou o mesmo tratamento (logo compacto + card "Passo 2 de 2"). `.checkbox` agora força `flex-direction: row` (o `label` global é column e empilhava a caixa em cima do texto). **Ajuste de mesmo dia**: Raphael pediu que coubesse tudo numa tela de celular — logo reduzido pra 170px com máscara radial (apaga a borda do retângulo sem recortar a imagem), card e mini-cards mais compactos, tela centralizada em `100dvh`; abaixo de 660px de altura os benefícios somem e fica só o essencial.
 
-**Pendente**: commit/push, olhar no deploy nos dois temas; conferir o comportamento em celular (grid vira 1 coluna abaixo de 640px, nav some — sem menu hambúrguer ainda). Troca de senha / "esqueci a senha" no portal.
+**Ajustes finos da entrada vistos no iPhone (16/09)**: campo de telefone mostrava "()" vazio (bug antigo do `formatarTelefone`, corrigido: vazio devolve vazio), campo agora ocupa a largura toda com 18px, links do aceite no amarelo da marca em vez do azul do navegador.
+
+**Logo do Sofrete (16/09)**: Raphael não gostou das 4 opções que tinha (estrada em S verde/azul, mapa do Brasil, caminhão com rede). Fiz 4 caminhos originais na paleta do Sofrete (grafite #1C2421, amarelo #F2B01E, off-white, Barlow), cada um em fundo claro, escuro e reduzido a 32px: `Docs/propostas-logo-sofrete.html` — (1) O de estrada, (2) Etiqueta de carga, (3) Rota origem→destino, (4) Carga em movimento. Recomendei a 3, com a 1 como segunda. **Aguardando escolha**; depois: refinar, converter texto em traçado, exportar SVG/PNG, trocar o logotipo provisório do `EmpresaLayout` (quadrado grafite com filete) pelo escolhido.
+
+## CHECKPOINT — 16/09 (fim de sessão)
+
+**Estado ao pausar**: identidade visual do motorista aplicada (Garagem, Resultado, Entrada, Verificação, faixa nos títulos); portal Sofrete com tema claro/escuro selecionável, layout de PC, cabeçalho, Meus dados, chips corrigidos. Tudo com `tsc` limpo no sandbox. **Verificar com `git status` se o último lote foi commitado** — o último comando passado foi o commit "fix(ui): campo de telefone vazio, largura total e links do aceite na marca"; as propostas de logo (`Docs/propostas-logo-sofrete.html`) e este checkpoint ainda não foram commitados.
+
+**AO RETOMAR**:
+1. `git status` + commitar o que faltar.
+2. Raphael escolher o caminho do logo do Sofrete (ver seção acima) → refinar e aplicar no cabeçalho do portal.
+3. Continuar a identidade do motorista nas telas que faltam: Analisar, Buscar frete, Perfil, Meu perfil (só os títulos receberam a faixa; conteúdo ainda no estilo antigo).
+4. Pendências do portal: troca de senha / "esqueci a senha"; menu em celular (nav some abaixo de 640px); hospedar a Barlow em `public/fontes` pra funcionar offline.
+5. Pendências antigas que continuam: revogar o `WA_ACCESS_TOKEN` exposto; número da Meta pro WhatsApp; gate de validação está em 1/160 com 6 motoristas — o gargalo real é aquisição, não funcionalidade.
 
 **Depois disso, o módulo de empresas MVP está completo.** Próximos incrementos (não bloqueantes): rate-limit de postagem por empresa; sinalizador de risco na fila do admin (preço abaixo do piso ANTT via `calcularPisoANTT`); editar/encerrar frete pela empresa; e-mail de aviso quando aprovado/rejeitado.
