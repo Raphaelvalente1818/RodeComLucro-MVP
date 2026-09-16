@@ -330,7 +330,7 @@ export default function Perfil() {
 
   return (
     <main className="tela tela-perfil">
-      <h1>Perfil do caminhão</h1>
+      <h1 className="faixa-rodovia">Perfil do caminhão</h1>
 
       {avisoFipe && <p className="aviso">{avisoFipe}</p>}
 

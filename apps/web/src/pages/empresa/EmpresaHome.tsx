@@ -108,7 +108,7 @@ export default function EmpresaHome() {
     <main className="tela tela-entrada">
       <p className="garagem-eyebrow">Portal da empresa</p>
       <h1>{empresa.nomeFantasia || empresa.razaoSocial}</h1>
-      <p className="admin-card-nota">
+      <p className="admin-card-nota faixa-rodovia">
         {empresa.razaoSocial} · CNPJ {formatarCnpj(empresa.cnpj)}
       </p>
 

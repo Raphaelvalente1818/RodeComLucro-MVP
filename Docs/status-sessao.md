@@ -1271,6 +1271,8 @@ Ajustes extras do mesmo dia (a partir do teste real de importação do Raphael):
 - `tsc --noEmit --strict` com o `@rode/calc` mapeado pro fonte: **0 erros**. (Rodar direto no sandbox acusa dezenas de erros de `Cannot find module '@rode/calc'` — é artefato do `node_modules` do workspace só existir na máquina do Raphael, não erro real.)
 - Varredura automática das classes usadas nos `.tsx` contra as definidas no CSS: nenhuma classe órfã.
 
+**Correção 16/09 — a faixa tracejada faltou**: o mockup tinha a faixa de divisão de pista (tracejado amarelo) fechando o cabeçalho, e eu não levei pro código na primeira aplicação; Raphael reparou olhando o deploy. Implementada agora como `background-image` (`repeating-linear-gradient`) no próprio elemento, em vez de `<div>` extra — assim não vira um terceiro item no flex do `.garagem-header`. Duas formas de usar: `.garagem-header` já vem com ela (Garagem e Buscar frete), e a classe utilitária `.faixa-rodovia` põe a faixa em qualquer título (Analisar, Resultado, Perfil, Meu perfil, Entrada, Verificação) ou na linha de apoio quando o título tem legenda logo abaixo (telas do portal da empresa, pra não separar o nome da empresa do CNPJ).
+
 **Pendente**: commit/push e olhar no deploy. Depois: aplicar a mesma identidade em Analisar, Buscar frete, Perfil, Entrada/Verificação, e no portal da empresa (que hoje reaproveita as classes do motorista, então já herda parte).
 
 **Depois disso, o módulo de empresas MVP está completo.** Próximos incrementos (não bloqueantes): rate-limit de postagem por empresa; sinalizador de risco na fila do admin (preço abaixo do piso ANTT via `calcularPisoANTT`); editar/encerrar frete pela empresa; e-mail de aviso quando aprovado/rejeitado.

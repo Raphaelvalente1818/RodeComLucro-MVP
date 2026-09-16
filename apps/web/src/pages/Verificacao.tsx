@@ -95,7 +95,7 @@ export default function Verificacao() {
 
   return (
     <main className="tela tela-verificacao">
-      <h1>Digite o codigo enviado</h1>
+      <h1 className="faixa-rodovia">Digite o codigo enviado</h1>
       <p>Enviamos um codigo de 6 digitos por {canal === 'whatsapp' ? 'WhatsApp' : 'SMS'}.</p>
 
       <div className="campos-codigo">

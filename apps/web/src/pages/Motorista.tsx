@@ -140,7 +140,7 @@ export default function Motorista() {
 
   return (
     <main className="tela">
-      <h1>Meu perfil</h1>
+      <h1 className="faixa-rodovia">Meu perfil</h1>
 
       <label>
         Nome

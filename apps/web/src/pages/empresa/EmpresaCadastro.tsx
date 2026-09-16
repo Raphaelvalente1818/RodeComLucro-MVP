@@ -86,7 +86,7 @@ export default function EmpresaCadastro() {
     <main className="tela tela-entrada">
       <p className="garagem-eyebrow">Portal da empresa</p>
       <h1>Cadastrar empresa</h1>
-      <p className="admin-card-nota">
+      <p className="admin-card-nota faixa-rodovia">
         Publique fretes direto pros motoristas do Rode com Lucro. O cadastro passa por uma aprovação rápida da nossa
         equipe antes de liberar a publicação.
       </p>

@@ -57,7 +57,7 @@ export default function Entrada() {
 
   return (
     <main className="tela tela-entrada">
-      <h1>Entrar com telefone</h1>
+      <h1 className="faixa-rodovia">Entrar com telefone</h1>
       <form onSubmit={onSubmit}>
         <label htmlFor="telefone">Numero de celular</label>
         <div className="campo-telefone">

@@ -177,7 +177,7 @@ export default function EmpresaPublicar() {
     <main className="tela tela-entrada">
       <p className="garagem-eyebrow">Portal da empresa</p>
       <h1>Publicar frete</h1>
-      <p className="admin-card-nota">
+      <p className="admin-card-nota faixa-rodovia">
         O frete passa por uma conferência rápida da nossa equipe antes de aparecer pros motoristas.
       </p>
 

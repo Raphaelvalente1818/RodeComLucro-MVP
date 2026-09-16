@@ -39,7 +39,7 @@ export default function EmpresaEntrar() {
   return (
     <main className="tela tela-entrada">
       <p className="garagem-eyebrow">Portal da empresa</p>
-      <h1>Entrar</h1>
+      <h1 className="faixa-rodovia">Entrar</h1>
       <form onSubmit={onSubmit}>
         <label htmlFor="email">E-mail</label>
         <input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />

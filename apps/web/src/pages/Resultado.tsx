@@ -242,7 +242,7 @@ export default function Resultado() {
 
   return (
     <main className="tela tela-resultado">
-      <h1>Resultado</h1>
+      <h1 className="faixa-rodovia">Resultado</h1>
 
       {modoHistorico && analisadoEm && <p className="aviso">Analisado em {fmtDataHora(analisadoEm)}</p>}
 

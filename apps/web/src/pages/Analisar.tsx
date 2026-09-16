@@ -313,7 +313,7 @@ export default function Analisar() {
 
   return (
     <main className="tela tela-analisar">
-      <h1>Analisar frete</h1>
+      <h1 className="faixa-rodovia">Analisar frete</h1>
 
       <label>
         Origem

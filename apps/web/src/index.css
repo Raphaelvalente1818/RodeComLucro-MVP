@@ -619,6 +619,33 @@ button:disabled {
   justify-content: space-between;
 }
 
+/* =====================================================================
+   Faixa de divisão de pista — a assinatura da marca.
+   Tracejada como a faixa amarela de rodovia, fechando o cabeçalho da
+   tela. Feita com background-image em vez de elemento próprio pra não
+   precisar de <div> extra em toda tela (e pra não virar um terceiro
+   item no flex do header).
+   ===================================================================== */
+.garagem-header,
+.faixa-rodovia {
+  padding-bottom: 14px;
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--marca) 0 22px,
+    transparent 22px 38px
+  );
+  background-repeat: no-repeat;
+  background-size: 100% 4px;
+  background-position: left bottom;
+}
+
+/* Telas sem .garagem-header (Analisar, Resultado, Perfil…) usam esta
+   classe no título pra ganhar a mesma faixa. */
+.faixa-rodovia {
+  display: block;
+  width: 100%;
+}
+
 /* PROVISÓRIO — empilha "Testes" em cima de "Backlog" no header da
    Garagem. Remover junto com o resto dos blocos "PROVISÓRIO" quando os
    testes acabarem. */
