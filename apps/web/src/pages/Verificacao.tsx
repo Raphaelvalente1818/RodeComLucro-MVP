@@ -95,8 +95,14 @@ export default function Verificacao() {
 
   return (
     <main className="tela tela-verificacao">
-      <h1 className="faixa-rodovia">Digite o codigo enviado</h1>
-      <p>Enviamos um codigo de 6 digitos por {canal === 'whatsapp' ? 'WhatsApp' : 'SMS'}.</p>
+      <div className="entrada-hero entrada-hero-compacto">
+        <img src="/img/logo-rode-com-lucro.jpg" alt="Rode com Lucro" className="entrada-logo" width="720" height="621" />
+      </div>
+
+      <div className="entrada-card">
+      <p className="garagem-eyebrow">Passo 2 de 2</p>
+      <h1>Digite o código enviado</h1>
+      <p className="entrada-nota">Enviamos um código de 6 dígitos por {canal === 'whatsapp' ? 'WhatsApp' : 'SMS'}.</p>
 
       <div className="campos-codigo">
         {codigo.map((d, i) => (
@@ -117,10 +123,11 @@ export default function Verificacao() {
       </button>
 
       <button type="button" className="link-secundario" disabled={reenvioEm > 0} onClick={reenviar}>
-        {reenvioEm > 0 ? `Reenviar em ${reenvioEm}s` : 'Reenviar codigo'}
+        {reenvioEm > 0 ? `Reenviar em ${reenvioEm}s` : 'Reenviar código'}
       </button>
 
       {erro && <p className="aviso-erro">{erro}</p>}
+      </div>
     </main>
   );
 }

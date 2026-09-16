@@ -299,9 +299,112 @@ button:disabled {
 
 .checkbox {
   display: flex;
-  gap: 8px;
+  flex-direction: row; /* label é column por padrão; aqui caixa e texto lado a lado */
+  gap: 10px;
   align-items: flex-start;
   font-size: 14px;
+  line-height: 1.45;
+}
+
+.checkbox input {
+  margin-top: 2px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--marca);
+  flex: none;
+}
+
+/* ---- tela de entrada (login do motorista) ---- */
+.entrada-hero {
+  margin: -32px -20px 0; /* sangra até a borda: o fundo do logo é o mesmo asfalto */
+  padding: 8px 0 0;
+  text-align: center;
+  background: #0b1014;
+  position: relative;
+}
+
+.entrada-hero::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 60px;
+  background: linear-gradient(180deg, transparent, var(--bg));
+}
+
+.entrada-logo {
+  display: block;
+  width: min(100%, 340px);
+  height: auto;
+  margin: 0 auto;
+}
+
+.entrada-hero-compacto .entrada-logo {
+  width: min(100%, 220px);
+}
+
+.entrada-tagline {
+  position: relative;
+  z-index: 1;
+  margin: -10px 20px 0;
+  padding-bottom: 12px;
+  font-size: 15px;
+  color: var(--txt-2);
+}
+
+.entrada-card {
+  background: var(--surf);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-card);
+  padding: 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.entrada-card h1 {
+  font-size: 22px;
+}
+
+.entrada-nota {
+  margin: -6px 0 0;
+  font-size: 13.5px;
+  color: var(--txt-dim);
+}
+
+.entrada-card .cta-primaria {
+  margin-top: 4px;
+}
+
+.entrada-beneficios {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.entrada-beneficio {
+  background: var(--surf);
+  border: 1px solid var(--linha);
+  border-radius: 12px;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.entrada-beneficio b {
+  font-family: var(--fonte-cond);
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--marca);
+}
+
+.entrada-beneficio span {
+  font-size: 12px;
+  color: var(--txt-dim);
+  line-height: 1.4;
 }
 
 .campo-toggle {

@@ -57,9 +57,18 @@ export default function Entrada() {
 
   return (
     <main className="tela tela-entrada">
-      <h1 className="faixa-rodovia">Entrar com telefone</h1>
-      <form onSubmit={onSubmit}>
-        <label htmlFor="telefone">Numero de celular</label>
+      {/* O logo já vem com o fundo no nosso asfalto, então entra sem
+          recorte; o fade na base emenda com a página. */}
+      <div className="entrada-hero">
+        <img src="/img/logo-rode-com-lucro.jpg" alt="Rode com Lucro" className="entrada-logo" width="720" height="621" />
+        <p className="entrada-tagline">Saiba se o frete vale a pena antes de aceitar.</p>
+      </div>
+
+      <form className="entrada-card" onSubmit={onSubmit}>
+        <p className="garagem-eyebrow">Entrar</p>
+        <h1>Seu número de celular</h1>
+        <p className="entrada-nota">A gente manda um código por SMS. Sem senha pra decorar.</p>
+
         <div className="campo-telefone">
           <span>+55</span>
           <input
@@ -68,6 +77,7 @@ export default function Entrada() {
             inputMode="tel"
             autoComplete="tel"
             placeholder="(11) 91234-5678"
+            aria-label="Número de celular"
             value={formatarTelefone(telefone)}
             onChange={(e) => setTelefone(e.target.value)}
           />
@@ -75,32 +85,54 @@ export default function Entrada() {
 
         <label className="checkbox">
           <input type="checkbox" checked={aceite} onChange={(e) => setAceite(e.target.checked)} />
-          Li e aceito os{' '}
-          <a href="/termos" target="_blank" rel="noreferrer">Termos de uso</a> e a{' '}
-          <a href="/privacidade" target="_blank" rel="noreferrer">Politica de privacidade</a>
+          <span>
+            Li e aceito os{' '}
+            <a href="/termos" target="_blank" rel="noreferrer">
+              Termos de uso
+            </a>{' '}
+            e a{' '}
+            <a href="/privacidade" target="_blank" rel="noreferrer">
+              Política de privacidade
+            </a>
+          </span>
         </label>
 
-        <button type="submit" disabled={!podeEnviar}>
-          {carregando ? 'Enviando...' : 'Receber codigo'}
+        <button type="submit" className="cta-primaria" disabled={!podeEnviar}>
+          <span className="cta-titulo">{carregando ? 'Enviando…' : 'Receber código'}</span>
+          <span className="cta-subtitulo">{canal === 'whatsapp' ? 'pelo WhatsApp' : 'por SMS'}</span>
         </button>
 
         <button
           type="button"
           className="link-secundario"
           disabled={!aceite || carregando}
-          onClick={() => setCanal('whatsapp')}
+          onClick={() => setCanal((c) => (c === 'whatsapp' ? 'sms' : 'whatsapp'))}
         >
-          Prefiro receber pelo WhatsApp
+          {canal === 'whatsapp' ? 'Prefiro receber por SMS' : 'Prefiro receber pelo WhatsApp'}
         </button>
 
         {bloqueadoAte && (
           <p className="aviso-erro">
-            Muitas tentativas. Tente novamente apos{' '}
-            {new Date(bloqueadoAte).toLocaleTimeString('pt-BR')}.
+            Muitas tentativas. Tente novamente após {new Date(bloqueadoAte).toLocaleTimeString('pt-BR')}.
           </p>
         )}
         {erro && <p className="aviso-erro">{erro}</p>}
       </form>
+
+      <div className="entrada-beneficios">
+        <div className="entrada-beneficio">
+          <b>Lucro real</b>
+          <span>Diesel, pedágio, pneu, manutenção — tudo na conta.</span>
+        </div>
+        <div className="entrada-beneficio">
+          <b>Piso ANTT</b>
+          <span>Vê na hora se a oferta está abaixo do mínimo.</span>
+        </div>
+        <div className="entrada-beneficio">
+          <b>Fretes perto</b>
+          <span>Cargas publicadas por empresas, no seu raio.</span>
+        </div>
+      </div>
     </main>
   );
 }
