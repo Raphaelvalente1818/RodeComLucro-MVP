@@ -42,17 +42,20 @@ function CampoCidade({
     return () => clearTimeout(h);
   }, [valor, selecionada]);
 
+  // Um <div> só, pra ocupar uma célula do grid de duas colunas.
   return (
-    <>
-      <label htmlFor={id}>{label}</label>
-      <input
-        id={id}
-        type="text"
-        placeholder="Cidade/UF"
-        autoComplete="off"
-        value={valor}
-        onChange={(e) => onChange(e.target.value)}
-      />
+    <div className="campo-cidade">
+      <label htmlFor={id}>
+        {label}
+        <input
+          id={id}
+          type="text"
+          placeholder="Cidade/UF"
+          autoComplete="off"
+          value={valor}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      </label>
       {sugestoes.length > 0 && (
         <ul className="sugestoes-box">
           {sugestoes.map((m) => (
@@ -71,7 +74,7 @@ function CampoCidade({
           ))}
         </ul>
       )}
-    </>
+    </div>
   );
 }
 
@@ -174,14 +177,16 @@ export default function EmpresaPublicar() {
   if (!empresa) return null;
 
   return (
-    <main className="tela tela-entrada">
-      <p className="garagem-eyebrow">Portal da empresa</p>
+    <main className="tela">
+      <p className="garagem-eyebrow">Nova publicação</p>
       <h1>Publicar frete</h1>
-      <p className="admin-card-nota faixa-rodovia">
-        O frete passa por uma conferência rápida da nossa equipe antes de aparecer pros motoristas.
+      <p className="admin-card-nota">
+        Preencha o essencial; o resto é opcional e ajuda o motorista a decidir mais rápido. O frete passa por uma
+        conferência rápida da nossa equipe antes de aparecer pros motoristas.
       </p>
 
-      <form onSubmit={onSubmit}>
+      <form className="empresa-form" onSubmit={onSubmit}>
+        <p className="empresa-form-secao">Rota</p>
         <CampoCidade
           id="origem"
           label="Origem"
@@ -212,6 +217,16 @@ export default function EmpresaPublicar() {
           }}
         />
 
+        <label>
+          Data de coleta (opcional)
+          <input type="date" value={dataColeta} onChange={(e) => setDataColeta(e.target.value)} />
+        </label>
+        <label>
+          Distância (km, opcional)
+          <input type="number" inputMode="numeric" min="0" value={distanciaKm} onChange={(e) => setDistanciaKm(e.target.value)} />
+        </label>
+
+        <p className="empresa-form-secao">Valor</p>
         <label className="checkbox">
           <input type="checkbox" checked={aCombinar} onChange={(e) => setACombinar(e.target.checked)} />
           Valor a combinar
@@ -219,49 +234,43 @@ export default function EmpresaPublicar() {
 
         {!aCombinar && (
           <>
-            <label htmlFor="valor">Valor do frete (R$)</label>
-            <input
-              id="valor"
-              type="number"
-              inputMode="decimal"
-              min="0"
-              step="0.01"
-              value={valorReais}
-              onChange={(e) => setValorReais(e.target.value)}
-            />
-            <label htmlFor="tipoValor">Tipo de valor</label>
-            <select id="tipoValor" value={tipoValor} onChange={(e) => setTipoValor(e.target.value as 'fixo' | 'por_tonelada')}>
-              <option value="fixo">Valor fixo (viagem)</option>
-              <option value="por_tonelada">Por tonelada</option>
-            </select>
+            <label>
+              Valor do frete (R$)
+              <input
+                type="number"
+                inputMode="decimal"
+                min="0"
+                step="0.01"
+                value={valorReais}
+                onChange={(e) => setValorReais(e.target.value)}
+              />
+            </label>
+            <label>
+              Tipo de valor
+              <select value={tipoValor} onChange={(e) => setTipoValor(e.target.value as 'fixo' | 'por_tonelada')}>
+                <option value="fixo">Valor fixo (viagem)</option>
+                <option value="por_tonelada">Por tonelada</option>
+              </select>
+            </label>
           </>
         )}
 
-        <label htmlFor="peso">Peso (kg, opcional)</label>
-        <input id="peso" type="number" inputMode="numeric" min="0" value={pesoKg} onChange={(e) => setPesoKg(e.target.value)} />
+        <label>
+          Peso (kg, opcional)
+          <input type="number" inputMode="numeric" min="0" value={pesoKg} onChange={(e) => setPesoKg(e.target.value)} />
+        </label>
+        <label>
+          Pedágio por conta de
+          <select value={pedagio} onChange={(e) => setPedagio(e.target.value as '' | 'empresa' | 'motorista')}>
+            <option value="">Não informado</option>
+            <option value="empresa">Empresa</option>
+            <option value="motorista">Motorista</option>
+          </select>
+        </label>
 
-        <label htmlFor="dist">Distância (km, opcional)</label>
-        <input
-          id="dist"
-          type="number"
-          inputMode="numeric"
-          min="0"
-          value={distanciaKm}
-          onChange={(e) => setDistanciaKm(e.target.value)}
-        />
-
-        <label htmlFor="coleta">Data de coleta (opcional)</label>
-        <input id="coleta" type="date" value={dataColeta} onChange={(e) => setDataColeta(e.target.value)} />
-
-        <label htmlFor="pedagio">Pedágio por conta de</label>
-        <select id="pedagio" value={pedagio} onChange={(e) => setPedagio(e.target.value as '' | 'empresa' | 'motorista')}>
-          <option value="">Não informado</option>
-          <option value="empresa">Empresa</option>
-          <option value="motorista">Motorista</option>
-        </select>
-
+        <p className="empresa-form-secao">Veículo aceito — vazio aceita qualquer</p>
         <div className="chip-secao">
-          <p className="chip-secao-titulo">Tipos de veículo aceitos (vazio = qualquer)</p>
+          <p className="chip-secao-titulo">Tipos de veículo</p>
           {VEICULOS.map(({ categoria, opcoes }) => (
             <div key={categoria} className="chip-grupo">
               <p className="chip-grupo-label">{categoria}</p>
@@ -282,7 +291,7 @@ export default function EmpresaPublicar() {
         </div>
 
         <div className="chip-secao">
-          <p className="chip-secao-titulo">Tipos de carroceria aceitos (vazio = qualquer)</p>
+          <p className="chip-secao-titulo">Tipos de carroceria</p>
           {CARROCERIAS.map(({ categoria, opcoes }) => (
             <div key={categoria} className="chip-grupo">
               <p className="chip-grupo-label">{categoria}</p>
@@ -302,20 +311,21 @@ export default function EmpresaPublicar() {
           ))}
         </div>
 
-        <label htmlFor="contatoNome">Nome do contato (opcional)</label>
-        <input id="contatoNome" type="text" value={contatoNome} onChange={(e) => setContatoNome(e.target.value)} />
+        <p className="empresa-form-secao">Contato pro motorista</p>
+        <label>
+          Nome (opcional)
+          <input type="text" value={contatoNome} onChange={(e) => setContatoNome(e.target.value)} />
+        </label>
+        <label>
+          Telefone (o motorista vê este número)
+          <input type="tel" inputMode="tel" value={contatoTelefone} onChange={(e) => setContatoTelefone(e.target.value)} />
+        </label>
+        <label className="largo">
+          Observações (opcional)
+          <textarea rows={3} value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
+        </label>
 
-        <label htmlFor="contatoTel">Telefone do contato (o motorista vê este número)</label>
-        <input
-          id="contatoTel"
-          type="tel"
-          inputMode="tel"
-          value={contatoTelefone}
-          onChange={(e) => setContatoTelefone(e.target.value)}
-        />
-
-        <label htmlFor="obs">Observações (opcional)</label>
-        <textarea id="obs" rows={3} value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
+        <p className="admin-card-nota">Ao enviar, o frete entra em análise. Costuma ser liberado no mesmo dia útil.</p>
 
         {erros.length > 0 && (
           <ul className="admin-lista-simples">

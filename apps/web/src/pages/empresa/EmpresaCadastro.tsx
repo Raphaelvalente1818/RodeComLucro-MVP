@@ -69,7 +69,8 @@ export default function EmpresaCadastro() {
 
   if (confirmarEmail) {
     return (
-      <main className="tela tela-entrada">
+      <main className="tela tela-empresa-login">
+        <p className="garagem-eyebrow">Sofrete · Empresas</p>
         <h1>Confirme seu e-mail</h1>
         <p>
           Enviamos um link de confirmação para <strong>{email}</strong>. Abra o e-mail, clique no link e depois entre no
@@ -83,53 +84,54 @@ export default function EmpresaCadastro() {
   }
 
   return (
-    <main className="tela tela-entrada">
-      <p className="garagem-eyebrow">Portal da empresa</p>
+    <main className="tela">
+      <p className="garagem-eyebrow">Sofrete · Empresas</p>
       <h1>Cadastrar empresa</h1>
-      <p className="admin-card-nota faixa-rodovia">
-        Publique fretes direto pros motoristas do Rode com Lucro. O cadastro passa por uma aprovação rápida da nossa
+      <p className="admin-card-nota">
+        Publique cargas direto pros motoristas do Rode com Lucro. O cadastro passa por uma aprovação rápida da nossa
         equipe antes de liberar a publicação.
       </p>
 
-      <form onSubmit={onSubmit}>
-        <label htmlFor="cnpj">CNPJ</label>
-        <input
-          id="cnpj"
-          type="text"
-          inputMode="numeric"
-          placeholder="00.000.000/0000-00"
-          value={formatarCnpj(cnpj)}
-          onChange={(e) => setCnpj(e.target.value)}
-        />
+      <form className="empresa-form" onSubmit={onSubmit}>
+        <label>
+          CNPJ
+          <input
+            type="text"
+            inputMode="numeric"
+            placeholder="00.000.000/0000-00"
+            value={formatarCnpj(cnpj)}
+            onChange={(e) => setCnpj(e.target.value)}
+          />
+        </label>
+        <label>
+          Razão social
+          <input type="text" value={razaoSocial} onChange={(e) => setRazaoSocial(e.target.value)} />
+        </label>
         {somenteDigitos(cnpj).length === 14 && !cnpjOk && <p className="aviso-erro">CNPJ inválido.</p>}
 
-        <label htmlFor="razao">Razão social</label>
-        <input id="razao" type="text" value={razaoSocial} onChange={(e) => setRazaoSocial(e.target.value)} />
+        <label>
+          Nome fantasia (opcional)
+          <input type="text" value={nomeFantasia} onChange={(e) => setNomeFantasia(e.target.value)} />
+        </label>
+        <label>
+          Telefone de contato (opcional)
+          <input
+            type="tel"
+            inputMode="tel"
+            placeholder="(11) 91234-5678"
+            value={formatarTelefone(telefone)}
+            onChange={(e) => setTelefone(e.target.value)}
+          />
+        </label>
 
-        <label htmlFor="fantasia">Nome fantasia (opcional)</label>
-        <input id="fantasia" type="text" value={nomeFantasia} onChange={(e) => setNomeFantasia(e.target.value)} />
-
-        <label htmlFor="tel">Telefone de contato (opcional)</label>
-        <input
-          id="tel"
-          type="tel"
-          inputMode="tel"
-          placeholder="(11) 91234-5678"
-          value={formatarTelefone(telefone)}
-          onChange={(e) => setTelefone(e.target.value)}
-        />
-
-        <label htmlFor="email">E-mail</label>
-        <input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-
-        <label htmlFor="senha">Senha (mínimo 8 caracteres)</label>
-        <input
-          id="senha"
-          type="password"
-          autoComplete="new-password"
-          value={senha}
-          onChange={(e) => setSenha(e.target.value)}
-        />
+        <label>
+          E-mail
+          <input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        </label>
+        <label>
+          Senha (mínimo 8 caracteres)
+          <input type="password" autoComplete="new-password" value={senha} onChange={(e) => setSenha(e.target.value)} />
+        </label>
 
         <label className="checkbox">
           <input type="checkbox" checked={aceite} onChange={(e) => setAceite(e.target.checked)} />

@@ -1670,3 +1670,335 @@ button:disabled {
   color: var(--txt);
   border-color: var(--linha-forte);
 }
+
+/* =====================================================================
+   SOFRETE — portal da empresa (16/09/2026)
+   Ver Docs/mockup-portal-empresa.html. Mesma marca, outro balcão: a
+   pessoa da empresa usa no escritório, de dia, no PC. Então: tema claro
+   por padrão (com alternador pra escuro sóbrio, guardado no navegador),
+   largura de PC, formulário em duas colunas, tabela de verdade.
+
+   É um TEMA, não um segundo CSS: a classe .tema-empresa (posta no <body>
+   pelo EmpresaLayout) redefine as variáveis do :root. Tipografia, selos,
+   campos e tabelas continuam os mesmos. O amarelo da marca sai dos
+   botões e vira detalhe de 3px no cabeçalho — em escritório,
+   credibilidade vem de contenção.
+
+   Tons de status mais escuros que os do motorista de propósito: verde e
+   laranja vivos reprovam no contraste AA sobre branco; estes foram
+   calculados (5,1 a 6,3 : 1) antes de entrar aqui.
+   ===================================================================== */
+body.tema-empresa {
+  --bg: #f4f5f3;
+  --bg-fundo: #e9ebe8;
+  --surf: #ffffff;
+  --surf-2: #eef0ed;
+  --surf-3: #e6e9e5;
+  --linha: #dce0db;
+  --linha-forte: #c3c9c2;
+  --txt: #161a18;
+  --txt-2: #3b4440;
+  --txt-dim: #5f6a65;
+  --txt-fraco: #6b7570;
+  --marca-tx: #8a6208;   /* amarelo só vira texto neste tom escuro (AA sobre fundo) */
+  --marca-bg: #fff7e3;
+  --primaria: #1c2421;   /* botão principal: grafite */
+  --primaria-tx: #ffffff;
+  --bom: #12753a;      --bom-bg: #e3f4e9;   --bom-borda: #a9d9b9;
+  --atencao: #8f5100;  --atencao-bg: #fff0d6; --atencao-borda: #e6c48a;
+  --ruim: #b83232;     --ruim-bg: #fbe5e5;  --ruim-borda: #e8a3a3;
+  --sombra: 0 1px 2px rgba(20, 26, 24, 0.06), 0 8px 24px rgba(20, 26, 24, 0.06);
+}
+
+/* Escuro sóbrio: o asfalto do motorista, mas sem amarelo em bloco. */
+body.tema-empresa.tema-empresa-escuro {
+  --bg: #0f1312;
+  --bg-fundo: #090c0b;
+  --surf: #171d1b;
+  --surf-2: #1f2725;
+  --surf-3: #263030;
+  --linha: #2a3330;
+  --linha-forte: #3d4a46;
+  --txt: #f2f5f4;
+  --txt-2: #c3ceca;
+  --txt-dim: #93a29e;
+  --txt-fraco: #7e8c88;
+  --marca-tx: #f2b01e;
+  --marca-bg: #33260a;
+  --primaria: #f2f5f4;
+  --primaria-tx: #10130f;
+  --bom: #2fd46e;      --bom-bg: #0e2e1c;   --bom-borda: #1d7a45;
+  --atencao: #ff9f1c;  --atencao-bg: #33220a; --atencao-borda: #8a5a14;
+  --ruim: #ff5a5a;     --ruim-bg: #331414;  --ruim-borda: #9e2f2f;
+  --sombra: none;
+}
+
+/* Botão e chip principais em grafite, não amarelo. */
+.tema-empresa button {
+  background: var(--primaria);
+  color: var(--primaria-tx);
+  font-weight: 600;
+}
+
+.tema-empresa .chip-ativo {
+  background: var(--primaria);
+  color: var(--primaria-tx);
+  border-color: var(--primaria);
+}
+
+.tema-empresa .link-secundario,
+.tema-empresa .admin-aba-secundaria {
+  background: transparent;
+  color: var(--txt-dim);
+}
+
+.tema-empresa .admin-aba-secundaria {
+  border: 1px solid var(--linha-forte);
+  color: var(--txt);
+}
+
+.tema-empresa .garagem-eyebrow {
+  color: var(--txt-dim);
+}
+
+/* A faixa da marca aqui é o filete de 3px do cabeçalho — tira a
+   tracejada dos títulos pra não ter duas. */
+.tema-empresa .faixa-rodovia {
+  background-image: none;
+  padding-bottom: 0;
+}
+
+.tema-empresa .admin-card,
+.tema-empresa .admin-tabela-wrap {
+  box-shadow: var(--sombra);
+  background: var(--surf);
+}
+
+.tema-empresa input,
+.tema-empresa select,
+.tema-empresa textarea {
+  border-color: var(--linha-forte);
+}
+
+.tema-empresa .admin-tag-nova { background: var(--bom-bg); color: var(--bom); }
+.tema-empresa .admin-tag-duplicada { background: var(--atencao-bg); color: var(--atencao); }
+.tema-empresa .admin-tag-erro { background: var(--ruim-bg); color: var(--ruim); }
+
+/* ---- cabeçalho do portal ---- */
+.empresa-topo {
+  background: var(--surf);
+  border-bottom: 1px solid var(--linha);
+  box-shadow: inset 0 -3px 0 var(--marca);
+  padding: 12px 24px;
+}
+
+.empresa-topo-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.sofrete-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+  color: var(--txt);
+  text-decoration: none;
+}
+
+.sofrete-logo-marca {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: var(--primaria);
+  position: relative;
+  flex: none;
+}
+
+.sofrete-logo-marca::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  right: 5px;
+  top: 12px;
+  height: 2px;
+  background: var(--marca);
+}
+
+.sofrete-logo small {
+  font-family: var(--fonte-cond);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--txt-dim);
+  margin-left: 4px;
+}
+
+.empresa-nav {
+  display: flex;
+  gap: 4px;
+}
+
+.empresa-nav a {
+  color: var(--txt-dim);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 7px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.empresa-nav a.ativo {
+  color: var(--txt);
+  background: var(--surf-2);
+  font-weight: 600;
+}
+
+.empresa-topo-direita {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--txt-2);
+}
+
+.empresa-topo-direita .ponto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--bom);
+  display: inline-block;
+  margin-right: 6px;
+}
+
+/* alternador claro/escuro */
+.tema-toggle {
+  background: transparent;
+  border: 1px solid var(--linha-forte);
+  color: var(--txt-dim);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---- tela larga de PC ---- */
+.tema-empresa .tela {
+  max-width: 760px;
+  padding: 28px 24px 56px;
+}
+
+.tema-empresa .tela-empresa-login {
+  max-width: 420px;
+  padding-top: 48px;
+}
+
+.tema-empresa h1 {
+  font-size: 26px;
+}
+
+.tema-empresa .admin-card-nota {
+  color: var(--txt-dim);
+}
+
+/* Formulário em duas colunas; itens marcados com .largo (ou que são
+   naturalmente largos: chips, listas, botões, textarea) ocupam a linha. */
+.empresa-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 16px;
+  background: var(--surf);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-card);
+  padding: 22px;
+  box-shadow: var(--sombra);
+}
+
+.empresa-form > .largo,
+.empresa-form > .chip-secao,
+.empresa-form > ul,
+.empresa-form > button,
+.empresa-form > .checkbox,
+.empresa-form > p,
+.empresa-form > a {
+  grid-column: 1 / -1;
+}
+
+.empresa-form > button {
+  justify-self: end;
+  width: auto;
+  min-width: 200px;
+}
+
+.empresa-form > button.link-secundario {
+  justify-self: start;
+  min-width: 0;
+}
+
+/* título de seção dentro do formulário (Rota / Valor / Contato) */
+.empresa-form-secao {
+  grid-column: 1 / -1;
+  font-family: var(--fonte-cond);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--txt-dim);
+  margin: 8px 0 -6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--linha);
+}
+
+.empresa-form-secao:first-child {
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.empresa-form .chip-secao {
+  margin: 0;
+}
+
+.campo-cidade {
+  position: relative;
+}
+
+.campo-cidade .sugestoes-box {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  margin: 4px 0 0;
+  background: var(--surf);
+  box-shadow: var(--sombra);
+}
+
+.tema-empresa .tela-empresa-login .empresa-form {
+  grid-template-columns: 1fr;
+}
+
+.tema-empresa .tela-empresa-login .empresa-form > button {
+  width: 100%;
+  justify-self: stretch;
+}
+
+@media (max-width: 640px) {
+  .empresa-form {
+    grid-template-columns: 1fr;
+  }
+
+  .empresa-nav {
+    display: none;
+  }
+}

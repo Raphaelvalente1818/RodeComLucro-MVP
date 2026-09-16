@@ -1273,6 +1273,21 @@ Ajustes extras do mesmo dia (a partir do teste real de importação do Raphael):
 
 **Correção 16/09 — a faixa tracejada faltou**: o mockup tinha a faixa de divisão de pista (tracejado amarelo) fechando o cabeçalho, e eu não levei pro código na primeira aplicação; Raphael reparou olhando o deploy. Implementada agora como `background-image` (`repeating-linear-gradient`) no próprio elemento, em vez de `<div>` extra — assim não vira um terceiro item no flex do `.garagem-header`. Duas formas de usar: `.garagem-header` já vem com ela (Garagem e Buscar frete), e a classe utilitária `.faixa-rodovia` põe a faixa em qualquer título (Analisar, Resultado, Perfil, Meu perfil, Entrada, Verificação) ou na linha de apoio quando o título tem legenda logo abaixo (telas do portal da empresa, pra não separar o nome da empresa do CNPJ).
 
-**Pendente**: commit/push e olhar no deploy. Depois: aplicar a mesma identidade em Analisar, Buscar frete, Perfil, Entrada/Verificação, e no portal da empresa (que hoje reaproveita as classes do motorista, então já herda parte).
+**Pendente**: commit/push e olhar no deploy. Depois: aplicar a mesma identidade em Analisar, Buscar frete, Perfil, Entrada/Verificação.
+
+## SOFRETE — 16/09: portal da empresa com marca própria e tema claro
+
+**Decisões do Raphael**: o visual "asfalto e faixa amarela" é só do motorista. O lado da empresa quer algo sóbrio, que transmita credibilidade; a marca dele é **"Sofrete"**; gostaram do estilo clean do mockup; e o alternador claro/escuro deve ficar disponível pro próprio usuário do portal.
+
+**Proposta**: `Docs/mockup-portal-empresa.html` (moldura de PC, 3 telas, botão claro/escuro). Mesma Barlow e mesmos componentes; amarelo sai dos botões e vira filete de 3px no cabeçalho; botão primário grafite; tons de status mais escuros (calculados: 5,1–6,3:1 sobre branco, AA).
+
+**Implementado**:
+- `index.css`, bloco "SOFRETE": `body.tema-empresa` redefine as variáveis (claro); `body.tema-empresa.tema-empresa-escuro` é o escuro sóbrio. É um tema, não um segundo CSS. Mais: `.empresa-topo` (cabeçalho com logotipo, nav, filete amarelo), `.tema-toggle`, `.empresa-form` (grid 2 colunas, `.largo` ocupa a linha, `.empresa-form-secao` como título de seção), `.campo-cidade` (sugestões em absolute), tela de 760px, login de 420px.
+- `pages/empresa/EmpresaLayout.tsx` (novo): rota-pai de `/empresa`; põe a classe no `<body>` (o fundo da página é do body — só no `<main>` ficaria "card claro em fundo preto") e remove no unmount pra não vazar pro app do motorista; alternador guarda em `localStorage['sofrete-tema']`, padrão claro; nav e botão Sair só com sessão; "Publicar frete" no nav só pra empresa aprovada.
+- `main.tsx`: `/empresa` virou rota aninhada (index, cadastro, entrar, publicar).
+- Telas: labels passaram a envolver os inputs (senão no grid label e input viram células separadas); Entrar/Cadastro/Publicar usam `.empresa-form`; Publicar ganhou seções Rota / Valor / Veículo / Contato; Home virou "Seus fretes" com CNPJ no eyebrow e sem botão Sair (está no cabeçalho); textos "Portal da empresa" viraram "Sofrete · Empresas". Frase de venda no login: "Publique cargas direto pros motoristas do Rode com Lucro" (fácil de tirar se não quiserem citar a outra marca).
+- `tsc` limpo (0 erros com `@rode/calc` mapeado).
+
+**Pendente**: commit/push, olhar no deploy nos dois temas; conferir o comportamento em celular (grid vira 1 coluna abaixo de 640px, nav some — sem menu hambúrguer ainda).
 
 **Depois disso, o módulo de empresas MVP está completo.** Próximos incrementos (não bloqueantes): rate-limit de postagem por empresa; sinalizador de risco na fila do admin (preço abaixo do piso ANTT via `calcularPisoANTT`); editar/encerrar frete pela empresa; e-mail de aviso quando aprovado/rejeitado.

@@ -22,6 +22,7 @@ import EmpresaCadastro from './pages/empresa/EmpresaCadastro';
 import EmpresaEntrar from './pages/empresa/EmpresaEntrar';
 import EmpresaHome from './pages/empresa/EmpresaHome';
 import EmpresaPublicar from './pages/empresa/EmpresaPublicar';
+import EmpresaLayout from './pages/empresa/EmpresaLayout';
 import './index.css';
 
 // Lazy: a lib de leitura de Excel (xlsx) é pesada (~300kB minificado) e só
@@ -42,10 +43,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Route path="/resultado/:id" element={<Resultado />} />
         <Route path="/perfil" element={<Perfil />} />
         <Route path="/buscar-frete" element={<BuscarFrete />} />
-        <Route path="/empresa" element={<EmpresaHome />} />
-        <Route path="/empresa/cadastro" element={<EmpresaCadastro />} />
-        <Route path="/empresa/entrar" element={<EmpresaEntrar />} />
-        <Route path="/empresa/publicar" element={<EmpresaPublicar />} />
+        {/* Portal Sofrete (lado da empresa): EmpresaLayout aplica o tema
+            claro/escuro no body e o cabeçalho com navegação. */}
+        <Route path="/empresa" element={<EmpresaLayout />}>
+          <Route index element={<EmpresaHome />} />
+          <Route path="cadastro" element={<EmpresaCadastro />} />
+          <Route path="entrar" element={<EmpresaEntrar />} />
+          <Route path="publicar" element={<EmpresaPublicar />} />
+        </Route>
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<VisaoGeral />} />
           <Route path="motoristas" element={<Motoristas />} />

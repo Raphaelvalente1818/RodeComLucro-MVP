@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sofrete — proposta visual do portal da empresa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  /* =================================================================
+     PROPOSTA VISUAL — portal da empresa (mockup navegável, 16/09/2026)
+     Mesma família (Barlow), mesmos componentes, outro tema: claro,
+     sóbrio, de escritório. O amarelo da marca vira detalhe fino — nunca
+     um bloco. Botão primário em grafite. Status em tons escuros que
+     passam AA sobre branco.
+     ================================================================= */
+
+  :root {
+    --fonte: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --fonte-cond: "Barlow Condensed", "Barlow", system-ui, sans-serif;
+  }
+
+  /* ---- TEMA EMPRESA (claro) — o que será a classe .tema-empresa no app ---- */
+  .tema-claro {
+    --bg:        #f4f5f3;
+    --surf:      #ffffff;
+    --surf-2:    #eef0ed;
+    --linha:     #dce0db;
+    --linha-forte: #c3c9c2;
+    --txt:       #161a18;
+    --txt-2:     #3b4440;
+    --txt-dim:   #5f6a65;
+    --txt-fraco: #6b7570;
+    --marca:     #f2b01e;      /* só detalhe: faixa fina, foco, ícone */
+    --marca-texto: #8a6208;    /* quando a marca precisa virar texto legível */
+    --primaria:  #1c2421;      /* botão principal: grafite, não amarelo */
+    --primaria-tx: #ffffff;
+    --bom: #12753a;      --bom-bg: #e3f4e9;
+    --atencao: #8f5100;  --atencao-bg: #fff0d6;
+    --ruim: #b83232;     --ruim-bg: #fbe5e5;
+    --sombra: 0 1px 2px rgba(20,26,24,.06), 0 8px 24px rgba(20,26,24,.06);
+  }
+
+  /* ---- alternativa: escuro sóbrio (sem amarelo nos botões) ---- */
+  .tema-escuro {
+    --bg: #0f1312; --surf: #171d1b; --surf-2: #1f2725; --linha: #2a3330; --linha-forte: #3d4a46;
+    --txt: #f2f5f4; --txt-2: #c3ceca; --txt-dim: #93a29e; --txt-fraco: #7e8c88;
+    --marca: #f2b01e; --marca-texto: #f2b01e;
+    --primaria: #f2f5f4; --primaria-tx: #10130f;
+    --bom: #2fd46e; --bom-bg: #0e2e1c; --atencao: #ff9f1c; --atencao-bg: #33220a; --ruim: #ff5a5a; --ruim-bg: #331414;
+    --sombra: none;
+  }
+
+  * , *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; background: #e9ebe8; color: #161a18; font-family: var(--fonte); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* ---------- casca do mockup ---------- */
+  .pagina { max-width: 1240px; margin: 0 auto; padding: 28px 20px 64px; }
+  .cabeca h1 { font-size: 24px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .cabeca p { margin: 0; color: #5f6a65; font-size: 14px; line-height: 1.55; max-width: 66ch; }
+  .controles { display: flex; gap: 8px; flex-wrap: wrap; margin: 22px 0 18px; align-items: center; }
+  .aba, .tema-btn {
+    background: #fff; color: #5f6a65; border: 1px solid #c3c9c2; padding: 9px 15px; border-radius: 999px;
+    font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .aba.on { background: #1c2421; color: #fff; border-color: #1c2421; }
+  .tema-btn.on { border-color: #f2b01e; color: #8a6208; background: #fff7e3; }
+  .sep { width: 1px; height: 22px; background: #c3c9c2; margin: 0 6px; }
+
+  .palco { display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; }
+
+  /* moldura de navegador (desktop) */
+  .janela {
+    flex: 1 1 760px; min-width: 620px; max-width: 820px;
+    border-radius: 12px; overflow: hidden; border: 1px solid #c3c9c2;
+    box-shadow: 0 24px 60px rgba(20,26,24,.18);
+    background: var(--bg);
+  }
+  .barra-nav { background: #dfe3de; padding: 9px 14px; display: flex; align-items: center; gap: 10px; font-size: 12px; color: #5f6a65; }
+  .barra-nav i { width: 10px; height: 10px; border-radius: 50%; background: #c3c9c2; display: inline-block; }
+  .barra-nav .url { flex: 1; background: #fff; border-radius: 6px; padding: 5px 10px; color: #3b4440; }
+  .app { min-height: 640px; color: var(--txt); background: var(--bg); }
+
+  /* ---------- sistema (painel lateral) ---------- */
+  .sistema { flex: 1 1 320px; min-width: 300px; max-width: 380px; display: flex; flex-direction: column; gap: 18px; }
+  .bloco { background: #fff; border: 1px solid #dce0db; border-radius: 14px; padding: 18px; }
+  .bloco h3 { margin: 0 0 6px; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: #5f6a65; }
+  .bloco p { margin: 8px 0 0; font-size: 13.5px; color: #3b4440; line-height: 1.55; }
+  .bloco b { color: #161a18; }
+  .cores { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 12px; }
+  .cor { border-radius: 8px; overflow: hidden; border: 1px solid #dce0db; }
+  .cor .am { height: 36px; }
+  .cor .rt { padding: 5px 7px; font-size: 11px; background: #f4f5f3; }
+  .cor .rt span { display: block; color: #5f6a65; font-variant-numeric: tabular-nums; }
+
+  /* =================================================================
+     COMPONENTES DO PORTAL
+     ================================================================= */
+  .topo-portal {
+    background: var(--surf); border-bottom: 1px solid var(--linha);
+    padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    /* a faixa da marca: 3px, na base — presente, não gritante */
+    box-shadow: inset 0 -3px 0 var(--marca);
+  }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -0.01em; font-size: 16px; }
+  .logo .quadrado { width: 26px; height: 26px; border-radius: 7px; background: var(--primaria); position: relative; }
+  .logo .quadrado::after { content: ""; position: absolute; left: 5px; right: 5px; top: 12px; height: 2px; background: var(--marca); }
+  .logo small { font-family: var(--fonte-cond); font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--txt-dim); font-size: 12px; margin-left: 6px; }
+  .topo-portal nav { display: flex; gap: 4px; }
+  .topo-portal nav a { color: var(--txt-dim); font-size: 14px; font-weight: 500; padding: 7px 12px; border-radius: 8px; cursor: pointer; }
+  .topo-portal nav a.on { color: var(--txt); background: var(--surf-2); font-weight: 600; }
+  .topo-portal .empresa-chip { font-size: 13px; color: var(--txt-2); display: flex; align-items: center; gap: 8px; }
+  .topo-portal .empresa-chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--bom); display: inline-block; }
+
+  .conteudo { padding: 28px 32px 48px; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+  .tela { display: none; } .tela.on { display: block; }
+
+  .eyebrow { font-family: var(--fonte-cond); font-size: 13px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--txt-dim); margin: 0 0 4px; }
+  h1.titulo { margin: 0 0 4px; font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+  .subtitulo { margin: 0; color: var(--txt-dim); font-size: 14px; }
+
+  .card { background: var(--surf); border: 1px solid var(--linha); border-radius: 12px; padding: 20px 22px; box-shadow: var(--sombra); }
+  .card-topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .card h2 { margin: 0; font-size: 16px; font-weight: 600; }
+
+  .status-linha { display: flex; align-items: center; gap: 14px; }
+  .status-icone { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; font-weight: 700; font-size: 18px; flex: none; }
+  .status-icone.ok { background: var(--bom-bg); color: var(--bom); }
+  .status-linha b { display: block; font-size: 15px; }
+  .status-linha p { margin: 2px 0 0; font-size: 13.5px; color: var(--txt-dim); }
+
+  .btn {
+    background: var(--primaria); color: var(--primaria-tx); border: 0; cursor: pointer; font-family: inherit;
+    font-size: 14px; font-weight: 600; padding: 11px 18px; border-radius: 9px; white-space: nowrap;
+  }
+  .btn.sec { background: var(--surf); color: var(--txt); border: 1px solid var(--linha-forte); }
+  .btn.link { background: none; color: var(--txt-dim); padding: 0; font-weight: 500; }
+
+  .kpis { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+  .kpi { background: var(--surf); border: 1px solid var(--linha); border-radius: 12px; padding: 14px 16px; box-shadow: var(--sombra); }
+  .kpi span { display: block; font-size: 12.5px; color: var(--txt-dim); margin-bottom: 4px; }
+  .kpi b { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-family: var(--fonte-cond); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--txt-dim); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--linha); }
+  td { padding: 12px 10px; border-bottom: 1px solid var(--linha); vertical-align: middle; }
+  tr:last-child td { border-bottom: 0; }
+  td .rota { font-weight: 600; display: block; }
+  td .sub { color: var(--txt-dim); font-size: 12.5px; }
+
+  .selo { font-family: var(--fonte-cond); font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+  .selo.bom { background: var(--bom-bg); color: var(--bom); }
+  .selo.atencao { background: var(--atencao-bg); color: var(--atencao); }
+  .selo.ruim { background: var(--ruim-bg); color: var(--ruim); }
+  .selo.neutro { background: var(--surf-2); color: var(--txt-dim); }
+
+  .motivo { display: block; font-size: 12.5px; color: var(--ruim); margin-top: 3px; }
+
+  /* formulário em duas colunas — é desktop */
+  .form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+  .form .largo { grid-column: 1 / -1; }
+  label.campo { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--txt-2); font-weight: 500; }
+  .campo input, .campo select, .campo textarea {
+    background: var(--surf); border: 1px solid var(--linha-forte); color: var(--txt); border-radius: 9px;
+    padding: 10px 12px; font-size: 15px; font-family: inherit; width: 100%;
+  }
+  .campo input:focus { outline: 2px solid var(--marca); outline-offset: 1px; border-color: var(--marca); }
+  .grupo-tit { grid-column: 1/-1; font-family: var(--fonte-cond); font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--txt-dim); margin: 6px 0 -4px; padding-top: 10px; border-top: 1px solid var(--linha); }
+  .grupo-tit:first-child { border-top: 0; padding-top: 0; margin-top: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { background: var(--surf); border: 1px solid var(--linha-forte); color: var(--txt-2); border-radius: 999px; padding: 6px 12px; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .chip.on { background: var(--primaria); color: var(--primaria-tx); border-color: var(--primaria); }
+  .acoes { grid-column: 1/-1; display: flex; gap: 10px; justify-content: flex-end; padding-top: 6px; }
+  .nota { grid-column: 1/-1; margin: 0; font-size: 13px; color: var(--txt-dim); }
+
+  /* login centrado */
+  .login { max-width: 400px; margin: 40px auto 0; }
+  .login .card { padding: 26px 28px; }
+  .login .form { grid-template-columns: 1fr; }
+  .login .btn { width: 100%; }
+</style>
+</head>
+<body>
+<div class="pagina">
+
+  <div class="cabeca">
+    <h1>Sofrete — proposta visual do portal da empresa</h1>
+    <p>
+      Mesma família tipográfica e os mesmos componentes do app do motorista, em outro tema: claro, de
+      escritório, desenhado pra tela de PC. Alterne entre <b>claro</b> e <b>escuro sóbrio</b> pra comparar.
+      O que não muda em nenhum dos dois: o amarelo sai dos botões e vira detalhe.
+    </p>
+  </div>
+
+  <div class="controles">
+    <button class="aba on" data-tela="inicio">Início</button>
+    <button class="aba" data-tela="publicar">Publicar frete</button>
+    <button class="aba" data-tela="entrar">Entrar</button>
+    <span class="sep"></span>
+    <button class="tema-btn on" data-tema="tema-claro">Claro (recomendado)</button>
+    <button class="tema-btn" data-tema="tema-escuro">Escuro sóbrio</button>
+  </div>
+
+  <div class="palco">
+
+    <!-- ================= JANELA ================= -->
+    <div class="janela tema-claro" id="janela">
+      <div class="barra-nav"><i></i><i></i><i></i><span class="url">rode-com-lucro-mvp.vercel.app/empresa</span></div>
+      <div class="app">
+
+        <header class="topo-portal">
+          <div class="logo"><span class="quadrado"></span> Sofrete <small>Empresas</small></div>
+          <nav>
+            <a class="on" data-ir="inicio">Início</a>
+            <a data-ir="publicar">Publicar frete</a>
+            <a>Meus dados</a>
+          </nav>
+          <div class="empresa-chip"><i></i> Transportes Norte Ltda</div>
+        </header>
+
+        <div class="conteudo">
+
+          <!-- ---------- INÍCIO ---------- -->
+          <section class="tela on" id="tela-inicio">
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:20px">
+              <div>
+                <p class="eyebrow">Transportes Norte Ltda · CNPJ 11.222.333/0001-81</p>
+                <h1 class="titulo">Seus fretes</h1>
+                <p class="subtitulo">Publicações passam por uma conferência da nossa equipe antes de ir pros motoristas.</p>
+              </div>
+              <button class="btn" data-ir="publicar">Publicar frete</button>
+            </div>
+
+            <div class="kpis" style="margin-bottom:20px">
+              <div class="kpi"><span>Publicados agora</span><b class="num">4</b></div>
+              <div class="kpi"><span>Em análise</span><b class="num">1</b></div>
+              <div class="kpi"><span>Motoristas que viram (30 dias)</span><b class="num">127</b></div>
+            </div>
+
+            <div class="card">
+              <div class="card-topo">
+                <h2>Últimas publicações</h2>
+                <button class="btn link">Ver todas ›</button>
+              </div>
+              <table>
+                <thead><tr><th>Rota</th><th>Valor</th><th>Coleta</th><th>Situação</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><span class="rota">Sinop/MT → Santos/SP</span><span class="sub">Carreta, Bitrem · Graneleiro</span></td>
+                    <td class="num">R$ 14.200,00</td>
+                    <td>18/09</td>
+                    <td><span class="selo atencao">Em análise</span></td>
+                  </tr>
+                  <tr>
+                    <td><span class="rota">Sorriso/MT → Paranaguá/PR</span><span class="sub">Bitrem 7 eixos · Graneleiro</span></td>
+                    <td class="num">R$ 190,00/t</td>
+                    <td>19/09</td>
+                    <td><span class="selo bom">Publicado</span></td>
+                  </tr>
+                  <tr>
+                    <td><span class="rota">Lucas do Rio Verde/MT → Uberlândia/MG</span><span class="sub">Qualquer carroceria</span></td>
+                    <td>a combinar</td>
+                    <td>20/09</td>
+                    <td><span class="selo bom">Publicado</span></td>
+                  </tr>
+                  <tr>
+                    <td><span class="rota">Cuiabá/MT → Belém/PA</span><span class="sub">Carreta · Sider</span></td>
+                    <td class="num">R$ 3.100,00</td>
+                    <td>12/09</td>
+                    <td><span class="selo ruim">Não aprovado</span><span class="motivo">Valor abaixo do piso ANTT pra 2.960 km</span></td>
+                  </tr>
+                  <tr>
+                    <td><span class="rota">Rondonópolis/MT → Santos/SP</span><span class="sub">Bitrem 9 eixos · Graneleiro</span></td>
+                    <td class="num">R$ 9.800,00</td>
+                    <td>10/09</td>
+                    <td><span class="selo neutro">Encerrado</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- ---------- PUBLICAR ---------- -->
+          <section class="tela" id="tela-publicar">
+            <div style="margin-bottom:20px">
+              <p class="eyebrow">Nova publicação</p>
+              <h1 class="titulo">Publicar frete</h1>
+              <p class="subtitulo">Preencha o essencial; o resto é opcional e ajuda o motorista a decidir mais rápido.</p>
+            </div>
+
+            <div class="card">
+              <div class="form">
+                <p class="grupo-tit">Rota</p>
+                <label class="campo">Origem <input value="Sinop/MT"></label>
+                <label class="campo">Destino <input value="Santos/SP"></label>
+                <label class="campo">Data de coleta <input type="date" value="2026-09-18"></label>
+                <label class="campo">Distância (km, opcional) <input class="num" value="2.010"></label>
+
+                <p class="grupo-tit">Valor</p>
+                <label class="campo">Valor do frete (R$) <input class="num" value="14.200,00"></label>
+                <label class="campo">Tipo de valor <select><option>Valor fixo (viagem)</option><option>Por tonelada</option></select></label>
+                <label class="campo">Peso (kg, opcional) <input class="num" value="32.000"></label>
+                <label class="campo">Pedágio por conta de <select><option>Empresa</option><option>Motorista</option></select></label>
+
+                <p class="grupo-tit">Veículo aceito <span style="font-weight:500;letter-spacing:0;text-transform:none;color:var(--txt-fraco)">— vazio aceita qualquer</span></p>
+                <div class="largo chips">
+                  <button class="chip on">Carreta</button><button class="chip on">Bitrem 7 eixos</button><button class="chip">Bitrem 9 eixos</button><button class="chip">Rodotrem</button><button class="chip">Truck</button><button class="chip">BiTruck</button>
+                </div>
+                <div class="largo chips">
+                  <button class="chip on">Graneleiro</button><button class="chip">Sider</button><button class="chip">Baú</button><button class="chip">Grade baixa</button><button class="chip">Prancha</button>
+                </div>
+
+                <p class="grupo-tit">Contato pro motorista</p>
+                <label class="campo">Nome <input value="Carlos Menezes"></label>
+                <label class="campo">Telefone (o motorista vê este número) <input value="(66) 99812-3344"></label>
+                <label class="campo largo">Observações <textarea rows="2">Carga paletizada, carregamento no galpão 2 a partir das 7h.</textarea></label>
+
+                <p class="nota">Ao enviar, o frete entra em análise. Costuma ser liberado no mesmo dia útil.</p>
+                <div class="acoes">
+                  <button class="btn sec" data-ir="inicio">Cancelar</button>
+                  <button class="btn" data-ir="inicio">Enviar pra aprovação</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ---------- ENTRAR ---------- -->
+          <section class="tela" id="tela-entrar">
+            <div class="login">
+              <div style="text-align:center;margin-bottom:18px">
+                <p class="eyebrow">Portal da empresa</p>
+                <h1 class="titulo">Entrar</h1>
+              </div>
+              <div class="card">
+                <div class="form">
+                  <label class="campo">E-mail <input value="logistica@transportesnorte.com.br"></label>
+                  <label class="campo">Senha <input type="password" value="••••••••••"></label>
+                  <button class="btn" data-ir="inicio">Entrar</button>
+                  <button class="btn link" style="text-align:center">Ainda não tenho cadastro</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SISTEMA ================= -->
+    <div class="sistema">
+      <div class="bloco">
+        <h3>A ideia</h3>
+        <p>
+          <b>Mesma marca, outro balcão.</b> O motorista vê o Rode com Lucro na cabine, à noite, no celular;
+          a empresa vê no escritório, de dia, no PC. Então o portal é claro, largo, com formulário em duas
+          colunas e tabela de verdade — o vocabulário visual de ferramenta de trabalho que uma pessoa de
+          logística já conhece.
+        </p>
+        <p>
+          <b>O que amarra os dois:</b> a mesma Barlow, os mesmos selos de status, a faixa amarela — só que
+          aqui ela tem 3px na base do cabeçalho, e o botão principal é grafite. O amarelo em bloco grande é
+          coisa de estrada; em escritório, credibilidade vem de contenção.
+        </p>
+      </div>
+
+      <div class="bloco">
+        <h3>Paleta (tema claro)</h3>
+        <div class="cores">
+          <div class="cor"><div class="am" style="background:#f4f5f3"></div><div class="rt">Fundo<span>#F4F5F3</span></div></div>
+          <div class="cor"><div class="am" style="background:#1c2421"></div><div class="rt">Primária<span>#1C2421</span></div></div>
+          <div class="cor"><div class="am" style="background:#f2b01e"></div><div class="rt">Marca (detalhe)<span>#F2B01E</span></div></div>
+          <div class="cor"><div class="am" style="background:#12753a"></div><div class="rt">Publicado<span>#12753A</span></div></div>
+          <div class="cor"><div class="am" style="background:#8f5100"></div><div class="rt">Em análise<span>#8F5100</span></div></div>
+          <div class="cor"><div class="am" style="background:#b83232"></div><div class="rt">Não aprovado<span>#B83232</span></div></div>
+        </div>
+        <p>
+          Os tons de status são mais escuros que os do motorista de propósito: sobre branco, o verde e o
+          laranja vivos não passam no contraste AA. Estes passam (5,1 a 6,3 : 1), calculados antes de
+          desenhar.
+        </p>
+      </div>
+
+      <div class="bloco">
+        <h3>Como entra no código</h3>
+        <p>
+          Como as cores viraram variáveis ontem, isto é <b>uma classe</b> — <code>.tema-empresa</code> —
+          que redefine as variáveis nas quatro telas do portal. Tipografia, botões, selos e campos
+          continuam os mesmos arquivos. O que muda de estrutura: largura de PC (760px em vez de 420px),
+          cabeçalho com navegação, formulário em duas colunas e a lista vira tabela.
+        </p>
+      </div>
+
+      <div class="bloco">
+        <h3>Escuro sóbrio — quando faria sentido</h3>
+        <p>
+          Deixei a alternativa no botão de cima pra você comparar. Ela mantém a coerência com o app do
+          motorista (mesmo asfalto) e pode agradar quem prefere tema escuro — mas pra um portal B2B que
+          será aberto em escritório iluminado e, cedo ou tarde, comparado com sistemas de gestão que a
+          empresa já usa, o claro transmite mais "ferramenta séria". Minha recomendação é o claro.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function irPara(id) {
+    document.querySelectorAll('.tela').forEach(function (t) { t.classList.remove('on'); });
+    document.getElementById('tela-' + id).classList.add('on');
+    document.querySelectorAll('.aba').forEach(function (a) { a.classList.toggle('on', a.dataset.tela === id); });
+    document.querySelectorAll('.topo-portal nav a[data-ir]').forEach(function (a) { a.classList.toggle('on', a.dataset.ir === id); });
+  }
+  document.querySelectorAll('.aba').forEach(function (a) { a.addEventListener('click', function () { irPara(a.dataset.tela); }); });
+  document.querySelectorAll('[data-ir]').forEach(function (b) { b.addEventListener('click', function () { irPara(b.dataset.ir); }); });
+  document.querySelectorAll('.tema-btn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('.tema-btn').forEach(function (x) { x.classList.remove('on'); });
+      b.classList.add('on');
+      var j = document.getElementById('janela');
+      j.classList.remove('tema-claro', 'tema-escuro');
+      j.classList.add(b.dataset.tema);
+    });
+  });
+  document.querySelectorAll('.chip').forEach(function (c) { c.addEventListener('click', function () { c.classList.toggle('on'); }); });
+</script>
+</body>
+</html>

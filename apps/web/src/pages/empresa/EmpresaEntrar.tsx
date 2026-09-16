@@ -37,21 +37,20 @@ export default function EmpresaEntrar() {
   }
 
   return (
-    <main className="tela tela-entrada">
-      <p className="garagem-eyebrow">Portal da empresa</p>
-      <h1 className="faixa-rodovia">Entrar</h1>
-      <form onSubmit={onSubmit}>
-        <label htmlFor="email">E-mail</label>
-        <input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+    <main className="tela tela-empresa-login">
+      <p className="garagem-eyebrow">Sofrete · Empresas</p>
+      <h1>Entrar</h1>
+      <p className="admin-card-nota">Publique cargas direto pros motoristas do Rode com Lucro.</p>
+      <form className="empresa-form" onSubmit={onSubmit}>
+        <label>
+          E-mail
+          <input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        </label>
 
-        <label htmlFor="senha">Senha</label>
-        <input
-          id="senha"
-          type="password"
-          autoComplete="current-password"
-          value={senha}
-          onChange={(e) => setSenha(e.target.value)}
-        />
+        <label>
+          Senha
+          <input type="password" autoComplete="current-password" value={senha} onChange={(e) => setSenha(e.target.value)} />
+        </label>
 
         <button type="submit" disabled={!podeEnviar}>
           {carregando ? 'Entrando…' : 'Entrar'}

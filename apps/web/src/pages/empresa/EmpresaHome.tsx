@@ -92,7 +92,7 @@ export default function EmpresaHome() {
 
   if (empresa === null) {
     return (
-      <main className="tela tela-entrada">
+      <main className="tela tela-empresa-login">
         <h1>Conta sem empresa</h1>
         <p className="aviso-erro">{erro ?? 'Esta conta não está vinculada a nenhuma empresa.'}</p>
         <button type="button" className="link-secundario" onClick={sair}>
@@ -105,12 +105,11 @@ export default function EmpresaHome() {
   const st = TEXTO_STATUS[empresa.status];
 
   return (
-    <main className="tela tela-entrada">
-      <p className="garagem-eyebrow">Portal da empresa</p>
-      <h1>{empresa.nomeFantasia || empresa.razaoSocial}</h1>
-      <p className="admin-card-nota faixa-rodovia">
+    <main className="tela">
+      <p className="garagem-eyebrow">
         {empresa.razaoSocial} · CNPJ {formatarCnpj(empresa.cnpj)}
       </p>
+      <h1>Seus fretes</h1>
 
       {publicadoAgora && <p className="sucesso">Frete enviado pra aprovação. Você acompanha o status na lista abaixo.</p>}
 
@@ -168,10 +167,6 @@ export default function EmpresaHome() {
           </div>
         </section>
       )}
-
-      <button type="button" className="link-secundario" onClick={sair}>
-        Sair
-      </button>
     </main>
   );
 }
