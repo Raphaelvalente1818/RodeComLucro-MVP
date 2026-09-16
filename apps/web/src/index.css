@@ -314,42 +314,43 @@ button:disabled {
   flex: none;
 }
 
-/* ---- tela de entrada (login do motorista) ---- */
-.entrada-hero {
-  margin: -32px -20px 0; /* sangra até a borda: o fundo do logo é o mesmo asfalto */
-  padding: 8px 0 0;
-  text-align: center;
-  background: #0b1014;
-  position: relative;
+/* ---- tela de entrada (login do motorista) ----
+   Orçamento: tudo precisa caber numa tela de celular sem rolar
+   (~740px úteis). Logo 150px + tagline + card + 3 mini-cards. */
+.tela-entrada,
+.tela-verificacao {
+  padding-top: 16px;
+  padding-bottom: 20px;
+  gap: 12px;
+  min-height: 100dvh;
+  justify-content: center;
 }
 
-.entrada-hero::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 60px;
-  background: linear-gradient(180deg, transparent, var(--bg));
+.entrada-hero {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
 }
 
 .entrada-logo {
   display: block;
-  width: min(100%, 340px);
+  width: 170px;
   height: auto;
-  margin: 0 auto;
+  /* o fundo do logo é o mesmo asfalto; o fade radial apaga a borda
+     do retângulo sem precisar recortar a imagem */
+  -webkit-mask-image: radial-gradient(ellipse 70% 62% at 50% 50%, #000 62%, transparent 100%);
+  mask-image: radial-gradient(ellipse 70% 62% at 50% 50%, #000 62%, transparent 100%);
 }
 
 .entrada-hero-compacto .entrada-logo {
-  width: min(100%, 220px);
+  width: 130px;
 }
 
 .entrada-tagline {
-  position: relative;
-  z-index: 1;
-  margin: -10px 20px 0;
-  padding-bottom: 12px;
-  font-size: 15px;
+  margin: -8px 0 0;
+  font-size: 14px;
   color: var(--txt-2);
 }
 
@@ -357,24 +358,38 @@ button:disabled {
   background: var(--surf);
   border: 1px solid var(--linha);
   border-radius: var(--r-card);
-  padding: 20px 18px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
+}
+
+.entrada-card .garagem-eyebrow {
+  margin: 0;
 }
 
 .entrada-card h1 {
-  font-size: 22px;
+  font-size: 20px;
+  margin-top: -6px;
 }
 
 .entrada-nota {
-  margin: -6px 0 0;
-  font-size: 13.5px;
+  margin: -4px 0 2px;
+  font-size: 13px;
   color: var(--txt-dim);
 }
 
+.entrada-card .checkbox {
+  font-size: 13px;
+}
+
 .entrada-card .cta-primaria {
-  margin-top: 4px;
+  padding: 12px 16px;
+}
+
+.entrada-card .link-secundario {
+  padding: 4px 0;
+  font-size: 13.5px;
 }
 
 .entrada-beneficios {
@@ -387,24 +402,36 @@ button:disabled {
   background: var(--surf);
   border: 1px solid var(--linha);
   border-radius: 12px;
-  padding: 12px 10px;
+  padding: 9px 9px 10px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .entrada-beneficio b {
   font-family: var(--fonte-cond);
-  font-size: 15px;
+  font-size: 14px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--marca);
 }
 
 .entrada-beneficio span {
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--txt-dim);
-  line-height: 1.4;
+  line-height: 1.35;
+}
+
+/* telas baixas (celular pequeno ou com barra do navegador aberta):
+   os benefícios saem, o essencial fica */
+@media (max-height: 660px) {
+  .entrada-beneficios {
+    display: none;
+  }
+
+  .entrada-logo {
+    width: 140px;
+  }
 }
 
 .campo-toggle {
