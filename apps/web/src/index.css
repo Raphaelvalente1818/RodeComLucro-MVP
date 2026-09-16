@@ -1740,10 +1740,42 @@ body.tema-empresa.tema-empresa-escuro {
   font-weight: 600;
 }
 
+/* Chips são <button>, então a regra acima os pintava de grafite — e o
+   chip solto ficava igual ao escolhido (bug visto no deploy de 16/09).
+   Solto: branco com borda; escolhido: grafite com marca de check. */
+.tema-empresa .chip {
+  background: var(--surf);
+  color: var(--txt-2);
+  border: 1px solid var(--linha-forte);
+  font-weight: 500;
+}
+
 .tema-empresa .chip-ativo {
   background: var(--primaria);
   color: var(--primaria-tx);
   border-color: var(--primaria);
+  font-weight: 600;
+}
+
+.tema-empresa .chip-ativo::before {
+  content: '✓ ';
+}
+
+/* Mesmo problema da regra genérica de <button>: sugestões de cidade e
+   o alternador de tema também são botões e não podem virar grafite. */
+.tema-empresa .sugestao-item {
+  background: var(--surf);
+  color: var(--txt);
+  font-weight: 500;
+}
+
+.tema-empresa .sugestao-item:hover {
+  background: var(--surf-2);
+}
+
+.tema-empresa .tema-toggle {
+  background: transparent;
+  color: var(--txt-dim);
 }
 
 .tema-empresa .link-secundario,
