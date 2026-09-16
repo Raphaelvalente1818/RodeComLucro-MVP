@@ -252,7 +252,27 @@ button:disabled {
 .campo-telefone {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+}
+
+.campo-telefone span {
+  color: var(--txt-2);
+  font-weight: 600;
+  flex: none;
+}
+
+.campo-telefone input {
+  flex: 1;
+  min-width: 0;
+  font-size: 18px;
+  letter-spacing: 0.02em;
+}
+
+/* links dentro do aceite: na marca, não no azul padrão do navegador */
+.checkbox a {
+  color: var(--marca);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .campos-codigo {

@@ -4,6 +4,9 @@ import { supabase } from '../lib/supabaseClient';
 
 function formatarTelefone(v: string) {
   const digits = v.replace(/\D/g, '').slice(0, 11);
+  // Vazio tem que ficar vazio: antes devolvia "() " e o campo nunca
+  // mostrava o placeholder (visto no celular do Raphael, 16/09).
+  if (!digits) return '';
   const ddd = digits.slice(0, 2);
   const resto = digits.slice(2);
   if (resto.length <= 4) return `(${ddd}) ${resto}`;
