@@ -1317,4 +1317,19 @@ Lições: 190 é sempre token (app errado, temporário vencido, ou espaço ao co
 
 **Destravado**: o trial de cálculo pra número desconhecido (estratégia B, construído em 10/09) agora pode ser testado de ponta a ponta — alguém sem cadastro manda um pedido de cálculo e deve receber estimativa + link de cadastro.
 
+## ESTRATÉGIA — 24/09: do contato compartilhado ao motorista cadastrado
+
+Raphael pediu, antes de codar, estudo das soluções que já existem e um plano de validação pra "missão vital": amigo recebe o contato → calcula → entra no app → completa dados e caminhão. Documento completo: **`Docs/estrategia-viral-whatsapp.md`** (pesquisa com fontes, dados do banco, jornada mensagem a mensagem, regras/custos da Meta, funil com metas, experimentos ordenados, fases de código, riscos).
+
+**Achados que mudam o desenho**:
+- Banco: 7 contas, só 2 usuários reais (os sócios); 5 pararam no cadastro; **zero** desconhecidos falaram com o bot desde 10/09 — o compartilhamento nunca aconteceu.
+- Meta cobra cada resposta do bot a partir de **1/10/2026** (~R$ 0,04/msg) → "uma mensagem, um veredito".
+- Respostas dentro da janela de 24h não contam no limite de 250 conversas/dia do número novo → o viral inbound não bate nesse teto. Verificar a empresa na Meta (→ 2.000).
+- Botões somem ao encaminhar; o objeto viral é a mensagem `contacts` (vCard do bot) + `wa.me?text=...%23CODIGO` pra atribuição.
+- Farmer.Chat: 79% repassam a resposta — viralidade pela utilidade do veredito.
+
+**Princípio central**: o número já é o cadastro. Primeira mensagem cria a conta (`auth.admin.createUser({phone, phone_confirm:true})`, trigger cria motorista, `canal_wa_ativo=true`), elimina OTP + VINCULAR; perfil do caminhão em 3 toques por botões no chat; app depois, por link mágico já logado. Funil F0–F6 com metas; semente = Emerson e David mandando o cartão pra 15 colegas cada.
+
+**Próximo passo**: Raphael aprovar a estratégia → Fase 1 (antes de 1/10): conta na 1ª mensagem, resposta única com botões de caminhão, máquina de estados `wa_onboarding`, vCard "Mandar pro colega", `#código` de indicação, eventos F0–F6, aba funil viral no admin.
+
 **Depois disso, o módulo de empresas MVP está completo.** Próximos incrementos (não bloqueantes): rate-limit de postagem por empresa; sinalizador de risco na fila do admin (preço abaixo do piso ANTT via `calcularPisoANTT`); editar/encerrar frete pela empresa; e-mail de aviso quando aprovado/rejeitado.
