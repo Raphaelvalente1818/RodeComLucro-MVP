@@ -1307,6 +1307,14 @@ Ajustes extras do mesmo dia (a partir do teste real de importação do Raphael):
 2. Raphael escolher o caminho do logo do Sofrete (ver seção acima) → refinar e aplicar no cabeçalho do portal.
 3. Continuar a identidade do motorista nas telas que faltam: Analisar, Buscar frete, Perfil, Meu perfil (só os títulos receberam a faixa; conteúdo ainda no estilo antigo).
 4. Pendências do portal: troca de senha / "esqueci a senha"; menu em celular (nav some abaixo de 640px); hospedar a Barlow em `public/fontes` pra funcionar offline.
-5. Pendências antigas que continuam: revogar o `WA_ACCESS_TOKEN` exposto; número da Meta pro WhatsApp; gate de validação está em 1/160 com 6 motoristas — o gargalo real é aquisição, não funcionalidade.
+5. Pendências antigas que continuam: gate de validação está em 1/160 com 6 motoristas — o gargalo real é aquisição, não funcionalidade.
+
+## RESOLVIDO — 24/09: WhatsApp no ar no número novo
+
+Número oficial da Meta passou a ser **5511999919971**. Raphael trocou os secrets em Edge Functions → Secrets (`NUMERO_OFICIAL_WA`, `WA_PHONE_NUMBER_ID`, `WA_ACCESS_TOKEN`). O primeiro token deu **401/código 190** nas duas primeiras mensagens do David (17:45 e 17:47) — token de outro app ou vencido; gerado um novo, e a busca de frete respondeu. Isso também fecha a pendência antiga do token exposto (foi substituído).
+
+Lições: 190 é sempre token (app errado, temporário vencido, ou espaço ao colar); o Phone Number ID é o de ~15 dígitos da tela API Setup, não o telefone. Nos logs de 22/09 do número anterior apareceram **131042 (método de pagamento da conta WhatsApp Business)** e **131047 (janela de 24h, precisa de template fora dela)** — ficar de olho no novo.
+
+**Destravado**: o trial de cálculo pra número desconhecido (estratégia B, construído em 10/09) agora pode ser testado de ponta a ponta — alguém sem cadastro manda um pedido de cálculo e deve receber estimativa + link de cadastro.
 
 **Depois disso, o módulo de empresas MVP está completo.** Próximos incrementos (não bloqueantes): rate-limit de postagem por empresa; sinalizador de risco na fila do admin (preço abaixo do piso ANTT via `calcularPisoANTT`); editar/encerrar frete pela empresa; e-mail de aviso quando aprovado/rejeitado.
