@@ -1343,7 +1343,7 @@ Raphael pediu, antes de codar, estudo das soluções que já existem e um plano 
 - Motorista sem `caminhao_perfil` (qualquer origem) → mesmo onboarding por botões após o cálculo.
 - `tratarRespostaOnboarding`: `onb_tipo:*` (Carreta/Bitrem/Truck) → `onb_eixos:N` (3 opções ao redor do padrão do tipo) → `onb_consumo:2|2.5|3` → upsert em `caminhao_perfil` (tipo, eixos, consumo; resto = PERFIL_DEFAULT) → evento `truck_profile_saved` → recalcula o mesmo frete e mostra a diferença ("Com o seu caminhão: R$ X a menos que a estimativa. Perfil salvo.").
 - Botão "Mandar pro colega" (`viral:cartao`) após o 1º recálculo e a cada 5 cálculos → mensagem `contacts` (vCard do bot) + link `wa.me?text=…#CODIGO` quando o motorista tiver `codigo_indicacao` (**ainda não é gerado — pendência**). Evento `referral_shared`.
-- Rodapé de todo veredito de motorista com perfil: "_Calcule o seu: +5511999919971_" (encaminhável).
+- ~~Rodapé "Calcule o seu: +55…" em todo veredito~~ — **removido na v45** a pedido do Raphael: lido no próprio chat com o bot não fazia sentido (a intenção era o encaminhamento em grupo, mas é invisível pra quem lê). Compartilhamento só pelo botão explícito "Mandar pro colega".
 - `SAIR` → `auth.admin.deleteUser` (cascade apaga tudo) + confirmação.
 - `extrairInteracoesLista` agora aceita `button_reply` além de `list_reply`; roteador por prefixo (`onb_`, `viral:cartao`, senão lista de busca).
 - Novos helpers: `enviarPayloadWhatsapp`, `enviarBotoes` (≤3 botões, título ≤20), `enviarCartaoDeContato`. `NUMERO_OFICIAL_WA` lido também aqui.

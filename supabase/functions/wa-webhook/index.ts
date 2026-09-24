@@ -1162,7 +1162,11 @@ async function calcularEResponderFrete(params: {
   // - motorista de sempre: link do app + rodapé encaminhável com o número
   //   do bot (o veredito é o objeto viral);
   // - anônimo (só se a criação de conta falhou): CTA de cadastro antigo.
-  const linhaCompartilhe = NUMERO_OFICIAL_WA ? `\n\n_Calcule o seu: +${NUMERO_OFICIAL_WA}_` : "";
+  // (Havia aqui um rodapé fixo "Calcule o seu: +55…" pensado pra quando o
+  // motorista encaminha o veredito num grupo — mas lido no próprio chat
+  // com o bot ele não faz sentido. Removido em 24/09 a pedido do Raphael;
+  // o compartilhamento fica só no botão explícito "Mandar pro colega".)
+  const linhaCompartilhe = "";
   let rodape: string;
   if (anonimo) {
     rodape =
