@@ -1330,6 +1330,26 @@ Raphael pediu, antes de codar, estudo das soluções que já existem e um plano 
 
 **Princípio central**: o número já é o cadastro. Primeira mensagem cria a conta (`auth.admin.createUser({phone, phone_confirm:true})`, trigger cria motorista, `canal_wa_ativo=true`), elimina OTP + VINCULAR; perfil do caminhão em 3 toques por botões no chat; app depois, por link mágico já logado. Funil F0–F6 com metas; semente = Emerson e David mandando o cartão pra 15 colegas cada.
 
-**Próximo passo**: Raphael aprovar a estratégia → Fase 1 (antes de 1/10): conta na 1ª mensagem, resposta única com botões de caminhão, máquina de estados `wa_onboarding`, vCard "Mandar pro colega", `#código` de indicação, eventos F0–F6, aba funil viral no admin.
+**Aprovado pelo Raphael** ("gostei da ideia de não precisar vincular whatsapp e automatizar o início do cadastro"). Decisões dele: aviso em uma linha no fim do veredito + SAIR; apresentação só com a marca; 3 toques.
+
+## FASE 1 VIRAL — 24/09: implementada e no ar (wa-webhook v44)
+
+**Migration `20260924160000_viral_onboarding_por_whatsapp.sql`** (aplicada): `motoristas.origem_cadastro`, `indicado_por_codigo`, `codigo_indicacao` (unique); tabela `wa_onboarding` (estado por número: etapa tipo→eixos→consumo, `ultimo_frete` jsonb pra recalcular); novos status em `wa_freight_query` (`calculado_novo`, `boas_vindas`, `onboarding_resposta`, `recalculado_perfil`, `sair`).
+
+**wa-webhook v44** (typecheck com Deno real no sandbox — `pip install deno` + symlink do `node_modules` do projeto pro `npm:@supabase/supabase-js`, já que o esm.sh não é alcançável daqui):
+- `criarMotoristaPorWhatsapp`: `auth.admin.createUser({phone, phone_confirm:true})` → trigger cria `motoristas` → update marca `telefone_verificado`, `canal_wa_ativo`, `origem_cadastro='whatsapp'`, `indicado_por_codigo`. Evento `signup_completed` (canal whatsapp).
+- Número novo: com frete completo → calcula com genérico (rodapé: "carreta padrão de 5 eixos" + "Seu número ficou cadastrado… manda SAIR… Termos") e emenda botões de tipo; sem frete ("oi", "tem frete?", "olha que bacana") → cria conta e se apresenta ("Opa! Sou o Rode com Lucro 🚛…"). **Antes, "oi" de número novo caía em silêncio.**
+- Conta do app sem vínculo escrevendo do mesmo número → vincula na hora, sem VINCULAR (no cálculo e na busca).
+- Motorista sem `caminhao_perfil` (qualquer origem) → mesmo onboarding por botões após o cálculo.
+- `tratarRespostaOnboarding`: `onb_tipo:*` (Carreta/Bitrem/Truck) → `onb_eixos:N` (3 opções ao redor do padrão do tipo) → `onb_consumo:2|2.5|3` → upsert em `caminhao_perfil` (tipo, eixos, consumo; resto = PERFIL_DEFAULT) → evento `truck_profile_saved` → recalcula o mesmo frete e mostra a diferença ("Com o seu caminhão: R$ X a menos que a estimativa. Perfil salvo.").
+- Botão "Mandar pro colega" (`viral:cartao`) após o 1º recálculo e a cada 5 cálculos → mensagem `contacts` (vCard do bot) + link `wa.me?text=…#CODIGO` quando o motorista tiver `codigo_indicacao` (**ainda não é gerado — pendência**). Evento `referral_shared`.
+- Rodapé de todo veredito de motorista com perfil: "_Calcule o seu: +5511999919971_" (encaminhável).
+- `SAIR` → `auth.admin.deleteUser` (cascade apaga tudo) + confirmação.
+- `extrairInteracoesLista` agora aceita `button_reply` além de `list_reply`; roteador por prefixo (`onb_`, `viral:cartao`, senão lista de busca).
+- Novos helpers: `enviarPayloadWhatsapp`, `enviarBotoes` (≤3 botões, título ≤20), `enviarCartaoDeContato`. `NUMERO_OFICIAL_WA` lido também aqui.
+
+**Pendências da Fase 1**: gerar `codigo_indicacao` (primeiro nome + sufixo) — hoje o link só aparece se existir; aba "Funil viral" no admin (eventos já gravados: `wa_first_contact`, `signup_completed`, `simulation_run`, `truck_profile_saved`, `referral_shared`); verificar a empresa na Meta; `/termos` linkado no rodapé — conferir se a rota existe no app.
+
+**TESTE (Raphael)**: de um número que NUNCA falou com o bot (ou de um que mandou SAIR antes): (1) "oi" → apresentação; (2) "Sinop pra Santos, 14 mil" → veredito genérico + botões de tipo; (3) tocar nos 3 botões → recálculo com diferença + "Perfil salvo" + botão "Mandar pro colega"; (4) tocar → cartão de contato chega; (5) "SAIR" → apaga. Depois eu confiro `motoristas`, `caminhao_perfil`, `wa_onboarding` (deve ficar vazia) e `analytics_event`.
 
 **Depois disso, o módulo de empresas MVP está completo.** Próximos incrementos (não bloqueantes): rate-limit de postagem por empresa; sinalizador de risco na fila do admin (preço abaixo do piso ANTT via `calcularPisoANTT`); editar/encerrar frete pela empresa; e-mail de aviso quando aprovado/rejeitado.

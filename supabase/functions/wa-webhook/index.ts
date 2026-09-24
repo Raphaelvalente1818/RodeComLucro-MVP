@@ -30,6 +30,13 @@
 //     interpretar pedidos de cálculo de frete em texto livre. Opcional:
 //     sem ela, qualquer mensagem sem intent reconhecido (VINCULAR/
 //     DESVINCULAR) só é logada, igual era antes do calc-wpp existir.
+//   NUMERO_OFICIAL_WA — número do bot (E.164 sem "+"), vai no cartão de
+//     contato "Mandar pro colega" e no rodapé encaminhável do veredito.
+//
+// 24/09/2026 — "o número já é o cadastro" (Docs/estrategia-viral-whatsapp.md):
+// número desconhecido vira conta na 1ª mensagem; conta do app sem vínculo
+// é vinculada ao escrever (sem código VINCULAR); perfil do caminhão por
+// botões em 3 toques; cartão de contato como objeto viral; SAIR apaga tudo.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { calcularFrete, tipoCargaPorCarroceria, fmtBRL, fmtPct, diasPorFaixaKm, type Custos } from "./calc.ts";
@@ -43,6 +50,9 @@ const WA_APP_SECRET = Deno.env.get("WA_APP_SECRET")!;
 // não chegou) — tratado em enviarMensagemWhatsapp(), não é erro de config.
 const WA_ACCESS_TOKEN = Deno.env.get("WA_ACCESS_TOKEN");
 const WA_PHONE_NUMBER_ID = Deno.env.get("WA_PHONE_NUMBER_ID");
+// Número oficial (E.164 sem "+") — mesmo secret do wa-vincular; aqui vai
+// no cartão de contato que o motorista encaminha pro colega.
+const NUMERO_OFICIAL_WA = Deno.env.get("NUMERO_OFICIAL_WA");
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
@@ -109,8 +119,16 @@ export async function assinaturaValida(
 // a resposta ao motorista nem falha o webhook): erro aqui só loga, nunca
 // interrompe o fluxo principal (o cálculo já aconteceu de verdade).
 // ---------------------------------------------------------------------
+// Funil viral (Docs/estrategia-viral-whatsapp.md §5): wa_first_contact (F0),
+// simulation_run (F1), truck_profile_saved (F3), referral_shared (F6).
 async function registrarEventoAnalytics(
-  eventName: "simulation_run" | "simulation_run_anonimo",
+  eventName:
+    | "simulation_run"
+    | "simulation_run_anonimo"
+    | "signup_completed"
+    | "wa_first_contact"
+    | "truck_profile_saved"
+    | "referral_shared",
   actorId: string | null,
   props: Record<string, unknown>,
 ): Promise<void> {
@@ -219,6 +237,83 @@ async function enviarListaFretes(paraE164: string, linhas: LinhaListaFrete[], to
 }
 
 // ---------------------------------------------------------------------
+// Envio genérico pra Cloud API — usado pelos tipos que não são texto puro
+// (botões de resposta rápida, cartão de contato). Mesmo tratamento de
+// erro das funções acima.
+// ---------------------------------------------------------------------
+async function enviarPayloadWhatsapp(paraE164: string, corpo: Record<string, unknown>, origemLog: string): Promise<void> {
+  if (!WA_ACCESS_TOKEN || !WA_PHONE_NUMBER_ID) {
+    // eslint-disable-next-line no-console
+    console.log(`[wa-webhook] envio pulado (chave da Meta pendente) para=${paraE164}: ${JSON.stringify(corpo)}`);
+    return;
+  }
+  try {
+    const resp = await fetch(`https://graph.facebook.com/v20.0/${WA_PHONE_NUMBER_ID}/messages`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${WA_ACCESS_TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ messaging_product: "whatsapp", to: paraE164, ...corpo }),
+    });
+    if (!resp.ok) {
+      const detalhe = await resp.text();
+      // eslint-disable-next-line no-console
+      console.error(`[wa-webhook] ${origemLog} falhou`, resp.status, detalhe);
+      await logErro(`wa-webhook.${origemLog}`, "Envio WhatsApp falhou", { status: resp.status, detalhe, para: paraE164 });
+    }
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error(`[wa-webhook] ${origemLog} lançou exceção`, e);
+    await logErro(`wa-webhook.${origemLog}`, "Envio WhatsApp lançou exceção", { erro: String(e), para: paraE164 });
+  }
+}
+
+/**
+ * Botões de resposta rápida (interactive/button): no máximo 3, título ≤20
+ * chars. É o que faz o perfil do caminhão caber em "3 toques" (ver
+ * Docs/estrategia-viral-whatsapp.md). A resposta chega como
+ * interactive.button_reply.id — ver extrairInteracoesLista.
+ */
+async function enviarBotoes(paraE164: string, texto: string, botoes: Array<{ id: string; titulo: string }>): Promise<void> {
+  await enviarPayloadWhatsapp(
+    paraE164,
+    {
+      type: "interactive",
+      interactive: {
+        type: "button",
+        body: { text: texto },
+        action: {
+          buttons: botoes.slice(0, 3).map((b) => ({ type: "reply", reply: { id: b.id, title: truncar(b.titulo, 20) } })),
+        },
+      },
+    },
+    "enviarBotoes",
+  );
+}
+
+/**
+ * Cartão de contato do próprio bot — o objeto viral. Botões somem quando
+ * uma mensagem é encaminhada; um vCard não: o colega recebe e toca em
+ * "Salvar", e o número entra na agenda com o nome certo. Ver pesquisa em
+ * Docs/estrategia-viral-whatsapp.md §3.
+ */
+async function enviarCartaoDeContato(paraE164: string): Promise<void> {
+  if (!NUMERO_OFICIAL_WA) return;
+  await enviarPayloadWhatsapp(
+    paraE164,
+    {
+      type: "contacts",
+      contacts: [
+        {
+          name: { formatted_name: "Rode com Lucro", first_name: "Rode com Lucro" },
+          phones: [{ phone: `+${NUMERO_OFICIAL_WA}`, wa_id: NUMERO_OFICIAL_WA, type: "WORK" }],
+          urls: [{ url: URL_APP, type: "WORK" }],
+        },
+      ],
+    },
+    "enviarCartaoDeContato",
+  );
+}
+
+// ---------------------------------------------------------------------
 // Payload da Meta: entry[].changes[].value.messages[] — pode vir vazio
 // (ex.: webhook de status de entrega, sem mensagem nova) ou com mais de
 // uma mensagem no mesmo POST. Função pura, sem I/O — dá pra testar com
@@ -272,11 +367,19 @@ export function extrairInteracoesLista(payload: unknown): InteracaoLista[] {
           id?: string;
           from?: string;
           type?: string;
-          interactive?: { type?: string; list_reply?: { id?: string } };
+          interactive?: { type?: string; list_reply?: { id?: string }; button_reply?: { id?: string } };
         };
         if (!msg.id || !msg.from || msg.type !== "interactive") continue;
-        const rowId = msg.interactive?.list_reply?.id;
-        if (msg.interactive?.type !== "list_reply" || !rowId) continue;
+        // Lista (busca de frete) e botão de resposta rápida (onboarding do
+        // caminhão, "mandar pro colega") chegam no mesmo formato, só muda
+        // o campo — os dois viram rowId e o roteador decide pelo prefixo.
+        const rowId =
+          msg.interactive?.type === "list_reply"
+            ? msg.interactive.list_reply?.id
+            : msg.interactive?.type === "button_reply"
+              ? msg.interactive.button_reply?.id
+              : undefined;
+        if (!rowId) continue;
         interacoes.push({ waMessageId: msg.id, fromE164: msg.from, rowId });
       }
     }
@@ -559,7 +662,19 @@ async function registrarTentativaFrete(params: {
   fromE164: string;
   texto: string;
   extracao: ExtracaoFrete | null;
-  status: "calculado" | "confirmacao_pendente" | "dado_faltando" | "erro_extracao" | "nao_vinculado" | "calculado_anonimo" | "nao_cadastrado";
+  status:
+    | "calculado"
+    | "confirmacao_pendente"
+    | "dado_faltando"
+    | "erro_extracao"
+    | "nao_vinculado"
+    | "calculado_anonimo"
+    | "nao_cadastrado"
+    | "calculado_novo"
+    | "boas_vindas"
+    | "onboarding_resposta"
+    | "recalculado_perfil"
+    | "sair";
   resultado?: unknown;
 }): Promise<void> {
   const { error } = await supabase.from("wa_freight_query").insert({
@@ -595,6 +710,199 @@ async function registrarTentativaFrete(params: {
 // pior (motorista acha que o bot não respondeu/quebrou).
 const RE_MENCIONA_FRETE_OU_CARGA = /\bfretes?\b|\bcargas?\b/i;
 
+// =====================================================================
+// "O número já é o cadastro" — Fase 1 da estratégia viral
+// (Docs/estrategia-viral-whatsapp.md, aprovada pelo Raphael em 24/09).
+//
+// Quando um número desconhecido manda a primeira mensagem, a Meta já
+// provou que o aparelho está na mão dele — exatamente o que o SMS de OTP
+// tenta provar. Então a conta nasce aqui, com telefone verificado e
+// WhatsApp vinculado, sem tela nenhuma. O perfil do caminhão é colhido
+// por botões, em 3 toques (tipo → eixos → consumo), e ao final o mesmo
+// frete é recalculado com o caminhão real — o erro da estimativa
+// genérica vira o motivo do cadastro.
+//
+// Decisões do Raphael: aviso em uma linha no fim do veredito (+ SAIR pra
+// apagar tudo, que é o direito de exclusão da LGPD); apresentação só com a
+// marca; 3 toques, não mais.
+// =====================================================================
+
+const RE_CODIGO_INDICACAO = /#([a-z0-9]{2,20})/i;
+const RE_SAIR = /^sair$/i;
+
+/** Extrai "#EMERSON" do texto (link wa.me?text=...%23EMERSON) — atribuição de indicação. */
+function extrairCodigoIndicacao(texto: string): string | null {
+  const m = texto.match(RE_CODIGO_INDICACAO);
+  return m ? m[1].toUpperCase() : null;
+}
+
+/**
+ * Cria a conta pra um número novo: usuário no Auth com phone confirmado
+ * (o trigger handle_new_auth_user cria a linha em motoristas), e em
+ * seguida marca telefone_verificado + canal_wa_ativo (o trigger de
+ * confirmação só dispara em UPDATE de phone_confirmed_at, não em INSERT
+ * já confirmado). Retorna o id ou null se falhou — nesse caso o chamador
+ * cai no trial anônimo antigo, sem quebrar a resposta.
+ */
+async function criarMotoristaPorWhatsapp(fromE164: string, codigoIndicacao: string | null): Promise<string | null> {
+  const { data, error } = await supabase.auth.admin.createUser({
+    phone: fromE164,
+    phone_confirm: true,
+    user_metadata: { origem_cadastro: "whatsapp" },
+  });
+  if (error || !data.user) {
+    await logErro("wa-webhook.criarMotorista", "Falha ao criar conta pelo WhatsApp", { erro: error?.message, from: fromE164 });
+    return null;
+  }
+  const id = data.user.id;
+  const { error: upErr } = await supabase
+    .from("motoristas")
+    .update({
+      telefone_verificado: true,
+      telefone_verificado_em: new Date().toISOString(),
+      canal_wa_ativo: true,
+      origem_cadastro: "whatsapp",
+      indicado_por_codigo: codigoIndicacao,
+    })
+    .eq("id", id);
+  if (upErr) {
+    await logErro("wa-webhook.criarMotorista", "Conta criada mas falhou ao marcar vínculo", { erro: upErr.message, id });
+  }
+  await registrarEventoAnalytics("signup_completed", id, { canal: "whatsapp", indicado_por: codigoIndicacao });
+  return id;
+}
+
+const TIPOS_VEICULO_BOTOES: Array<{ id: string; titulo: string; eixosPadrao: number }> = [
+  { id: "onb_tipo:Carreta", titulo: "Carreta", eixosPadrao: 5 },
+  { id: "onb_tipo:Bitrem 7 eixos", titulo: "Bitrem", eixosPadrao: 7 },
+  { id: "onb_tipo:Truck", titulo: "Truck", eixosPadrao: 3 },
+];
+
+/** Passo 2 → 3: depois do primeiro veredito, pergunta o tipo do caminhão. */
+async function iniciarOnboardingCaminhao(fromE164: string, motoristaId: string, ultimoFrete: Record<string, unknown>): Promise<void> {
+  await supabase.from("wa_onboarding").upsert({
+    from_e164: fromE164,
+    motorista_id: motoristaId,
+    etapa: "tipo",
+    ultimo_frete: ultimoFrete,
+    updated_at: new Date().toISOString(),
+  });
+  await enviarBotoes(
+    fromE164,
+    "Quer o número certo pro *seu* caminhão? Me diz só o tipo:",
+    TIPOS_VEICULO_BOTOES.map((t) => ({ id: t.id, titulo: t.titulo })),
+  );
+}
+
+/**
+ * Resposta de botão do onboarding (ids "onb_tipo:X", "onb_eixos:N",
+ * "onb_consumo:N"). Salva a cada toque; no último, grava o perfil em
+ * caminhao_perfil e recalcula o frete que ele tinha pedido.
+ */
+async function tratarRespostaOnboarding(fromE164: string, rowId: string, waMessageId: string): Promise<void> {
+  const { data: onb } = await supabase.from("wa_onboarding").select("*").eq("from_e164", fromE164).maybeSingle();
+  if (!onb) return; // botão velho, onboarding já concluído — ignora em silêncio
+
+  const [chave, valor] = rowId.split(":");
+  await registrarTentativaFrete({ waMessageId, motoristaId: onb.motorista_id, fromE164, texto: rowId, extracao: null, status: "onboarding_resposta" });
+
+  if (chave === "onb_tipo") {
+    const tipo = TIPOS_VEICULO_BOTOES.find((t) => t.id === rowId);
+    await supabase
+      .from("wa_onboarding")
+      .update({ tipo_veiculo: valor, numero_eixos: tipo?.eixosPadrao ?? 5, etapa: "eixos", updated_at: new Date().toISOString() })
+      .eq("from_e164", fromE164);
+    const sugestao = tipo?.eixosPadrao ?? 5;
+    const opcoes = [sugestao - 1, sugestao, sugestao + 1].filter((n) => n >= 2 && n <= 9);
+    await enviarBotoes(fromE164, `${valor}. Quantos eixos?`, opcoes.map((n) => ({ id: `onb_eixos:${n}`, titulo: `${n} eixos` })));
+    return;
+  }
+
+  if (chave === "onb_eixos") {
+    await supabase
+      .from("wa_onboarding")
+      .update({ numero_eixos: Number(valor), etapa: "consumo", updated_at: new Date().toISOString() })
+      .eq("from_e164", fromE164);
+    await enviarBotoes(fromE164, "Última: ele faz mais ou menos quantos km por litro?", [
+      { id: "onb_consumo:2", titulo: "Uns 2 km/L" },
+      { id: "onb_consumo:2.5", titulo: "Uns 2,5 km/L" },
+      { id: "onb_consumo:3", titulo: "3 ou mais" },
+    ]);
+    return;
+  }
+
+  if (chave === "onb_consumo") {
+    const consumo = Number(valor);
+    const eixos = onb.numero_eixos ?? 5;
+    // Perfil mínimo: tipo, eixos e consumo do motorista; o resto no PERFIL_DEFAULT
+    // (mesmos valores do app). Ele ajusta depois em "Meu Caminhão".
+    const { error } = await supabase.from("caminhao_perfil").upsert(
+      {
+        user_id: onb.motorista_id,
+        apelido: onb.tipo_veiculo,
+        tipo_veiculo: onb.tipo_veiculo,
+        numero_eixos: eixos,
+        diesel_km_por_lt: consumo,
+        diesel_preco_por_litro: PERFIL_CUSTO_DEFAULT.diesel_preco_por_litro,
+        arla_km_por_lt: PERFIL_CUSTO_DEFAULT.arla_km_por_lt,
+        arla_preco_por_litro: PERFIL_CUSTO_DEFAULT.arla_preco_por_litro,
+        manutencao_por_km: PERFIL_CUSTO_DEFAULT.manutencao_por_km,
+        pneus_por_km: PERFIL_CUSTO_DEFAULT.pneus_por_km,
+        depreciacao_por_km: PERFIL_CUSTO_DEFAULT.depreciacao_por_km,
+        alimentacao_dia: PERFIL_CUSTO_DEFAULT.alimentacao_dia,
+        pernoite_dia: PERFIL_CUSTO_DEFAULT.pernoite_dia,
+        estacionamento_padrao: PERFIL_CUSTO_DEFAULT.estacionamento_padrao,
+        chapa_padrao: PERFIL_CUSTO_DEFAULT.chapa_padrao,
+        margem_desejada: PERFIL_CUSTO_DEFAULT.margem_desejada,
+      },
+      { onConflict: "user_id" },
+    );
+    if (error) {
+      await logErro("wa-webhook.onboarding", "Falha ao gravar caminhao_perfil", { erro: error.message, motoristaId: onb.motorista_id });
+      await enviarMensagemWhatsapp(fromE164, "Não consegui salvar agora. Tenta de novo daqui a pouco.");
+      return;
+    }
+    await supabase.from("wa_onboarding").delete().eq("from_e164", fromE164);
+    await registrarEventoAnalytics("truck_profile_saved", onb.motorista_id, { canal: "whatsapp", tipo_veiculo: onb.tipo_veiculo, eixos, consumo });
+
+    // Recalcula o frete que ele tinha pedido, agora com o caminhão dele —
+    // e mostra a diferença. É o momento "ah, então era isso".
+    const f = (onb.ultimo_frete ?? {}) as { origem?: string; destino?: string; valorFreteReais?: number; voltaVazia?: boolean; lucroGenerico?: number };
+    if (f.origem && f.destino && f.valorFreteReais != null) {
+      await calcularEResponderFrete({
+        fromE164,
+        motoristaId: onb.motorista_id,
+        origem: f.origem,
+        destino: f.destino,
+        valorFreteReais: f.valorFreteReais,
+        voltaVazia: Boolean(f.voltaVazia),
+        waMessageId,
+        texto: "(recalculo pós-onboarding)",
+        extracao: null,
+        recalculoDe: f.lucroGenerico ?? null,
+      });
+    } else {
+      await enviarMensagemWhatsapp(fromE164, `Pronto, seu ${onb.tipo_veiculo} de ${eixos} eixos ficou salvo. 🚛 Manda a próxima rota e valor que eu calculo com ele.`);
+    }
+    return;
+  }
+}
+
+/** "SAIR": apaga a conta criada pelo WhatsApp (direito de exclusão). */
+async function tratarSair(fromE164: string, waMessageId: string): Promise<void> {
+  const { data: m } = await supabase.from("motoristas").select("id").eq("telefone_e164", fromE164).maybeSingle();
+  if (!m) return;
+  await registrarTentativaFrete({ waMessageId, motoristaId: m.id, fromE164, texto: "SAIR", extracao: null, status: "sair" });
+  // auth.users cascade → motoristas, caminhao_perfil, analise_frete, wa_onboarding
+  const { error } = await supabase.auth.admin.deleteUser(m.id);
+  if (error) {
+    await logErro("wa-webhook.sair", "Falha ao apagar conta", { erro: error.message, id: m.id });
+    await enviarMensagemWhatsapp(fromE164, "Não consegui apagar agora. Tenta de novo em instantes.");
+    return;
+  }
+  await enviarMensagemWhatsapp(fromE164, "Pronto — apaguei seu cadastro e seus dados. Se quiser voltar, é só mandar uma rota e um valor. 👋");
+}
+
 async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageId: string): Promise<void> {
   const extracao = await extrairFreteDeTexto(texto);
   if (!extracao) {
@@ -612,7 +920,24 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
       await tratarBuscaDeFrete(fromE164, waMessageId);
       return;
     }
-    // De fato não é sobre frete (saudação, outro assunto etc.) — só loga.
+    // Não é sobre frete (saudação, "olha que bacana", outro assunto).
+    // Motorista conhecido: silêncio, como sempre (responder custa mensagem
+    // e ensina o motorista a conversar com o bot). Número NOVO: silêncio é
+    // o pior resultado possível pra quem acabou de receber o contato —
+    // cria a conta e se apresenta.
+    const { data: conhecido } = await supabase.from("motoristas").select("id").eq("telefone_e164", fromE164).maybeSingle();
+    if (!conhecido) {
+      const codigo = extrairCodigoIndicacao(texto);
+      const novoId = await criarMotoristaPorWhatsapp(fromE164, codigo);
+      await registrarEventoAnalytics("wa_first_contact", novoId, { indicado_por: codigo, tinha_frete: false, intent: "saudacao" });
+      await registrarTentativaFrete({ waMessageId, motoristaId: novoId, fromE164, texto, extracao, status: novoId ? "boas_vindas" : "nao_cadastrado" });
+      await enviarMensagemWhatsapp(
+        fromE164,
+        `Opa! Sou o Rode com Lucro 🚛 — te digo se um frete vale a pena antes de você aceitar.\n\n` +
+          `Me manda a rota e o valor. Ex.: *"Sinop pra Santos, 14 mil"*`,
+      );
+      return;
+    }
     // eslint-disable-next-line no-console
     console.log(`[wa-webhook] mensagem sem intent reconhecido de ${fromE164}: "${texto}"`);
     return;
@@ -631,19 +956,20 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
     .eq("telefone_e164", fromE164)
     .maybeSingle();
 
-  // Tem conta mas ainda não vinculou o WhatsApp — pede pra vincular antes
-  // de mais nada. Comportamento inalterado: essa pessoa já sabe o que é o
-  // app, só falta um passo dentro dele. NÃO cai no trial abaixo (o trial é
-  // só pra quem não tem conta nenhuma — pra quem já tem conta, empurrar
-  // pra vincular é o caminho mais curto, não faz sentido dar estimativa
-  // anônima de novo).
+  // Tem conta (pelo app) e escreveu do mesmo número: a mensagem já prova
+  // a posse do telefone — vincula na hora, sem código VINCULAR. (Antes
+  // pedia pra ir no app gerar código; era uma das três provas de
+  // identidade que travavam o funil — ver Docs/estrategia-viral-whatsapp.md §1.)
   if (motorista && !motorista.canal_wa_ativo) {
-    await registrarTentativaFrete({ waMessageId, motoristaId: motorista.id, fromE164, texto, extracao, status: "nao_vinculado" });
-    await enviarMensagemWhatsapp(
-      fromE164,
-      "Pra calcular fretes por aqui, primeiro vincule seu WhatsApp pelo app (Meu perfil → Vincular WhatsApp).",
-    );
-    return;
+    const { error } = await supabase
+      .from("motoristas")
+      .update({ canal_wa_ativo: true, telefone_verificado: true, telefone_verificado_em: new Date().toISOString() })
+      .eq("id", motorista.id);
+    if (error) {
+      await logErro("wa-webhook.autoVinculo", "Falha ao vincular WhatsApp automaticamente", { erro: error.message, motoristaId: motorista.id });
+    } else {
+      await registrarTentativaFrete({ waMessageId, motoristaId: motorista.id, fromE164, texto, extracao, status: "nao_vinculado" });
+    }
   }
 
   const faltando: string[] = [];
@@ -651,29 +977,31 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
   if (!extracao.destino) faltando.push("destino");
   if (extracao.valorFreteReais == null) faltando.push("valor do frete");
 
-  // Número sem conta nenhuma — provavelmente chegou aqui porque alguém
-  // compartilhou o contato do nosso WhatsApp (estratégia de crescimento
-  // viral, ver Docs/status-sessao.md 10/09: "estratégia B" aprovada pelo
-  // Raphael). Se o pedido já veio completo e confiável, calcula na hora
-  // com um perfil de caminhão padrão e convida pro cadastro logo depois
-  // do resultado — é quando a pessoa está mais interessada. Se faltou
-  // dado, explica o que é o bot antes de pedir de novo (mensagem de
-  // "vincule seu WhatsApp" não faz sentido pra quem nunca teve conta).
+  // Número sem conta nenhuma — chegou pelo contato compartilhado por um
+  // colega. Se o pedido já veio completo, calcula na hora com o caminhão
+  // genérico e emenda o onboarding por botões; se não, se apresenta.
   if (!motorista) {
+    // Número novo: a conta nasce aqui (ver bloco "o número já é o
+    // cadastro" acima). Se a criação falhar, cai no trial anônimo antigo
+    // (motoristaId null) — nunca deixa o motorista sem resposta.
+    const codigo = extrairCodigoIndicacao(texto);
+    const novoId = await criarMotoristaPorWhatsapp(fromE164, codigo);
+    await registrarEventoAnalytics("wa_first_contact", novoId, { indicado_por: codigo, tinha_frete: faltando.length === 0 });
+
     const confiancaMinima =
       faltando.length === 0 ? Math.min(extracao.confiancaOrigem, extracao.confiancaDestino, extracao.confiancaValor) : 0;
     if (faltando.length > 0 || confiancaMinima < CONFIANCA_MINIMA) {
-      await registrarTentativaFrete({ waMessageId, motoristaId: null, fromE164, texto, extracao, status: "nao_cadastrado" });
+      await registrarTentativaFrete({ waMessageId, motoristaId: novoId, fromE164, texto, extracao, status: novoId ? "boas_vindas" : "nao_cadastrado" });
       await enviarMensagemWhatsapp(
         fromE164,
-        `Oi! Aqui é o Rode com Lucro 🚛 — calculadora de frete pra caminhoneiro. Me manda a origem, o destino e o valor do frete que eu calculo se vale a pena (ex.: "frete de Sorocaba pra Curitiba, 8 mil reais").\n\n` +
-          `Quer usar sempre, com o cálculo certinho pro SEU caminhão? Cadastre-se grátis: ${URL_APP}/entrar`,
+        `Opa! Sou o Rode com Lucro 🚛 — te digo se um frete vale a pena antes de você aceitar.\n\n` +
+          `Me manda a rota e o valor. Ex.: *"Sinop pra Santos, 14 mil"*`,
       );
       return;
     }
     await calcularEResponderFrete({
       fromE164,
-      motoristaId: null,
+      motoristaId: novoId,
       origem: extracao.origem as string,
       destino: extracao.destino as string,
       valorFreteReais: extracao.valorFreteReais as number,
@@ -681,6 +1009,7 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
       waMessageId,
       texto,
       extracao,
+      primeiroContato: true,
     });
     return;
   }
@@ -711,6 +1040,13 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
     return;
   }
 
+  // Sem caminhão cadastrado (mandou "oi" no primeiro contato, ou veio pelo
+  // app e parou no perfil): calcula com o genérico e puxa os 3 toques.
+  const { count: perfis } = await supabase
+    .from("caminhao_perfil")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", motorista.id);
+
   await calcularEResponderFrete({
     fromE164,
     motoristaId: motorista.id,
@@ -721,6 +1057,7 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
     waMessageId,
     texto,
     extracao,
+    semPerfil: (perfis ?? 0) === 0,
   });
 }
 
@@ -749,9 +1086,16 @@ async function calcularEResponderFrete(params: {
   waMessageId: string;
   texto: string;
   extracao: ExtracaoFrete | null;
+  /** Conta acabou de ser criada nesta mensagem: rodapé avisa (LGPD + SAIR) e puxa o onboarding por botões. */
+  primeiroContato?: boolean;
+  /** Motorista sem caminhão cadastrado (veio pelo WhatsApp e mandou "oi" antes, ou pelo app e parou no perfil): puxa o onboarding por botões. */
+  semPerfil?: boolean;
+  /** Recalculando o mesmo frete depois do onboarding: lucro da estimativa genérica, pra mostrar a diferença. */
+  recalculoDe?: number | null;
 }): Promise<void> {
-  const { fromE164, motoristaId, origem, destino, valorFreteReais, voltaVazia, waMessageId, texto, extracao } = params;
+  const { fromE164, motoristaId, origem, destino, valorFreteReais, voltaVazia, waMessageId, texto, extracao, primeiroContato, semPerfil, recalculoDe } = params;
   const anonimo = motoristaId == null;
+  const puxarOnboarding = Boolean(primeiroContato || semPerfil);
 
   const rota = await chamarRouteCost(origem, destino);
   if (!rota) {
@@ -790,7 +1134,7 @@ async function calcularEResponderFrete(params: {
     fromE164,
     texto,
     extracao,
-    status: anonimo ? "calculado_anonimo" : "calculado",
+    status: anonimo ? "calculado_anonimo" : primeiroContato ? "calculado_novo" : recalculoDe != null ? "recalculado_perfil" : "calculado",
     resultado,
   });
   await registrarEventoAnalytics(anonimo ? "simulation_run_anonimo" : "simulation_run", motoristaId, {
@@ -809,17 +1153,41 @@ async function calcularEResponderFrete(params: {
 
   const emoji = resultado.veredicto === "BOM" ? "✅" : resultado.veredicto === "ACEITÁVEL" ? "🟡" : "🔴";
   const avisoPiso = resultado.abaixoPisoANTT ? "\n⚠️ Valor abaixo do piso mínimo ANTT." : "";
-  // Rodapé muda conforme quem pediu: motorista com conta vê o link de
-  // histórico de sempre; número anônimo (trial) vê o convite de cadastro
-  // logo depois do resultado — é o momento de maior interesse dele.
-  const rodape = anonimo
-    ? `(estimativa com um caminhão padrão — cadastre o seu em instantes pra ter o valor exato do SEU caminhão)\n\n` +
-      `🚀 Gostou? Cadastre-se grátis: ${URL_APP}/entrar`
-    : `(estimativa com base no seu perfil cadastrado no app — ${dias} dia${dias > 1 ? "s" : ""} de viagem)\n\n` +
-      // Toda resposta de cálculo (texto livre ou clique na lista de busca)
-      // sempre reforça o link do app — pedido explícito: o motorista precisa
-      // ter essa porta sempre visível, não só quando falta cadastro.
-      `📲 Veja o histórico completo e mais fretes no app: ${URL_APP}/buscar-frete`;
+
+  // Rodapé por situação (ver Docs/estrategia-viral-whatsapp.md §3):
+  // - primeiro contato: estimativa genérica + aviso de conta criada (LGPD,
+  //   com SAIR) — o gancho pro caminhão vem na mensagem de botões logo após;
+  // - recálculo pós-onboarding: mostra a diferença pro genérico e avisa
+  //   que o caminhão ficou salvo;
+  // - motorista de sempre: link do app + rodapé encaminhável com o número
+  //   do bot (o veredito é o objeto viral);
+  // - anônimo (só se a criação de conta falhou): CTA de cadastro antigo.
+  const linhaCompartilhe = NUMERO_OFICIAL_WA ? `\n\n_Calcule o seu: +${NUMERO_OFICIAL_WA}_` : "";
+  let rodape: string;
+  if (anonimo) {
+    rodape =
+      `(estimativa com um caminhão padrão — cadastre o seu em instantes pra ter o valor exato do SEU caminhão)\n\n` +
+      `🚀 Gostou? Cadastre-se grátis: ${URL_APP}/entrar`;
+  } else if (primeiroContato) {
+    rodape =
+      `_(estimativa com uma carreta padrão de ${perfil.numero_eixos} eixos)_\n\n` +
+      `Seu número ficou cadastrado no Rode com Lucro. Pra apagar tudo, manda *SAIR*. Termos: ${URL_APP}/termos`;
+  } else if (semPerfil) {
+    rodape = `_(estimativa com uma carreta padrão de ${perfil.numero_eixos} eixos — você ainda não cadastrou o seu)_`;
+  } else if (recalculoDe != null) {
+    const dif = resultado.lucro - recalculoDe;
+    const difTxt = Math.abs(dif) < 1 ? "praticamente o mesmo" : dif > 0 ? `${fmtBRL(dif)} a mais que a estimativa` : `${fmtBRL(-dif)} a menos que a estimativa`;
+    rodape =
+      `Com o *seu* caminhão: ${difTxt}. 🚛 Perfil salvo.\n\n` +
+      `📲 Histórico e fretes perto de você: ${URL_APP}/buscar-frete` +
+      linhaCompartilhe;
+  } else {
+    rodape =
+      `(estimativa com base no seu perfil cadastrado no app — ${dias} dia${dias > 1 ? "s" : ""} de viagem)\n\n` +
+      `📲 Veja o histórico completo e mais fretes no app: ${URL_APP}/buscar-frete` +
+      linhaCompartilhe;
+  }
+
   const resposta =
     `📦 ${origem} → ${destino} (${rota.distanciaKm.toFixed(0)} km${rota.distanciaEstimada ? ", estimado" : ""})\n` +
     `Valor ofertado: ${fmtBRL(valorFreteReais)}\n` +
@@ -830,6 +1198,41 @@ async function calcularEResponderFrete(params: {
     rodape;
 
   await enviarMensagemWhatsapp(fromE164, resposta);
+
+  // Primeiro contato: emenda a pergunta do caminhão (3 toques). Guarda o
+  // frete pra recalcular no fim e mostrar a diferença.
+  if (puxarOnboarding && motoristaId) {
+    await iniciarOnboardingCaminhao(fromE164, motoristaId, { origem, destino, valorFreteReais, voltaVazia, lucroGenerico: resultado.lucro });
+    return;
+  }
+
+  // Motorista já com perfil: a cada N cálculos oferece o cartão pra
+  // mandar pro colega. Não em todo cálculo (vira ruído e custa mensagem
+  // a partir de 1/10) — no 1º recálculo e depois a cada 5.
+  if (!anonimo && motoristaId && (recalculoDe != null || (await contarCalculos(motoristaId)) % 5 === 0)) {
+    await enviarBotoes(fromE164, "Conhece alguém que ia gostar de saber se o frete vale a pena?", [
+      { id: "viral:cartao", titulo: "Mandar pro colega" },
+    ]);
+  }
+}
+
+async function contarCalculos(motoristaId: string): Promise<number> {
+  const { count } = await supabase
+    .from("wa_freight_query")
+    .select("id", { count: "exact", head: true })
+    .eq("motorista_id", motoristaId)
+    .in("status", ["calculado", "calculado_novo", "recalculado_perfil"]);
+  return count ?? 0;
+}
+
+/** Botão "Mandar pro colega": envia o cartão de contato do bot + instrução. */
+async function tratarPedidoCartao(fromE164: string, waMessageId: string): Promise<void> {
+  const { data: m } = await supabase.from("motoristas").select("id, codigo_indicacao, nome").eq("telefone_e164", fromE164).maybeSingle();
+  await enviarCartaoDeContato(fromE164);
+  const codigo = m?.codigo_indicacao;
+  const link = NUMERO_OFICIAL_WA && codigo ? `\n\nOu manda esse link num grupo: https://wa.me/${NUMERO_OFICIAL_WA}?text=${encodeURIComponent(`Calcula um frete pra mim #${codigo}`)}` : "";
+  await enviarMensagemWhatsapp(fromE164, `👆 Encaminha esse contato pro colega. Ele salva e já manda a rota e o valor.${link}`);
+  if (m) await registrarEventoAnalytics("referral_shared", m.id, { via: "cartao", wa_message_id: waMessageId });
 }
 
 // ---------------------------------------------------------------------
@@ -880,12 +1283,24 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string): Promis
     .eq("telefone_e164", fromE164)
     .maybeSingle<MotoristaBusca>();
 
-  if (!motorista?.canal_wa_ativo) {
+  // Número desconhecido pedindo busca ("tem frete?" é a mensagem mais
+  // comum de quem recebe o contato): cria a conta como no cálculo, e
+  // explica o que precisa. Conta pelo app sem vínculo: vincula na hora.
+  if (!motorista) {
+    const novoId = await criarMotoristaPorWhatsapp(fromE164, null);
+    await registrarEventoAnalytics("wa_first_contact", novoId, { indicado_por: null, tinha_frete: false, intent: "busca" });
     await enviarMensagemWhatsapp(
       fromE164,
-      "Pra buscar fretes por aqui, primeiro vincule seu WhatsApp pelo app (Meu perfil → Vincular WhatsApp).",
+      `Opa! Sou o Rode com Lucro 🚛 — te digo se um frete vale a pena antes de você aceitar, e mostro cargas perto de você.\n\n` +
+        `Pra começar, me manda uma rota e um valor. Ex.: *"Sinop pra Santos, 14 mil"*`,
     );
     return;
+  }
+  if (!motorista.canal_wa_ativo) {
+    await supabase
+      .from("motoristas")
+      .update({ canal_wa_ativo: true, telefone_verificado: true, telefone_verificado_em: new Date().toISOString() })
+      .eq("id", motorista.id);
   }
 
   const { data: perfil } = await supabase
@@ -1147,7 +1562,9 @@ async function tratarRequisicao(req: Request): Promise<Response> {
       console.error("[wa-webhook] falha ao registrar idempotência, processando mesmo assim", dupError);
     }
 
-    if (intent.tipo === "vincular") {
+    if (RE_SAIR.test(msg.texto.trim())) {
+      await tratarSair(msg.fromE164, msg.waMessageId);
+    } else if (intent.tipo === "vincular") {
       await tratarVincular(msg.fromE164, intent.codigo, msg.waMessageId);
     } else if (intent.tipo === "desvincular") {
       await tratarDesvincular(msg.fromE164, msg.waMessageId);
@@ -1171,7 +1588,15 @@ async function tratarRequisicao(req: Request): Promise<Response> {
       // eslint-disable-next-line no-console
       console.error("[wa-webhook] falha ao registrar idempotência (lista), processando mesmo assim", dupError);
     }
-    await tratarRespostaLista(it.fromE164, it.rowId, it.waMessageId);
+    // Roteia pelo prefixo do id: onboarding do caminhão, pedido do cartão
+    // de contato, ou (sem prefixo) clique num frete da lista de busca.
+    if (it.rowId.startsWith("onb_")) {
+      await tratarRespostaOnboarding(it.fromE164, it.rowId, it.waMessageId);
+    } else if (it.rowId === "viral:cartao") {
+      await tratarPedidoCartao(it.fromE164, it.waMessageId);
+    } else {
+      await tratarRespostaLista(it.fromE164, it.rowId, it.waMessageId);
+    }
   }
 
   // A Meta espera 200 rápido — se demorar ou der erro, ela reentrega.
