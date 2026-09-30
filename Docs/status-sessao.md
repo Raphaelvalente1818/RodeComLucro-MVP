@@ -1402,7 +1402,7 @@ Raphael pediu, antes de codar, estudo das soluções que já existem e um plano 
 
 ## CHECKPOINT — 30/09 (fim de sessão, v47)
 
-**Estado**: wa-webhook **v47** no ar (Camadas 2+3 acima). `CLAUDE.md` criado. Commit pendente: `CLAUDE.md`, `supabase/functions/wa-webhook/{index,extracao}.ts`, `supabase/migrations/20260930170000_conversa_livre_wa.sql`, `Docs/status-sessao.md`.
+**Estado**: wa-webhook **v47** no ar (Camadas 2+3 acima). `CLAUDE.md` criado. Contas do David (`5511991143035`) e do Rapha (`5541999871818`) **apagadas a pedido** pra testarem como número novo. Achado no caminho: `consentimento` estava sem ON DELETE CASCADE — o SAIR falharia pra quem vinculou pelo app; corrigido em `20260930180000_consentimento_cascade.sql`. Commit pendente: `CLAUDE.md`, `supabase/functions/wa-webhook/{index,extracao}.ts`, `supabase/migrations/20260930170000_*.sql`, `supabase/migrations/20260930180000_*.sql`, `Docs/status-sessao.md`.
 
 **AO RETOMAR (no Claude Code)**:
 1. Rodar o TESTE da v47 (acima) e revisar as respostas livres no banco; depois de uma semana, descer o limite pra 3.
