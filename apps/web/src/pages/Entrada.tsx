@@ -40,10 +40,20 @@ export default function Entrada() {
       });
 
       if (error) {
-        // supabase-js expoe o status HTTP do erro em error.context quando disponivel
-        const status = (error as { context?: { status?: number } }).context?.status;
-        if (status === 429 && data?.bloqueado_ate) {
-          setBloqueadoAte(data.bloqueado_ate);
+        // supabase-js: em erro HTTP, `data` vem null e o corpo fica em
+        // error.context (o Response). Antes lia data.bloqueado_ate — nunca
+        // vinha — e o bloqueio de 15 min aparecia como "Não foi possível
+        // enviar o código" genérico (David, 30/09: 3 pedidos em 2 min).
+        const ctx = (error as { context?: Response }).context;
+        const status = ctx?.status;
+        let corpo: { bloqueado_ate?: string; motivo?: string } | null = null;
+        try {
+          corpo = ctx && typeof ctx.json === 'function' ? await ctx.clone().json() : null;
+        } catch {
+          corpo = null;
+        }
+        if (status === 429) {
+          setBloqueadoAte(corpo?.bloqueado_ate ?? new Date(Date.now() + 15 * 60_000).toISOString());
         } else if (status === 503) {
           setErro('Login por telefone temporariamente indisponivel. Tente novamente em instantes.');
         } else {
@@ -70,7 +80,7 @@ export default function Entrada() {
       <form className="entrada-card" onSubmit={onSubmit}>
         <p className="garagem-eyebrow">Entrar</p>
         <h1>Seu número de celular</h1>
-        <p className="entrada-nota">A gente manda um código por SMS. Sem senha pra decorar.</p>
+        <p className="entrada-nota">A gente manda um código pelo WhatsApp ou por SMS. Sem senha pra decorar.</p>
 
         <div className="campo-telefone">
           <span>+55</span>
@@ -116,7 +126,8 @@ export default function Entrada() {
 
         {bloqueadoAte && (
           <p className="aviso-erro">
-            Muitas tentativas. Tente novamente após {new Date(bloqueadoAte).toLocaleTimeString('pt-BR')}.
+            Muitos códigos pedidos seguidos. Se já recebeu um SMS, ele ainda vale — o mais recente. Senão, tente de novo às{' '}
+            {new Date(bloqueadoAte).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.
           </p>
         )}
         {erro && <p className="aviso-erro">{erro}</p>}

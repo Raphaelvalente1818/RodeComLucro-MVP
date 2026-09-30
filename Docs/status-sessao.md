@@ -1400,12 +1400,31 @@ Raphael pediu, antes de codar, estudo das soluções que já existem e um plano 
 
 **TESTE (Raphael)**, de um número novo ou depois de SAIR: (1) "Tem carga para container hoje partindo de São Paulo?" → botões de tipo com a frase citando container/São Paulo → 3 toques → lista (ou "não achei…"); (2) "O que você faz?" → resposta da IA; (3) "Você paga o frete?" → deve dizer que não faz isso e puxar pra ação; (4) mandar 6 mensagens de papo → a 6ª fica sem resposta; (5) "carreta" digitado no meio do onboarding → segue.
 
-## CHECKPOINT — 30/09 (fim de sessão, v47)
+## 30/09 (noite) — Teste do David/Rapha: OTP, lista cortada, login sem SMS (v48)
 
-**Estado**: wa-webhook **v47** no ar (Camadas 2+3 acima). `CLAUDE.md` criado. Contas do David (`5511991143035`) e do Rapha (`5541999871818`) **apagadas a pedido** pra testarem como número novo. Achado no caminho: `consentimento` estava sem ON DELETE CASCADE — o SAIR falharia pra quem vinculou pelo app; corrigido em `20260930180000_consentimento_cascade.sql`. Commit pendente: `CLAUDE.md`, `supabase/functions/wa-webhook/{index,extracao}.ts`, `supabase/migrations/20260930170000_*.sql`, `supabase/migrations/20260930180000_*.sql`, `Docs/status-sessao.md`.
+**Print 1 — "Não foi possível enviar o código" não era o Twilio.** Logs: David entrou por SMS às 09:35; às 10:51–10:53 pediu 3 códigos em 2 min (clicou "pelo WhatsApp", que era um botão fake — sempre caía em SMS), digitou um código velho (`otp_expired`) e do 4º pedido em diante o próprio `otp-solicitar` bloqueou 15 min (`limite_telefone_15min=3`). O app lia `data.bloqueado_ate` num erro do `functions.invoke` — em erro `data` é null, o corpo fica em `error.context` (Response) — e mostrava o genérico. **Fix** `Entrada.tsx`: lê `error.context.json()`, mostra "Muitos códigos pedidos seguidos… o mais recente ainda vale… tente às HH:MM".
+
+**OTP pelo WhatsApp de verdade** (template `modelo01`, pt_BR, categoria Autenticação, ativo na Meta):
+- `otp-solicitar` v31: `canal=whatsapp` → gera código de 6 dígitos, guarda `hmac(pepper, fone:codigo)` em `wa_otp` (10 min, 5 tentativas), manda template pela Cloud API (body param + botão copiar código). Se a Meta falhar, cai pra SMS na hora e devolve `canal_efetivo: 'sms'`. Secrets opcionais: `WA_TEMPLATE_OTP` (default modelo01), `WA_TEMPLATE_OTP_IDIOMA` (pt_BR).
+- **Nova Edge Function `sessao-wa`** (verify_jwt=false): recebe `{telefone_e164, codigo}` OU `{token}`; valida; garante conta (cria se não existe); põe e-mail sintético `<fone>@wa.rodecomlucro.app` (confirmado, invisível) se o usuário não tem e-mail; `auth.admin.generateLink({type:'magiclink'})` → devolve `hashed_token`. O app faz `verifyOtp({ token_hash, type: 'magiclink' })` e cai logado. Audit em `identidade_audit` (`login_ok`, via `sessao_wa_codigo|token`).
+- `Verificacao.tsx`: canal whatsapp → `sessao-wa`; sms → `verifyOtp` sms como antes.
+
+**Print 3 — veio do WhatsApp e o app pediu OTP.** Link mágico (item §7 da estratégia, agora fechado): `wa-webhook` v48 tem `linkApp(motoristaId, caminho)` — token de 24 bytes, uso único, 24h, hash em `wa_login_token`; TODO link do app nas mensagens sai como `…/buscar-frete?t=XYZ`. No app, `lib/LoginPorLink.tsx` envolve as rotas em `main.tsx`: se tem `?t=` e não tem sessão, troca em `sessao-wa`, faz `verifyOtp` magiclink, limpa a URL e só então renderiza (senão o `getSession` das páginas mandava pro /entrar antes da sessão existir). Sessão já existente ignora o token.
+
+**Print 2 — lista cortada.** Título da lista tem 24 chars na Meta; agora título = "→ Destino/UF", descrição = "de Origem/UF · R$ · a N km".
+
+**Migration** `20260930190000_otp_whatsapp_e_link_magico.sql` (aplicada): `wa_otp`, `wa_login_token`, `limpar_tokens_wa()` (falta agendar no pg_cron).
+
+**TESTE**: (1) app → número → "Receber código pelo WhatsApp" → chega template no WhatsApp → digita → entra. (2) No bot, calcular um frete → tocar no link do veredito → app abre já logado, sem código. (3) Segundo clique no mesmo link (token usado) → pede login normal. (4) Pedir 4 códigos seguidos → mensagem clara com horário.
+
+**Atenção**: o app na Vercel só passa a entender o canal WhatsApp depois do `git push` (deploy automático). Até lá, quem pedir "pelo WhatsApp" recebe o código certo mas o app antigo tenta validar como SMS e falha — fazer o push antes de testar.
+
+## CHECKPOINT — 30/09 (fim de sessão, v48)
+
+**Estado**: wa-webhook **v48**, otp-solicitar **v31**, **sessao-wa v1** no ar (OTP WhatsApp + link mágico acima). `CLAUDE.md` criado. Contas do David (`5511991143035`) e do Rapha (`5541999871818`) **apagadas a pedido** pra testarem como número novo. Achado no caminho: `consentimento` estava sem ON DELETE CASCADE — o SAIR falharia pra quem vinculou pelo app; corrigido em `20260930180000_consentimento_cascade.sql`. Commit pendente: `CLAUDE.md`, `supabase/functions/{wa-webhook,otp-solicitar,sessao-wa}/`, `supabase/migrations/20260930*.sql`, `apps/web/src/{main.tsx,lib/LoginPorLink.tsx,pages/Entrada.tsx,pages/Verificacao.tsx}`, `Docs/status-sessao.md`.
 
 **AO RETOMAR (no Claude Code)**:
-1. Rodar o TESTE da v47 (acima) e revisar as respostas livres no banco; depois de uma semana, descer o limite pra 3.
+1. Rodar os TESTES (v47 e v48, acima) e revisar as respostas livres no banco; depois de uma semana, descer o limite pra 3. Agendar `limpar_tokens_wa()` no pg_cron (diário).
 2. (`5541…1818` era o próprio Raphael testando — não é lead. Conta spam `5515…` pode ficar; decisão: conta nasce com qualquer mensagem.)
 3. Semente do funil: Emerson e David mandam o cartão pra 15 colegas cada. **Sem isso não há dado** — gate está em 1/160.
 4. Pendências da Fase 1: `codigo_indicacao` por motorista; aba "Funil viral" no admin; verificar empresa na Meta; conferir rota `/termos`.

@@ -24,6 +24,7 @@ import EmpresaHome from './pages/empresa/EmpresaHome';
 import EmpresaPublicar from './pages/empresa/EmpresaPublicar';
 import EmpresaLayout from './pages/empresa/EmpresaLayout';
 import EmpresaDados from './pages/empresa/EmpresaDados';
+import LoginPorLink from './lib/LoginPorLink';
 import './index.css';
 
 // Lazy: a lib de leitura de Excel (xlsx) é pesada (~300kB minificado) e só
@@ -34,6 +35,7 @@ const ImportarFretes = lazy(() => import('./admin/pages/ImportarFretes'));
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
+      <LoginPorLink>
       <Routes>
         <Route path="/entrar" element={<Entrada />} />
         <Route path="/verificar" element={<Verificacao />} />
@@ -73,6 +75,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         </Route>
         <Route path="*" element={<Navigate to="/entrar" replace />} />
       </Routes>
+      </LoginPorLink>
     </BrowserRouter>
   </React.StrictMode>,
 );

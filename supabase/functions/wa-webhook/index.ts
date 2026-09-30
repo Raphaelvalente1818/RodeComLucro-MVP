@@ -1258,6 +1258,7 @@ async function calcularEResponderFrete(params: {
   // com o bot ele não faz sentido. Removido em 24/09 a pedido do Raphael;
   // o compartilhamento fica só no botão explícito "Mandar pro colega".)
   const linhaCompartilhe = "";
+  const linkBusca = await linkApp(motoristaId, "/buscar-frete");
   let rodape: string;
   if (anonimo) {
     rodape =
@@ -1274,12 +1275,12 @@ async function calcularEResponderFrete(params: {
     const difTxt = Math.abs(dif) < 1 ? "praticamente o mesmo" : dif > 0 ? `${fmtBRL(dif)} a mais que a estimativa` : `${fmtBRL(-dif)} a menos que a estimativa`;
     rodape =
       `Com o *seu* caminhão: ${difTxt}. 🚛 Perfil salvo.\n\n` +
-      `📲 Histórico e fretes perto de você: ${URL_APP}/buscar-frete` +
+      `📲 Histórico e fretes perto de você (abre já logado): ${linkBusca}` +
       linhaCompartilhe;
   } else {
     rodape =
       `(estimativa com base no seu perfil cadastrado no app — ${dias} dia${dias > 1 ? "s" : ""} de viagem)\n\n` +
-      `📲 Veja o histórico completo e mais fretes no app: ${URL_APP}/buscar-frete` +
+      `📲 Veja o histórico completo e mais fretes no app: ${linkBusca}` +
       linhaCompartilhe;
   }
 
@@ -1342,6 +1343,36 @@ async function tratarPedidoCartao(fromE164: string, waMessageId: string): Promis
 
 const RAIO_BUSCA_MAX_RESULTADOS = 3;
 const URL_APP = "https://rode-com-lucro-mvp.vercel.app";
+// Mesmo pepper do otp-solicitar/sessao-wa — o hash do token de login usa ele.
+const TELEFONE_PEPPER = Deno.env.get("TELEFONE_PEPPER");
+const LINK_LOGIN_VALIDADE_H = 24;
+
+/**
+ * Link mágico (30/09): o motorista já provou o número ao falar com o bot;
+ * o link carrega essa prova até o navegador. Token de uso único (24h) em
+ * wa_login_token; a Edge Function sessao-wa troca por sessão. Sem
+ * motorista (trial anônimo) ou sem pepper, devolve o link puro.
+ */
+async function linkApp(motoristaId: string | null, caminho: string): Promise<string> {
+  const base = `${URL_APP}${caminho}`;
+  if (!motoristaId || !TELEFONE_PEPPER) return base;
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  const token = btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(TELEFONE_PEPPER), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`login:${token}`));
+  const tokenHash = Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  const { error } = await supabase.from("wa_login_token").insert({
+    token_hash: tokenHash,
+    motorista_id: motoristaId,
+    expira_em: new Date(Date.now() + LINK_LOGIN_VALIDADE_H * 60 * 60_000).toISOString(),
+  });
+  if (error) {
+    await logErro("wa-webhook.linkApp", "Falha ao gravar token de login", { erro: error.message, motoristaId });
+    return base;
+  }
+  return `${base}${base.includes("?") ? "&" : "?"}t=${token}`;
+}
 
 function distanciaKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371;
@@ -1519,7 +1550,7 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string, opcoes:
     await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto: textoOriginal, extracao: null, status: "busca_origem" });
     await enviarMensagemWhatsapp(
       fromE164,
-      `De que cidade você quer sair? Manda ex.: *"tem ${descCarga} saindo de Cuiabá/MT?"*\n\n_Pra não precisar dizer toda vez, cadastre sua cidade base no app: ${URL_APP}/motorista_` +
+      `De que cidade você quer sair? Manda ex.: *"tem ${descCarga} saindo de Cuiabá/MT?"*\n\n_Pra não precisar dizer toda vez, cadastre sua cidade base no app: ${await linkApp(motoristaId, "/motorista")}_` +
         avisoNovo,
     );
     return;
@@ -1575,17 +1606,20 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string, opcoes:
     await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto: textoOriginal, extracao: null, status: "busca_sem_resultado" });
     await enviarMensagemWhatsapp(
       fromE164,
-      `${opcoes.prefixo ?? ""}Não achei ${descCarga} pra ${tipoVeiculo} perto de ${lugar} agora. Vou ficando de olho — tenta de novo mais tarde ou veja tudo no app: ${URL_APP}/buscar-frete` +
+      `${opcoes.prefixo ?? ""}Não achei ${descCarga} pra ${tipoVeiculo} perto de ${lugar} agora. Vou ficando de olho — tenta de novo mais tarde ou veja tudo no app: ${await linkApp(motoristaId, "/buscar-frete")}` +
         avisoNovo,
     );
     return;
   }
 
+  // Título tem 24 chars na Meta — "Ribeirão Preto/SP → Águas…" cortava o
+  // destino (print do Raphael, 30/09). O que o motorista quer ver é PRA
+  // ONDE vai: título = destino; origem, valor e distância na descrição.
   const linhas: LinhaListaFrete[] = compativeis.map((f) => ({
     id: f.id,
-    title: truncar(`${f.origemCidade}/${f.origemUf} → ${f.destinoCidade}/${f.destinoUf}`, 24),
+    title: truncar(`→ ${f.destinoCidade}/${f.destinoUf}`, 24),
     description: truncar(
-      `${textoValorCurto(f.valorACombinar, f.valorFreteCentavos, f.tipoValor)} · ${f.distanciaOrigemKm.toFixed(0)} km de ${origem.nome}`,
+      `de ${f.origemCidade}/${f.origemUf} · ${textoValorCurto(f.valorACombinar, f.valorFreteCentavos, f.tipoValor)} · a ${f.distanciaOrigemKm.toFixed(0)} km`,
       72,
     ),
   }));
@@ -1606,16 +1640,17 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string, opcoes:
  * saiu do ar.
  */
 async function tratarRespostaLista(fromE164: string, rowId: string, waMessageId: string): Promise<void> {
-  if (rowId === "abrir_app") {
-    await enviarMensagemWhatsapp(fromE164, `Abra o app pra ver todos os fretes e mais detalhes: ${URL_APP}/buscar-frete`);
-    return;
-  }
-
   const { data: motorista } = await supabase
     .from("motoristas")
     .select("id, canal_wa_ativo")
     .eq("telefone_e164", fromE164)
     .maybeSingle();
+
+  if (rowId === "abrir_app") {
+    await enviarMensagemWhatsapp(fromE164, `Abra o app pra ver todos os fretes e mais detalhes (já entra logado): ${await linkApp(motorista?.id ?? null, "/buscar-frete")}`);
+    return;
+  }
+
   if (!motorista?.canal_wa_ativo) return; // defensivo — só quem está vinculado recebe a lista.
 
   const { data: frete } = await supabase
@@ -1635,7 +1670,7 @@ async function tratarRespostaLista(fromE164: string, rowId: string, waMessageId:
   if (frete.valor_a_combinar || frete.valor_frete_centavos == null) {
     await enviarMensagemWhatsapp(
       fromE164,
-      `📦 ${origem} → ${destino}\nValor a combinar — abra o app pra ver os detalhes e negociar: ${URL_APP}/buscar-frete`,
+      `📦 ${origem} → ${destino}\nValor a combinar — abra o app pra ver os detalhes e negociar: ${await linkApp(motorista.id, "/buscar-frete")}`,
     );
     return;
   }
@@ -1654,7 +1689,7 @@ async function tratarRespostaLista(fromE164: string, rowId: string, waMessageId:
     if (!cargaMaxima) {
       await enviarMensagemWhatsapp(
         fromE164,
-        `📦 ${origem} → ${destino}\nEsse frete é por tonelada (${fmtBRL(frete.valor_frete_centavos / 100)}/ton) — cadastre a carga máxima do seu caminhão pra eu calcular o valor total: ${URL_APP}/perfil\nEnquanto isso, abra o app pra negociar esse frete: ${URL_APP}/buscar-frete`,
+        `📦 ${origem} → ${destino}\nEsse frete é por tonelada (${fmtBRL(frete.valor_frete_centavos / 100)}/ton) — cadastre a carga máxima do seu caminhão pra eu calcular o valor total: ${await linkApp(motorista.id, "/perfil")}\nEnquanto isso, abra o app pra negociar esse frete: ${URL_APP}/buscar-frete`,
       );
       return;
     }

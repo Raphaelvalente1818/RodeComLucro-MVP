@@ -64,12 +64,31 @@ export default function Verificacao() {
     setCarregando(true);
     setErro(null);
     try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        phone: `+${telefoneE164}`,
-        token,
-        type: 'sms',
-      });
-      if (error) {
+      // WhatsApp (30/09): o código é nosso (template da Meta), quem confere
+      // é a Edge Function sessao-wa, que devolve um token_hash de magiclink
+      // — o verifyOtp abaixo troca por sessão. SMS segue direto no GoTrue.
+      let data: { user: { created_at: string } | null } | null = null;
+      let error: unknown = null;
+      if (canal === 'whatsapp') {
+        const r = await supabase.functions.invoke('sessao-wa', { body: { telefone_e164: telefoneE164, codigo: token } });
+        if (r.error || !r.data?.token_hash) {
+          const status = (r.error as { context?: Response } | null)?.context?.status;
+          setErro(
+            status === 429
+              ? 'Muitas tentativas com esse código. Peça um novo.'
+              : 'Codigo invalido ou expirado. Confira e tente de novo.',
+          );
+          return;
+        }
+        const v = await supabase.auth.verifyOtp({ token_hash: r.data.token_hash as string, type: 'magiclink' });
+        data = v.data;
+        error = v.error;
+      } else {
+        const v = await supabase.auth.verifyOtp({ phone: `+${telefoneE164}`, token, type: 'sms' });
+        data = v.data;
+        error = v.error;
+      }
+      if (error || !data) {
         setErro('Codigo invalido ou expirado. Confira e tente de novo.');
         return;
       }

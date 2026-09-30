@@ -263,33 +263,109 @@ async function tratarRequisicao(req: Request): Promise<Response> {
     return json({ bloqueado_ate: bloqueadoAte, motivo: "sms_pumping" }, 429);
   }
 
-  // 6. Dispara o OTP via GoTrue. Canal 'whatsapp' ainda depende do
-  // template HSM da Meta (Fase 2 do roadmap) — por enquanto cai para SMS.
-  // TODO(fase 2): integrar wa-send / HSM 'authentication' quando aprovado.
-  const canalEfetivo = "sms";
-  const { error: otpError } = await supabase.auth.signInWithOtp({
-    phone: `+${telefoneE164}`,
-  });
+  // 6. Dispara o OTP.
+  // - sms: GoTrue (Twilio), verificação pelo verifyOtp do app;
+  // - whatsapp (30/09): código nosso, guardado em wa_otp, mandado pelo
+  //   template de autenticação "modelo01" da Meta; verificação na Edge
+  //   Function sessao-wa. Se a Meta falhar, cai pra SMS na hora — o
+  //   motorista nunca fica sem código.
+  let canalEfetivo: "sms" | "whatsapp" = canal;
+  let erroEnvio: string | null = null;
+
+  if (canal === "whatsapp") {
+    const erroWa = await enviarCodigoPorWhatsapp(telefoneE164);
+    if (erroWa) {
+      await logErro("otp-solicitar.whatsapp", "Meta falhou ao mandar template de OTP; caindo pra SMS", { erro: erroWa });
+      canalEfetivo = "sms";
+    }
+  }
+  if (canalEfetivo === "sms") {
+    const { error: otpError } = await supabase.auth.signInWithOtp({ phone: `+${telefoneE164}` });
+    erroEnvio = otpError?.message ?? null;
+  }
 
   await supabase.from("otp_envio").insert({
     telefone_hash: telefoneHash,
     ip,
     canal: canalEfetivo,
-    provider: "supabase_gotrue",
-    status: otpError ? "falha" : "enviado",
+    provider: canalEfetivo === "whatsapp" ? "meta_cloud_api" : "supabase_gotrue",
+    status: erroEnvio ? "falha" : "enviado",
   });
 
   await supabase.from("identidade_audit").insert({
     evento: "otp_solicitado",
     telefone_hash: telefoneHash,
     ip,
-    detalhe: { canal: canalEfetivo, ok: !otpError },
+    detalhe: { canal: canalEfetivo, canal_pedido: canal, ok: !erroEnvio },
   });
 
-  if (otpError) {
-    await logErro("otp-solicitar.enviarOtp", "GoTrue falhou ao enviar OTP", { erro: otpError.message, canal: canalEfetivo });
+  if (erroEnvio) {
+    await logErro("otp-solicitar.enviarOtp", "GoTrue falhou ao enviar OTP", { erro: erroEnvio, canal: canalEfetivo });
     return json({ enviado: false, erro: "falha_envio" }, 502);
   }
 
   return json({ enviado: true, canal_efetivo: canalEfetivo, proximo_reenvio_s: 60 });
+}
+
+// ---------------------------------------------------------------------
+// OTP pelo WhatsApp — template de autenticação da Meta (categoria
+// AUTHENTICATION, formato fixo: código no corpo + botão "Copiar código").
+// Mesmos secrets do wa-webhook. O código fica hasheado com o pepper em
+// wa_otp; quem confere é a Edge Function sessao-wa.
+// ---------------------------------------------------------------------
+const WA_ACCESS_TOKEN = Deno.env.get("WA_ACCESS_TOKEN");
+const WA_PHONE_NUMBER_ID = Deno.env.get("WA_PHONE_NUMBER_ID");
+const WA_TEMPLATE_OTP = Deno.env.get("WA_TEMPLATE_OTP") ?? "modelo01";
+const WA_TEMPLATE_OTP_IDIOMA = Deno.env.get("WA_TEMPLATE_OTP_IDIOMA") ?? "pt_BR";
+const OTP_VALIDADE_MIN = 10;
+
+async function enviarCodigoPorWhatsapp(telefoneE164: string): Promise<string | null> {
+  if (!WA_ACCESS_TOKEN || !WA_PHONE_NUMBER_ID) return "WA_ACCESS_TOKEN/WA_PHONE_NUMBER_ID ausentes";
+
+  // 6 dígitos com crypto, sem zero à esquerda perdido (string).
+  const buf = new Uint32Array(1);
+  crypto.getRandomValues(buf);
+  const codigo = String(buf[0] % 1_000_000).padStart(6, "0");
+  const codigoHash = await hashTelefone(`${telefoneE164}:${codigo}`);
+
+  const { error: dbErr } = await supabase.from("wa_otp").upsert(
+    {
+      telefone_e164: telefoneE164,
+      codigo_hash: codigoHash,
+      expira_em: new Date(Date.now() + OTP_VALIDADE_MIN * 60_000).toISOString(),
+      tentativas: 0,
+      criado_em: new Date().toISOString(),
+    },
+    { onConflict: "telefone_e164" },
+  );
+  if (dbErr) return `wa_otp: ${dbErr.message}`;
+
+  try {
+    const resp = await fetch(`https://graph.facebook.com/v20.0/${WA_PHONE_NUMBER_ID}/messages`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${WA_ACCESS_TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to: telefoneE164,
+        type: "template",
+        template: {
+          name: WA_TEMPLATE_OTP,
+          language: { code: WA_TEMPLATE_OTP_IDIOMA },
+          components: [
+            { type: "body", parameters: [{ type: "text", text: codigo }] },
+            { type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: codigo }] },
+          ],
+        },
+      }),
+    });
+    if (!resp.ok) {
+      const detalhe = await resp.text();
+      await supabase.from("wa_otp").delete().eq("telefone_e164", telefoneE164);
+      return `Meta ${resp.status}: ${detalhe.slice(0, 300)}`;
+    }
+    return null;
+  } catch (e) {
+    await supabase.from("wa_otp").delete().eq("telefone_e164", telefoneE164);
+    return String(e);
+  }
 }
