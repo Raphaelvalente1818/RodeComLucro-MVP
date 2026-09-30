@@ -1350,6 +1350,18 @@ Raphael pediu, antes de codar, estudo das soluções que já existem e um plano 
 
 **Pendências da Fase 1**: gerar `codigo_indicacao` (primeiro nome + sufixo) — hoje o link só aparece se existir; aba "Funil viral" no admin (eventos já gravados: `wa_first_contact`, `signup_completed`, `simulation_run`, `truck_profile_saved`, `referral_shared`); verificar a empresa na Meta; `/termos` linkado no rodapé — conferir se a rota existe no app.
 
+## CHECKPOINT — 24/09 (fim de sessão)
+
+**Estado ao pausar**: Fase 1 viral no ar (wa-webhook **v45**), migration aplicada, `Docs/estrategia-viral-whatsapp.md` escrito. **Ainda não testado de ponta a ponta** com número novo. Conferir com `git status` se o último lote foi commitado (estratégia, migration `20260924160000`, wa-webhook, status-sessao).
+
+**AO RETOMAR**:
+1. Rodar o TESTE abaixo com um número que nunca falou com o bot; eu confiro no banco (`motoristas`, `caminhao_perfil`, `wa_onboarding` vazia, `analytics_event`).
+2. Pendências da Fase 1: gerar `codigo_indicacao` por motorista; aba "Funil viral" no admin (F0–F6); verificar a empresa na Meta (limite 250→2.000); conferir se `/termos` existe no app (o rodapé linka).
+3. Semente: Emerson e David mandam o cartão ("Mandar pro colega") pra 15 colegas cada — sem isso o funil não tem dado.
+4. **1/10/2026: Meta passa a cobrar ~R$ 0,04 por mensagem do bot** — acompanhar custo no admin.
+5. Fase 2 (depois do dado): link mágico pro app (decisão técnica em aberto no doc §7), opt-in + lembrete, WhatsApp Flow vs botões.
+6. Pendências antigas: logo do Sofrete (Raphael escolher entre as 4 de `Docs/propostas-logo-sofrete.html`); identidade visual nas telas Analisar/Buscar/Perfil; troca de senha no portal; hospedar a Barlow local.
+
 **TESTE (Raphael)**: de um número que NUNCA falou com o bot (ou de um que mandou SAIR antes): (1) "oi" → apresentação; (2) "Sinop pra Santos, 14 mil" → veredito genérico + botões de tipo; (3) tocar nos 3 botões → recálculo com diferença + "Perfil salvo" + botão "Mandar pro colega"; (4) tocar → cartão de contato chega; (5) "SAIR" → apaga. Depois eu confiro `motoristas`, `caminhao_perfil`, `wa_onboarding` (deve ficar vazia) e `analytics_event`.
 
 **Depois disso, o módulo de empresas MVP está completo.** Próximos incrementos (não bloqueantes): rate-limit de postagem por empresa; sinalizador de risco na fila do admin (preço abaixo do piso ANTT via `calcularPisoANTT`); editar/encerrar frete pela empresa; e-mail de aviso quando aprovado/rejeitado.
