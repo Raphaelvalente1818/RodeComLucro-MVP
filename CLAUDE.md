@@ -70,7 +70,8 @@ Se `@rode/calc` não resolver, apague `node_modules` na raiz, em `apps/web` e em
 ## Pendências abertas (ver checkpoint pra ordem)
 
 Testes da v47 (conversa livre) e v48 (OTP WhatsApp + link mágico) com o David e o Rapha;
-agendar `limpar_tokens_wa()` no pg_cron; `codigo_indicacao` por
+agendar `limpar_tokens_wa()` no pg_cron; leitura de CNH/CRLV por foto no bot (ver
+checkpoint 30/09 — sem guardar imagem nem CPF); `codigo_indicacao` por
 motorista; aba "Funil viral" no admin; verificar a empresa na Meta; logo do Sofrete
 (4 propostas em `Docs/propostas-logo-sofrete.html`, ele ainda não escolheu);
 identidade visual em Analisar/Buscar/Perfil; troca de senha no portal; hospedar a
