@@ -37,10 +37,16 @@
 // número desconhecido vira conta na 1ª mensagem; conta do app sem vínculo
 // é vinculada ao escrever (sem código VINCULAR); perfil do caminhão por
 // botões em 3 toques; cartão de contato como objeto viral; SAIR apaga tudo.
+//
+// 30/09/2026 — conversa fora do roteiro (Docs/status-sessao.md 30/09):
+// a IA classifica a intenção (extracao.ts); busca aceita origem e tipo de
+// carga digitados e puxa o onboarding antes se não tem caminhão; mensagem
+// que não é sobre frete recebe resposta livre da IA (5 por número/dia);
+// conta nasce em QUALQUER primeira mensagem (garantirMotorista).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { calcularFrete, tipoCargaPorCarroceria, fmtBRL, fmtPct, diasPorFaixaKm, type Custos } from "./calc.ts";
-import { extrairFreteDeTexto, type ExtracaoFrete } from "./extracao.ts";
+import { extrairFreteDeTexto, type ExtracaoFrete, type TipoCargaBusca } from "./extracao.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -197,7 +203,7 @@ interface LinhaListaFrete {
   description: string;
 }
 
-async function enviarListaFretes(paraE164: string, linhas: LinhaListaFrete[], totalCompativeis: number): Promise<void> {
+async function enviarListaFretes(paraE164: string, linhas: LinhaListaFrete[], textoCorpo: string): Promise<void> {
   if (!WA_ACCESS_TOKEN || !WA_PHONE_NUMBER_ID) {
     // eslint-disable-next-line no-console
     console.log(`[wa-webhook] envio de lista pulado (chave da Meta pendente) para=${paraE164}: ${JSON.stringify(linhas)}`);
@@ -213,9 +219,7 @@ async function enviarListaFretes(paraE164: string, linhas: LinhaListaFrete[], to
         type: "interactive",
         interactive: {
           type: "list",
-          body: {
-            text: `Encontrei ${totalCompativeis} frete${totalCompativeis > 1 ? "s" : ""} compatível${totalCompativeis > 1 ? "eis" : ""} com seu caminhão perto de você. Toque numa opção pra ver o cálculo completo:`,
-          },
+          body: { text: textoCorpo.slice(0, 1024) },
           action: {
             button: "Ver opções",
             sections: [{ title: "Fretes compatíveis", rows: linhas }],
@@ -674,7 +678,11 @@ async function registrarTentativaFrete(params: {
     | "boas_vindas"
     | "onboarding_resposta"
     | "recalculado_perfil"
-    | "sair";
+    | "sair"
+    | "resposta_livre"
+    | "limite_diario"
+    | "busca_sem_resultado"
+    | "busca_origem";
   resultado?: unknown;
 }): Promise<void> {
   const { error } = await supabase.from("wa_freight_query").insert({
@@ -729,6 +737,83 @@ const RE_MENCIONA_FRETE_OU_CARGA = /\bfretes?\b|\bcargas?\b/i;
 
 const RE_CODIGO_INDICACAO = /#([a-z0-9]{2,20})/i;
 const RE_SAIR = /^sair$/i;
+// Só os comandos secos ("ajuda", "menu"). Perguntas em texto ("o que você
+// faz?", "pra que serve?") vão pra IA (intent pergunta_bot em extracao.ts),
+// que responde a pergunta de verdade em vez de cuspir o menu.
+const RE_AJUDA = /^(ajuda|help|menu|comandos)\s*[?!.]*$/i;
+
+// Camada 3 (30/09): respostas livres da IA pra mensagem fora do roteiro,
+// limitadas por número e por dia — cada uma custa mensagem na Meta.
+// Decisão do Raphael: 5 no começo, descer pra 3 depois de ver o dado.
+const LIMITE_RESPOSTAS_LIVRES_DIA = 5;
+const AVISO_CADASTRO = `\n\n_Seu número ficou cadastrado no Rode com Lucro. Pra apagar, manda SAIR._`;
+
+/** Apresentação em uma mensagem só (custo pós-1/10) — usada quando a IA não responde (sem chave, erro) e nos comandos "ajuda"/"menu". */
+function mensagemApresentacao(temConta: boolean): string {
+  return (
+    `Opa! Sou o Rode com Lucro 🚛 — faço duas coisas pra você:\n\n` +
+    `1️⃣ Digo se um frete *vale a pena* (custo real, lucro e piso ANTT). Manda a rota e o valor. Ex.: *"Sinop pra Santos, 14 mil"*\n\n` +
+    `2️⃣ Mostro *cargas perto de você*. Manda *BUSCAR*.` +
+    (temConta ? `\n\n_Pra apagar seu cadastro, manda SAIR._` : "")
+  );
+}
+
+/**
+ * "O número já é o cadastro", versão 30/09: a conta nasce na PRIMEIRA
+ * mensagem, seja ela qual for ("oi", "pra que serve", "tem carga?").
+ * Decisão do Raphael. Retorna o id (ou null se a criação falhou) e se
+ * acabou de ser criada — quem chama usa `novo` pra pôr o aviso LGPD.
+ */
+async function garantirMotorista(fromE164: string, texto: string): Promise<{ id: string | null; novo: boolean }> {
+  const { data: m } = await supabase.from("motoristas").select("id").eq("telefone_e164", fromE164).maybeSingle();
+  if (m) return { id: m.id, novo: false };
+  const codigo = extrairCodigoIndicacao(texto);
+  const id = await criarMotoristaPorWhatsapp(fromE164, codigo);
+  await registrarEventoAnalytics("wa_first_contact", id, { indicado_por: codigo, texto: texto.slice(0, 120) });
+  return { id, novo: true };
+}
+
+/** Quantas respostas livres esse número já recebeu nas últimas 24h. */
+async function contarRespostasLivresHoje(fromE164: string): Promise<number> {
+  const desde = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { count } = await supabase
+    .from("wa_freight_query")
+    .select("id", { count: "exact", head: true })
+    .eq("from_e164", fromE164)
+    .eq("status", "resposta_livre")
+    .gte("criado_em", desde);
+  return count ?? 0;
+}
+
+/**
+ * Camada 3: mensagem fora do roteiro (saudação, pergunta sobre o bot,
+ * outro assunto, spam). A IA já escreveu a resposta em extracao.ts; aqui
+ * só decide se manda (limite diário) e registra pra auditoria. Sem
+ * resposta da IA, cai na apresentação fixa. Nunca fica em silêncio dentro
+ * do limite.
+ */
+async function tratarConversaLivre(fromE164: string, texto: string, waMessageId: string, extracao: ExtracaoFrete | null): Promise<void> {
+  const { id: motoristaId, novo } = await garantirMotorista(fromE164, texto);
+  const usadas = await contarRespostasLivresHoje(fromE164);
+  if (usadas >= LIMITE_RESPOSTAS_LIVRES_DIA) {
+    await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao, status: "limite_diario" });
+    // eslint-disable-next-line no-console
+    console.log(`[wa-webhook] limite diário de respostas livres atingido para ${fromE164}: "${texto}"`);
+    return;
+  }
+  const corpo = extracao?.respostaLivre ?? mensagemApresentacao(Boolean(motoristaId) && !novo);
+  const resposta = novo && motoristaId ? corpo + AVISO_CADASTRO : corpo;
+  await registrarTentativaFrete({
+    waMessageId,
+    motoristaId,
+    fromE164,
+    texto,
+    extracao,
+    status: "resposta_livre",
+    resultado: { intent: extracao?.intent ?? null, resposta, gerada_pela_ia: Boolean(extracao?.respostaLivre) },
+  });
+  await enviarMensagemWhatsapp(fromE164, resposta);
+}
 
 /** Extrai "#EMERSON" do texto (link wa.me?text=...%23EMERSON) — atribuição de indicação. */
 function extrairCodigoIndicacao(texto: string): string | null {
@@ -866,8 +951,28 @@ async function tratarRespostaOnboarding(fromE164: string, rowId: string, waMessa
     await registrarEventoAnalytics("truck_profile_saved", onb.motorista_id, { canal: "whatsapp", tipo_veiculo: onb.tipo_veiculo, eixos, consumo });
 
     // Recalcula o frete que ele tinha pedido, agora com o caminhão dele —
-    // e mostra a diferença. É o momento "ah, então era isso".
-    const f = (onb.ultimo_frete ?? {}) as { origem?: string; destino?: string; valorFreteReais?: number; voltaVazia?: boolean; lucroGenerico?: number };
+    // e mostra a diferença. É o momento "ah, então era isso". Se o que
+    // ele pediu antes foi uma BUSCA ("tem carga de container saindo de São
+    // Paulo?"), roda a busca agora, com o caminhão que acabou de salvar.
+    const f = (onb.ultimo_frete ?? {}) as {
+      origem?: string;
+      destino?: string;
+      valorFreteReais?: number;
+      voltaVazia?: boolean;
+      lucroGenerico?: number;
+      busca?: boolean;
+      origemTexto?: string | null;
+      tipoCarga?: TipoCargaBusca | null;
+    };
+    if (f.busca) {
+      await tratarBuscaDeFrete(fromE164, waMessageId, {
+        origemTexto: f.origemTexto ?? null,
+        tipoCarga: f.tipoCarga ?? null,
+        prefixo: `Caminhão salvo: ${onb.tipo_veiculo} de ${eixos} eixos. 🚛 `,
+        textoOriginal: "(busca pós-onboarding)",
+      });
+      return;
+    }
     if (f.origem && f.destino && f.valorFreteReais != null) {
       await calcularEResponderFrete({
         fromE164,
@@ -903,72 +1008,86 @@ async function tratarSair(fromE164: string, waMessageId: string): Promise<void> 
   await enviarMensagemWhatsapp(fromE164, "Pronto — apaguei seu cadastro e seus dados. Se quiser voltar, é só mandar uma rota e um valor. 👋");
 }
 
+/**
+ * Motorista no meio do onboarding que DIGITA em vez de tocar no botão
+ * ("carreta", "5 eixos", "2,3") — casa o texto com a etapa pendente e
+ * segue como se fosse o botão. Retorna false se não tinha onboarding ou
+ * o texto não casou (aí a mensagem segue o fluxo normal).
+ */
+async function tratarTextoDuranteOnboarding(fromE164: string, texto: string, waMessageId: string): Promise<boolean> {
+  const { data: onb } = await supabase.from("wa_onboarding").select("etapa").eq("from_e164", fromE164).maybeSingle();
+  if (!onb) return false;
+  const t = texto.trim().toLowerCase();
+  let rowId: string | null = null;
+  if (onb.etapa === "tipo") {
+    if (/\bcarreta\b|\bcavalo\b/.test(t)) rowId = "onb_tipo:Carreta";
+    else if (/\bbi-?trem\b|\brodotrem\b/.test(t)) rowId = "onb_tipo:Bitrem 7 eixos";
+    else if (/\btruck\b|\btruc\b|\btoco\b|\b3\/4\b/.test(t)) rowId = "onb_tipo:Truck";
+  } else if (onb.etapa === "eixos") {
+    const m = t.match(/\b([2-9])\b/);
+    if (m) rowId = `onb_eixos:${m[1]}`;
+  } else if (onb.etapa === "consumo") {
+    const m = t.match(/(\d+(?:[.,]\d+)?)/);
+    if (m) {
+      const n = Number(m[1].replace(",", "."));
+      if (n >= 1 && n <= 6) rowId = `onb_consumo:${n}`;
+    }
+  }
+  if (!rowId) return false;
+  await tratarRespostaOnboarding(fromE164, rowId, waMessageId);
+  return true;
+}
+
 async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageId: string): Promise<void> {
+  // Digitou em vez de tocar no botão do onboarding? Casa com a etapa e segue.
+  if (await tratarTextoDuranteOnboarding(fromE164, texto, waMessageId)) return;
+
   const extracao = await extrairFreteDeTexto(texto);
   if (!extracao) {
-    // Sem chave da IA configurada, ou a chamada falhou de verdade — mesmo
-    // comportamento de antes do calc-wpp existir: só loga, sem responder.
-    // eslint-disable-next-line no-console
-    console.log(`[wa-webhook] mensagem sem intent reconhecido de ${fromE164}: "${texto}"`);
+    // Sem chave da IA ou a chamada falhou: nunca silêncio — apresentação
+    // fixa (e a conta nasce do mesmo jeito, é a primeira mensagem dele).
+    await tratarConversaLivre(fromE164, texto, waMessageId, null);
     return;
   }
 
-  if (!extracao.ePedidoDeFrete && !extracao.ePedidoDeBusca) {
+  if (extracao.intent !== "calcular" && extracao.intent !== "buscar") {
     if (RE_MENCIONA_FRETE_OU_CARGA.test(texto) && extracao.valorFreteReais == null) {
+      // Rede de segurança: citou frete/carga e a IA não classificou —
+      // trata como busca (silêncio ou papo é pior que buscar e não achar).
       // eslint-disable-next-line no-console
-      console.log(`[wa-webhook] fallback: tratando como busca (IA não classificou) de ${fromE164}: "${texto}"`);
-      await tratarBuscaDeFrete(fromE164, waMessageId);
+      console.log(`[wa-webhook] fallback: tratando como busca (IA classificou ${extracao.intent}) de ${fromE164}: "${texto}"`);
+      await tratarBuscaDeFrete(fromE164, waMessageId, { origemTexto: extracao.origem, tipoCarga: extracao.tipoCarga, textoOriginal: texto });
       return;
     }
-    // Não é sobre frete (saudação, "olha que bacana", outro assunto).
-    // Motorista conhecido: silêncio, como sempre (responder custa mensagem
-    // e ensina o motorista a conversar com o bot). Número NOVO: silêncio é
-    // o pior resultado possível pra quem acabou de receber o contato —
-    // cria a conta e se apresenta.
-    const { data: conhecido } = await supabase.from("motoristas").select("id").eq("telefone_e164", fromE164).maybeSingle();
-    if (!conhecido) {
-      const codigo = extrairCodigoIndicacao(texto);
-      const novoId = await criarMotoristaPorWhatsapp(fromE164, codigo);
-      await registrarEventoAnalytics("wa_first_contact", novoId, { indicado_por: codigo, tinha_frete: false, intent: "saudacao" });
-      await registrarTentativaFrete({ waMessageId, motoristaId: novoId, fromE164, texto, extracao, status: novoId ? "boas_vindas" : "nao_cadastrado" });
-      await enviarMensagemWhatsapp(
-        fromE164,
-        `Opa! Sou o Rode com Lucro 🚛 — te digo se um frete vale a pena antes de você aceitar.\n\n` +
-          `Me manda a rota e o valor. Ex.: *"Sinop pra Santos, 14 mil"*`,
-      );
-      return;
-    }
-    // eslint-disable-next-line no-console
-    console.log(`[wa-webhook] mensagem sem intent reconhecido de ${fromE164}: "${texto}"`);
+    // Camada 3: saudação, pergunta sobre o bot, outro assunto, spam.
+    await tratarConversaLivre(fromE164, texto, waMessageId, extracao);
     return;
   }
 
-  // Linguagem natural de busca que o atalho por regex (detectarIntent) não
-  // pegou — ex.: "tem frete pra SP?". Mesmo handler do gatilho direto.
-  if (extracao.ePedidoDeBusca && !extracao.ePedidoDeFrete) {
-    await tratarBuscaDeFrete(fromE164, waMessageId);
+  // Busca em linguagem natural ("tem carga de container saindo de São
+  // Paulo?") — com a origem e o tipo de carga que ele digitou.
+  if (extracao.intent === "buscar") {
+    await tratarBuscaDeFrete(fromE164, waMessageId, { origemTexto: extracao.origem, tipoCarga: extracao.tipoCarga, textoOriginal: texto });
     return;
   }
 
-  const { data: motorista } = await supabase
-    .from("motoristas")
-    .select("id, canal_wa_ativo")
-    .eq("telefone_e164", fromE164)
-    .maybeSingle();
+  // Cálculo. A conta já existe ou nasce agora (qualquer mensagem cria).
+  const { id: motoristaId, novo } = await garantirMotorista(fromE164, texto);
 
   // Tem conta (pelo app) e escreveu do mesmo número: a mensagem já prova
-  // a posse do telefone — vincula na hora, sem código VINCULAR. (Antes
-  // pedia pra ir no app gerar código; era uma das três provas de
-  // identidade que travavam o funil — ver Docs/estrategia-viral-whatsapp.md §1.)
-  if (motorista && !motorista.canal_wa_ativo) {
-    const { error } = await supabase
-      .from("motoristas")
-      .update({ canal_wa_ativo: true, telefone_verificado: true, telefone_verificado_em: new Date().toISOString() })
-      .eq("id", motorista.id);
-    if (error) {
-      await logErro("wa-webhook.autoVinculo", "Falha ao vincular WhatsApp automaticamente", { erro: error.message, motoristaId: motorista.id });
-    } else {
-      await registrarTentativaFrete({ waMessageId, motoristaId: motorista.id, fromE164, texto, extracao, status: "nao_vinculado" });
+  // a posse do telefone — vincula na hora, sem código VINCULAR.
+  if (motoristaId && !novo) {
+    const { data: m } = await supabase.from("motoristas").select("canal_wa_ativo").eq("id", motoristaId).maybeSingle();
+    if (m && !m.canal_wa_ativo) {
+      const { error } = await supabase
+        .from("motoristas")
+        .update({ canal_wa_ativo: true, telefone_verificado: true, telefone_verificado_em: new Date().toISOString() })
+        .eq("id", motoristaId);
+      if (error) {
+        await logErro("wa-webhook.autoVinculo", "Falha ao vincular WhatsApp automaticamente", { erro: error.message, motoristaId });
+      } else {
+        await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao, status: "nao_vinculado" });
+      }
     }
   }
 
@@ -977,48 +1096,12 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
   if (!extracao.destino) faltando.push("destino");
   if (extracao.valorFreteReais == null) faltando.push("valor do frete");
 
-  // Número sem conta nenhuma — chegou pelo contato compartilhado por um
-  // colega. Se o pedido já veio completo, calcula na hora com o caminhão
-  // genérico e emenda o onboarding por botões; se não, se apresenta.
-  if (!motorista) {
-    // Número novo: a conta nasce aqui (ver bloco "o número já é o
-    // cadastro" acima). Se a criação falhar, cai no trial anônimo antigo
-    // (motoristaId null) — nunca deixa o motorista sem resposta.
-    const codigo = extrairCodigoIndicacao(texto);
-    const novoId = await criarMotoristaPorWhatsapp(fromE164, codigo);
-    await registrarEventoAnalytics("wa_first_contact", novoId, { indicado_por: codigo, tinha_frete: faltando.length === 0 });
-
-    const confiancaMinima =
-      faltando.length === 0 ? Math.min(extracao.confiancaOrigem, extracao.confiancaDestino, extracao.confiancaValor) : 0;
-    if (faltando.length > 0 || confiancaMinima < CONFIANCA_MINIMA) {
-      await registrarTentativaFrete({ waMessageId, motoristaId: novoId, fromE164, texto, extracao, status: novoId ? "boas_vindas" : "nao_cadastrado" });
-      await enviarMensagemWhatsapp(
-        fromE164,
-        `Opa! Sou o Rode com Lucro 🚛 — te digo se um frete vale a pena antes de você aceitar.\n\n` +
-          `Me manda a rota e o valor. Ex.: *"Sinop pra Santos, 14 mil"*`,
-      );
-      return;
-    }
-    await calcularEResponderFrete({
-      fromE164,
-      motoristaId: novoId,
-      origem: extracao.origem as string,
-      destino: extracao.destino as string,
-      valorFreteReais: extracao.valorFreteReais as number,
-      voltaVazia: extracao.voltaVazia,
-      waMessageId,
-      texto,
-      extracao,
-      primeiroContato: true,
-    });
-    return;
-  }
-
   if (faltando.length > 0) {
-    await registrarTentativaFrete({ waMessageId, motoristaId: motorista.id, fromE164, texto, extracao, status: "dado_faltando" });
+    await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao, status: "dado_faltando" });
     await enviarMensagemWhatsapp(
       fromE164,
-      `Faltou informar: ${faltando.join(", ")}. Manda de novo com origem, destino e valor do frete (ex.: "frete de Sorocaba pra Curitiba, 8 mil reais").`,
+      `Opa! Pra calcular faltou: ${faltando.join(", ")}. Manda com origem, destino e valor (ex.: *"Sorocaba pra Curitiba, 8 mil"*).` +
+        (novo && motoristaId ? AVISO_CADASTRO : ""),
     );
     return;
   }
@@ -1032,24 +1115,31 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
 
   const confiancaMinima = Math.min(extracao.confiancaOrigem, extracao.confiancaDestino, extracao.confiancaValor);
   if (confiancaMinima < CONFIANCA_MINIMA) {
-    await registrarTentativaFrete({ waMessageId, motoristaId: motorista.id, fromE164, texto, extracao, status: "confirmacao_pendente" });
+    await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao, status: "confirmacao_pendente" });
     await enviarMensagemWhatsapp(
       fromE164,
-      `Não entendi direito — origem "${origem}", destino "${destino}", valor R$ ${valorFreteReais}. Se estiver certo, manda de novo mais claro (ex.: "frete de ${origem} pra ${destino}, R$ ${valorFreteReais}").`,
+      `Não entendi direito — origem "${origem}", destino "${destino}", valor R$ ${valorFreteReais}. Se estiver certo, manda de novo mais claro (ex.: "frete de ${origem} pra ${destino}, R$ ${valorFreteReais}").` +
+        (novo && motoristaId ? AVISO_CADASTRO : ""),
     );
     return;
   }
 
-  // Sem caminhão cadastrado (mandou "oi" no primeiro contato, ou veio pelo
+  // Criação de conta falhou: trial anônimo antigo (nunca deixa sem resposta).
+  if (!motoristaId) {
+    await calcularEResponderFrete({ fromE164, motoristaId: null, origem, destino, valorFreteReais, voltaVazia: extracao.voltaVazia, waMessageId, texto, extracao });
+    return;
+  }
+
+  // Sem caminhão cadastrado (conta nova, ou mandou "oi" antes, ou veio pelo
   // app e parou no perfil): calcula com o genérico e puxa os 3 toques.
   const { count: perfis } = await supabase
     .from("caminhao_perfil")
     .select("id", { count: "exact", head: true })
-    .eq("user_id", motorista.id);
+    .eq("user_id", motoristaId);
 
   await calcularEResponderFrete({
     fromE164,
-    motoristaId: motorista.id,
+    motoristaId,
     origem,
     destino,
     valorFreteReais,
@@ -1057,6 +1147,7 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
     waMessageId,
     texto,
     extracao,
+    primeiroContato: novo,
     semPerfil: (perfis ?? 0) === 0,
   });
 }
@@ -1241,10 +1332,9 @@ async function tratarPedidoCartao(fromE164: string, waMessageId: string): Promis
 
 // ---------------------------------------------------------------------
 // Busca de frete via WhatsApp (busca-wpp) — gatilho "BUSCAR"/"FRETES"
-// (detectarIntent) ou linguagem natural (extracao.ts, ePedidoDeBusca).
-// Sempre incentiva o app: se faltar tipo de veículo ou localização,
-// orienta a cadastrar (com o motivo) e NÃO busca nada — sem fallback
-// degradado, pra não ensinar o motorista a ignorar o cadastro no app.
+// (detectarIntent) ou linguagem natural (extracao.ts, intent "buscar").
+// Sem caminhão cadastrado, colhe pelos 3 toques e busca em seguida; a
+// origem pode vir digitada na mensagem (30/09) ou da cidade base do app.
 // Copia isomórfica de distanciaKm (apps/web/src/lib/municipios.ts) e do
 // filtro de compatibilidade por tipo_veiculo (BuscarFrete.tsx) — Edge
 // Function não importa de apps/web, mesmo padrão já usado por calc.ts.
@@ -1280,27 +1370,102 @@ interface MotoristaBusca {
   cidade_base_lng: number | null;
 }
 
-async function tratarBuscaDeFrete(fromE164: string, waMessageId: string): Promise<void> {
+/** Tipo de carga citado na busca → carrocerias que carregam isso (mesmos nomes de caminhao_perfil.tipo_carroceria / fretes_publicados.tipos_carroceria_aceitos). */
+const CARROCERIAS_POR_TIPO_CARGA: Record<TipoCargaBusca, string[]> = {
+  container: ["Bug Porta Container"],
+  frigorificada: ["Baú Frigorífico", "Baú Refrigerado"],
+  granel: ["Graneleiro", "Caçamba", "Silo", "Cavaqueira", "Hoper"],
+  liquido: ["Tanque"],
+  veiculos: ["Cegonheiro"],
+  carga_geral: ["Sider", "Baú", "Grade baixa", "Prancha", "Plataforma"],
+};
+
+const NOME_TIPO_CARGA: Record<TipoCargaBusca, string> = {
+  container: "container",
+  frigorificada: "carga frigorificada",
+  granel: "granel",
+  liquido: "carga líquida",
+  veiculos: "veículos",
+  carga_geral: "carga geral",
+};
+
+function semAcento(s: string): string {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+
+interface CidadeGeo {
+  nome: string;
+  uf: string;
+  lat: number;
+  lng: number;
+}
+
+/**
+ * "São Paulo", "sao paulo sp", "Cuiabá/MT", "Sinop - MT" → lat/lng via
+ * municipios_brasil (mesma tabela do app). Sem UF e com homônimos, fica
+ * com o primeiro — o motorista vê a cidade/UF na resposta e corrige.
+ */
+async function geocodificarCidade(texto: string): Promise<CidadeGeo | null> {
+  let t = semAcento(texto).replace(/[.,;:!?]+$/g, "");
+  // Apelidos que o motorista usa como se fossem cidade.
+  const APELIDOS: Record<string, string> = {
+    sp: "sao paulo/sp", sampa: "sao paulo/sp", rj: "rio de janeiro/rj", rio: "rio de janeiro/rj",
+    bh: "belo horizonte/mg", poa: "porto alegre/rs", cwb: "curitiba/pr", bsb: "brasilia/df",
+    floripa: "florianopolis/sc", ssa: "salvador/ba", cuiaba: "cuiaba/mt", "campo grande": "campo grande/ms",
+  };
+  if (APELIDOS[t]) t = APELIDOS[t];
+  const m = t.match(/^(.+?)\s*(?:[\/\-–,]\s*|\s+)([a-z]{2})$/);
+  const nome = (m ? m[1] : t).trim();
+  const uf = m ? m[2].toUpperCase() : null;
+  if (!nome) return null;
+  let q = supabase.from("municipios_brasil").select("nome, uf, latitude, longitude").eq("nome_norm", nome).limit(5);
+  if (uf) q = q.eq("uf", uf);
+  const { data } = await q;
+  const linha = (data ?? [])[0] as { nome: string; uf: string; latitude: number; longitude: number } | undefined;
+  if (!linha) return null;
+  return { nome: linha.nome, uf: linha.uf, lat: Number(linha.latitude), lng: Number(linha.longitude) };
+}
+
+interface OpcoesBusca {
+  /** Cidade de saída digitada na mensagem ("tem carga saindo de Cuiabá?"); null = cidade base do cadastro. */
+  origemTexto?: string | null;
+  /** Tipo de carga citado; filtra por carroceria compatível. */
+  tipoCarga?: TipoCargaBusca | null;
+  /** Texto pra abrir a mensagem (ex.: "Caminhão salvo: Carreta de 5 eixos. "). */
+  prefixo?: string;
+  /** Mensagem original, pra auditoria. */
+  textoOriginal?: string;
+}
+
+/**
+ * Busca de fretes. Decisões de 30/09 (Docs/status-sessao.md):
+ * - a conta nasce aqui se o número for novo (qualquer mensagem cria);
+ * - sem caminhão cadastrado, guarda a busca em wa_onboarding e puxa os 3
+ *   toques — ao terminar, a busca roda sozinha (tratarRespostaOnboarding);
+ * - origem: a que ele DIGITOU, se digitou; senão a cidade base do cadastro;
+ *   sem nenhuma das duas, pergunta de que cidade quer sair.
+ */
+async function tratarBuscaDeFrete(fromE164: string, waMessageId: string, opcoes: OpcoesBusca = {}): Promise<void> {
+  const origemTexto = opcoes.origemTexto ?? null;
+  const tipoCarga = opcoes.tipoCarga ?? null;
+  const textoOriginal = opcoes.textoOriginal ?? "[busca]";
+  const descCarga = tipoCarga ? `carga de ${NOME_TIPO_CARGA[tipoCarga]}` : "carga";
+
+  const { id: motoristaId, novo } = await garantirMotorista(fromE164, textoOriginal);
+  if (!motoristaId) {
+    // Criação de conta falhou — sem user_id não dá pra guardar onboarding nem perfil.
+    await registrarTentativaFrete({ waMessageId, motoristaId: null, fromE164, texto: textoOriginal, extracao: null, status: "nao_cadastrado" });
+    await enviarMensagemWhatsapp(fromE164, mensagemApresentacao(false));
+    return;
+  }
+  const avisoNovo = novo ? AVISO_CADASTRO : "";
+
   const { data: motorista } = await supabase
     .from("motoristas")
     .select("id, canal_wa_ativo, cidade_base, uf_base, cidade_base_lat, cidade_base_lng")
-    .eq("telefone_e164", fromE164)
+    .eq("id", motoristaId)
     .maybeSingle<MotoristaBusca>();
-
-  // Número desconhecido pedindo busca ("tem frete?" é a mensagem mais
-  // comum de quem recebe o contato): cria a conta como no cálculo, e
-  // explica o que precisa. Conta pelo app sem vínculo: vincula na hora.
-  if (!motorista) {
-    const novoId = await criarMotoristaPorWhatsapp(fromE164, null);
-    await registrarEventoAnalytics("wa_first_contact", novoId, { indicado_por: null, tinha_frete: false, intent: "busca" });
-    await enviarMensagemWhatsapp(
-      fromE164,
-      `Opa! Sou o Rode com Lucro 🚛 — te digo se um frete vale a pena antes de você aceitar, e mostro cargas perto de você.\n\n` +
-        `Pra começar, me manda uma rota e um valor. Ex.: *"Sinop pra Santos, 14 mil"*`,
-    );
-    return;
-  }
-  if (!motorista.canal_wa_ativo) {
+  if (motorista && !motorista.canal_wa_ativo) {
     await supabase
       .from("motoristas")
       .update({ canal_wa_ativo: true, telefone_verificado: true, telefone_verificado_em: new Date().toISOString() })
@@ -1309,54 +1474,63 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string): Promis
 
   const { data: perfil } = await supabase
     .from("caminhao_perfil")
-    .select("tipo_veiculo")
-    .eq("user_id", motorista.id)
+    .select("tipo_veiculo, tipo_carroceria")
+    .eq("user_id", motoristaId)
     .maybeSingle();
   const tipoVeiculo = (perfil?.tipo_veiculo as string | null) ?? null;
 
-  // Sempre a cidade_base (cadastrada em Meu perfil) — igual ao pedido
-  // original ("partindo da cidade que ele cadastrou como base"). NÃO usa
-  // cidade_atual: esse campo só existe se o motorista já usou o Buscar
-  // Frete no app, não tem timestamp/expiração, e fica "preso" na última
-  // cidade digitada indefinidamente — testado e confirmado que isso gera
-  // busca na praça errada quando o motorista testou uma cidade qualquer
-  // uma vez e nunca mais atualizou.
-  const lat = motorista.cidade_base_lat;
-  const lng = motorista.cidade_base_lng;
-  const cidadeOrigem = motorista.cidade_base;
-  const ufOrigem = motorista.uf_base;
-
-  if (!tipoVeiculo || lat == null || lng == null) {
-    // Cada campo mora numa tela diferente: tipo de veículo é do caminhão
-    // (Perfil, /perfil), cidade base é do motorista (Meu perfil, /motorista)
-    // — manda o link certo pra cada um em vez de jogar tudo no domínio raiz.
-    const faltando: string[] = [];
-    if (!tipoVeiculo) faltando.push(`o tipo do seu caminhão (Meu caminhão: ${URL_APP}/perfil)`);
-    if (lat == null || lng == null) faltando.push(`sua cidade base (Meu perfil: ${URL_APP}/motorista)`);
-    await enviarMensagemWhatsapp(
+  // Sem caminhão: guarda o pedido e pergunta o tipo (3 toques). A busca
+  // roda no fim do onboarding com o que ele pediu aqui.
+  if (!tipoVeiculo) {
+    await supabase.from("wa_onboarding").upsert({
+      from_e164: fromE164,
+      motorista_id: motoristaId,
+      etapa: "tipo",
+      ultimo_frete: { busca: true, origemTexto, tipoCarga },
+      updated_at: new Date().toISOString(),
+    });
+    await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto: textoOriginal, extracao: null, status: "busca_origem" });
+    const deOnde = origemTexto ? ` saindo de ${origemTexto}` : "";
+    await enviarBotoes(
       fromE164,
-      `Pra eu buscar fretes compatíveis com você, falta cadastrar: ${faltando.join(" e ")}.\n\n` +
-        "Vale a pena: pelo app os fretes já vêm filtrados pro seu caminhão específico, a partir da cidade que você escolher como base, no raio de atuação que você preferir — sem precisar digitar nada toda vez. 🚛",
+      `Opa! ${tipoCarga || origemTexto ? `${descCarga[0].toUpperCase()}${descCarga.slice(1)}${deOnde} — tenho como buscar.` : "Tenho como buscar carga pra você."} Só preciso saber seu caminhão pra filtrar o que serve. Qual é o tipo?` +
+        avisoNovo,
+      TIPOS_VEICULO_BOTOES.map((t) => ({ id: t.id, titulo: t.titulo })),
     );
     return;
   }
 
-  // O limit aqui precisa cobrir TODOS os fretes "aberto" (hoje ~800), não um
-  // recorte arbitrário: o filtro por distância roda em memória DEPOIS dessa
-  // busca, então se o banco tiver mais fretes "aberto" que o limit, alguns
-  // ficam de fora ANTES de serem comparados por distância. Bug real
-  // encontrado em teste (02/09): com limit(300) e ~800 fretes "aberto"
-  // compartilhando o mesmo created_at (import em lote), o Postgres não
-  // garante uma ordem estável pra desempatar o ORDER BY created_at — cada
-  // chamada podia trazer um recorte diferente dos 300, às vezes sem os
-  // fretes de fato mais próximos do motorista (ex.: motorista em Guarulhos
-  // recebendo só opções de Ribeirão Preto, porque os fretes perto de
-  // Guarulhos simplesmente não entraram nesse recorte). 2000 dá folga
-  // confortável acima do volume atual.
+  // Origem: digitada > cidade base > pergunta.
+  let origem: CidadeGeo | null = null;
+  if (origemTexto) {
+    origem = await geocodificarCidade(origemTexto);
+    if (!origem) {
+      await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto: textoOriginal, extracao: null, status: "busca_sem_resultado" });
+      await enviarMensagemWhatsapp(
+        fromE164,
+        `Não achei a cidade "${origemTexto}". Manda com o estado, ex.: *"tem ${descCarga} saindo de ${origemTexto}/SP?"*` + avisoNovo,
+      );
+      return;
+    }
+  } else if (motorista?.cidade_base_lat != null && motorista.cidade_base_lng != null && motorista.cidade_base) {
+    origem = { nome: motorista.cidade_base, uf: motorista.uf_base ?? "", lat: motorista.cidade_base_lat, lng: motorista.cidade_base_lng };
+  }
+  if (!origem) {
+    await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto: textoOriginal, extracao: null, status: "busca_origem" });
+    await enviarMensagemWhatsapp(
+      fromE164,
+      `De que cidade você quer sair? Manda ex.: *"tem ${descCarga} saindo de Cuiabá/MT?"*\n\n_Pra não precisar dizer toda vez, cadastre sua cidade base no app: ${URL_APP}/motorista_` +
+        avisoNovo,
+    );
+    return;
+  }
+
+  // O limit precisa cobrir TODOS os fretes "aberto" (hoje ~800): o filtro
+  // por distância roda em memória depois. Bug real de 02/09 com limit(300).
   const { data: fretesRaw, error } = await supabase
     .from("fretes_publicados")
     .select(
-      "id, origem_cidade, origem_uf, origem_lat, origem_lng, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, tipos_veiculo_aceitos",
+      "id, origem_cidade, origem_uf, origem_lat, origem_lng, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, tipos_veiculo_aceitos, tipos_carroceria_aceitos",
     )
     .eq("status", "aberto")
     .order("created_at", { ascending: false })
@@ -1369,10 +1543,16 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string): Promis
     return;
   }
 
+  const carroceriasCarga = tipoCarga ? CARROCERIAS_POR_TIPO_CARGA[tipoCarga] : null;
   const compativeis = (fretesRaw as Array<Record<string, unknown>>)
     .filter((f) => {
       const tipos = (f.tipos_veiculo_aceitos as string[] | null) ?? [];
       return tipos.length === 0 || tipos.includes(tipoVeiculo);
+    })
+    .filter((f) => {
+      if (!carroceriasCarga) return true;
+      const aceitas = (f.tipos_carroceria_aceitos as string[] | null) ?? [];
+      return aceitas.length === 0 || aceitas.some((c) => carroceriasCarga.includes(c));
     })
     .filter((f) => f.origem_lat != null && f.origem_lng != null)
     .map((f) => ({
@@ -1384,15 +1564,19 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string): Promis
       valorFreteCentavos: f.valor_frete_centavos as number | null,
       valorACombinar: Boolean(f.valor_a_combinar),
       tipoValor: (f.tipo_valor as "fixo" | "por_tonelada" | null) ?? null,
-      distanciaOrigemKm: distanciaKm(lat, lng, f.origem_lat as number, f.origem_lng as number),
+      distanciaOrigemKm: distanciaKm(origem.lat, origem.lng, f.origem_lat as number, f.origem_lng as number),
     }))
     .sort((a, b) => a.distanciaOrigemKm - b.distanciaOrigemKm)
     .slice(0, RAIO_BUSCA_MAX_RESULTADOS);
 
+  const lugar = `${origem.nome}${origem.uf ? `/${origem.uf}` : ""}`;
+
   if (compativeis.length === 0) {
+    await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto: textoOriginal, extracao: null, status: "busca_sem_resultado" });
     await enviarMensagemWhatsapp(
       fromE164,
-      `Não encontrei fretes compatíveis com seu ${tipoVeiculo} perto de ${cidadeOrigem}/${ufOrigem} agora. Abra o app pra ver o raio completo ou tenta de novo mais tarde: ${URL_APP}/buscar-frete`,
+      `${opcoes.prefixo ?? ""}Não achei ${descCarga} pra ${tipoVeiculo} perto de ${lugar} agora. Vou ficando de olho — tenta de novo mais tarde ou veja tudo no app: ${URL_APP}/buscar-frete` +
+        avisoNovo,
     );
     return;
   }
@@ -1401,13 +1585,17 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string): Promis
     id: f.id,
     title: truncar(`${f.origemCidade}/${f.origemUf} → ${f.destinoCidade}/${f.destinoUf}`, 24),
     description: truncar(
-      `${textoValorCurto(f.valorACombinar, f.valorFreteCentavos, f.tipoValor)} · ${f.distanciaOrigemKm.toFixed(0)} km daqui`,
+      `${textoValorCurto(f.valorACombinar, f.valorFreteCentavos, f.tipoValor)} · ${f.distanciaOrigemKm.toFixed(0)} km de ${origem.nome}`,
       72,
     ),
   }));
   linhas.push({ id: "abrir_app", title: "Abrir o app", description: "Ver todos os fretes e mais detalhes" });
 
-  await enviarListaFretes(fromE164, linhas, compativeis.length);
+  const n = compativeis.length;
+  const corpo =
+    `${opcoes.prefixo ?? ""}Encontrei ${n} ${n > 1 ? "opções" : "opção"} de ${descCarga} pra ${tipoVeiculo} perto de ${lugar}. Toque numa pra ver se vale a pena:` +
+    avisoNovo;
+  await enviarListaFretes(fromE164, linhas, corpo);
 }
 
 /**
@@ -1568,12 +1756,17 @@ async function tratarRequisicao(req: Request): Promise<Response> {
 
     if (RE_SAIR.test(msg.texto.trim())) {
       await tratarSair(msg.fromE164, msg.waMessageId);
+    } else if (RE_AJUDA.test(msg.texto.trim())) {
+      // "ajuda"/"menu" — apresentação fixa, sem IA (conta nasce se for novo).
+      const { id, novo } = await garantirMotorista(msg.fromE164, msg.texto);
+      await registrarTentativaFrete({ waMessageId: msg.waMessageId, motoristaId: id, fromE164: msg.fromE164, texto: msg.texto, extracao: null, status: "boas_vindas" });
+      await enviarMensagemWhatsapp(msg.fromE164, mensagemApresentacao(Boolean(id) && !novo) + (novo && id ? AVISO_CADASTRO : ""));
     } else if (intent.tipo === "vincular") {
       await tratarVincular(msg.fromE164, intent.codigo, msg.waMessageId);
     } else if (intent.tipo === "desvincular") {
       await tratarDesvincular(msg.fromE164, msg.waMessageId);
     } else if (intent.tipo === "buscar") {
-      await tratarBuscaDeFrete(msg.fromE164, msg.waMessageId);
+      await tratarBuscaDeFrete(msg.fromE164, msg.waMessageId, { textoOriginal: msg.texto });
     } else {
       await tratarPedidoDeCalculo(msg.fromE164, msg.texto, msg.waMessageId);
     }

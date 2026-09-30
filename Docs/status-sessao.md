@@ -1365,3 +1365,49 @@ Raphael pediu, antes de codar, estudo das soluções que já existem e um plano 
 **TESTE (Raphael)**: de um número que NUNCA falou com o bot (ou de um que mandou SAIR antes): (1) "oi" → apresentação; (2) "Sinop pra Santos, 14 mil" → veredito genérico + botões de tipo; (3) tocar nos 3 botões → recálculo com diferença + "Perfil salvo" + botão "Mandar pro colega"; (4) tocar → cartão de contato chega; (5) "SAIR" → apaga. Depois eu confiro `motoristas`, `caminhao_perfil`, `wa_onboarding` (deve ficar vazia) e `analytics_event`.
 
 **Depois disso, o módulo de empresas MVP está completo.** Próximos incrementos (não bloqueantes): rate-limit de postagem por empresa; sinalizador de risco na fila do admin (preço abaixo do piso ANTT via `calcularPisoANTT`); editar/encerrar frete pela empresa; e-mail de aviso quando aprovado/rejeitado.
+
+## 30/09 — Dado real pós-Fase 1 e correção (wa-webhook v46)
+
+**Migração**: o Cowork descontinua tarefas em pasta local em 06/10. Criado `CLAUDE.md` na raiz (guia pro Claude Code: começar por este checkpoint, mapa do projeto, infra, regras do Raphael). A partir da próxima sessão, trabalhar no Claude Code abrindo `D:\RodeComLucro-MVP`.
+
+**O que o banco mostrou** (desde 24/09): 2 números novos, os dois viraram conta automaticamente (mecanismo funciona), **zero cálculos, zero perfis**.
+- `5541…` (Curitiba): tenta desde 02/09; em 25/09 perguntou "O que você faz?", "Para que você serve?" e "O que mais você faz?" — **três vezes, silêncio**. A regra "conhecido sem intent de frete → cala" engoliu um motorista tentando entender o produto.
+- `5515…`: telemarketing ("Olá Erminia, sou da Oral Sin…") pro número errado — virou "motorista" cadastrado.
+
+**Correção (v46, deployada)**:
+1. `RE_AJUDA` (regex, sem custo de IA): "o que você faz", "pra que serve", "como funciona", "ajuda", "menu"… → **sempre** responde com `mensagemApresentacao(temConta)`, conhecido ou não. Roteado logo depois de SAIR.
+2. `mensagemApresentacao()` unifica as 3 boas-vindas (número novo sem frete, busca de desconhecido, ajuda) numa mensagem só: duas coisas que o bot faz + exemplo + BUSCAR; se tem conta, linha "_Pra apagar seu cadastro, manda SAIR._".
+3. Mensagem que **não é sobre frete**: número novo recebe apresentação mas **não vira conta** (conta só nasce com intent de frete — cálculo ou busca); conhecido **sem** `caminhao_perfil` recebe apresentação; conhecido **com** perfil segue em silêncio.
+
+**Pendente**: apagar a conta spam `5515…` (precisa `auth.admin.deleteUser` — o `execute_sql` do MCP é read-only). Fazer pelo painel Supabase → Authentication → Users, ou mandar "SAIR" não dá (não é nosso número).
+
+## 30/09 (tarde) — Conversa fora do roteiro: Camadas 2+3 (wa-webhook v47)
+
+**Gatilho**: print do Raphael testando. "Tem carga para container hoje partindo de São Paulo?" recebeu a apresentação genérica (ignorou container e São Paulo); "O que você faz?" ficou no silêncio. Diagnóstico: o bot só tinha dois modos, script ou silêncio.
+
+**Decisões do Raphael**: (1) busca aceita a origem digitada na mensagem — aprovado; (2) 5 respostas livres por número/dia no começo, descer pra 3 depois; (3) tom "Opa! Sou o Rode com Lucro"; (4) **conta nasce em qualquer primeira mensagem** ("oi", "pra que serve", qualquer coisa) — desfeita a parte da v46 que segurava a conta.
+
+**Camada 2 — a IA classifica e a busca usa o que ela leu** (`extracao.ts` reescrito):
+- Ferramenta `ler_mensagem` com `intent` (calcular / buscar / pergunta_bot / saudacao / outro), `tipo_carga` (container, frigorificada, granel, liquido, veiculos, carga_geral) e `resposta_livre`. Uma chamada só ao Haiku.
+- `tratarBuscaDeFrete(from, id, { origemTexto, tipoCarga, prefixo })`: origem digitada > cidade base > pergunta "de que cidade você quer sair?". Geocodifica em `municipios_brasil` (`geocodificarCidade`: aceita "Cuiabá/MT", "sinop - mt", apelidos sp/rj/bh/poa…). Tipo de carga filtra `tipos_carroceria_aceitos` (`CARROCERIAS_POR_TIPO_CARGA`).
+- Sem caminhão cadastrado: guarda a busca em `wa_onboarding.ultimo_frete = {busca, origemTexto, tipoCarga}`, manda "Carga de container saindo de São Paulo — tenho como buscar. Só preciso saber seu caminhão…" + 3 botões; no 3º toque a busca roda sozinha com prefixo "Caminhão salvo: Carreta de 5 eixos".
+- `tratarTextoDuranteOnboarding`: se ele digita "carreta"/"5"/"2,3" em vez de tocar, casa com a etapa.
+- Lista de resultados agora diz "Encontrei 2 opções de carga de container pra Carreta perto de São Paulo/SP" e "km de São Paulo".
+
+**Camada 3 — resposta livre** (`tratarConversaLivre`): pra pergunta_bot/saudacao/outro, manda a `resposta_livre` que o Haiku escreveu (prompt fechado: sabe o que o bot faz e o que NÃO faz, ≤400 chars, termina puxando pra rota+valor ou BUSCAR; spam recebe "acho que essa mensagem não era pra mim"). Limite `LIMITE_RESPOSTAS_LIVRES_DIA = 5` (24h, por número) — acima disso, silêncio + status `limite_diario`. Sem IA (chave/erro) cai na apresentação fixa. Conta nova ganha rodapé `AVISO_CADASTRO` ("_Seu número ficou cadastrado… manda SAIR._"). `RE_AJUDA` agora só "ajuda/menu/help/comandos" secos.
+
+**Auditoria**: tudo em `wa_freight_query` — status novos `resposta_livre` (com `resultado_snapshot.resposta` e `gerada_pela_ia`), `limite_diario`, `busca_sem_resultado`, `busca_origem`. Migration `20260930170000_conversa_livre_wa.sql` (aplicada). Revisar as respostas livres: `select texto_recebido, resultado_snapshot->>'resposta' from wa_freight_query where status='resposta_livre' order by criado_em desc`.
+
+**TESTE (Raphael)**, de um número novo ou depois de SAIR: (1) "Tem carga para container hoje partindo de São Paulo?" → botões de tipo com a frase citando container/São Paulo → 3 toques → lista (ou "não achei…"); (2) "O que você faz?" → resposta da IA; (3) "Você paga o frete?" → deve dizer que não faz isso e puxar pra ação; (4) mandar 6 mensagens de papo → a 6ª fica sem resposta; (5) "carreta" digitado no meio do onboarding → segue.
+
+## CHECKPOINT — 30/09 (fim de sessão, v47)
+
+**Estado**: wa-webhook **v47** no ar (Camadas 2+3 acima). `CLAUDE.md` criado. Commit pendente: `CLAUDE.md`, `supabase/functions/wa-webhook/{index,extracao}.ts`, `supabase/migrations/20260930170000_conversa_livre_wa.sql`, `Docs/status-sessao.md`.
+
+**AO RETOMAR (no Claude Code)**:
+1. Rodar o TESTE da v47 (acima) e revisar as respostas livres no banco; depois de uma semana, descer o limite pra 3.
+2. (`5541…1818` era o próprio Raphael testando — não é lead. Conta spam `5515…` pode ficar; decisão: conta nasce com qualquer mensagem.)
+3. Semente do funil: Emerson e David mandam o cartão pra 15 colegas cada. **Sem isso não há dado** — gate está em 1/160.
+4. Pendências da Fase 1: `codigo_indicacao` por motorista; aba "Funil viral" no admin; verificar empresa na Meta; conferir rota `/termos`.
+5. Custo Meta desde 1/10 (~R$ 0,04/mensagem do bot): olhar `wa_freight_query` por status semanalmente.
+6. Antigas: logo do Sofrete (4 propostas); identidade visual em Analisar/Buscar/Perfil; troca de senha no portal; Barlow local.
