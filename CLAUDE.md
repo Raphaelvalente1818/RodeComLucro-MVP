@@ -35,10 +35,13 @@ pro Deno — se a fórmula mudar, atualizar os dois.
 - Supabase, projeto `gastwloozlzthpqhxnzr`. Migrations em `supabase/migrations/`
   (sempre salvar o `.sql` no repo, mesmo quando aplicada por outro caminho).
 - Edge Functions: `wa-webhook` (verify_jwt=false — webhook público da Meta, valida
-  HMAC), `otp-solicitar`, `route-cost`, `wa-vincular` (verify_jwt=true).
+  HMAC), `sessao-wa` (verify_jwt=false — troca código do WhatsApp ou token do link
+  mágico por sessão), `otp-solicitar`, `route-cost`, `wa-vincular` (verify_jwt=true).
   Secrets em Edge Functions → Secrets: `WA_ACCESS_TOKEN`, `WA_PHONE_NUMBER_ID`,
   `NUMERO_OFICIAL_WA` (=5511999919971), `WA_APP_SECRET`, `WA_WEBHOOK_VERIFY_TOKEN`,
-  `ANTHROPIC_API_KEY`, `GOOGLE_ROUTES_API_KEY`.
+  `ANTHROPIC_API_KEY`, `GOOGLE_ROUTES_API_KEY`, `TELEFONE_PEPPER` (HMAC de telefone,
+  código OTP e token de login — compartilhado por otp-solicitar, sessao-wa e wa-webhook).
+  Template de OTP na Meta: `modelo01` (pt_BR, Autenticação).
 - Deploy do app: Vercel, https://rode-com-lucro-mvp.vercel.app (push em `main` publica).
 - Meta cobra ~R$ 0,04 por mensagem do bot a partir de 1/10/2026 — responder em uma
   mensagem só; nada de bot tagarela.
@@ -66,7 +69,8 @@ Se `@rode/calc` não resolver, apague `node_modules` na raiz, em `apps/web` e em
 
 ## Pendências abertas (ver checkpoint pra ordem)
 
-Teste ponta a ponta da Fase 1 viral com número novo; `codigo_indicacao` por
+Testes da v47 (conversa livre) e v48 (OTP WhatsApp + link mágico) com o David e o Rapha;
+agendar `limpar_tokens_wa()` no pg_cron; `codigo_indicacao` por
 motorista; aba "Funil viral" no admin; verificar a empresa na Meta; logo do Sofrete
 (4 propostas em `Docs/propostas-logo-sofrete.html`, ele ainda não escolheu);
 identidade visual em Analisar/Buscar/Perfil; troca de senha no portal; hospedar a
