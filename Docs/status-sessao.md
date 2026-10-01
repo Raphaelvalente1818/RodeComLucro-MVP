@@ -1419,9 +1419,21 @@ Raphael pediu, antes de codar, estudo das soluções que já existem e um plano 
 
 **Atenção**: o app na Vercel só passa a entender o canal WhatsApp depois do `git push` (deploy automático). Até lá, quem pedir "pelo WhatsApp" recebe o código certo mas o app antigo tenta validar como SMS e falha — fazer o push antes de testar.
 
-## CHECKPOINT — 30/09 (fim de sessão, v48)
+## 01/10 — Continuidade WhatsApp → app (wa-webhook v49)
 
-**Estado**: wa-webhook **v48**, otp-solicitar **v31**, **sessao-wa v1** no ar (OTP WhatsApp + link mágico acima). `CLAUDE.md` criado. Contas do David (`5511991143035`) e do Rapha (`5541999871818`) **apagadas a pedido (2×, a última já com a v48 no ar)** pra testarem como número novo; bloqueio de OTP do David também limpo. Achado no caminho: `consentimento` estava sem ON DELETE CASCADE — o SAIR falharia pra quem vinculou pelo app; corrigido em `20260930180000_consentimento_cascade.sql`. Commit pendente: `CLAUDE.md`, `supabase/functions/{wa-webhook,otp-solicitar,sessao-wa}/`, `supabase/migrations/20260930*.sql`, `apps/web/src/{main.tsx,lib/LoginPorLink.tsx,pages/Entrada.tsx,pages/Verificacao.tsx}`, `Docs/status-sessao.md`.
+**Gatilho**: teste do David. Buscou carga saindo de Guarulhos, tocou em "Guarulhos → Curitiba R$ 4.500", veio o veredito (ok), tocou no link do app e caiu numa busca genérica sem o frete. Causa: o cálculo do bot só existia em `wa_freight_query` (auditoria); o app lê `analise_frete`. Eram dois mundos.
+
+**Decisão do Raphael** (pergunta dele: "a busca pré-preenchida não treina o motorista no app?" — sim, pro caso de frete da lista):
+- Veredito de **frete da lista** → link `/buscar-frete?frete=<id>`: tela de busca com a origem digitada já preenchida e o frete em destaque no topo, selo "Você viu esse no WhatsApp". Ele refaz no app o gesto do bot.
+- Veredito de **cálculo em texto** → link `/resultado/<id>`: detalhamento completo.
+- Nos dois casos o bot grava em **`analise_frete`** (mesmo formato de `montarLinhaAnalise`, com empresa/contato do frete publicado) → aparece em "Últimas análises" da Garagem e conta no gate de validação.
+- Busca com origem digitada grava `motoristas.cidade_atual/uf_atual/lat/lng` → `BuscarFrete.tsx` já parte dali.
+
+**Código**: `calcularEResponderFrete` ganhou `fretePublicado` (id, empresa, contato) e insere em `analise_frete`; `caminhoApp` decide o destino; `fraseLink` adapta o texto do rodapé. `tratarRespostaLista` passa o frete. App: `lib/fretesPublicados.ts` → `carregarFretePorId` + `mapFretePublicado`; `BuscarFrete.tsx` lê `?frete=` (`useSearchParams`), carrega por id, fixa no topo fora do raio/filtros (`.frete-destacado`, `.frete-destacado-selo` em `index.css`, amarelo = marca).
+
+## CHECKPOINT — 30/09 (fim de sessão, v49)
+
+**Estado**: wa-webhook **v49**, otp-solicitar **v31**, **sessao-wa v1** no ar. App precisa do push (BuscarFrete `?frete=`). `CLAUDE.md` criado. Contas do David (`5511991143035`) e do Rapha (`5541999871818`) **apagadas a pedido (2×, a última já com a v48 no ar)** pra testarem como número novo; bloqueio de OTP do David também limpo. Achado no caminho: `consentimento` estava sem ON DELETE CASCADE — o SAIR falharia pra quem vinculou pelo app; corrigido em `20260930180000_consentimento_cascade.sql`. Commit pendente: `CLAUDE.md`, `supabase/functions/{wa-webhook,otp-solicitar,sessao-wa}/`, `supabase/migrations/20260930*.sql`, `apps/web/src/{main.tsx,lib/LoginPorLink.tsx,pages/Entrada.tsx,pages/Verificacao.tsx}`, `Docs/status-sessao.md`.
 
 **AO RETOMAR (no Claude Code)**:
 0. Conferir com `git status`/`git log` se o commit da v48 foi feito e se a Vercel publicou (o app precisa estar no ar pro OTP por WhatsApp e pro link mágico funcionarem — Edge Functions já estão).
@@ -1431,4 +1443,5 @@ Raphael pediu, antes de codar, estudo das soluções que já existem e um plano 
 4. Pendências da Fase 1: `codigo_indicacao` por motorista; aba "Funil viral" no admin; verificar empresa na Meta; conferir rota `/termos`.
 5. Custo Meta desde 1/10 (~R$ 0,04/mensagem do bot): olhar `wa_freight_query` por status semanalmente.
 6. **Na fila (Raphael, 30/09): leitura de CNH/CRLV por foto no WhatsApp.** Estimativa 1–2 dias: migration (placa, renavam, cnh_categoria, crlv_exercicio), webhook recebe `type: "image"` e baixa a mídia da Meta, Haiku com visão extrai (schema fechado), botões Salvar/Corrigir/Cancelar, grava só os campos usados. Regras propostas (a confirmar antes de codar): NÃO guardar a imagem, NÃO gravar CPF, consentimento em uma linha antes da 1ª leitura, não é validação de autenticidade (só preenchimento + lembrete de vencimento), pedir só depois do primeiro cálculo. Nota: PRD doc-wpp dizia "NÃO faz OCR" — mudança de escopo consciente. Antes de codar, mostrar os textos das mensagens pro Raphael aprovar.
-7. Antigas: logo do Sofrete (4 propostas); identidade visual em Analisar/Buscar/Perfil; troca de senha no portal; Barlow local.
+7. **Na fila: integração Aferi+** (app irmão dos postos de tacógrafo). Respostas técnicas e proposta completa em `Docs/integracao-aferi-plus.md` (tabela `convite_parceiro`, functions `parceiro-convite`/`convite-abrir`/`convite-concluir`, rota `/entrar?ref=`, critério de "captado", LGPD/CPF). ~2 dias.
+8. Antigas: logo do Sofrete (4 propostas); identidade visual em Analisar/Buscar/Perfil; troca de senha no portal; Barlow local.

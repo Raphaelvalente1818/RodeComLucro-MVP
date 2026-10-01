@@ -15,11 +15,11 @@
 // lista inteira de fretes de uma vez.
 
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { fmtBRL } from '@rode/calc';
 import type { TipoVeiculo } from '@rode/calc';
-import { listarFretesAbertos, UFS_BRASIL, type FretePublicado, type FiltrosFrete } from '../lib/fretesPublicados';
+import { listarFretesAbertos, carregarFretePorId, UFS_BRASIL, type FretePublicado, type FiltrosFrete } from '../lib/fretesPublicados';
 import { carregarMotorista, salvarCidadeAtual } from '../lib/motorista';
 import { carregarPerfil } from '../lib/frete';
 import { buscarMunicipios, distanciaKm, RAIOS_KM, type Municipio } from '../lib/municipios';
@@ -97,6 +97,12 @@ export default function BuscarFrete() {
 
   const [carregando, setCarregando] = useState(true);
   const [fretes, setFretes] = useState<FretePublicado[]>([]);
+  // Veio do WhatsApp com ?frete=<id> (01/10): o frete que ele acabou de ver
+  // no bot fica fixo no topo, fora do raio/filtros, com um selo. Ele refaz
+  // no app o gesto que fez no WhatsApp — é o "treino" da tela.
+  const [searchParams] = useSearchParams();
+  const freteDestacadoId = searchParams.get('frete');
+  const [freteDestacado, setFreteDestacado] = useState<FretePublicado | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -121,6 +127,11 @@ export default function BuscarFrete() {
       }
     });
   }, [navigate]);
+
+  useEffect(() => {
+    if (!freteDestacadoId) return;
+    carregarFretePorId(freteDestacadoId).then(setFreteDestacado);
+  }, [freteDestacadoId]);
 
   // Autocomplete de cidade (com debounce) — só busca se o texto digitado ainda não bate com a cidade já selecionada.
   useEffect(() => {
@@ -162,7 +173,18 @@ export default function BuscarFrete() {
   }, [destinoUf, soMeuTipo, tipoVeiculoPerfil]);
 
   const listaExibir = useMemo<FreteComDistancia[]>(() => {
-    const comDistancia: FreteComDistancia[] = fretes.map((f) => ({
+    const destacado: FreteComDistancia[] = freteDestacado
+      ? [
+          {
+            ...freteDestacado,
+            distancia:
+              cidadeSelecionada && freteDestacado.origemLat != null && freteDestacado.origemLng != null
+                ? distanciaKm(cidadeSelecionada.latitude, cidadeSelecionada.longitude, freteDestacado.origemLat, freteDestacado.origemLng)
+                : null,
+          },
+        ]
+      : [];
+    const comDistancia: FreteComDistancia[] = fretes.filter((f) => f.id !== freteDestacado?.id).map((f) => ({
       ...f,
       distancia:
         cidadeSelecionada && f.origemLat != null && f.origemLng != null
@@ -174,20 +196,20 @@ export default function BuscarFrete() {
       : comDistancia;
 
     if (relevancia === 'valor') {
-      return [...filtrada].sort((a, b) => {
+      return [...destacado, ...[...filtrada].sort((a, b) => {
         const va = valorComparavelCentavos(a, cargaMaximaPerfil);
         const vb = valorComparavelCentavos(b, cargaMaximaPerfil);
         if (va == null && vb == null) return 0;
         if (va == null) return 1;
         if (vb == null) return -1;
         return vb - va; // maior valor primeiro
-      });
+      })];
     }
     // relevancia === 'distancia' (padrão): sem cidade selecionada, todo
     // mundo tem distancia null — mantém a ordem que veio do banco.
-    if (!cidadeSelecionada) return filtrada;
-    return [...filtrada].sort((a, b) => (a.distancia ?? 0) - (b.distancia ?? 0));
-  }, [fretes, cidadeSelecionada, raioKm, relevancia, cargaMaximaPerfil]);
+    if (!cidadeSelecionada) return [...destacado, ...filtrada];
+    return [...destacado, ...[...filtrada].sort((a, b) => (a.distancia ?? 0) - (b.distancia ?? 0))];
+  }, [fretes, freteDestacado, cidadeSelecionada, raioKm, relevancia, cargaMaximaPerfil]);
 
   const semLocalizacao = cidadeSelecionada
     ? fretes.filter((f) => f.origemLat == null || f.origemLng == null).length
@@ -337,7 +359,8 @@ export default function BuscarFrete() {
               f.tiposVeiculoAceitos.includes(tipoVeiculoPerfil as TipoVeiculo);
             const totalEstimado = valorTotalEstimadoCentavos(f, cargaMaximaPerfil);
             return (
-              <li key={f.id} className="linha-analise-item">
+              <li key={f.id} className={f.id === freteDestacado?.id ? 'linha-analise-item frete-destacado' : 'linha-analise-item'}>
+                {f.id === freteDestacado?.id && <p className="frete-destacado-selo">Você viu esse no WhatsApp</p>}
                 <div className="frete-linha">
                   <div>
                     <p className="linha-analise-rota">

@@ -1183,8 +1183,10 @@ async function calcularEResponderFrete(params: {
   semPerfil?: boolean;
   /** Recalculando o mesmo frete depois do onboarding: lucro da estimativa genérica, pra mostrar a diferença. */
   recalculoDe?: number | null;
+  /** Veio de um frete publicado (clique na lista): vai pro histórico com empresa/contato e o link do app destaca esse frete. */
+  fretePublicado?: { id: string; empresaNome: string | null; contatoNome: string | null; contatoTelefone: string | null } | null;
 }): Promise<void> {
-  const { fromE164, motoristaId, origem, destino, valorFreteReais, voltaVazia, waMessageId, texto, extracao, primeiroContato, semPerfil, recalculoDe } = params;
+  const { fromE164, motoristaId, origem, destino, valorFreteReais, voltaVazia, waMessageId, texto, extracao, primeiroContato, semPerfil, recalculoDe, fretePublicado } = params;
   const anonimo = motoristaId == null;
   const puxarOnboarding = Boolean(primeiroContato || semPerfil);
 
@@ -1258,7 +1260,53 @@ async function calcularEResponderFrete(params: {
   // com o bot ele não faz sentido. Removido em 24/09 a pedido do Raphael;
   // o compartilhamento fica só no botão explícito "Mandar pro colega".)
   const linhaCompartilhe = "";
-  const linkBusca = await linkApp(motoristaId, "/buscar-frete");
+
+  // 01/10: o cálculo do bot vai pro MESMO histórico do app (analise_frete)
+  // — antes ficava só em wa_freight_query e a Garagem abria vazia pra quem
+  // só usava o WhatsApp. Mesmo formato de montarLinhaAnalise (lib/frete.ts),
+  // então Resultado.tsx renderiza por id sem adaptação.
+  let analiseId: string | null = null;
+  if (motoristaId) {
+    analiseId = crypto.randomUUID();
+    const { error: errAnalise } = await supabase.from("analise_frete").insert({
+      id: analiseId,
+      user_id: motoristaId,
+      caminhao_perfil_id: null,
+      origem,
+      destino,
+      distancia_km: rota.distanciaKm,
+      distancia_estimada: rota.distanciaEstimada,
+      volta_vazia: voltaVazia,
+      valor_frete_centavos: Math.round(valorFreteReais * 100),
+      margem_desejada: perfil.margem_desejada,
+      numero_eixos: perfil.numero_eixos,
+      custos_snapshot: custos,
+      resultado_snapshot: resultado,
+      veredicto: resultado.veredicto,
+      formula_versao: resultado.formulaVersao,
+      empresa_nome: fretePublicado?.empresaNome ?? null,
+      contato_nome: fretePublicado?.contatoNome ?? null,
+      contato_telefone: fretePublicado?.contatoTelefone ?? null,
+      valor_a_combinar: false,
+    });
+    if (errAnalise) {
+      await logErro("wa-webhook.analiseFrete", "Falha ao gravar analise_frete", { erro: errAnalise.message, motoristaId });
+      analiseId = null;
+    }
+  }
+
+  // Destino do link (decisão do Raphael, 01/10): frete da lista → busca do
+  // app com esse frete destacado (ele refaz no app o gesto do WhatsApp);
+  // cálculo em texto → tela de resultado com o detalhamento.
+  const caminhoApp = fretePublicado
+    ? `/buscar-frete?frete=${fretePublicado.id}`
+    : analiseId
+      ? `/resultado/${analiseId}`
+      : "/buscar-frete";
+  const linkBusca = await linkApp(motoristaId, caminhoApp);
+  const fraseLink = fretePublicado
+    ? "Esse frete e outros perto de você no app (abre já logado)"
+    : "Detalhe completo desse cálculo no app (abre já logado)";
   let rodape: string;
   if (anonimo) {
     rodape =
@@ -1275,12 +1323,12 @@ async function calcularEResponderFrete(params: {
     const difTxt = Math.abs(dif) < 1 ? "praticamente o mesmo" : dif > 0 ? `${fmtBRL(dif)} a mais que a estimativa` : `${fmtBRL(-dif)} a menos que a estimativa`;
     rodape =
       `Com o *seu* caminhão: ${difTxt}. 🚛 Perfil salvo.\n\n` +
-      `📲 Histórico e fretes perto de você (abre já logado): ${linkBusca}` +
+      `📲 ${fraseLink}: ${linkBusca}` +
       linhaCompartilhe;
   } else {
     rodape =
       `(estimativa com base no seu perfil cadastrado no app — ${dias} dia${dias > 1 ? "s" : ""} de viagem)\n\n` +
-      `📲 Veja o histórico completo e mais fretes no app: ${linkBusca}` +
+      `📲 ${fraseLink}: ${linkBusca}` +
       linhaCompartilhe;
   }
 
@@ -1543,6 +1591,13 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string, opcoes:
       );
       return;
     }
+    // A cidade que ele digitou vira a "cidade atual" — é de onde a tela
+    // Buscar Frete do app parte (BuscarFrete.tsx lê motoristas.cidade_atual).
+    // Assim o app abre em Guarulhos, não numa busca vazia (David, 01/10).
+    await supabase
+      .from("motoristas")
+      .update({ cidade_atual: origem.nome, uf_atual: origem.uf || null, cidade_atual_lat: origem.lat, cidade_atual_lng: origem.lng })
+      .eq("id", motoristaId);
   } else if (motorista?.cidade_base_lat != null && motorista.cidade_base_lng != null && motorista.cidade_base) {
     origem = { nome: motorista.cidade_base, uf: motorista.uf_base ?? "", lat: motorista.cidade_base_lat, lng: motorista.cidade_base_lng };
   }
@@ -1655,7 +1710,7 @@ async function tratarRespostaLista(fromE164: string, rowId: string, waMessageId:
 
   const { data: frete } = await supabase
     .from("fretes_publicados")
-    .select("id, origem_cidade, origem_uf, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, status")
+    .select("id, origem_cidade, origem_uf, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, status, empresa_nome, contato_nome, contato_telefone")
     .eq("id", rowId)
     .maybeSingle();
 
@@ -1708,6 +1763,12 @@ async function tratarRespostaLista(fromE164: string, rowId: string, waMessageId:
     waMessageId,
     texto: `[busca] ${origem} -> ${destino}`,
     extracao: null,
+    fretePublicado: {
+      id: frete.id as string,
+      empresaNome: (frete.empresa_nome as string | null) ?? null,
+      contatoNome: (frete.contato_nome as string | null) ?? null,
+      contatoTelefone: (frete.contato_telefone as string | null) ?? null,
+    },
   });
 }
 

@@ -39,27 +39,11 @@ export interface FiltrosFrete {
   tipoVeiculo?: string | null;
 }
 
-/** Fretes com status "aberto", mais recentes primeiro, com filtros opcionais de UF de destino/tipo de veículo. O filtro de raio (distância até a cidade atual do motorista) é aplicado depois, no cliente — ver BuscarFrete.tsx. */
-export async function listarFretesAbertos(filtros: FiltrosFrete = {}, limite = 300): Promise<FretePublicado[]> {
-  let query = supabase
-    .from('fretes_publicados')
-    .select(
-      'id, empresa_nome, contato_nome, contato_telefone, origem_cidade, origem_uf, origem_lat, origem_lng, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, tipos_veiculo_aceitos, tipos_carroceria_aceitos, status, created_at',
-    )
-    .eq('status', 'aberto')
-    .order('created_at', { ascending: false })
-    .limit(limite);
+const COLUNAS_FRETE =
+  'id, empresa_nome, contato_nome, contato_telefone, origem_cidade, origem_uf, origem_lat, origem_lng, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, tipos_veiculo_aceitos, tipos_carroceria_aceitos, status, created_at';
 
-  if (filtros.destinoUf) query = query.eq('destino_uf', filtros.destinoUf);
-  if (filtros.tipoVeiculo) query = query.contains('tipos_veiculo_aceitos', [filtros.tipoVeiculo]);
-
-  const { data, error } = await query;
-  if (error) {
-    // eslint-disable-next-line no-console
-    console.error('listarFretesAbertos', error);
-    return [];
-  }
-  return (data ?? []).map((r) => ({
+function mapFretePublicado(r: Record<string, unknown>): FretePublicado {
+  return {
     id: r.id as string,
     empresaNome: r.empresa_nome as string,
     contatoNome: (r.contato_nome as string | null) ?? null,
@@ -77,7 +61,40 @@ export async function listarFretesAbertos(filtros: FiltrosFrete = {}, limite = 3
     tiposCarroceriaAceitos: (r.tipos_carroceria_aceitos as TipoCarroceria[] | null) ?? [],
     status: r.status as string,
     createdAt: r.created_at as string,
-  }));
+  };
+}
+
+/**
+ * Um frete pelo id — usado quando o motorista chega do WhatsApp com
+ * `/buscar-frete?frete=<id>` (01/10): o frete que ele viu no bot vai pro
+ * topo da lista mesmo que esteja fora do raio/filtros. Null se não existe
+ * ou não está mais aberto.
+ */
+export async function carregarFretePorId(id: string): Promise<FretePublicado | null> {
+  const { data, error } = await supabase.from('fretes_publicados').select(COLUNAS_FRETE).eq('id', id).maybeSingle();
+  if (error || !data) return null;
+  return mapFretePublicado(data as Record<string, unknown>);
+}
+
+/** Fretes com status "aberto", mais recentes primeiro, com filtros opcionais de UF de destino/tipo de veículo. O filtro de raio (distância até a cidade atual do motorista) é aplicado depois, no cliente — ver BuscarFrete.tsx. */
+export async function listarFretesAbertos(filtros: FiltrosFrete = {}, limite = 300): Promise<FretePublicado[]> {
+  let query = supabase
+    .from('fretes_publicados')
+    .select(COLUNAS_FRETE)
+    .eq('status', 'aberto')
+    .order('created_at', { ascending: false })
+    .limit(limite);
+
+  if (filtros.destinoUf) query = query.eq('destino_uf', filtros.destinoUf);
+  if (filtros.tipoVeiculo) query = query.contains('tipos_veiculo_aceitos', [filtros.tipoVeiculo]);
+
+  const { data, error } = await query;
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error('listarFretesAbertos', error);
+    return [];
+  }
+  return (data ?? []).map(mapFretePublicado);
 }
 
 export const UFS_BRASIL = [
