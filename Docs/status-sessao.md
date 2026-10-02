@@ -1431,6 +1431,10 @@ Raphael pediu, antes de codar, estudo das soluções que já existem e um plano 
 
 **Código**: `calcularEResponderFrete` ganhou `fretePublicado` (id, empresa, contato) e insere em `analise_frete`; `caminhoApp` decide o destino; `fraseLink` adapta o texto do rodapé. `tratarRespostaLista` passa o frete. App: `lib/fretesPublicados.ts` → `carregarFretePorId` + `mapFretePublicado`; `BuscarFrete.tsx` lê `?frete=` (`useSearchParams`), carrega por id, fixa no topo fora do raio/filtros (`.frete-destacado`, `.frete-destacado-selo` em `index.css`, amarelo = marca).
 
+**Ícone da tela de início (01/10)**: `apps/web/public/icons/` (apple-touch-icon 180, 192, 512, 512 maskable) + `favicon-32.png` + `public/manifest.webmanifest` (standalone, fundo #0B0E0D) + tags no `index.html` (`apple-mobile-web-app-capable=yes` — tela cheia, aprovado pelo Raphael: "impressão de app real"). Gerados a partir de `public/img/logo-rode-com-lucro.jpg`; regerar se o logo mudar. Atalho antigo precisa ser removido e adicionado de novo.
+
+**Plano de escala (01/10)**: `Docs/plano-escala.md` — capacidade hoje (~50–100 simultâneos), pagando (1–2 mil; 10 mil+ com índice geográfico), e as ações em ordem com o sinal de cada uma. Guardado pra quando ficar lento; não é tarefa agora.
+
 ## CHECKPOINT — 30/09 (fim de sessão, v49)
 
 **Estado**: wa-webhook **v49**, otp-solicitar **v31**, **sessao-wa v1** no ar. App precisa do push (BuscarFrete `?frete=`). `CLAUDE.md` criado. Contas do David (`5511991143035`) e do Rapha (`5541999871818`) **apagadas a pedido (2×, a última já com a v48 no ar)** pra testarem como número novo; bloqueio de OTP do David também limpo. Achado no caminho: `consentimento` estava sem ON DELETE CASCADE — o SAIR falharia pra quem vinculou pelo app; corrigido em `20260930180000_consentimento_cascade.sql`. Commit pendente: `CLAUDE.md`, `supabase/functions/{wa-webhook,otp-solicitar,sessao-wa}/`, `supabase/migrations/20260930*.sql`, `apps/web/src/{main.tsx,lib/LoginPorLink.tsx,pages/Entrada.tsx,pages/Verificacao.tsx}`, `Docs/status-sessao.md`.

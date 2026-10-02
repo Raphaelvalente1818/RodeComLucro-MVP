@@ -14,6 +14,13 @@ descontinuou tarefas em pasta local em 06/10/2026). Tudo que importa está aqui 
    cadastro** (conta criada na 1ª mensagem do WhatsApp, sem OTP nem código VINCULAR).
 3. `Docs/sequencia-construcao.md` e os `Docs/PRD-tecnico-*.html` — contratos
    funcionais. O PRD define o que cada tela faz; NÃO define visual.
+4. `Docs/integracao-aferi-plus.md` — integração com o Aferi+ (app irmão, postos de
+   aferição de tacógrafo): convite por código, pré-cadastro, captação remunerada.
+   Respostas técnicas prontas + proposta de tabela/functions. Na fila.
+5. `Docs/plano-escala.md` — o que fazer quando ficar lento (capacidade atual,
+   sinais e ações em ordem: tier Anthropic, Supabase Pro, verificação Meta,
+   índice geográfico na busca, fila no webhook, região). Só abrir quando o sinal
+   aparecer.
 
 ## O que é
 
@@ -71,7 +78,7 @@ Se `@rode/calc` não resolver, apague `node_modules` na raiz, em `apps/web` e em
 
 Testes da v47 (conversa livre) e v48 (OTP WhatsApp + link mágico) com o David e o Rapha;
 agendar `limpar_tokens_wa()` no pg_cron; leitura de CNH/CRLV por foto no bot (ver
-checkpoint 30/09 — sem guardar imagem nem CPF); `codigo_indicacao` por
+checkpoint 30/09 — sem guardar imagem nem CPF); integração Aferi+ (`Docs/integracao-aferi-plus.md`); `codigo_indicacao` por
 motorista; aba "Funil viral" no admin; verificar a empresa na Meta; logo do Sofrete
 (4 propostas em `Docs/propostas-logo-sofrete.html`, ele ainda não escolheu);
 identidade visual em Analisar/Buscar/Perfil; troca de senha no portal; hospedar a
