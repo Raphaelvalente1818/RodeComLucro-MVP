@@ -53,7 +53,9 @@ pro Deno — se a fórmula mudar, atualizar os dois.
   Template de OTP na Meta: `modelo01` (pt_BR, Autenticação).
 - Deploy do app: Vercel, https://rode-com-lucro-mvp.vercel.app (push em `main` publica).
 - Meta cobra ~R$ 0,04 por mensagem do bot a partir de 1/10/2026 — responder em uma
-  mensagem só; nada de bot tagarela.
+  mensagem só; nada de bot tagarela. Cota por número: `LIMITE_CONSULTAS_DIA` em
+  `wa-webhook/index.ts` (hoje 20/24 h; a última consulta sai com aviso + link do app,
+  depois silêncio). Raphael vai pedir pra baixar pra 5 — só trocar a constante.
 
 ## Como validar
 

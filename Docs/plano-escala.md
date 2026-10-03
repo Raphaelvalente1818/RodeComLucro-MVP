@@ -84,5 +84,6 @@ tamanho do banco (100 mil motoristas × 20 cálculos ≈ 2 GB).
 
 ## Custo que cresce com uso (decisão de produto, não de infra)
 Meta ~R$ 0,04 por mensagem do bot + centavos de IA por mensagem em texto livre.
-10 mil motoristas ativos × 5 mensagens/dia ≈ R$ 2 mil/dia só de Meta. O limite
-de respostas livres por dia (`LIMITE_RESPOSTAS_LIVRES_DIA`, hoje 5) é a alavanca.
+10 mil motoristas ativos × 5 mensagens/dia ≈ R$ 2 mil/dia só de Meta. A cota diária
+por número (`LIMITE_CONSULTAS_DIA`, hoje 20 — vale pra tudo: cálculo, cotação, busca
+e conversa; v52) é a alavanca. Plano: baixar pra 5 quando o Raphael pedir.

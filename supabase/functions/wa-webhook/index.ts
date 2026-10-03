@@ -762,11 +762,19 @@ const RE_SAIR = /^sair$/i;
 // que responde a pergunta de verdade em vez de cuspir o menu.
 const RE_AJUDA = /^(ajuda|help|menu|comandos)\s*[?!.]*$/i;
 
-// Camada 3 (30/09): respostas livres da IA pra mensagem fora do roteiro,
-// limitadas por número e por dia — cada uma custa mensagem na Meta.
-// Decisão do Raphael: 5 no começo, descer pra 3 depois de ver o dado.
-// 02/10: 20 enquanto os testes rolam (o teste do Rapha queimou 4 em 10 min); descer quando o Raphael pedir.
-const LIMITE_RESPOSTAS_LIVRES_DIA = 20;
+// Cota diária (02/10, decisão do Raphael): 20 consultas por número e por dia,
+// contando TUDO que o bot responde (cálculo, cotação, busca, conversa) — cada
+// resposta custa mensagem na Meta; no app o cálculo não custa. Na 20ª o bot
+// avisa e manda o link do app (abre logado, sem limite); da 21ª em diante,
+// silêncio até o dia virar. Toques de botão (onboarding, salvar caminhão) não
+// contam. Mudar aqui quando ele pedir pra baixar.
+const LIMITE_CONSULTAS_DIA = 20;
+// Status que representam uma consulta respondida (entram na cota).
+const STATUS_CONSULTA = [
+  "calculado", "calculado_novo", "recalculado_perfil", "calculado_anonimo", "cotado",
+  "resposta_livre", "pergunta_calculo", "boas_vindas", "dado_faltando", "confirmacao_pendente",
+  "busca_sem_resultado", "busca_origem", "erro_extracao", "nao_cadastrado",
+];
 const AVISO_CADASTRO = `\n\n_Seu número ficou cadastrado no Rode com Lucro. Pra apagar, manda SAIR._`;
 
 /** Apresentação em uma mensagem só (custo pós-1/10) — usada quando a IA não responde (sem chave, erro) e nos comandos "ajuda"/"menu". */
@@ -795,16 +803,26 @@ async function garantirMotorista(fromE164: string, texto: string): Promise<{ id:
   return { id, novo: true };
 }
 
-/** Quantas respostas livres esse número já recebeu nas últimas 24h. */
-async function contarRespostasLivresHoje(fromE164: string): Promise<number> {
+/** Quantas consultas esse número já teve respondidas nas últimas 24h (cota diária). */
+async function contarConsultasHoje(fromE164: string): Promise<number> {
   const desde = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const { count } = await supabase
     .from("wa_freight_query")
     .select("id", { count: "exact", head: true })
     .eq("from_e164", fromE164)
-    .eq("status", "resposta_livre")
+    .in("status", STATUS_CONSULTA)
     .gte("criado_em", desde);
   return count ?? 0;
+}
+
+/** 20ª consulta do dia: avisa e manda o app (abre logado, sem limite). */
+async function avisarUltimaConsulta(fromE164: string): Promise<void> {
+  const { data: m } = await supabase.from("motoristas").select("id").eq("telefone_e164", fromE164).maybeSingle();
+  const link = await linkApp(m?.id ?? null, "/");
+  await enviarMensagemWhatsapp(
+    fromE164,
+    `⚠️ Essa foi sua última consulta de hoje aqui no WhatsApp. No app você faz quantas quiser, sem limite — e já abre logado: ${link}`,
+  );
 }
 
 /**
@@ -816,13 +834,6 @@ async function contarRespostasLivresHoje(fromE164: string): Promise<number> {
  */
 async function tratarConversaLivre(fromE164: string, texto: string, waMessageId: string, extracao: ExtracaoFrete | null, status: "resposta_livre" | "pergunta_calculo" = "resposta_livre"): Promise<void> {
   const { id: motoristaId, novo } = await garantirMotorista(fromE164, texto);
-  const usadas = await contarRespostasLivresHoje(fromE164);
-  if (usadas >= LIMITE_RESPOSTAS_LIVRES_DIA) {
-    await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao, status: "limite_diario" });
-    // eslint-disable-next-line no-console
-    console.log(`[wa-webhook] limite diário de respostas livres atingido para ${fromE164}: "${texto}"`);
-    return;
-  }
   const corpo = extracao?.respostaLivre ?? mensagemApresentacao(Boolean(motoristaId) && !novo);
   const resposta = novo && motoristaId ? corpo + AVISO_CADASTRO : corpo;
   await registrarTentativaFrete({
@@ -2155,6 +2166,15 @@ async function tratarRequisicao(req: Request): Promise<Response> {
       console.error("[wa-webhook] falha ao registrar idempotência, processando mesmo assim", dupError);
     }
 
+    // Cota diária (ver LIMITE_CONSULTAS_DIA). SAIR passa sempre.
+    const usadas = RE_SAIR.test(msg.texto.trim()) ? 0 : await contarConsultasHoje(msg.fromE164);
+    if (usadas >= LIMITE_CONSULTAS_DIA) {
+      await registrarTentativaFrete({ waMessageId: msg.waMessageId, motoristaId: null, fromE164: msg.fromE164, texto: msg.texto, extracao: null, status: "limite_diario" });
+      // eslint-disable-next-line no-console
+      console.log(`[wa-webhook] cota diária atingida para ${msg.fromE164}: "${msg.texto}"`);
+      continue;
+    }
+
     if (RE_SAIR.test(msg.texto.trim())) {
       await tratarSair(msg.fromE164, msg.waMessageId);
     } else if (RE_AJUDA.test(msg.texto.trim())) {
@@ -2170,6 +2190,11 @@ async function tratarRequisicao(req: Request): Promise<Response> {
       await tratarBuscaDeFrete(msg.fromE164, msg.waMessageId, { textoOriginal: msg.texto });
     } else {
       await tratarPedidoDeCalculo(msg.fromE164, msg.texto, msg.waMessageId);
+    }
+
+    // Era a última da cota: avisa uma vez e aponta pro app.
+    if (usadas + 1 >= LIMITE_CONSULTAS_DIA && (await contarConsultasHoje(msg.fromE164)) >= LIMITE_CONSULTAS_DIA) {
+      await avisarUltimaConsulta(msg.fromE164);
     }
   }
 

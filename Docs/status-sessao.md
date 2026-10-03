@@ -1460,13 +1460,19 @@ Raphael pediu, antes de codar, estudo das soluções que já existem e um plano 
 
 **Pra atualizar quando sair resolução nova**: INSERT das linhas (5 tipos × eixos) em `antt_piso_tabela` com `versao` nova e `vigencia_inicio`; app e bot trocam sozinhos na data. Por garantia, atualizar também as constantes nos dois arquivos (fallback) — conferindo 1:1 com o DOU.
 
-## CHECKPOINT — 30/09 (fim de sessão, v51)
+## 02/10 — Cota diária única de 20 consultas + aviso da última (v52)
 
-**Estado**: wa-webhook **v51** (bundle esbuild — ver 02/10), otp-solicitar **v31**, **sessao-wa v1** no ar. App precisa do push (BuscarFrete `?frete=`, ícones PWA). `CLAUDE.md` criado. Contas do David (`5511991143035`) e do Rapha (`5541999871818`) **apagadas a pedido (2×, a última já com a v48 no ar)** pra testarem como número novo; bloqueio de OTP do David também limpo. Achado no caminho: `consentimento` estava sem ON DELETE CASCADE — o SAIR falharia pra quem vinculou pelo app; corrigido em `20260930180000_consentimento_cascade.sql`. Commit pendente: `CLAUDE.md`, `supabase/functions/{wa-webhook,otp-solicitar,sessao-wa}/`, `supabase/migrations/20260930*.sql`, `apps/web/src/{main.tsx,lib/LoginPorLink.tsx,pages/Entrada.tsx,pages/Verificacao.tsx}`, `Docs/status-sessao.md`.
+**Pedido do Raphael**: motorista novo tem 20 respostas; na última, o bot avisa "essa foi sua última consulta de hoje, no app você faz quantas quiser" com o link logado. Futuramente baixar pra 5 e a 5ª recebe a mesma mensagem.
+
+**Como ficou** (`index.ts`): `LIMITE_CONSULTAS_DIA = 20` é a **única** alavanca — substitui o antigo `LIMITE_RESPOSTAS_LIVRES_DIA` (que só valia pra resposta livre; cálculo/cotação/busca eram ilimitados). `contarConsultasHoje(from)` conta em `wa_freight_query` (últimas 24 h, status em `STATUS_CONSULTA` — tudo que gera resposta; SAIR, onboarding, veiculo_salvo e limite_diario ficam fora). No roteador: antes de processar, se `usadas >= LIMITE` → grava `limite_diario` e silencia (SAIR sempre passa); depois de processar, se a mensagem foi a que fechou a cota, `avisarUltimaConsulta()` manda a 2ª mensagem com `linkApp(id, "/")`. Pra mudar o limite (ex.: 5) basta trocar a constante — o aviso sai na N-ésima automaticamente. `tratarConversaLivre` não tem mais limite próprio. Deploy v52 em bundle.
+
+## CHECKPOINT — 02/10 (fim de sessão, v52)
+
+**Estado**: wa-webhook **v52** (bundle esbuild — ver 02/10), otp-solicitar **v31**, **sessao-wa v1** no ar. App precisa do push (BuscarFrete `?frete=`, ícones PWA). `CLAUDE.md` criado. Contas do David (`5511991143035`) e do Rapha (`5541999871818`) **apagadas a pedido (2×, a última já com a v48 no ar)** pra testarem como número novo; bloqueio de OTP do David também limpo. Achado no caminho: `consentimento` estava sem ON DELETE CASCADE — o SAIR falharia pra quem vinculou pelo app; corrigido em `20260930180000_consentimento_cascade.sql`. Commit pendente: `CLAUDE.md`, `supabase/functions/{wa-webhook,otp-solicitar,sessao-wa}/`, `supabase/migrations/20260930*.sql`, `apps/web/src/{main.tsx,lib/LoginPorLink.tsx,pages/Entrada.tsx,pages/Verificacao.tsx}`, `Docs/status-sessao.md`.
 
 **AO RETOMAR (no Claude Code)**:
 0. Conferir com `git status`/`git log` se o commit da v48 foi feito e se a Vercel publicou (o app precisa estar no ar pro OTP por WhatsApp e pro link mágico funcionarem — Edge Functions já estão).
-1. Rodar os TESTES (v47 e v48, acima) e revisar as respostas livres no banco; depois de uma semana, descer o limite pra 3. Agendar `limpar_tokens_wa()` no pg_cron (diário).
+1. Rodar os TESTES (v47 e v48, acima) e revisar as respostas livres no banco; quando o Raphael pedir, descer `LIMITE_CONSULTAS_DIA` de 20 pra 5 (a 5ª já sai com o aviso). Agendar `limpar_tokens_wa()` no pg_cron (diário).
 2. (`5541…1818` era o próprio Raphael testando — não é lead. Conta spam `5515…` pode ficar; decisão: conta nasce com qualquer mensagem.)
 3. Semente do funil: Emerson e David mandam o cartão pra 15 colegas cada. **Sem isso não há dado** — gate está em 1/160.
 4. Pendências da Fase 1: `codigo_indicacao` por motorista; aba "Funil viral" no admin; verificar empresa na Meta; conferir rota `/termos`.
