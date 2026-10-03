@@ -45,6 +45,13 @@ function normalizar(endereco: string) {
   return endereco.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+// 03/10: o Google recebia o nome cru ("Coruípe") e, sem país, procurava no
+// mundo inteiro — e devolvia "sem rota" em silêncio. Agora todo endereço vai
+// ancorado no Brasil, e o 404 fica registrado em app_log.
+function enderecoBR(endereco: string) {
+  return /brasil|brazil/i.test(endereco) ? endereco : `${endereco}, Brasil`;
+}
+
 interface PrecoMoeda {
   currencyCode?: string;
   units?: string;
@@ -130,11 +137,13 @@ async function tratarRequisicao(req: Request): Promise<Response> {
           "routes.distanceMeters,routes.duration,routes.travelAdvisory.tollInfo",
       },
       body: JSON.stringify({
-        origin: { address: origem },
-        destination: { address: destino },
+        origin: { address: enderecoBR(origem) },
+        destination: { address: enderecoBR(destino) },
         travelMode: "DRIVE",
         routingPreference: "TRAFFIC_UNAWARE",
         units: "METRIC",
+        regionCode: "BR",
+        languageCode: "pt-BR",
         extraComputations: ["TOLLS"],
       }),
     });
@@ -154,6 +163,8 @@ async function tratarRequisicao(req: Request): Promise<Response> {
   const dados = await resposta.json();
   const rota = dados.routes?.[0];
   if (!rota?.distanceMeters) {
+    console.error("route_cost_rota_nao_encontrada", origem, destino, JSON.stringify(dados).slice(0, 500));
+    await logErro("route-cost.computeRoutes", "Google não achou rota (cidade não reconhecida?)", { origem, destino, resposta: JSON.stringify(dados).slice(0, 500) });
     return json({ erro: "rota_nao_encontrada" }, 404);
   }
 

@@ -73,6 +73,13 @@ export interface ContextoConversa {
     eixos: number;
     quandoMinutos: number;
   } | null;
+  /** Última tentativa que FALHOU (rota não achada etc.), se for mais recente que o último cálculo — pra "por que não conseguiu?". */
+  ultimaFalha: {
+    origem: string | null;
+    destino: string | null;
+    motivo: string;
+    quandoMinutos: number;
+  } | null;
 }
 
 export interface ExtracaoFrete {
@@ -110,7 +117,7 @@ CLASSIFIQUE em UM intent:
 - "calcular": oferta concreta com VALOR em reais pra avaliar (rota + valor). Extraia origem, destino, valor_frete_reais, volta_vazia, confianças.
 - "cotar": rota SEM valor — quer saber quanto cobrar, ou distância/pedágio/piso ANTT/custo de uma rota. Extraia origem e destino. Se faltar origem ou destino, deixe null (o sistema pergunta).
 - "buscar": quer VER cargas disponíveis, sem valor pra avaliar. Extraia origem (de onde quer sair; "daqui" = null), destino, tipo_carga.
-- "pergunta_calculo": pergunta sobre o último cálculo do CONTEXTO (pedágio, diesel, dias, margem, piso, "e se voltar vazio?", "por que ruim?"). Só se existir ultimo_calculo no contexto; senão trate como "cotar" (se tiver rota) ou "outro".
+- "pergunta_calculo": pergunta sobre o último cálculo do CONTEXTO (pedágio, diesel, dias, margem, piso, "e se voltar vazio?", "por que ruim?"). Só se existir ultimo_calculo no contexto; senão trate como "cotar" (se tiver rota) ou "outro". ATENÇÃO: se o contexto tiver ultima_falha, uma pergunta tipo "por que não conseguiu?" / "deu erro?" é sobre a FALHA, não sobre o último cálculo — classifique como "outro" e explique a falha na resposta_livre.
 - "pergunta_bot": o que você é/faz, pra que serve, como funciona, é grátis, quem está por trás.
 - "saudacao": só "oi", "bom dia", "opa", "tudo bem?", sem pedido.
 - "outro": qualquer outra coisa (fora do escopo, reclamação, spam, mensagem pra outra pessoa).
@@ -123,12 +130,13 @@ RESPOSTA LIVRE (só pra pergunta_calculo, pergunta_bot, saudacao, outro; nos dem
 - pergunta_calculo: responda com os NÚMEROS do contexto (ex.: "Pedágio nesse trecho: R$ 412,00, já tá dentro do custo de R$ 10.215,22"). Formato R$ 1.234,56. Não recalcule nada, não invente número que não está no contexto; se o que ele perguntou não está lá, diga que não tem essa quebra e o que tem.
 - pergunta_bot/saudacao: diga o que faz (os 4 itens, resumido) e termine com UM exemplo concreto: 'manda a rota e o valor (ex.: *"Sinop pra Santos, 14 mil"*), ou só a rota pra eu cotar, ou *BUSCAR*'.
 - outro: diga em uma frase que não faz isso, sem inventar, e termine com o exemplo acima.
+- Pergunta sobre ultima_falha ("por que não conseguiu?"): explique o motivo que está no contexto, em uma frase, e peça a correção. Ex.: 'Não achei a cidade "coruipe" no mapa. Manda com o estado, tipo *"Diadema pra Coruripe/AL, 15 mil"*'. NUNCA diga "consegui sim" nem mostre números de outro cálculo.
 - Spam/mensagem pra outra pessoa: "Opa! Acho que essa mensagem não era pra mim — sou um assistente pra caminhoneiro. Se quiser saber se um frete vale a pena, manda a rota e o valor."
 - NUNCA termine com pergunta de sim/não ("quer testar?"). Termine com o exemplo.
 - Formatação do WhatsApp: *negrito* com asterisco simples. No máximo 1 emoji.
 
 Extração:
-- origem/destino: cidade (e UF se dita), como ele escreveu — não invente UF.
+- origem/destino: cidade (e UF se dita), COPIADA LETRA POR LETRA como ele escreveu — não corrija grafia, não acrescente nem tire acento, não invente UF ("coruipe" fica "coruipe"; o sistema é quem corrige).
 - valor_frete_reais: "8 mil"→8000, "R$ 4.500"→4500, "3500 reais"→3500. null se não mencionou.
 - volta_vazia: true SÓ se disser que volta vazio.
 - tipo_carga (busca): container / frigorificada / granel / liquido / veiculos / carga_geral; null se não citou.
@@ -219,6 +227,10 @@ function descreverContexto(c: ContextoConversa): string {
     );
   } else {
     linhas.push("ultimo_calculo=nenhum");
+  }
+  const f = c.ultimaFalha;
+  if (f) {
+    linhas.push(`ultima_falha (há ${f.quandoMinutos} min, DEPOIS do último cálculo): tentou ${f.origem ?? "?"} → ${f.destino ?? "?"} e ${f.motivo}`);
   }
   return linhas.join("\n");
 }

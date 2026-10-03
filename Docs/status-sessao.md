@@ -1466,12 +1466,29 @@ Raphael pediu, antes de codar, estudo das soluções que já existem e um plano 
 
 **Como ficou** (`index.ts`): `LIMITE_CONSULTAS_DIA = 20` é a **única** alavanca — substitui o antigo `LIMITE_RESPOSTAS_LIVRES_DIA` (que só valia pra resposta livre; cálculo/cotação/busca eram ilimitados). `contarConsultasHoje(from)` conta em `wa_freight_query` (últimas 24 h, status em `STATUS_CONSULTA` — tudo que gera resposta; SAIR, onboarding, veiculo_salvo e limite_diario ficam fora). No roteador: antes de processar, se `usadas >= LIMITE` → grava `limite_diario` e silencia (SAIR sempre passa); depois de processar, se a mensagem foi a que fechou a cota, `avisarUltimaConsulta()` manda a 2ª mensagem com `linkApp(id, "/")`. Pra mudar o limite (ex.: 5) basta trocar a constante — o aviso sai na N-ésima automaticamente. `tratarConversaLivre` não tem mais limite próprio. Deploy v52 em bundle.
 
-## CHECKPOINT — 02/10 (fim de sessão, v52)
+## 03/10 — Caso "coruipe": corretor de cidade + falha explicada (route-cost v31, wa-webhook v53)
 
-**Estado**: wa-webhook **v52** (bundle esbuild — ver 02/10), otp-solicitar **v31**, **sessao-wa v1** no ar. App precisa do push (BuscarFrete `?frete=`, ícones PWA). `CLAUDE.md` criado. Contas do David (`5511991143035`) e do Rapha (`5541999871818`) **apagadas a pedido (2×, a última já com a v48 no ar)** pra testarem como número novo; bloqueio de OTP do David também limpo. Achado no caminho: `consentimento` estava sem ON DELETE CASCADE — o SAIR falharia pra quem vinculou pelo app; corrigido em `20260930180000_consentimento_cascade.sql`. Commit pendente: `CLAUDE.md`, `supabase/functions/{wa-webhook,otp-solicitar,sessao-wa}/`, `supabase/migrations/20260930*.sql`, `apps/web/src/{main.tsx,lib/LoginPorLink.tsx,pages/Entrada.tsx,pages/Verificacao.tsx}`, `Docs/status-sessao.md`.
+**Teste do Raphael (02/10 22h33)**: "Diadema para coruipe, truck grade baixa, 15000" → bot respondeu 2× "não consegui calcular a distância"; "Por que não conseguiu?" → "Consegui sim! Carandaí → Piracaia…" (cálculo de horas antes). Diagnóstico no banco (`wa_freight_query`): (1) Haiku "corrigiu" coruipe → **"Coruípe"** (acento inventado; a cidade é Coruripe/AL); (2) `route-cost` mandava o nome cru pro Google sem país e o 404 não ia pro `app_log`; (3) `montarContexto` só via o último cálculo que deu certo — a falha (`erro_extracao`) não tem snapshot, então a IA respondeu com outra rota. Não tinha relação com perfil/caminhão.
+
+**A — blindagem** (`route-cost` **v31**, `extracao.ts`, `index.ts`):
+- `route-cost`: `regionCode: "BR"`, `languageCode: "pt-BR"`, sufixo ", Brasil" (`enderecoBR`); 404 "rota não encontrada" agora grava em `app_log` com a resposta do Google.
+- Prompt: origem/destino copiados letra por letra ("não corrija grafia, não acrescente acento").
+- `ContextoConversa.ultimaFalha` (origem/destino/motivo/quando) quando a última `erro_extracao` é mais recente que o último cálculo; prompt manda classificar "por que não conseguiu?" como `outro` e explicar a falha — nunca "consegui sim".
+- `mensagemRotaNaoEncontrada(origem, destino)` nos dois fluxos: diz a rota que falhou e pede com UF.
+
+**B — corretor de cidade** (migration `20261003100000_municipio_sugerir_trgm.sql`, bot **v53**):
+- `pg_trgm` + índice GIN em `municipios_brasil.nome_norm`; RPC `municipio_sugerir(p_texto, p_limite)` → nome, uf, lat/lng, `similaridade` (1 = exato; aceita "cidade/UF", "cidade - UF", "cidade UF"; `unaccent` está em `public`). Testes: coruipe→Coruripe/AL 0,55; curitba→Curitiba 0,55; "bom jesus" empata em 3 UFs.
+- Bot: `sugerirMunicipios` → `decidirCidade` (exato único → segue; `≥0,45` com folga `≥0,12` pro 2º → corrige e avisa "_entendi 'coruipe' como Coruripe/AL_"; homônimos ou dúvida → **botões** com até 3 candidatos, status `cidade_pendente` guardando a extração; nada `≥0,3` → "não achei cidade parecida com X, manda com o estado"). `corrigirCidades` roda em `tratarCotacao` e no cálculo (`despacharExtracao`, cauda de `tratarPedidoDeCalculo` separada pra poder reexecutar). Botão `cidade:o|d:<Nome/UF>` → `tratarEscolhaCidade` recupera o pedido pendente (1 h) e despacha de novo. `geocodificarCidade` (busca) usa a mesma RPC.
+- Origem/destino passam pro Google já como "Cidade/UF" — o cache `rota_distancia_cache` fica mais consistente também.
+
+**Testar**: repetir "Diadema para coruipe, truck grade baixa, 15000" (deve calcular Diadema/SP → Coruripe/AL com nota); "Sinop pra bom jesus, 10 mil" (botões); "xyzabc pra Santos, 5 mil" (não achou); depois de uma falha, "por que não conseguiu?".
+
+## CHECKPOINT — 03/10 (fim de sessão, v53)
+
+**Estado**: wa-webhook **v53**, route-cost **v31** (bundle esbuild — ver 02/10), otp-solicitar **v31**, **sessao-wa v1** no ar. App precisa do push (BuscarFrete `?frete=`, ícones PWA). `CLAUDE.md` criado. Contas do David (`5511991143035`) e do Rapha (`5541999871818`) **apagadas a pedido (2×, a última já com a v48 no ar)** pra testarem como número novo; bloqueio de OTP do David também limpo. Achado no caminho: `consentimento` estava sem ON DELETE CASCADE — o SAIR falharia pra quem vinculou pelo app; corrigido em `20260930180000_consentimento_cascade.sql`. Commit pendente: `CLAUDE.md`, `supabase/functions/{wa-webhook,otp-solicitar,sessao-wa}/`, `supabase/migrations/20260930*.sql`, `apps/web/src/{main.tsx,lib/LoginPorLink.tsx,pages/Entrada.tsx,pages/Verificacao.tsx}`, `Docs/status-sessao.md`.
 
 **AO RETOMAR (no Claude Code)**:
-0. Conferir com `git status`/`git log` se o commit da v48 foi feito e se a Vercel publicou (o app precisa estar no ar pro OTP por WhatsApp e pro link mágico funcionarem — Edge Functions já estão).
+0. Rodar os testes do corretor de cidade (seção 03/10 acima) e olhar `app_log` por `route-cost.computeRoutes` — agora toda rota que o Google não acha fica registrada.
 1. Rodar os TESTES (v47 e v48, acima) e revisar as respostas livres no banco; quando o Raphael pedir, descer `LIMITE_CONSULTAS_DIA` de 20 pra 5 (a 5ª já sai com o aviso). Agendar `limpar_tokens_wa()` no pg_cron (diário).
 2. (`5541…1818` era o próprio Raphael testando — não é lead. Conta spam `5515…` pode ficar; decisão: conta nasce com qualquer mensagem.)
 3. Semente do funil: Emerson e David mandam o cartão pra 15 colegas cada. **Sem isso não há dado** — gate está em 1/160.

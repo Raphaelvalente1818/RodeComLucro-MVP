@@ -33,6 +33,10 @@ piso ANTT), com duas marcas e três superfícies:
   tema claro sóbrio com alternador, grafite #1C2421 + amarelo #F2B01E só em detalhe.
 - **Painel admin** em `apps/web/src/admin` (moderação de fretes e empresas, funil, saúde).
 
+Cidades digitadas no bot passam por `municipio_sugerir` (pg_trgm em
+`municipios_brasil`) antes do Google — ver `corrigirCidades` em `wa-webhook/index.ts`
+e `Docs/status-sessao.md` 03/10. Limiares: `LIMIAR_CIDADE_AUTO`/`FOLGA_CIDADE_AUTO`.
+
 Motor de cálculo em `packages/rode-calc` (`@rode/calc`), fórmula do Emerson,
 piso ANTT. **Tabela ANTT vigente vem do banco** (`antt_piso_tabela` via RPC
 `antt_piso_vigente`; app em `lib/antt.ts`, bot em `garantirTabelaANTT`); as

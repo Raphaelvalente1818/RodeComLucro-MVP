@@ -650,6 +650,12 @@ interface RotaResultado {
 }
 
 /** Chama a Edge Function route-cost (function-to-function, mesmo projeto) — service role key como Bearer satisfaz o verify_jwt=true dela. */
+// 03/10: o erro genérico ("não consegui calcular a distância dessa rota")
+// não dizia QUAL cidade falhou — o motorista mandava a mesma frase de novo.
+function mensagemRotaNaoEncontrada(origem: string, destino: string): string {
+  return `Não achei no mapa a rota *${origem} → ${destino}*. Pode ser o nome da cidade escrito diferente. Manda de novo com o estado depois da cidade, tipo *"Diadema/SP pra Coruripe/AL"*.`;
+}
+
 async function chamarRouteCost(origem: string, destino: string): Promise<RotaResultado | null> {
   try {
     const resp = await fetch(`${SUPABASE_URL}/functions/v1/route-cost`, {
@@ -702,7 +708,8 @@ async function registrarTentativaFrete(params: {
     | "busca_origem"
     | "cotado"
     | "pergunta_calculo"
-    | "veiculo_salvo";
+    | "veiculo_salvo"
+    | "cidade_pendente";
   resultado?: unknown;
 }): Promise<void> {
   const { error } = await supabase.from("wa_freight_query").insert({
@@ -773,7 +780,7 @@ const LIMITE_CONSULTAS_DIA = 20;
 const STATUS_CONSULTA = [
   "calculado", "calculado_novo", "recalculado_perfil", "calculado_anonimo", "cotado",
   "resposta_livre", "pergunta_calculo", "boas_vindas", "dado_faltando", "confirmacao_pendente",
-  "busca_sem_resultado", "busca_origem", "erro_extracao", "nao_cadastrado",
+  "busca_sem_resultado", "busca_origem", "erro_extracao", "nao_cadastrado", "cidade_pendente",
 ];
 const AVISO_CADASTRO = `\n\n_Seu número ficou cadastrado no Rode com Lucro. Pra apagar, manda SAIR._`;
 
@@ -871,7 +878,7 @@ type SnapshotCalculo = {
 
 /** O que a IA precisa saber antes de ler a mensagem: já apresentado? tem caminhão? último cálculo? */
 async function montarContexto(fromE164: string): Promise<ContextoConversa> {
-  const [{ count: apresentacoes }, { data: m }, { data: ultimo }] = await Promise.all([
+  const [{ count: apresentacoes }, { data: m }, { data: ultimo }, { data: falha }] = await Promise.all([
     supabase
       .from("wa_freight_query")
       .select("id", { count: "exact", head: true })
@@ -886,7 +893,28 @@ async function montarContexto(fromE164: string): Promise<ContextoConversa> {
       .order("criado_em", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    supabase
+      .from("wa_freight_query")
+      .select("extracao_snapshot, criado_em")
+      .eq("from_e164", fromE164)
+      .eq("status", "erro_extracao")
+      .order("criado_em", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
+  // 03/10: "Por que não conseguiu calcular?" caía no último cálculo que deu
+  // certo (horas antes) e o Haiku respondia "consegui sim!" com números de
+  // outra rota. Agora a falha mais recente vai no contexto, se for posterior.
+  const falhaDepois = falha?.criado_em && (!ultimo?.criado_em || new Date(falha.criado_em as string) > new Date(ultimo.criado_em as string));
+  const exFalha = (falha?.extracao_snapshot ?? null) as { origem?: string | null; destino?: string | null } | null;
+  const ultimaFalha: ContextoConversa["ultimaFalha"] = falhaDepois
+    ? {
+        origem: exFalha?.origem ?? null,
+        destino: exFalha?.destino ?? null,
+        motivo: "não achou a rota no mapa (cidade não reconhecida ou escrita diferente)",
+        quandoMinutos: Math.max(0, Math.round((Date.now() - new Date(falha!.criado_em as string).getTime()) / 60_000)),
+      }
+    : null;
   let caminhaoCadastrado: string | null = null;
   if (m) {
     const { data: p } = await supabase.from("caminhao_perfil").select("tipo_veiculo, numero_eixos").eq("user_id", m.id).maybeSingle();
@@ -912,7 +940,7 @@ async function montarContexto(fromE164: string): Promise<ContextoConversa> {
           quandoMinutos: ultimo?.criado_em ? Math.max(0, Math.round((Date.now() - new Date(ultimo.criado_em as string).getTime()) / 60_000)) : 0,
         }
       : null;
-  return { jaApresentado: (apresentacoes ?? 0) > 0, caminhaoCadastrado, ultimoCalculo };
+  return { jaApresentado: (apresentacoes ?? 0) > 0, caminhaoCadastrado, ultimoCalculo, ultimaFalha };
 }
 
 /** Caminhão dito na mensagem, já resolvido contra o perfil cadastrado. */
@@ -1026,11 +1054,17 @@ async function tratarCotacao(fromE164: string, texto: string, waMessageId: strin
     return;
   }
 
+  // "coruipe" → Coruripe/AL antes de pedir a rota ao Google (03/10).
+  const cidades = await corrigirCidades(fromE164, texto, waMessageId, motoristaId, ex);
+  if (!cidades) return; // já perguntou (botões) ou já avisou que não achou
+  ex = cidades.ex;
+  const { origem, destino, nota: notaCidade } = cidades;
+
   const veiculo = await resolverVeiculoDaMensagem(motoristaId, ex);
-  const rota = await chamarRouteCost(ex.origem, ex.destino);
+  const rota = await chamarRouteCost(origem, destino);
   if (!rota) {
     await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao: ex, status: "erro_extracao" });
-    await enviarMensagemWhatsapp(fromE164, `Não consegui calcular a distância de ${ex.origem} pra ${ex.destino} agora. Confere o nome das cidades (com UF ajuda: "Carandaí/MG pra Piracaia/SP") e manda de novo.`);
+    await enviarMensagemWhatsapp(fromE164, mensagemRotaNaoEncontrada(origem, destino));
     return;
   }
 
@@ -1048,14 +1082,14 @@ async function tratarCotacao(fromE164: string, texto: string, waMessageId: strin
   const custos = perfilParaCustos(perfil, dias, pedagioReais);
   const tipoCarga = tipoCargaPorCarroceria(perfil.tipo_carroceria);
   // valorFrete 0 só pra extrair custo e piso; o "valor" aqui é o que ele deve cobrar.
-  const base = calcularFrete({ origem: ex.origem, destino: ex.destino, distanciaKm: rota.distanciaKm, valorFrete: 0, voltaVazia: ex.voltaVazia, margemDesejada: perfil.margem_desejada, custos, distanciaEstimada: rota.distanciaEstimada, numeroEixos: perfil.numero_eixos, tipoCarga });
+  const base = calcularFrete({ origem: origem, destino: destino, distanciaKm: rota.distanciaKm, valorFrete: 0, voltaVazia: ex.voltaVazia, margemDesejada: perfil.margem_desejada, custos, distanciaEstimada: rota.distanciaEstimada, numeroEixos: perfil.numero_eixos, tipoCarga });
   const margem = perfil.margem_desejada;
   const valorComMargem = margem < 100 ? base.custoTotal / (1 - margem / 100) : base.custoTotal;
   const valorSugerido = Math.max(valorComMargem, base.pisoANTT);
   const abaixoPiso = valorComMargem < base.pisoANTT;
 
   const snapshot: SnapshotCalculo = {
-    entrada: { origem: ex.origem, destino: ex.destino, distanciaKm: rota.distanciaKm, valorFrete: valorSugerido, numeroEixos: perfil.numero_eixos },
+    entrada: { origem: origem, destino: destino, distanciaKm: rota.distanciaKm, valorFrete: valorSugerido, numeroEixos: perfil.numero_eixos },
     custoTotal: base.custoTotal,
     custoDetalhado: { ...base.custoDetalhado },
     pisoANTT: base.pisoANTT,
@@ -1063,12 +1097,12 @@ async function tratarCotacao(fromE164: string, texto: string, waMessageId: strin
     dias,
   };
   await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao: ex, status: "cotado", resultado: snapshot });
-  await registrarEventoAnalytics("simulation_run", motoristaId, { origem: ex.origem, destino: ex.destino, distancia_km: rota.distanciaKm, cotacao: true, valor_sugerido: valorSugerido, piso_antt: base.pisoANTT });
+  await registrarEventoAnalytics("simulation_run", motoristaId, { origem: origem, destino: destino, distancia_km: rota.distanciaKm, cotacao: true, valor_sugerido: valorSugerido, piso_antt: base.pisoANTT });
 
   const d = base.custoDetalhado;
   const descVeiculo = veiculo?.tipoVeiculo ? `${veiculo.tipoVeiculo} de ${perfil.numero_eixos} eixos` : temPerfil ? `seu caminhão (${perfil.numero_eixos} eixos)` : `carreta padrão de ${perfil.numero_eixos} eixos`;
   const resposta =
-    `📍 ${ex.origem} → ${ex.destino}: *${rota.distanciaKm.toFixed(0)} km*${rota.distanciaEstimada ? " (estimado)" : ""}, ${dias} dia${dias > 1 ? "s" : ""} de viagem${ex.voltaVazia ? ", voltando vazio" : ""}\n` +
+    `📍 ${origem} → ${destino}: *${rota.distanciaKm.toFixed(0)} km*${rota.distanciaEstimada ? " (estimado)" : ""}, ${dias} dia${dias > 1 ? "s" : ""} de viagem${ex.voltaVazia ? ", voltando vazio" : ""}\n` +
     `Pedágio: ${fmtBRL(d.pedagio)}\n` +
     `Diesel: ${fmtBRL(d.diesel)} · Arla: ${fmtBRL(d.arla)}\n` +
     `Manutenção + pneus + depreciação: ${fmtBRL(d.manutencao + d.pneus + d.depreciacao)}\n` +
@@ -1078,6 +1112,7 @@ async function tratarCotacao(fromE164: string, texto: string, waMessageId: strin
     `💰 Pra ter ${margem.toFixed(0)}% de margem, cobre a partir de *${fmtBRL(valorSugerido)}*` +
     (abaixoPiso ? ` (o piso ANTT manda — é o mínimo legal)` : ` (acima do piso ANTT)`) +
     `\n\n_estimativa com ${descVeiculo}_` +
+    (notaCidade ? `\n_${notaCidade}_` : "") +
     (veiculo?.nota ? `\n_${veiculo.nota}_` : "") +
     avisoNovo;
   await enviarMensagemWhatsapp(fromE164, resposta);
@@ -1085,7 +1120,7 @@ async function tratarCotacao(fromE164: string, texto: string, waMessageId: strin
   if (veiculo?.botaoSalvar) {
     await enviarBotoes(fromE164, "Quer que eu use esse caminhão nos próximos cálculos?", [veiculo.botaoSalvar]);
   } else if (motoristaId && !temPerfil && !veiculo?.perfilCriado) {
-    await iniciarOnboardingCaminhao(fromE164, motoristaId, { cotacao: true, origem: ex.origem, destino: ex.destino, voltaVazia: ex.voltaVazia });
+    await iniciarOnboardingCaminhao(fromE164, motoristaId, { cotacao: true, origem: origem, destino: destino, voltaVazia: ex.voltaVazia });
   }
 }
 
@@ -1333,7 +1368,15 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
     await tratarConversaLivre(fromE164, texto, waMessageId, null);
     return;
   }
+  await despacharExtracao(fromE164, texto, waMessageId, extracao);
+}
 
+/**
+ * Do intent pra frente. Separado de tratarPedidoDeCalculo (03/10) pra poder
+ * reexecutar o MESMO pedido depois que o motorista toca no botão de
+ * confirmação de cidade ("é Coruripe/AL?") — ver tratarEscolhaCidade.
+ */
+async function despacharExtracao(fromE164: string, texto: string, waMessageId: string, extracao: ExtracaoFrete): Promise<void> {
   // Pergunta sobre o último cálculo ("quanto de pedágio?"): a IA já
   // respondeu com os números do contexto — só manda (conta no limite diário).
   if (extracao.intent === "pergunta_calculo") {
@@ -1406,11 +1449,12 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
     return;
   }
 
-  // Narrowing explícito pro TS — a checagem de `faltando` acima já garante
-  // que os três campos estão preenchidos, mas TS não propaga isso pra
-  // propriedades de objeto através de `await`s seguintes.
-  const origem = extracao.origem as string;
-  const destino = extracao.destino as string;
+  // "coruipe" → Coruripe/AL antes de pedir a rota ao Google (03/10). Se
+  // ficou em dúvida, já perguntou com botões e o pedido fica guardado.
+  const cidades = await corrigirCidades(fromE164, texto, waMessageId, motoristaId, extracao);
+  if (!cidades) return;
+  extracao = cidades.ex;
+  const { origem, destino, nota: notaCidade } = cidades;
   const valorFreteReais = extracao.valorFreteReais as number;
 
   const confiancaMinima = Math.min(extracao.confiancaOrigem, extracao.confiancaDestino, extracao.confiancaValor);
@@ -1426,7 +1470,7 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
 
   // Criação de conta falhou: trial anônimo antigo (nunca deixa sem resposta).
   if (!motoristaId) {
-    await calcularEResponderFrete({ fromE164, motoristaId: null, origem, destino, valorFreteReais, voltaVazia: extracao.voltaVazia, waMessageId, texto, extracao, veiculo: veiculoMsg });
+    await calcularEResponderFrete({ fromE164, motoristaId: null, origem, destino, valorFreteReais, voltaVazia: extracao.voltaVazia, waMessageId, texto, extracao, veiculo: veiculoMsg, notaCidade });
     return;
   }
 
@@ -1450,6 +1494,7 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
     primeiroContato: novo,
     semPerfil: (perfis ?? 0) === 0,
     veiculo: veiculoMsg,
+    notaCidade,
   });
 }
 
@@ -1488,15 +1533,17 @@ async function calcularEResponderFrete(params: {
   fretePublicado?: { id: string; empresaNome: string | null; contatoNome: string | null; contatoTelefone: string | null } | null;
   /** Caminhão dito na mensagem (resolverVeiculoDaMensagem): sobrepõe eixos/carroceria do perfil nesse cálculo. */
   veiculo?: VeiculoDaMensagem | null;
+  /** "entendi 'coruipe' como Coruripe/AL" — corrigirCidades (03/10). */
+  notaCidade?: string | null;
 }): Promise<void> {
-  const { fromE164, motoristaId, origem, destino, valorFreteReais, voltaVazia, waMessageId, texto, extracao, primeiroContato, semPerfil, recalculoDe, fretePublicado, veiculo } = params;
+  const { fromE164, motoristaId, origem, destino, valorFreteReais, voltaVazia, waMessageId, texto, extracao, primeiroContato, semPerfil, recalculoDe, fretePublicado, veiculo, notaCidade } = params;
   const anonimo = motoristaId == null;
   const puxarOnboarding = Boolean(primeiroContato || semPerfil);
 
   const rota = await chamarRouteCost(origem, destino);
   if (!rota) {
     await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao, status: "erro_extracao" });
-    await enviarMensagemWhatsapp(fromE164, "Não consegui calcular a distância dessa rota agora. Tenta de novo em instantes ou use o app.");
+    await enviarMensagemWhatsapp(fromE164, mensagemRotaNaoEncontrada(origem, destino));
     return;
   }
 
@@ -1646,6 +1693,7 @@ async function calcularEResponderFrete(params: {
     `Piso ANTT: ${fmtBRL(resultado.pisoANTT)}${avisoPiso}\n\n` +
     `${emoji} Veredito: ${resultado.veredicto}\n\n` +
     rodape +
+    (notaCidade ? `\n_${notaCidade}_` : "") +
     (veiculo?.nota ? `\n_${veiculo.nota}_` : "");
 
   await enviarMensagemWhatsapp(fromE164, resposta);
@@ -1799,24 +1847,140 @@ interface CidadeGeo {
  * com o primeiro — o motorista vê a cidade/UF na resposta e corrige.
  */
 async function geocodificarCidade(texto: string): Promise<CidadeGeo | null> {
+  const cands = await sugerirMunicipios(texto, 1);
+  const c = cands[0];
+  // Busca é tolerante: aceita o melhor candidato se for razoável (o
+  // motorista vê "perto de Coruripe/AL" na resposta e corrige se não for).
+  if (!c || c.similaridade < LIMIAR_CIDADE_AUTO) return null;
+  return { nome: c.nome, uf: c.uf, lat: c.lat, lng: c.lng };
+}
+
+// ---------------------------------------------------------------------------
+// Corretor de cidade (03/10/2026) — caso real: "coruipe" virou "Coruípe" na
+// extração, o Google não achou rota e o bot respondeu genérico duas vezes.
+// Agora origem/destino passam por municipios_brasil (pg_trgm, RPC
+// municipio_sugerir) ANTES do Google:
+//   - casou exato (ou erro pequeno com folga pro 2º): segue com "Cidade/UF";
+//   - parecido mas em dúvida (homônimos, erro grande): pergunta com botões
+//     e guarda o pedido em wa_freight_query (status cidade_pendente);
+//   - nada parecido: avisa qual cidade não achou e pede com o estado.
+// ---------------------------------------------------------------------------
+interface CandidatoCidade extends CidadeGeo {
+  similaridade: number;
+}
+/** Similaridade mínima pra corrigir sozinho (com folga pro segundo colocado). */
+const LIMIAR_CIDADE_AUTO = 0.45;
+/** Folga mínima entre 1º e 2º pra não perguntar. */
+const FOLGA_CIDADE_AUTO = 0.12;
+/** Abaixo disso nem sugere. */
+const LIMIAR_CIDADE_SUGERIR = 0.3;
+/** Apelidos que o motorista usa como se fossem cidade. */
+const APELIDOS_CIDADE: Record<string, string> = {
+  sp: "sao paulo/sp", sampa: "sao paulo/sp", rj: "rio de janeiro/rj", rio: "rio de janeiro/rj",
+  bh: "belo horizonte/mg", poa: "porto alegre/rs", cwb: "curitiba/pr", bsb: "brasilia/df",
+  floripa: "florianopolis/sc", ssa: "salvador/ba", cuiaba: "cuiaba/mt", "campo grande": "campo grande/ms",
+};
+
+async function sugerirMunicipios(texto: string, limite = 3): Promise<CandidatoCidade[]> {
   let t = semAcento(texto).replace(/[.,;:!?]+$/g, "");
-  // Apelidos que o motorista usa como se fossem cidade.
-  const APELIDOS: Record<string, string> = {
-    sp: "sao paulo/sp", sampa: "sao paulo/sp", rj: "rio de janeiro/rj", rio: "rio de janeiro/rj",
-    bh: "belo horizonte/mg", poa: "porto alegre/rs", cwb: "curitiba/pr", bsb: "brasilia/df",
-    floripa: "florianopolis/sc", ssa: "salvador/ba", cuiaba: "cuiaba/mt", "campo grande": "campo grande/ms",
-  };
-  if (APELIDOS[t]) t = APELIDOS[t];
-  const m = t.match(/^(.+?)\s*(?:[\/\-–,]\s*|\s+)([a-z]{2})$/);
-  const nome = (m ? m[1] : t).trim();
-  const uf = m ? m[2].toUpperCase() : null;
-  if (!nome) return null;
-  let q = supabase.from("municipios_brasil").select("nome, uf, latitude, longitude").eq("nome_norm", nome).limit(5);
-  if (uf) q = q.eq("uf", uf);
-  const { data } = await q;
-  const linha = (data ?? [])[0] as { nome: string; uf: string; latitude: number; longitude: number } | undefined;
-  if (!linha) return null;
-  return { nome: linha.nome, uf: linha.uf, lat: Number(linha.latitude), lng: Number(linha.longitude) };
+  if (APELIDOS_CIDADE[t]) t = APELIDOS_CIDADE[t];
+  if (!t) return [];
+  const { data, error } = await supabase.rpc("municipio_sugerir", { p_texto: t, p_limite: limite });
+  if (error) {
+    await logErro("wa-webhook.sugerirMunicipios", "RPC municipio_sugerir falhou", { erro: error.message, texto });
+    return [];
+  }
+  return ((data ?? []) as { nome: string; uf: string; latitude: number; longitude: number; similaridade: number }[]).map((l) => ({
+    nome: l.nome,
+    uf: l.uf,
+    lat: Number(l.latitude),
+    lng: Number(l.longitude),
+    similaridade: Number(l.similaridade),
+  }));
+}
+
+type DecisaoCidade =
+  | { tipo: "ok"; canonico: string; corrigiu: boolean }
+  | { tipo: "perguntar"; candidatos: CandidatoCidade[] }
+  | { tipo: "nao_achou" };
+
+async function decidirCidade(texto: string): Promise<DecisaoCidade> {
+  const cands = await sugerirMunicipios(texto, 3);
+  if (cands.length === 0) return { tipo: "nao_achou" };
+  const [a, b] = cands;
+  const canonico = `${a.nome}/${a.uf}`;
+  const exatos = cands.filter((c) => c.similaridade >= 0.999);
+  if (exatos.length === 1) return { tipo: "ok", canonico, corrigiu: false };
+  if (exatos.length > 1) return { tipo: "perguntar", candidatos: exatos }; // homônimos sem UF
+  if (a.similaridade >= LIMIAR_CIDADE_AUTO && (!b || a.similaridade - b.similaridade >= FOLGA_CIDADE_AUTO)) {
+    return { tipo: "ok", canonico, corrigiu: true };
+  }
+  const plausiveis = cands.filter((c) => c.similaridade >= LIMIAR_CIDADE_SUGERIR);
+  return plausiveis.length > 0 ? { tipo: "perguntar", candidatos: plausiveis } : { tipo: "nao_achou" };
+}
+
+/**
+ * Resolve origem e destino da extração. Devolve null quando a conversa
+ * ficou pendente (perguntou com botões) ou quando avisou que não achou —
+ * nos dois casos já respondeu ao motorista.
+ */
+async function corrigirCidades(
+  fromE164: string,
+  texto: string,
+  waMessageId: string,
+  motoristaId: string | null,
+  ex: ExtracaoFrete,
+): Promise<{ ex: ExtracaoFrete; origem: string; destino: string; nota: string | null } | null> {
+  const notas: string[] = [];
+  const novo = { ...ex };
+  for (const campo of ["origem", "destino"] as const) {
+    const original = novo[campo];
+    if (!original) continue;
+    const d = await decidirCidade(original);
+    if (d.tipo === "ok") {
+      if (d.corrigiu) notas.push(`entendi "${original}" como ${d.canonico}`);
+      novo[campo] = d.canonico;
+      continue;
+    }
+    // Pendência: guarda o pedido inteiro (com o que já foi corrigido) e pergunta.
+    await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao: novo, status: d.tipo === "perguntar" ? "cidade_pendente" : "erro_extracao" });
+    const rotulo = campo === "origem" ? "saída" : "destino";
+    if (d.tipo === "perguntar") {
+      await enviarBotoes(
+        fromE164,
+        `Não achei "${original}" exatamente. A cidade de ${rotulo} é qual dessas?`,
+        d.candidatos.slice(0, 3).map((c) => ({ id: `cidade:${campo === "origem" ? "o" : "d"}:${c.nome}/${c.uf}`, titulo: `${c.nome}/${c.uf}` })),
+      );
+    } else {
+      await enviarMensagemWhatsapp(fromE164, `Não achei nenhuma cidade parecida com "${original}". Manda de novo com o estado, tipo *"Diadema/SP pra Coruripe/AL"*.`);
+    }
+    return null;
+  }
+  return { ex: novo, origem: novo.origem as string, destino: novo.destino as string, nota: notas.length ? notas.join("; ") : null };
+}
+
+/** Toque no botão "Coruripe/AL": recupera o pedido pendente e segue de onde parou. */
+async function tratarEscolhaCidade(fromE164: string, rowId: string, waMessageId: string): Promise<void> {
+  const [, campoCurto, ...resto] = rowId.split(":");
+  const escolhida = resto.join(":");
+  const campo = campoCurto === "o" ? "origem" : "destino";
+  const desde = new Date(Date.now() - 60 * 60_000).toISOString();
+  const { data: pend } = await supabase
+    .from("wa_freight_query")
+    .select("texto_recebido, extracao_snapshot, criado_em")
+    .eq("from_e164", fromE164)
+    .eq("status", "cidade_pendente")
+    .gte("criado_em", desde)
+    .order("criado_em", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const ex = (pend?.extracao_snapshot ?? null) as ExtracaoFrete | null;
+  if (!ex || !escolhida) {
+    await enviarMensagemWhatsapp(fromE164, 'Esse pedido já expirou. Manda de novo a rota e o valor, com o estado nas cidades (ex.: *"Diadema/SP pra Coruripe/AL, 15 mil"*).');
+    return;
+  }
+  const corrigida: ExtracaoFrete = { ...ex, [campo]: escolhida };
+  await despacharExtracao(fromE164, pend!.texto_recebido as string, waMessageId, corrigida);
 }
 
 interface OpcoesBusca {
@@ -2217,6 +2381,8 @@ async function tratarRequisicao(req: Request): Promise<Response> {
       await tratarRespostaOnboarding(it.fromE164, it.rowId, it.waMessageId);
     } else if (it.rowId === "viral:cartao") {
       await tratarPedidoCartao(it.fromE164, it.waMessageId);
+    } else if (it.rowId.startsWith("cidade:")) {
+      await tratarEscolhaCidade(it.fromE164, it.rowId, it.waMessageId);
     } else if (it.rowId.startsWith("perfil:salvar:")) {
       await tratarSalvarVeiculo(it.fromE164, it.rowId, it.waMessageId);
     } else {
