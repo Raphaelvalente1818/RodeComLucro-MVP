@@ -58,7 +58,11 @@ pro Deno — se a fórmula mudar, atualizar os dois.
 ```
 cd apps/web && npx tsc --noEmit --strict          # app web (0 erros é a régua)
 cd supabase/functions/wa-webhook && deno check index.ts   # Edge Function
+supabase functions deploy wa-webhook --no-verify-jwt       # deploy (3 arquivos; sem bundle)
 ```
+
+A v50 (02/10) foi deployada como bundle esbuild por limite do MCP do Cowork; pelo CLI
+não precisa — ver `Docs/status-sessao.md` 02/10.
 
 Se `@rode/calc` não resolver, apague `node_modules` na raiz, em `apps/web` e em
 `packages/rode-calc` e rode `npm install` de novo (aconteceu em 10/09).

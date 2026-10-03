@@ -46,7 +46,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { calcularFrete, tipoCargaPorCarroceria, fmtBRL, fmtPct, diasPorFaixaKm, type Custos } from "./calc.ts";
-import { extrairFreteDeTexto, type ExtracaoFrete, type TipoCargaBusca } from "./extracao.ts";
+import { extrairFreteDeTexto, EIXOS_PADRAO, type ExtracaoFrete, type TipoCargaBusca, type ContextoConversa, type TipoVeiculoMsg, type TipoCarroceriaMsg } from "./extracao.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -682,7 +682,10 @@ async function registrarTentativaFrete(params: {
     | "resposta_livre"
     | "limite_diario"
     | "busca_sem_resultado"
-    | "busca_origem";
+    | "busca_origem"
+    | "cotado"
+    | "pergunta_calculo"
+    | "veiculo_salvo";
   resultado?: unknown;
 }): Promise<void> {
   const { error } = await supabase.from("wa_freight_query").insert({
@@ -745,15 +748,17 @@ const RE_AJUDA = /^(ajuda|help|menu|comandos)\s*[?!.]*$/i;
 // Camada 3 (30/09): respostas livres da IA pra mensagem fora do roteiro,
 // limitadas por número e por dia — cada uma custa mensagem na Meta.
 // Decisão do Raphael: 5 no começo, descer pra 3 depois de ver o dado.
-const LIMITE_RESPOSTAS_LIVRES_DIA = 5;
+// 02/10: 20 enquanto os testes rolam (o teste do Rapha queimou 4 em 10 min); descer quando o Raphael pedir.
+const LIMITE_RESPOSTAS_LIVRES_DIA = 20;
 const AVISO_CADASTRO = `\n\n_Seu número ficou cadastrado no Rode com Lucro. Pra apagar, manda SAIR._`;
 
 /** Apresentação em uma mensagem só (custo pós-1/10) — usada quando a IA não responde (sem chave, erro) e nos comandos "ajuda"/"menu". */
 function mensagemApresentacao(temConta: boolean): string {
   return (
-    `Opa! Sou o Rode com Lucro 🚛 — faço duas coisas pra você:\n\n` +
+    `Opa! Sou o Rode com Lucro 🚛 — faço três coisas pra você:\n\n` +
     `1️⃣ Digo se um frete *vale a pena* (custo real, lucro e piso ANTT). Manda a rota e o valor. Ex.: *"Sinop pra Santos, 14 mil"*\n\n` +
-    `2️⃣ Mostro *cargas perto de você*. Manda *BUSCAR*.` +
+    `2️⃣ *Coto* uma rota: km, pedágio, piso ANTT e quanto cobrar. Manda só a rota. Ex.: *"Carandaí pra Piracaia"*\n\n` +
+    `3️⃣ Mostro *cargas perto de você*. Manda *BUSCAR*.` +
     (temConta ? `\n\n_Pra apagar seu cadastro, manda SAIR._` : "")
   );
 }
@@ -792,7 +797,7 @@ async function contarRespostasLivresHoje(fromE164: string): Promise<number> {
  * resposta da IA, cai na apresentação fixa. Nunca fica em silêncio dentro
  * do limite.
  */
-async function tratarConversaLivre(fromE164: string, texto: string, waMessageId: string, extracao: ExtracaoFrete | null): Promise<void> {
+async function tratarConversaLivre(fromE164: string, texto: string, waMessageId: string, extracao: ExtracaoFrete | null, status: "resposta_livre" | "pergunta_calculo" = "resposta_livre"): Promise<void> {
   const { id: motoristaId, novo } = await garantirMotorista(fromE164, texto);
   const usadas = await contarRespostasLivresHoje(fromE164);
   if (usadas >= LIMITE_RESPOSTAS_LIVRES_DIA) {
@@ -809,10 +814,251 @@ async function tratarConversaLivre(fromE164: string, texto: string, waMessageId:
     fromE164,
     texto,
     extracao,
-    status: "resposta_livre",
+    status,
     resultado: { intent: extracao?.intent ?? null, resposta, gerada_pela_ia: Boolean(extracao?.respostaLivre) },
   });
   await enviarMensagemWhatsapp(fromE164, resposta);
+}
+
+
+// =====================================================================
+// 02/10 — memória da conversa + caminhão dito na mensagem + cotação.
+// Teste do Rapha (01/10): o bot negava capacidade que tem ("não consulto
+// distância/pedágio/ANTT"), não lembrava o cálculo anterior, ignorava
+// "truck grade baixa" e se apresentava toda vez. Ver Docs/status-sessao.md.
+// =====================================================================
+
+type SnapshotCalculo = {
+  entrada?: { origem?: string; destino?: string; distanciaKm?: number; valorFrete?: number; numeroEixos?: number };
+  custoTotal?: number;
+  custoDetalhado?: Record<string, number>;
+  lucro?: number;
+  margemReal?: number;
+  pisoANTT?: number;
+  veredicto?: string;
+  cotacao?: boolean;
+  dias?: number;
+  criadoEm?: string;
+};
+
+/** O que a IA precisa saber antes de ler a mensagem: já apresentado? tem caminhão? último cálculo? */
+async function montarContexto(fromE164: string): Promise<ContextoConversa> {
+  const [{ count: apresentacoes }, { data: m }, { data: ultimo }] = await Promise.all([
+    supabase
+      .from("wa_freight_query")
+      .select("id", { count: "exact", head: true })
+      .eq("from_e164", fromE164)
+      .in("status", ["resposta_livre", "boas_vindas", "calculado_novo", "pergunta_calculo"]),
+    supabase.from("motoristas").select("id").eq("telefone_e164", fromE164).maybeSingle(),
+    supabase
+      .from("wa_freight_query")
+      .select("resultado_snapshot, criado_em")
+      .eq("from_e164", fromE164)
+      .in("status", ["calculado", "calculado_novo", "recalculado_perfil", "cotado"])
+      .order("criado_em", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+  let caminhaoCadastrado: string | null = null;
+  if (m) {
+    const { data: p } = await supabase.from("caminhao_perfil").select("tipo_veiculo, numero_eixos").eq("user_id", m.id).maybeSingle();
+    if (p?.tipo_veiculo) caminhaoCadastrado = `${p.tipo_veiculo} ${p.numero_eixos} eixos`;
+  }
+  const snap = (ultimo?.resultado_snapshot ?? null) as SnapshotCalculo | null;
+  const e = snap?.entrada;
+  const ultimoCalculo: ContextoConversa["ultimoCalculo"] =
+    snap && e?.origem && e?.destino && e.distanciaKm != null && snap.custoTotal != null && snap.pisoANTT != null
+      ? {
+          origem: e.origem,
+          destino: e.destino,
+          distanciaKm: e.distanciaKm,
+          valorFrete: snap.cotacao ? null : (e.valorFrete ?? null),
+          custoTotal: snap.custoTotal,
+          custos: snap.custoDetalhado ?? {},
+          lucro: snap.cotacao ? null : (snap.lucro ?? null),
+          margemReal: snap.cotacao ? null : (snap.margemReal ?? null),
+          pisoANTT: snap.pisoANTT,
+          veredicto: snap.cotacao ? null : (snap.veredicto ?? null),
+          dias: snap.dias ?? diasPorFaixaKm(e.distanciaKm),
+          eixos: e.numeroEixos ?? 5,
+          quandoMinutos: ultimo?.criado_em ? Math.max(0, Math.round((Date.now() - new Date(ultimo.criado_em as string).getTime()) / 60_000)) : 0,
+        }
+      : null;
+  return { jaApresentado: (apresentacoes ?? 0) > 0, caminhaoCadastrado, ultimoCalculo };
+}
+
+/** Caminhão dito na mensagem, já resolvido contra o perfil cadastrado. */
+interface VeiculoDaMensagem {
+  tipoVeiculo: TipoVeiculoMsg | null;
+  numeroEixos: number;
+  tipoCarroceria: TipoCarroceriaMsg | null;
+  /** Linha pro rodapé ("calculei com Truck de 3 eixos, como você disse"). */
+  nota: string;
+  /** Botão pra salvar esse caminhão no perfil quando difere do cadastrado. */
+  botaoSalvar: { id: string; titulo: string } | null;
+  /** Acabou de criar o perfil a partir da mensagem (não precisa dos 3 toques). */
+  perfilCriado: boolean;
+}
+
+/**
+ * Regra (Raphael, 01/10): usa o caminhão que ele disse NESSA mensagem; se
+ * não tem perfil, salva direto (sem os 3 toques); se tem perfil diferente,
+ * calcula com o da mensagem e oferece um botão pra salvar. Nunca pergunta
+ * o que já sabe.
+ */
+async function resolverVeiculoDaMensagem(motoristaId: string | null, ex: ExtracaoFrete): Promise<VeiculoDaMensagem | null> {
+  if (!ex.tipoVeiculo && ex.numeroEixos == null && !ex.tipoCarroceria) return null;
+  const { data: perfil } = motoristaId
+    ? await supabase.from("caminhao_perfil").select("tipo_veiculo, numero_eixos, tipo_carroceria").eq("user_id", motoristaId).maybeSingle()
+    : { data: null };
+
+  const tipo = ex.tipoVeiculo ?? ((perfil?.tipo_veiculo as TipoVeiculoMsg | null) ?? null);
+  const eixos = ex.numeroEixos ?? (ex.tipoVeiculo ? EIXOS_PADRAO[ex.tipoVeiculo] : (perfil?.numero_eixos as number | null) ?? 5);
+  const carroceria = ex.tipoCarroceria ?? ((perfil?.tipo_carroceria as TipoCarroceriaMsg | null) ?? null);
+  const descricao = `${tipo ?? "caminhão"} de ${eixos} eixos${carroceria ? ` (${carroceria})` : ""}`;
+
+  if (motoristaId && !perfil?.tipo_veiculo && tipo) {
+    // Sem perfil: a mensagem vira o cadastro. Consumo/custos no default do app.
+    const { error } = await supabase.from("caminhao_perfil").upsert(
+      {
+        user_id: motoristaId,
+        apelido: tipo,
+        tipo_veiculo: tipo,
+        numero_eixos: eixos,
+        tipo_carroceria: carroceria,
+        diesel_km_por_lt: PERFIL_CUSTO_DEFAULT.diesel_km_por_lt,
+        diesel_preco_por_litro: PERFIL_CUSTO_DEFAULT.diesel_preco_por_litro,
+        arla_km_por_lt: PERFIL_CUSTO_DEFAULT.arla_km_por_lt,
+        arla_preco_por_litro: PERFIL_CUSTO_DEFAULT.arla_preco_por_litro,
+        manutencao_por_km: PERFIL_CUSTO_DEFAULT.manutencao_por_km,
+        pneus_por_km: PERFIL_CUSTO_DEFAULT.pneus_por_km,
+        depreciacao_por_km: PERFIL_CUSTO_DEFAULT.depreciacao_por_km,
+        alimentacao_dia: PERFIL_CUSTO_DEFAULT.alimentacao_dia,
+        pernoite_dia: PERFIL_CUSTO_DEFAULT.pernoite_dia,
+        estacionamento_padrao: PERFIL_CUSTO_DEFAULT.estacionamento_padrao,
+        chapa_padrao: PERFIL_CUSTO_DEFAULT.chapa_padrao,
+        margem_desejada: PERFIL_CUSTO_DEFAULT.margem_desejada,
+      },
+      { onConflict: "user_id" },
+    );
+    if (!error) {
+      await registrarEventoAnalytics("truck_profile_saved", motoristaId, { canal: "whatsapp", via: "mensagem", tipo_veiculo: tipo, eixos });
+      return { tipoVeiculo: tipo, numeroEixos: eixos, tipoCarroceria: carroceria, nota: `Salvei seu ${descricao} como seu caminhão. Ajusta consumo e custos no app quando quiser.`, botaoSalvar: null, perfilCriado: true };
+    }
+    await logErro("wa-webhook.veiculoMensagem", "Falha ao salvar perfil a partir da mensagem", { erro: error.message, motoristaId });
+  }
+
+  const difere = perfil?.tipo_veiculo && (perfil.tipo_veiculo !== tipo || (ex.numeroEixos != null && perfil.numero_eixos !== eixos) || (ex.tipoCarroceria && perfil.tipo_carroceria !== carroceria));
+  if (difere) {
+    return {
+      tipoVeiculo: tipo,
+      numeroEixos: eixos,
+      tipoCarroceria: carroceria,
+      nota: `Calculei com ${descricao}, como você disse (seu cadastro é ${perfil!.tipo_veiculo} de ${perfil!.numero_eixos} eixos).`,
+      botaoSalvar: { id: `perfil:salvar:${tipo}:${eixos}:${carroceria ?? ""}`, titulo: "Salvar esse caminhão" },
+      perfilCriado: false,
+    };
+  }
+  return { tipoVeiculo: tipo, numeroEixos: eixos, tipoCarroceria: carroceria, nota: "", botaoSalvar: null, perfilCriado: false };
+}
+
+/** Botão "Salvar esse caminhão" (id perfil:salvar:<tipo>:<eixos>:<carroceria>). */
+async function tratarSalvarVeiculo(fromE164: string, rowId: string, waMessageId: string): Promise<void> {
+  const [, , tipo, eixosTxt, carroceria] = rowId.split(":");
+  const { data: m } = await supabase.from("motoristas").select("id").eq("telefone_e164", fromE164).maybeSingle();
+  if (!m) return;
+  const eixos = Number(eixosTxt) || 5;
+  const { error } = await supabase
+    .from("caminhao_perfil")
+    .update({ tipo_veiculo: tipo, apelido: tipo, numero_eixos: eixos, tipo_carroceria: carroceria || null })
+    .eq("user_id", m.id);
+  await registrarTentativaFrete({ waMessageId, motoristaId: m.id, fromE164, texto: rowId, extracao: null, status: "veiculo_salvo" });
+  if (error) {
+    await logErro("wa-webhook.salvarVeiculo", "Falha ao atualizar caminhao_perfil", { erro: error.message, motoristaId: m.id });
+    await enviarMensagemWhatsapp(fromE164, "Não consegui salvar agora. Tenta de novo daqui a pouco.");
+    return;
+  }
+  await enviarMensagemWhatsapp(fromE164, `Pronto: ${tipo} de ${eixos} eixos${carroceria ? ` (${carroceria})` : ""} é seu caminhão agora. 🚛`);
+}
+
+/**
+ * Cotação: rota sem valor ("quanto posso cobrar?", "qual o pedágio?").
+ * Mesmo motor do veredito, mas em vez de julgar um valor, diz o mínimo
+ * pra fechar a margem dele e o piso ANTT. Antes o bot negava ("não
+ * calculo valor") — e tinha tudo pra responder.
+ */
+async function tratarCotacao(fromE164: string, texto: string, waMessageId: string, ex: ExtracaoFrete): Promise<void> {
+  const { id: motoristaId, novo } = await garantirMotorista(fromE164, texto);
+  const avisoNovo = novo && motoristaId ? AVISO_CADASTRO : "";
+
+  if (!ex.origem || !ex.destino) {
+    await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao: ex, status: "dado_faltando" });
+    const falta = !ex.origem && !ex.destino ? "De onde pra onde? Ex.: *\"Carandaí pra Piracaia\"*" : !ex.origem ? `Saindo de onde? Ex.: *"Carandaí pra ${ex.destino}"*` : `Pra onde? Ex.: *"${ex.origem} pra Piracaia"*`;
+    await enviarMensagemWhatsapp(fromE164, `Opa! Pra cotar, ${falta}` + avisoNovo);
+    return;
+  }
+
+  const veiculo = await resolverVeiculoDaMensagem(motoristaId, ex);
+  const rota = await chamarRouteCost(ex.origem, ex.destino);
+  if (!rota) {
+    await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao: ex, status: "erro_extracao" });
+    await enviarMensagemWhatsapp(fromE164, `Não consegui calcular a distância de ${ex.origem} pra ${ex.destino} agora. Confere o nome das cidades (com UF ajuda: "Carandaí/MG pra Piracaia/SP") e manda de novo.`);
+    return;
+  }
+
+  const perfilBase = motoristaId ? await buscarPerfilOuDefault(motoristaId) : PERFIL_CUSTO_DEFAULT;
+  const perfil: PerfilCusto = veiculo
+    ? { ...perfilBase, numero_eixos: veiculo.numeroEixos, tipo_carroceria: veiculo.tipoCarroceria ?? perfilBase.tipo_carroceria }
+    : perfilBase;
+  const { count: perfis } = motoristaId
+    ? await supabase.from("caminhao_perfil").select("id", { count: "exact", head: true }).eq("user_id", motoristaId)
+    : { count: 0 };
+  const temPerfil = (perfis ?? 0) > 0;
+
+  const dias = diasPorFaixaKm(rota.distanciaKm);
+  const pedagioReais = rota.pedagioCentavos != null ? Math.round(rota.pedagioCentavos * (perfil.numero_eixos / 2)) / 100 : 0;
+  const custos = perfilParaCustos(perfil, dias, pedagioReais);
+  const tipoCarga = tipoCargaPorCarroceria(perfil.tipo_carroceria);
+  // valorFrete 0 só pra extrair custo e piso; o "valor" aqui é o que ele deve cobrar.
+  const base = calcularFrete({ origem: ex.origem, destino: ex.destino, distanciaKm: rota.distanciaKm, valorFrete: 0, voltaVazia: ex.voltaVazia, margemDesejada: perfil.margem_desejada, custos, distanciaEstimada: rota.distanciaEstimada, numeroEixos: perfil.numero_eixos, tipoCarga });
+  const margem = perfil.margem_desejada;
+  const valorComMargem = margem < 100 ? base.custoTotal / (1 - margem / 100) : base.custoTotal;
+  const valorSugerido = Math.max(valorComMargem, base.pisoANTT);
+  const abaixoPiso = valorComMargem < base.pisoANTT;
+
+  const snapshot: SnapshotCalculo = {
+    entrada: { origem: ex.origem, destino: ex.destino, distanciaKm: rota.distanciaKm, valorFrete: valorSugerido, numeroEixos: perfil.numero_eixos },
+    custoTotal: base.custoTotal,
+    custoDetalhado: { ...base.custoDetalhado },
+    pisoANTT: base.pisoANTT,
+    cotacao: true,
+    dias,
+  };
+  await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao: ex, status: "cotado", resultado: snapshot });
+  await registrarEventoAnalytics("simulation_run", motoristaId, { origem: ex.origem, destino: ex.destino, distancia_km: rota.distanciaKm, cotacao: true, valor_sugerido: valorSugerido, piso_antt: base.pisoANTT });
+
+  const d = base.custoDetalhado;
+  const descVeiculo = veiculo?.tipoVeiculo ? `${veiculo.tipoVeiculo} de ${perfil.numero_eixos} eixos` : temPerfil ? `seu caminhão (${perfil.numero_eixos} eixos)` : `carreta padrão de ${perfil.numero_eixos} eixos`;
+  const resposta =
+    `📍 ${ex.origem} → ${ex.destino}: *${rota.distanciaKm.toFixed(0)} km*${rota.distanciaEstimada ? " (estimado)" : ""}, ${dias} dia${dias > 1 ? "s" : ""} de viagem${ex.voltaVazia ? ", voltando vazio" : ""}\n` +
+    `Pedágio: ${fmtBRL(d.pedagio)}\n` +
+    `Diesel: ${fmtBRL(d.diesel)} · Arla: ${fmtBRL(d.arla)}\n` +
+    `Manutenção + pneus + depreciação: ${fmtBRL(d.manutencao + d.pneus + d.depreciacao)}\n` +
+    `Alimentação/pernoite: ${fmtBRL(d.alimentacao + d.pernoite)}\n` +
+    `*Custo da viagem: ${fmtBRL(base.custoTotal)}*\n` +
+    `Piso ANTT: ${fmtBRL(base.pisoANTT)}\n\n` +
+    `💰 Pra ter ${margem.toFixed(0)}% de margem, cobre a partir de *${fmtBRL(valorSugerido)}*` +
+    (abaixoPiso ? ` (o piso ANTT manda — é o mínimo legal)` : ` (acima do piso ANTT)`) +
+    `\n\n_estimativa com ${descVeiculo}_` +
+    (veiculo?.nota ? `\n_${veiculo.nota}_` : "") +
+    avisoNovo;
+  await enviarMensagemWhatsapp(fromE164, resposta);
+
+  if (veiculo?.botaoSalvar) {
+    await enviarBotoes(fromE164, "Quer que eu use esse caminhão nos próximos cálculos?", [veiculo.botaoSalvar]);
+  } else if (motoristaId && !temPerfil && !veiculo?.perfilCriado) {
+    await iniciarOnboardingCaminhao(fromE164, motoristaId, { cotacao: true, origem: ex.origem, destino: ex.destino, voltaVazia: ex.voltaVazia });
+  }
 }
 
 /** Extrai "#EMERSON" do texto (link wa.me?text=...%23EMERSON) — atribuição de indicação. */
@@ -963,7 +1209,16 @@ async function tratarRespostaOnboarding(fromE164: string, rowId: string, waMessa
       busca?: boolean;
       origemTexto?: string | null;
       tipoCarga?: TipoCargaBusca | null;
+      cotacao?: boolean;
     };
+    if (f.cotacao && f.origem && f.destino) {
+      await tratarCotacao(fromE164, "(cotação pós-onboarding)", waMessageId, {
+        intent: "cotar", ePedidoDeFrete: false, ePedidoDeBusca: false, origem: f.origem, destino: f.destino, valorFreteReais: null,
+        voltaVazia: Boolean(f.voltaVazia), tipoCarga: null, tipoVeiculo: null, numeroEixos: null, tipoCarroceria: null, respostaLivre: null,
+        confiancaOrigem: 1, confiancaDestino: 1, confiancaValor: 0,
+      });
+      return;
+    }
     if (f.busca) {
       await tratarBuscaDeFrete(fromE164, waMessageId, {
         origemTexto: f.origemTexto ?? null,
@@ -1042,11 +1297,25 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
   // Digitou em vez de tocar no botão do onboarding? Casa com a etapa e segue.
   if (await tratarTextoDuranteOnboarding(fromE164, texto, waMessageId)) return;
 
-  const extracao = await extrairFreteDeTexto(texto);
+  const contexto = await montarContexto(fromE164);
+  const extracao = await extrairFreteDeTexto(texto, contexto);
   if (!extracao) {
     // Sem chave da IA ou a chamada falhou: nunca silêncio — apresentação
     // fixa (e a conta nasce do mesmo jeito, é a primeira mensagem dele).
     await tratarConversaLivre(fromE164, texto, waMessageId, null);
+    return;
+  }
+
+  // Pergunta sobre o último cálculo ("quanto de pedágio?"): a IA já
+  // respondeu com os números do contexto — só manda (conta no limite diário).
+  if (extracao.intent === "pergunta_calculo") {
+    await tratarConversaLivre(fromE164, texto, waMessageId, extracao, "pergunta_calculo");
+    return;
+  }
+
+  // Cotação: rota sem valor (ou "calcular" que veio sem valor — mesma coisa).
+  if (extracao.intent === "cotar" || (extracao.intent === "calcular" && extracao.valorFreteReais == null && extracao.origem && extracao.destino)) {
+    await tratarCotacao(fromE164, texto, waMessageId, extracao);
     return;
   }
 
@@ -1073,6 +1342,9 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
 
   // Cálculo. A conta já existe ou nasce agora (qualquer mensagem cria).
   const { id: motoristaId, novo } = await garantirMotorista(fromE164, texto);
+  // "truck grade baixa de 15 mil": o caminhão da mensagem vale pra esse
+  // cálculo (e vira o cadastro se ele não tinha nenhum).
+  const veiculoMsg = await resolverVeiculoDaMensagem(motoristaId, extracao);
 
   // Tem conta (pelo app) e escreveu do mesmo número: a mensagem já prova
   // a posse do telefone — vincula na hora, sem código VINCULAR.
@@ -1126,7 +1398,7 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
 
   // Criação de conta falhou: trial anônimo antigo (nunca deixa sem resposta).
   if (!motoristaId) {
-    await calcularEResponderFrete({ fromE164, motoristaId: null, origem, destino, valorFreteReais, voltaVazia: extracao.voltaVazia, waMessageId, texto, extracao });
+    await calcularEResponderFrete({ fromE164, motoristaId: null, origem, destino, valorFreteReais, voltaVazia: extracao.voltaVazia, waMessageId, texto, extracao, veiculo: veiculoMsg });
     return;
   }
 
@@ -1149,6 +1421,7 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
     extracao,
     primeiroContato: novo,
     semPerfil: (perfis ?? 0) === 0,
+    veiculo: veiculoMsg,
   });
 }
 
@@ -1185,8 +1458,10 @@ async function calcularEResponderFrete(params: {
   recalculoDe?: number | null;
   /** Veio de um frete publicado (clique na lista): vai pro histórico com empresa/contato e o link do app destaca esse frete. */
   fretePublicado?: { id: string; empresaNome: string | null; contatoNome: string | null; contatoTelefone: string | null } | null;
+  /** Caminhão dito na mensagem (resolverVeiculoDaMensagem): sobrepõe eixos/carroceria do perfil nesse cálculo. */
+  veiculo?: VeiculoDaMensagem | null;
 }): Promise<void> {
-  const { fromE164, motoristaId, origem, destino, valorFreteReais, voltaVazia, waMessageId, texto, extracao, primeiroContato, semPerfil, recalculoDe, fretePublicado } = params;
+  const { fromE164, motoristaId, origem, destino, valorFreteReais, voltaVazia, waMessageId, texto, extracao, primeiroContato, semPerfil, recalculoDe, fretePublicado, veiculo } = params;
   const anonimo = motoristaId == null;
   const puxarOnboarding = Boolean(primeiroContato || semPerfil);
 
@@ -1201,7 +1476,10 @@ async function calcularEResponderFrete(params: {
   // de propósito: é o que permite o TS estreitar `motoristaId` pra `string`
   // no branch do buscarPerfilOuDefault (ele não propaga a narrowing através
   // de uma variável booleana calculada separadamente).
-  const perfil = motoristaId == null ? PERFIL_CUSTO_DEFAULT : await buscarPerfilOuDefault(motoristaId);
+  const perfilBase = motoristaId == null ? PERFIL_CUSTO_DEFAULT : await buscarPerfilOuDefault(motoristaId);
+  const perfil: PerfilCusto = veiculo
+    ? { ...perfilBase, numero_eixos: veiculo.numeroEixos, tipo_carroceria: veiculo.tipoCarroceria ?? perfilBase.tipo_carroceria }
+    : perfilBase;
   const dias = diasPorFaixaKm(rota.distanciaKm);
   // Mesmo ajuste carro->caminhão de Analisar.tsx: tarifa_caminhão = tarifa_carro × (eixos/2).
   const pedagioReais = rota.pedagioCentavos != null ? Math.round(rota.pedagioCentavos * (perfil.numero_eixos / 2)) / 100 : 0;
@@ -1228,7 +1506,7 @@ async function calcularEResponderFrete(params: {
     texto,
     extracao,
     status: anonimo ? "calculado_anonimo" : primeiroContato ? "calculado_novo" : recalculoDe != null ? "recalculado_perfil" : "calculado",
-    resultado,
+    resultado: { ...resultado, dias },
   });
   await registrarEventoAnalytics(anonimo ? "simulation_run_anonimo" : "simulation_run", motoristaId, {
     origem,
@@ -1316,7 +1594,7 @@ async function calcularEResponderFrete(params: {
     rodape =
       `_(estimativa com uma carreta padrão de ${perfil.numero_eixos} eixos)_\n\n` +
       `Seu número ficou cadastrado no Rode com Lucro. Pra apagar tudo, manda *SAIR*. Termos: ${URL_APP}/termos`;
-  } else if (semPerfil) {
+  } else if (semPerfil && !veiculo?.perfilCriado) {
     rodape = `_(estimativa com uma carreta padrão de ${perfil.numero_eixos} eixos — você ainda não cadastrou o seu)_`;
   } else if (recalculoDe != null) {
     const dif = resultado.lucro - recalculoDe;
@@ -1339,13 +1617,21 @@ async function calcularEResponderFrete(params: {
     `Lucro estimado: ${fmtBRL(resultado.lucro)} (margem ${fmtPct(resultado.margemReal)})\n` +
     `Piso ANTT: ${fmtBRL(resultado.pisoANTT)}${avisoPiso}\n\n` +
     `${emoji} Veredito: ${resultado.veredicto}\n\n` +
-    rodape;
+    rodape +
+    (veiculo?.nota ? `\n_${veiculo.nota}_` : "");
 
   await enviarMensagemWhatsapp(fromE164, resposta);
 
+  // Caminhão da mensagem difere do cadastrado: oferece salvar (um toque).
+  if (veiculo?.botaoSalvar) {
+    await enviarBotoes(fromE164, "Quer que eu use esse caminhão nos próximos cálculos?", [veiculo.botaoSalvar]);
+    return;
+  }
+
   // Primeiro contato: emenda a pergunta do caminhão (3 toques). Guarda o
-  // frete pra recalcular no fim e mostrar a diferença.
-  if (puxarOnboarding && motoristaId) {
+  // frete pra recalcular no fim e mostrar a diferença. Se a mensagem já
+  // trouxe o caminhão (perfilCriado), não precisa dos toques.
+  if (puxarOnboarding && motoristaId && !veiculo?.perfilCriado) {
     await iniciarOnboardingCaminhao(fromE164, motoristaId, { origem, destino, valorFreteReais, voltaVazia, lucroGenerico: resultado.lucro });
     return;
   }
@@ -1887,6 +2173,8 @@ async function tratarRequisicao(req: Request): Promise<Response> {
       await tratarRespostaOnboarding(it.fromE164, it.rowId, it.waMessageId);
     } else if (it.rowId === "viral:cartao") {
       await tratarPedidoCartao(it.fromE164, it.waMessageId);
+    } else if (it.rowId.startsWith("perfil:salvar:")) {
+      await tratarSalvarVeiculo(it.fromE164, it.rowId, it.waMessageId);
     } else {
       await tratarRespostaLista(it.fromE164, it.rowId, it.waMessageId);
     }
