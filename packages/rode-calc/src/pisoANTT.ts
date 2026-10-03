@@ -45,7 +45,7 @@ export type TipoCarga = 'carga_geral' | 'granel_solido' | 'granel_liquido' | 'fr
 export const ANTT_VERSAO = 'resolucao-6084-2026';
 export const ANTT_FONTE = 'Resolução ANTT Nº 6.084/2026 (altera Anexo II da Resolução ANTT 5.867/2020), Tabela A, DOU 17/07/2026';
 
-type CoeficientesPorEixo = Record<number, { ccd: number; cc: number }>;
+export type CoeficientesPorEixo = Record<number, { ccd: number; cc: number }>;
 
 export const ANTT_GRANEL_SOLIDO: CoeficientesPorEixo = {
   2: { ccd: 4.0144, cc: 460.59 },
@@ -130,9 +130,72 @@ function eixosOrdenados(tabela: CoeficientesPorEixo): number[] {
  * `'carga_geral'` quando `tipoCarga` não é informado — mantém compatível
  * com todo código existente que só passava distância/eixos.
  */
+// ---------------------------------------------------------------------
+// 02/10/2026 — tabela vigente vinda do banco (decisão do Raphael: "opção 3").
+// As constantes acima continuam como FALLBACK (offline, primeiro boot, banco
+// fora). O app e o bot chamam `definirTabelaANTT()` com as linhas de
+// `antt_piso_tabela` vigentes (RPC `antt_piso_vigente`) e, a partir daí,
+// `calcularPisoANTT` usa essa tabela. Reajuste da ANTT vira um INSERT no
+// banco com `vigencia_inicio` — sem deploy. Cada resultado grava `anttVersao`.
+// ---------------------------------------------------------------------
+
+export interface TabelaANTT {
+  versao: string;
+  fonte: string;
+  vigenciaInicio: string;
+  tabela: Record<TipoCarga, CoeficientesPorEixo>;
+}
+
+export interface LinhaTabelaANTT {
+  tipo_carga: TipoCarga;
+  numero_eixos: number;
+  ccd: number;
+  cc: number;
+  versao: string;
+  fonte: string;
+  vigencia_inicio: string;
+}
+
+const TABELA_EMBUTIDA: TabelaANTT = {
+  versao: ANTT_VERSAO,
+  fonte: ANTT_FONTE,
+  vigenciaInicio: '2026-07-17',
+  tabela: ANTT_TABELA_A,
+};
+
+let tabelaAtiva: TabelaANTT = TABELA_EMBUTIDA;
+
+/** Monta uma TabelaANTT a partir das linhas de `antt_piso_tabela` (uma versão só). Null se vier vazio/incompleto. */
+export function montarTabelaANTT(linhas: LinhaTabelaANTT[]): TabelaANTT | null {
+  if (!linhas.length) return null;
+  const tabela: Partial<Record<TipoCarga, CoeficientesPorEixo>> = {};
+  for (const l of linhas) {
+    const ccd = Number(l.ccd);
+    const cc = Number(l.cc);
+    if (!Number.isFinite(ccd) || !Number.isFinite(cc)) continue;
+    (tabela[l.tipo_carga] ??= {})[l.numero_eixos] = { ccd, cc };
+  }
+  // Precisa ter pelo menos carga_geral com 5 eixos pra ser usável.
+  if (!tabela.carga_geral?.[5]) return null;
+  for (const t of Object.keys(ANTT_TABELA_A) as TipoCarga[]) {
+    if (!tabela[t] || Object.keys(tabela[t]!).length === 0) tabela[t] = ANTT_TABELA_A[t];
+  }
+  const ref = linhas[0];
+  return { versao: ref.versao, fonte: ref.fonte, vigenciaInicio: String(ref.vigencia_inicio), tabela: tabela as Record<TipoCarga, CoeficientesPorEixo> };
+}
+
+/** Troca a tabela usada por `calcularPisoANTT`. Passar null volta pra embutida. */
+export function definirTabelaANTT(t: TabelaANTT | null): void {
+  tabelaAtiva = t ?? TABELA_EMBUTIDA;
+}
+
+export function tabelaANTTAtual(): TabelaANTT {
+  return tabelaAtiva;
+}
+
 export function calcularPisoANTT(distanciaKm: number, numeroEixos?: number, tipoCarga: TipoCarga = 'carga_geral'): number {
   const eixos = numeroEixos ?? 5;
-  const tabela = ANTT_TABELA_A[tipoCarga];
+  const tabela = tabelaAtiva.tabela[tipoCarga] ?? ANTT_TABELA_A[tipoCarga];
   const ordenados = eixosOrdenados(tabela);
   let eixosRef = ordenados[0];
   for (const e of ordenados) {

@@ -11,8 +11,11 @@ export {
   ANTT_VERSAO,
   ANTT_FONTE,
   TIPO_CARGA_LABEL,
+  definirTabelaANTT,
+  tabelaANTTAtual,
+  montarTabelaANTT,
 } from './pisoANTT';
-export type { TipoCarga } from './pisoANTT';
+export type { TipoCarga, TabelaANTT, LinhaTabelaANTT } from './pisoANTT';
 export { TIPO_CARGA_POR_CARROCERIA, tipoCargaPorCarroceria } from './tipoCargaPorCarroceria';
 export { fmtBRL, fmtPct, centsToReais, reaisToCents, parseNumeroPtBR } from './format';
 export { caminhoes, marcas } from './caminhoes';

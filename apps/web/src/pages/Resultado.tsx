@@ -342,7 +342,8 @@ export default function Resultado() {
       </ul>
 
       <p className="disclaimer">
-        Estimativa com base em modelo de custo transparente. O piso ANTT é referência regulatória; este
+        Estimativa com base em modelo de custo transparente. O piso ANTT é referência regulatória
+        {resultado.anttVersao ? ` (tabela ${resultado.anttVersao.replace('resolucao-', 'Res. ').replace(/-(\d{4})$/, '/$1')})` : ''}; este
         veredito não é aconselhamento jurídico ou financeiro.
       </p>
 

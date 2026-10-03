@@ -25,12 +25,16 @@ import EmpresaPublicar from './pages/empresa/EmpresaPublicar';
 import EmpresaLayout from './pages/empresa/EmpresaLayout';
 import EmpresaDados from './pages/empresa/EmpresaDados';
 import LoginPorLink from './lib/LoginPorLink';
+import { carregarTabelaANTT } from './lib/antt';
 import './index.css';
 
 // Lazy: a lib de leitura de Excel (xlsx) é pesada (~300kB minificado) e só
 // essa tela usa — carregar de cara pra todo mundo (inclusive motorista no
 // celular) inflaria o bundle principal à toa.
 const ImportarFretes = lazy(() => import('./admin/pages/ImportarFretes'));
+
+// Piso ANTT vigente (banco → cache → embutida). Fire-and-forget: não segura a tela.
+void carregarTabelaANTT();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

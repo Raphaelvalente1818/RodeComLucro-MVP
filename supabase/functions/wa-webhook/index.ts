@@ -45,7 +45,7 @@
 // conta nasce em QUALQUER primeira mensagem (garantirMotorista).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { calcularFrete, tipoCargaPorCarroceria, fmtBRL, fmtPct, diasPorFaixaKm, type Custos } from "./calc.ts";
+import { calcularFrete, tipoCargaPorCarroceria, fmtBRL, fmtPct, diasPorFaixaKm, definirTabelaANTT, montarTabelaANTT, type Custos, type LinhaTabelaANTT } from "./calc.ts";
 import { extrairFreteDeTexto, EIXOS_PADRAO, type ExtracaoFrete, type TipoCargaBusca, type ContextoConversa, type TipoVeiculoMsg, type TipoCarroceriaMsg } from "./extracao.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -63,6 +63,23 @@ const NUMERO_OFICIAL_WA = Deno.env.get("NUMERO_OFICIAL_WA");
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
 });
+
+// 02/10: piso ANTT vigente vem do banco (RPC antt_piso_vigente), cache de 1h
+// em memória da instância; sem banco, calc.ts usa a tabela embutida.
+let tabelaANTTCarregadaEm = 0;
+async function garantirTabelaANTT(): Promise<void> {
+  if (Date.now() - tabelaANTTCarregadaEm < 60 * 60_000) return;
+  try {
+    const { data, error } = await supabase.rpc("antt_piso_vigente");
+    if (!error && Array.isArray(data) && data.length > 0) {
+      definirTabelaANTT(montarTabelaANTT(data as LinhaTabelaANTT[]));
+      tabelaANTTCarregadaEm = Date.now();
+    }
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error("[wa-webhook] falha ao carregar tabela ANTT, usando embutida", e);
+  }
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -2102,6 +2119,8 @@ async function tratarRequisicao(req: Request): Promise<Response> {
   } catch {
     return json({ erro: "body_invalido" }, 400);
   }
+
+  await garantirTabelaANTT();
 
   // Diagnóstico: status de entrega (sent/delivered/read/failed) de
   // mensagens que NÓS enviamos — não tem relação com processar mensagem

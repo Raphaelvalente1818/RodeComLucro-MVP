@@ -1447,9 +1447,22 @@ Raphael pediu, antes de codar, estudo das soluções que já existem e um plano 
 
 **TESTE (Rapha, repetir as 4 mensagens de 01/10)**: (1) "Quanto posso cobrar Carandaí para Piracaia, carreta LS palete" → cotação com Carreta LS 6 eixos (salva como caminhão dele se não tinha); (2) "Qual a distância e valor da ANTT e quanto vou gastar de pedágio…" → cotação (não nega); (3) "Tenho um frete de Diadema para Coruipe para um truck grade baixa de 15.000" → veredito com Truck 3 eixos + nota + botão "Salvar esse caminhão" se o perfil for carreta; (4) "Quanto vou gastar de pedágio?" → resposta com o número do último cálculo, sem "Sou o Rode com Lucro".
 
-## CHECKPOINT — 30/09 (fim de sessão, v50)
+## 02/10 — Piso ANTT lido do banco ("opção 3") + lembrete mensal (v51)
 
-**Estado**: wa-webhook **v50** (bundle esbuild — ver 02/10), otp-solicitar **v31**, **sessao-wa v1** no ar. App precisa do push (BuscarFrete `?frete=`, ícones PWA). `CLAUDE.md` criado. Contas do David (`5511991143035`) e do Rapha (`5541999871818`) **apagadas a pedido (2×, a última já com a v48 no ar)** pra testarem como número novo; bloqueio de OTP do David também limpo. Achado no caminho: `consentimento` estava sem ON DELETE CASCADE — o SAIR falharia pra quem vinculou pelo app; corrigido em `20260930180000_consentimento_cascade.sql`. Commit pendente: `CLAUDE.md`, `supabase/functions/{wa-webhook,otp-solicitar,sessao-wa}/`, `supabase/migrations/20260930*.sql`, `apps/web/src/{main.tsx,lib/LoginPorLink.tsx,pages/Entrada.tsx,pages/Verificacao.tsx}`, `Docs/status-sessao.md`.
+**Pergunta do Raphael**: "a atualização da tabela ANTT é automática?" Não era: coeficientes fixos no código (pacote + cópia no bot + espelho no banco). ANTT revisa em janeiro e julho (+ extraordinária se diesel >10%). Decisão dele: lembrete a cada 30 dias **e** opção 3.
+
+**Como ficou**:
+- `antt_piso_tabela` (já existia como espelho) agora é a **fonte em runtime**. RPC `antt_piso_vigente(p_data default current_date)` devolve as linhas da versão com maior `vigencia_inicio <= data` (migration `20261002120000_antt_piso_vigente.sql`, com exemplo de INSERT pra resolução nova).
+- `@rode/calc` (`pisoANTT.ts`): `TabelaANTT`, `montarTabelaANTT(linhas)`, `definirTabelaANTT(t)`, `tabelaANTTAtual()`; `calcularPisoANTT` usa a tabela ativa; constantes viram fallback. `FreteResultado.anttVersao` gravado em todo cálculo (`resultado_snapshot`).
+- App: `lib/antt.ts` → `carregarTabelaANTT()` no boot (`main.tsx`): aplica cache `localStorage` (`antt-tabela-vigente-v1`) na hora, busca a RPC, regrava. Offline sem cache = embutida. `Resultado.tsx` mostra "(tabela Res. 6084/2026)" no disclaimer.
+- Bot (`calc.ts` + `index.ts`): `garantirTabelaANTT()` no início de cada POST, cache 1 h em memória. **wa-webhook v51** (bundle, como a v50).
+- **Lembrete**: tarefa agendada no Claude `antt-piso-reajuste`, todo dia 10 às 9h — pesquisa resolução nova e avisa; roda com o app aberto.
+
+**Pra atualizar quando sair resolução nova**: INSERT das linhas (5 tipos × eixos) em `antt_piso_tabela` com `versao` nova e `vigencia_inicio`; app e bot trocam sozinhos na data. Por garantia, atualizar também as constantes nos dois arquivos (fallback) — conferindo 1:1 com o DOU.
+
+## CHECKPOINT — 30/09 (fim de sessão, v51)
+
+**Estado**: wa-webhook **v51** (bundle esbuild — ver 02/10), otp-solicitar **v31**, **sessao-wa v1** no ar. App precisa do push (BuscarFrete `?frete=`, ícones PWA). `CLAUDE.md` criado. Contas do David (`5511991143035`) e do Rapha (`5541999871818`) **apagadas a pedido (2×, a última já com a v48 no ar)** pra testarem como número novo; bloqueio de OTP do David também limpo. Achado no caminho: `consentimento` estava sem ON DELETE CASCADE — o SAIR falharia pra quem vinculou pelo app; corrigido em `20260930180000_consentimento_cascade.sql`. Commit pendente: `CLAUDE.md`, `supabase/functions/{wa-webhook,otp-solicitar,sessao-wa}/`, `supabase/migrations/20260930*.sql`, `apps/web/src/{main.tsx,lib/LoginPorLink.tsx,pages/Entrada.tsx,pages/Verificacao.tsx}`, `Docs/status-sessao.md`.
 
 **AO RETOMAR (no Claude Code)**:
 0. Conferir com `git status`/`git log` se o commit da v48 foi feito e se a Vercel publicou (o app precisa estar no ar pro OTP por WhatsApp e pro link mágico funcionarem — Edge Functions já estão).

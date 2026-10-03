@@ -85,9 +85,60 @@ function eixosOrdenados(tabela: CoeficientesPorEixo): number[] {
   return Object.keys(tabela).map(Number).sort((a, b) => a - b);
 }
 
+// 02/10/2026 — tabela vigente vinda do banco (espelho de pisoANTT.ts no
+// pacote): as constantes acima viram fallback; index.ts chama
+// definirTabelaANTT() com as linhas de antt_piso_vigente() antes de calcular.
+export const ANTT_VERSAO = 'resolucao-6084-2026';
+export const ANTT_FONTE = 'Resolução ANTT Nº 6.084/2026 (altera Anexo II da Resolução ANTT 5.867/2020), Tabela A, DOU 17/07/2026';
+
+export interface TabelaANTT {
+  versao: string;
+  fonte: string;
+  vigenciaInicio: string;
+  tabela: Record<TipoCarga, CoeficientesPorEixo>;
+}
+
+export interface LinhaTabelaANTT {
+  tipo_carga: TipoCarga;
+  numero_eixos: number;
+  ccd: number;
+  cc: number;
+  versao: string;
+  fonte: string;
+  vigencia_inicio: string;
+}
+
+const TABELA_EMBUTIDA: TabelaANTT = { versao: ANTT_VERSAO, fonte: ANTT_FONTE, vigenciaInicio: '2026-07-17', tabela: ANTT_TABELA_A };
+let tabelaAtiva: TabelaANTT = TABELA_EMBUTIDA;
+
+export function montarTabelaANTT(linhas: LinhaTabelaANTT[]): TabelaANTT | null {
+  if (!linhas.length) return null;
+  const tabela: Partial<Record<TipoCarga, CoeficientesPorEixo>> = {};
+  for (const l of linhas) {
+    const ccd = Number(l.ccd);
+    const cc = Number(l.cc);
+    if (!Number.isFinite(ccd) || !Number.isFinite(cc)) continue;
+    (tabela[l.tipo_carga] ??= {})[l.numero_eixos] = { ccd, cc };
+  }
+  if (!tabela.carga_geral?.[5]) return null;
+  for (const t of Object.keys(ANTT_TABELA_A) as TipoCarga[]) {
+    if (!tabela[t] || Object.keys(tabela[t]!).length === 0) tabela[t] = ANTT_TABELA_A[t];
+  }
+  const ref = linhas[0];
+  return { versao: ref.versao, fonte: ref.fonte, vigenciaInicio: String(ref.vigencia_inicio), tabela: tabela as Record<TipoCarga, CoeficientesPorEixo> };
+}
+
+export function definirTabelaANTT(t: TabelaANTT | null): void {
+  tabelaAtiva = t ?? TABELA_EMBUTIDA;
+}
+
+export function tabelaANTTAtual(): TabelaANTT {
+  return tabelaAtiva;
+}
+
 export function calcularPisoANTT(distanciaKm: number, numeroEixos?: number, tipoCarga: TipoCarga = 'carga_geral'): number {
   const eixos = numeroEixos ?? 5;
-  const tabela = ANTT_TABELA_A[tipoCarga];
+  const tabela = tabelaAtiva.tabela[tipoCarga] ?? ANTT_TABELA_A[tipoCarga];
   const ordenados = eixosOrdenados(tabela);
   let eixosRef = ordenados[0];
   for (const e of ordenados) {
@@ -179,6 +230,7 @@ export interface FreteResultado {
   abaixoPisoANTT: boolean;
   veredicto: Veredicto;
   formulaVersao: string;
+  anttVersao: string;
 }
 
 export const FORMULA_VERSAO = 'emerson-v1';
@@ -219,7 +271,7 @@ export function calcularFrete(entrada: FreteInput): FreteResultado {
     veredicto = 'ACEITÁVEL';
   }
 
-  return { entrada, custoTotal, custoDetalhado, lucro, margemReal, pisoANTT, abaixoPisoANTT, veredicto, formulaVersao: FORMULA_VERSAO };
+  return { entrada, custoTotal, custoDetalhado, lucro, margemReal, pisoANTT, abaixoPisoANTT, veredicto, formulaVersao: FORMULA_VERSAO, anttVersao: tabelaAtiva.versao };
 }
 
 export function fmtBRL(value: number): string {

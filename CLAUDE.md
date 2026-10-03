@@ -34,7 +34,9 @@ piso ANTT), com duas marcas e três superfícies:
 - **Painel admin** em `apps/web/src/admin` (moderação de fretes e empresas, funil, saúde).
 
 Motor de cálculo em `packages/rode-calc` (`@rode/calc`), fórmula do Emerson,
-piso ANTT. `supabase/functions/wa-webhook/calc.ts` é uma CÓPIA isomórfica dele
+piso ANTT. **Tabela ANTT vigente vem do banco** (`antt_piso_tabela` via RPC
+`antt_piso_vigente`; app em `lib/antt.ts`, bot em `garantirTabelaANTT`); as
+constantes no código são fallback. Reajuste = INSERT com `versao` + `vigencia_inicio`. `supabase/functions/wa-webhook/calc.ts` é uma CÓPIA isomórfica dele
 pro Deno — se a fórmula mudar, atualizar os dois.
 
 ## Infra

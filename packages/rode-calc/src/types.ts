@@ -88,4 +88,6 @@ export interface FreteResultado {
   veredicto: Veredicto;
   /** Versão da fórmula usada — carimbada para reprodutibilidade do histórico. */
   formulaVersao: string;
+  /** Versão da tabela ANTT usada (ex.: 'resolucao-6084-2026') — ver pisoANTT.ts. */
+  anttVersao: string;
 }

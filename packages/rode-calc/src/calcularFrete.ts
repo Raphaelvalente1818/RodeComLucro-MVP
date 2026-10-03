@@ -23,7 +23,7 @@
 //      `LIMIAR_VERDE`/`pctAcimaPiso` que o PRD calc-app propunha.
 
 import type { FreteInput, FreteResultado, CustoDetalhado } from './types';
-import { calcularPisoANTT } from './pisoANTT';
+import { calcularPisoANTT, tabelaANTTAtual } from './pisoANTT';
 
 /** Versão da fórmula, carimbada em toda análise persistida para reprodutibilidade do histórico. */
 export const FORMULA_VERSAO = 'emerson-v1';
@@ -92,5 +92,6 @@ export function calcularFrete(entrada: FreteInput): FreteResultado {
     abaixoPisoANTT,
     veredicto,
     formulaVersao: FORMULA_VERSAO,
+    anttVersao: tabelaANTTAtual().versao,
   };
 }
