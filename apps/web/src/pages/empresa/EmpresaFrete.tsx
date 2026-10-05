@@ -138,7 +138,7 @@ export default function EmpresaFrete() {
           <div>
             <span className={`admin-tag ${tag.classe}`}>{tag.label}</span>
             <b className="empresa-status-titulo">{st.titulo}</b>
-            <p className="admin-card-nota">{st.texto}</p>
+            <p className="admin-card-nota nao-imprime">{st.texto}</p>
             {frete.status === 'rejeitado' && frete.motivoRejeicao && <p className="admin-card-nota">Motivo: {frete.motivoRejeicao}</p>}
           </div>
           {acoes.length > 0 && (
@@ -274,7 +274,7 @@ export default function EmpresaFrete() {
             </li>
           ))}
         </ul>
-        <p className="admin-card-nota">Fretes não são apagados. Este histórico fica guardado como registro do que foi publicado, quando e por quem.</p>
+        <p className="admin-card-nota nao-imprime">Fretes não são apagados. Este histórico fica guardado como registro do que foi publicado, quando e por quem.</p>
         <p className="so-imprime admin-card-nota">Documento gerado pelo portal Sofrete (rode-com-lucro-mvp.vercel.app). Os dados refletem o estado do frete no momento da impressão.</p>
       </section>
 

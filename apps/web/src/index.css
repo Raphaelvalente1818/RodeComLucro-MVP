@@ -2441,8 +2441,11 @@ body.tema-empresa.tema-empresa-escuro {
 }
 
 @media print {
+  /* Alvo: uma página A4. Margens curtas, fonte menor, cartões em grade
+     de duas colunas (rota | valor), histórico compacto. */
   @page {
-    margin: 14mm;
+    size: A4 portrait;
+    margin: 9mm 10mm;
   }
 
   body.tema-empresa,
@@ -2476,12 +2479,94 @@ body.tema-empresa.tema-empresa-escuro {
   .tema-empresa .tela {
     max-width: none;
     padding: 0;
-    gap: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px 6px;
+    font-size: 9.5pt;
+  }
+
+  .tema-empresa .tela > * {
+    grid-column: 1 / -1;
+  }
+
+  /* 2º e 3º cartões (Rota e prazo | Valor) lado a lado. */
+  .tema-empresa .tela > .admin-card:nth-of-type(2),
+  .tema-empresa .tela > .admin-card:nth-of-type(3) {
+    grid-column: auto;
   }
 
   .tema-empresa h1 {
-    font-size: 20pt;
+    font-size: 15pt;
+    margin: 0;
     color: #000;
+  }
+
+  .tema-empresa .garagem-eyebrow {
+    margin: 0;
+    font-size: 8.5pt;
+  }
+
+  .empresa-impressao-cabecalho {
+    margin-bottom: 4px;
+    padding-bottom: 4px;
+    font-size: 9pt;
+  }
+
+  .empresa-status-titulo {
+    font-size: 10pt;
+    margin-top: 3px;
+  }
+
+  .tema-empresa .admin-card-titulo {
+    font-size: 9.5pt;
+  }
+
+  .empresa-grade {
+    gap: 5px 14px;
+  }
+
+  .empresa-grade dt {
+    font-size: 7.5pt;
+    margin-bottom: 0;
+  }
+
+  .empresa-grade dd,
+  .empresa-chips i,
+  .empresa-obs {
+    font-size: 9.5pt !important;
+  }
+
+  .empresa-chips i {
+    padding: 1px 6px;
+  }
+
+  .empresa-obs {
+    padding: 4px 6px;
+  }
+
+  .empresa-valor-grande {
+    font-size: 13pt !important;
+  }
+
+  .empresa-historico li {
+    padding: 2px 0;
+    font-size: 8.5pt;
+    grid-template-columns: 110px 1fr;
+    gap: 8px;
+  }
+
+  .empresa-historico-quem {
+    display: inline;
+    font-size: 8.5pt;
+  }
+
+  .empresa-historico-quem::before {
+    content: " · ";
+  }
+
+  .tema-empresa .admin-card .admin-card-nota {
+    font-size: 8pt;
+    margin: 2px 0 0;
   }
 
   .tema-empresa .garagem-eyebrow,
@@ -2496,7 +2581,8 @@ body.tema-empresa.tema-empresa-escuro {
     box-shadow: none !important;
     border: 1px solid #999 !important;
     background: #fff !important;
-    padding: 10px 14px;
+    padding: 6px 10px;
+    gap: 4px;
     break-inside: avoid;
     page-break-inside: avoid;
   }
@@ -2509,11 +2595,6 @@ body.tema-empresa.tema-empresa-escuro {
   .empresa-chips i,
   .empresa-obs {
     color: #000 !important;
-    font-size: 11pt;
-  }
-
-  .empresa-valor-grande {
-    font-size: 16pt !important;
   }
 
   .empresa-chips i,
@@ -2530,6 +2611,5 @@ body.tema-empresa.tema-empresa-escuro {
 
   .empresa-historico li {
     border-color: #ccc;
-    font-size: 10.5pt;
   }
 }
