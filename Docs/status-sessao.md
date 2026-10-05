@@ -1501,6 +1501,8 @@ Raphael pediu, antes de codar, estudo das soluções que já existem e um plano 
 
 **Lado do motorista** (pergunta do Raphael: "e se já foi contratado e está na meta?"): não some — o que ele guarda é cópia em `analise_frete` (Garagem, Realizado, meta), sem referência ao frete da empresa. Só a busca deixa de listar. Único ponto solto era o link do WhatsApp `?frete=<id>` (`carregarFretePorId` não filtra status): agora `BuscarFrete.tsx` mostra o frete destacado com selo laranja "Esse frete não está mais disponível — a empresa tirou do ar", sem botão Analisar nem contato (`.frete-indisponivel`).
 
+**Ajustes pós-deploy (05/10)**: botões de status na mesma linha da tabela (a célula estava virando flex e saía do layout de tabela — `display: table-cell` + `width: 1%`); botão **Imprimir** no detalhe (`window.print()`) com `@media print` no `index.css`: some navegação/ações (`.nao-imprime`, `.empresa-topo`), entra cabeçalho só de impressão (`.so-imprime`: empresa, CNPJ, nº do frete, data/hora), cartões com borda fina, preto no branco, sem quebrar cartão entre páginas; distância 0 passa a mostrar "—".
+
 **Validar no deploy**: entrar como a empresa Teste → pausar o frete de R$ 6.500 → no app do motorista ele some da busca → publicar de novo → volta. Abrir o detalhe e conferir o histórico.
 
 ## CHECKPOINT — 05/10 (fim de sessão, v53)

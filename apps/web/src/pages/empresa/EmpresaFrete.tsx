@@ -13,6 +13,7 @@ import {
   carregarFreteDaEmpresa,
   carregarHistoricoFrete,
   carregarMinhaEmpresa,
+  formatarCnpj,
   type Empresa,
   type FreteDaEmpresaDetalhe,
   type HistoricoFrete,
@@ -115,9 +116,20 @@ export default function EmpresaFrete() {
 
   return (
     <main className="tela">
-      <button type="button" className="link-secundario empresa-voltar" onClick={() => navigate('/empresa')}>
-        ← Seus fretes
-      </button>
+      <div className="empresa-detalhe-topo nao-imprime">
+        <button type="button" className="link-secundario empresa-voltar" onClick={() => navigate('/empresa')}>
+          ← Seus fretes
+        </button>
+        <button type="button" className="empresa-btn-sec empresa-btn-mini" onClick={() => window.print()}>
+          Imprimir
+        </button>
+      </div>
+      {/* Cabeçalho que só aparece na impressão (05/10): quem, qual frete, quando foi impresso. */}
+      <div className="so-imprime empresa-impressao-cabecalho">
+        <b>Sofrete · {empresa.nomeFantasia || empresa.razaoSocial}</b>
+        <span>CNPJ {formatarCnpj(empresa.cnpj)}</span>
+        <span>Frete {frete.id.slice(0, 8).toUpperCase()} · impresso em {fmtDataHora(new Date().toISOString())}</span>
+      </div>
       <p className="garagem-eyebrow">Frete · publicado em {fmtDataBR(frete.createdAt)}</p>
       <h1>{rota}</h1>
 
@@ -130,7 +142,7 @@ export default function EmpresaFrete() {
             {frete.status === 'rejeitado' && frete.motivoRejeicao && <p className="admin-card-nota">Motivo: {frete.motivoRejeicao}</p>}
           </div>
           {acoes.length > 0 && (
-            <div className="empresa-acoes">
+            <div className="empresa-acoes nao-imprime">
               {acoes.map((a) => (
                 <button
                   key={a.para}
@@ -163,7 +175,7 @@ export default function EmpresaFrete() {
           </div>
           <div>
             <dt>Distância</dt>
-            <dd>{frete.distanciaKm != null ? `${frete.distanciaKm.toLocaleString('pt-BR')} km` : '—'}</dd>
+            <dd>{frete.distanciaKm ? `${frete.distanciaKm.toLocaleString('pt-BR')} km` : '—'}</dd>
           </div>
           <div>
             <dt>Coleta</dt>
@@ -263,6 +275,7 @@ export default function EmpresaFrete() {
           ))}
         </ul>
         <p className="admin-card-nota">Fretes não são apagados. Este histórico fica guardado como registro do que foi publicado, quando e por quem.</p>
+        <p className="so-imprime admin-card-nota">Documento gerado pelo portal Sofrete (rode-com-lucro-mvp.vercel.app). Os dados refletem o estado do frete no momento da impressão.</p>
       </section>
 
       {pedido && (
