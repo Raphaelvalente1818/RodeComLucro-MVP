@@ -2256,8 +2256,19 @@ body.tema-empresa.tema-empresa-escuro {
   white-space: nowrap;
 }
 
+/* Na tabela os botões ficam lado a lado numa linha só: a célula encolhe
+   pro tamanho do conteúdo (width 1% + nowrap) e a rota é quem quebra. */
 .admin-tabela td.empresa-acoes {
+  display: table-cell; /* .empresa-acoes é flex no detalhe; aqui tem que continuar célula */
   text-align: right;
+  width: 1%;
+  white-space: nowrap;
+}
+
+.admin-tabela td.empresa-acoes .empresa-btn-mini {
+  display: inline-block;
+  margin-left: 6px;
+  vertical-align: middle;
 }
 
 .tema-empresa .empresa-btn-mini {
