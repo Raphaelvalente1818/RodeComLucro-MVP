@@ -24,6 +24,7 @@ import EmpresaHome from './pages/empresa/EmpresaHome';
 import EmpresaPublicar from './pages/empresa/EmpresaPublicar';
 import EmpresaLayout from './pages/empresa/EmpresaLayout';
 import EmpresaDados from './pages/empresa/EmpresaDados';
+import EmpresaFrete from './pages/empresa/EmpresaFrete';
 import LoginPorLink from './lib/LoginPorLink';
 import { carregarTabelaANTT } from './lib/antt';
 import './index.css';
@@ -58,6 +59,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="entrar" element={<EmpresaEntrar />} />
           <Route path="publicar" element={<EmpresaPublicar />} />
           <Route path="dados" element={<EmpresaDados />} />
+          <Route path="frete/:id" element={<EmpresaFrete />} />
         </Route>
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<VisaoGeral />} />

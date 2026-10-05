@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sofrete — fretes da empresa: pausar, publicar e abrir o detalhe (mockup 05/10/2026)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  /* =================================================================
+     MOCKUP — "Seus fretes" com status mutável + tela de detalhe
+     (05/10/2026). Pedido do Raphael: a empresa pausa e republica quando
+     quiser; frete NUNCA é apagado (evidência); dá pra abrir o frete com
+     todos os detalhes. Mesmo tema claro do portal (Docs/mockup-portal-
+     empresa.html): grafite como ação, amarelo só como detalhe, verde /
+     laranja / vermelho exclusivos de status.
+     ================================================================= */
+  :root {
+    --fonte: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --fonte-cond: "Barlow Condensed", "Barlow", system-ui, sans-serif;
+    --bg: #f4f5f3; --surf: #ffffff; --surf-2: #eef0ed; --linha: #dce0db; --linha-forte: #c3c9c2;
+    --txt: #161a18; --txt-2: #3b4440; --txt-dim: #5f6a65;
+    --marca: #f2b01e; --marca-texto: #8a6208;
+    --primaria: #1c2421; --primaria-tx: #ffffff;
+    --bom: #12753a; --bom-bg: #e3f4e9;
+    --atencao: #8f5100; --atencao-bg: #fff0d6;
+    --ruim: #b83232; --ruim-bg: #fbe5e5;
+    --neutro: #5f6a65; --neutro-bg: #eef0ed;
+    --sombra: 0 1px 2px rgba(20,26,24,.06), 0 8px 24px rgba(20,26,24,.06);
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; background: #e9ebe8; color: var(--txt); font-family: var(--fonte); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* ---------- casca ---------- */
+  .pagina { max-width: 1280px; margin: 0 auto; padding: 28px 20px 64px; }
+  .cabeca h1 { font-size: 24px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .cabeca p { margin: 0; color: var(--txt-dim); font-size: 14px; line-height: 1.55; max-width: 70ch; }
+  .controles { display: flex; gap: 8px; flex-wrap: wrap; margin: 22px 0 18px; align-items: center; }
+  .aba { background: #fff; color: var(--txt-dim); border: 1px solid var(--linha-forte); padding: 9px 15px; border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .aba.on { background: var(--primaria); color: #fff; border-color: var(--primaria); }
+  .palco { display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; }
+  .janela { flex: 1 1 760px; min-width: 620px; max-width: 840px; border-radius: 12px; overflow: hidden; border: 1px solid var(--linha-forte); box-shadow: 0 24px 60px rgba(20,26,24,.18); background: var(--bg); }
+  .barra-nav { background: #dfe3de; padding: 9px 14px; display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--txt-dim); }
+  .barra-nav i { width: 10px; height: 10px; border-radius: 50%; background: var(--linha-forte); display: inline-block; }
+  .barra-nav .url { flex: 1; background: #fff; border-radius: 6px; padding: 5px 10px; color: var(--txt-2); }
+  .app { min-height: 680px; }
+  .sistema { flex: 1 1 320px; min-width: 300px; max-width: 400px; display: flex; flex-direction: column; gap: 18px; }
+  .bloco { background: #fff; border: 1px solid var(--linha); border-radius: 14px; padding: 18px; }
+  .bloco h3 { margin: 0 0 6px; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--txt-dim); }
+  .bloco p, .bloco li { font-size: 13.5px; color: var(--txt-2); line-height: 1.55; }
+  .bloco p { margin: 8px 0 0; }
+  .bloco ul { margin: 8px 0 0; padding-left: 18px; }
+  .bloco b { color: var(--txt); }
+  .bloco .rec { border-left: 3px solid var(--marca); padding-left: 10px; margin-top: 10px; }
+
+  /* ---------- portal ---------- */
+  .topo-portal { background: var(--surf); border-bottom: 1px solid var(--linha); padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; gap: 16px; box-shadow: inset 0 -3px 0 var(--marca); }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; }
+  .logo .quadrado { width: 26px; height: 26px; border-radius: 7px; background: var(--primaria); position: relative; }
+  .logo .quadrado::after { content: ""; position: absolute; left: 5px; right: 5px; top: 12px; height: 2px; background: var(--marca); }
+  .logo small { font-family: var(--fonte-cond); font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--txt-dim); font-size: 12px; margin-left: 6px; }
+  .topo-portal nav { display: flex; gap: 4px; }
+  .topo-portal nav a { color: var(--txt-dim); font-size: 14px; font-weight: 500; padding: 7px 12px; border-radius: 8px; cursor: pointer; }
+  .topo-portal nav a.on { color: var(--txt); background: var(--surf-2); font-weight: 600; }
+  .conteudo { padding: 28px 32px 48px; max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+  .tela { display: none; } .tela.on { display: flex; flex-direction: column; gap: 20px; }
+  .eyebrow { font-family: var(--fonte-cond); font-size: 13px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--txt-dim); margin: 0 0 4px; }
+  h1.titulo { margin: 0 0 4px; font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+  .subtitulo { margin: 0; color: var(--txt-dim); font-size: 14px; }
+  .card { background: var(--surf); border: 1px solid var(--linha); border-radius: 12px; padding: 20px 22px; box-shadow: var(--sombra); }
+  .card h2 { margin: 0 0 12px; font-size: 15px; font-weight: 600; }
+  .card-topo { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .card-topo h2 { margin: 0; }
+  .btn { background: var(--primaria); color: var(--primaria-tx); border: 0; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 600; padding: 11px 18px; border-radius: 9px; white-space: nowrap; }
+  .btn.sec { background: var(--surf); color: var(--txt); border: 1px solid var(--linha-forte); }
+  .btn.mini { font-size: 12.5px; padding: 6px 11px; border-radius: 7px; }
+  .btn.perigo { background: var(--surf); color: var(--ruim); border: 1px solid var(--linha-forte); }
+  .btn.link { background: none; color: var(--txt-dim); padding: 0; font-weight: 500; }
+  .btn:disabled { opacity: .45; cursor: default; }
+
+  /* tags de status — verde/laranja/vermelho/neutro só aqui */
+  .tag { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 999px; white-space: nowrap; }
+  .tag::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .tag.publicado { background: var(--bom-bg); color: var(--bom); }
+  .tag.pausado { background: var(--atencao-bg); color: var(--atencao); }
+  .tag.analise { background: var(--neutro-bg); color: var(--neutro); }
+  .tag.fechado { background: var(--neutro-bg); color: var(--neutro); }
+  .tag.rejeitado { background: var(--ruim-bg); color: var(--ruim); }
+
+  /* tabela */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-family: var(--fonte-cond); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--txt-dim); padding: 8px 10px; border-bottom: 1px solid var(--linha); font-weight: 700; }
+  td { padding: 12px 10px; border-bottom: 1px solid var(--linha); vertical-align: middle; }
+  tr.linha { cursor: pointer; }
+  tr.linha:hover td { background: var(--surf-2); }
+  td.rota b { display: block; font-weight: 600; }
+  td.rota span { color: var(--txt-dim); font-size: 12.5px; }
+  td.acoes { text-align: right; white-space: nowrap; }
+  td.acoes .btn { margin-left: 6px; }
+  .filtros { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .chip { background: var(--surf); border: 1px solid var(--linha-forte); color: var(--txt-dim); font-size: 12.5px; font-weight: 600; padding: 5px 11px; border-radius: 999px; cursor: pointer; font-family: inherit; }
+  .chip.on { background: var(--primaria); color: #fff; border-color: var(--primaria); }
+  .vazio { color: var(--txt-dim); font-size: 13.5px; padding: 14px 10px; }
+
+  /* detalhe */
+  .voltar { display: inline-flex; align-items: center; gap: 6px; color: var(--txt-dim); font-size: 13.5px; cursor: pointer; font-weight: 500; }
+  .status-box { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .status-box .txt b { display: block; font-size: 15px; margin-bottom: 2px; }
+  .status-box .txt p { margin: 0; font-size: 13.5px; color: var(--txt-dim); }
+  .status-box .acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+  .grade { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; }
+  .dado small { display: block; font-family: var(--fonte-cond); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--txt-dim); margin-bottom: 2px; }
+  .dado span { font-size: 15px; font-weight: 500; }
+  .dado .grande { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+  .dado.largo { grid-column: 1 / -1; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chips i { font-style: normal; background: var(--surf-2); border: 1px solid var(--linha); border-radius: 999px; padding: 4px 10px; font-size: 12.5px; font-weight: 500; }
+  .obs { background: var(--surf-2); border-radius: 8px; padding: 10px 12px; font-size: 14px; line-height: 1.5; }
+  .hist { list-style: none; margin: 0; padding: 0; }
+  .hist li { display: grid; grid-template-columns: 150px 1fr; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--linha); font-size: 13.5px; }
+  .hist li:last-child { border-bottom: 0; }
+  .hist .quando { color: var(--txt-dim); font-variant-numeric: tabular-nums; }
+  .hist .quem { color: var(--txt-dim); font-size: 12.5px; display: block; }
+  .nota-evid { font-size: 12.5px; color: var(--txt-dim); margin: 10px 0 0; }
+
+  /* confirmação (modal simples) */
+  .veu { position: absolute; inset: 0; background: rgba(20,26,24,.35); display: none; align-items: center; justify-content: center; padding: 20px; }
+  .veu.on { display: flex; }
+  .modal { background: var(--surf); border-radius: 12px; padding: 22px; max-width: 420px; width: 100%; box-shadow: 0 24px 60px rgba(20,26,24,.25); }
+  .modal h2 { margin: 0 0 8px; font-size: 17px; }
+  .modal p { margin: 0 0 16px; font-size: 14px; color: var(--txt-2); line-height: 1.5; }
+  .modal .acoes { display: flex; gap: 8px; justify-content: flex-end; }
+  .app { position: relative; }
+  .toast { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); background: var(--primaria); color: #fff; font-size: 13.5px; padding: 10px 16px; border-radius: 9px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.on { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="pagina">
+  <div class="cabeca">
+    <h1>Sofrete — fretes da empresa: pausar, republicar, fechar e abrir o detalhe</h1>
+    <p>Mockup navegável (05/10/2026). Clique numa linha pra abrir o frete; use os botões pra mudar o status. Nada é apagado: cada mudança vira uma linha no histórico do frete. Painel à direita: decisões e opções.</p>
+  </div>
+  <div class="controles">
+    <button class="aba on" data-ir="lista">1 · Seus fretes (lista)</button>
+    <button class="aba" data-ir="detalhe">2 · Detalhe do frete</button>
+  </div>
+
+  <div class="palco">
+    <div class="janela">
+      <div class="barra-nav"><i></i><i></i><i></i><span class="url" id="url">rode-com-lucro-mvp.vercel.app/empresa</span></div>
+      <div class="app">
+        <header class="topo-portal">
+          <div class="logo"><span class="quadrado"></span>Sofrete<small>Empresas</small></div>
+          <nav><a class="on">Início</a><a>Publicar frete</a><a>Meus dados</a></nav>
+          <span style="font-size:13px;color:var(--txt-dim)">Sair</span>
+        </header>
+
+        <!-- ================= TELA 1: LISTA ================= -->
+        <div class="conteudo">
+          <section class="tela on" id="tela-lista">
+            <div>
+              <p class="eyebrow">Teste · CNPJ 11.222.333/0001-81</p>
+              <h1 class="titulo">Seus fretes</h1>
+              <p class="subtitulo">Pausado some do app e do WhatsApp na hora; publicado volta na hora. Fechado é definitivo.</p>
+            </div>
+
+            <section class="card">
+              <div class="card-topo">
+                <h2>Empresa aprovada</h2>
+                <button class="btn">Publicar frete</button>
+              </div>
+              <p style="margin:0;font-size:14px;color:var(--txt-2)">Sua empresa está liberada pra publicar fretes.</p>
+            </section>
+
+            <section class="card">
+              <div class="card-topo">
+                <h2>Seus fretes <span id="cont" style="color:var(--txt-dim);font-weight:500"></span></h2>
+              </div>
+              <div class="filtros" id="filtros">
+                <button class="chip on" data-f="ativos">Ativos</button>
+                <button class="chip" data-f="publicado">Publicados</button>
+                <button class="chip" data-f="pausado">Pausados</button>
+                <button class="chip" data-f="todos">Todos (inclui fechados)</button>
+              </div>
+              <table>
+                <thead><tr><th>Rota</th><th>Valor</th><th>Coleta</th><th>Status</th><th></th></tr></thead>
+                <tbody id="linhas"></tbody>
+              </table>
+            </section>
+          </section>
+
+          <!-- ================= TELA 2: DETALHE ================= -->
+          <section class="tela" id="tela-detalhe">
+            <span class="voltar" data-ir="lista">← Seus fretes</span>
+            <div>
+              <p class="eyebrow" id="d-eyebrow">Frete · publicado em 12/09/2026</p>
+              <h1 class="titulo" id="d-titulo">São Paulo/SP → Ribeirão Preto/SP</h1>
+              <p class="subtitulo" id="d-sub">Nº 8F2A-19 · visto por 14 motoristas no app · 3 pelo WhatsApp</p>
+            </div>
+
+            <section class="card">
+              <div class="status-box">
+                <div class="txt">
+                  <span class="tag" id="d-tag">publicado</span>
+                  <b id="d-status-titulo" style="margin-top:8px">Aparecendo pros motoristas</b>
+                  <p id="d-status-texto">Está na busca do app e nas respostas do WhatsApp pra caminhão compatível.</p>
+                </div>
+                <div class="acoes" id="d-acoes"></div>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>Rota e prazo</h2>
+              <div class="grade">
+                <div class="dado"><small>Origem</small><span>São Paulo/SP</span></div>
+                <div class="dado"><small>Destino</small><span>Ribeirão Preto/SP</span></div>
+                <div class="dado"><small>Distância</small><span class="num">313 km</span></div>
+                <div class="dado"><small>Coleta</small><span class="num">20/09/2026</span></div>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>Valor</h2>
+              <div class="grade">
+                <div class="dado"><small>Frete</small><span class="grande num">R$ 6.500,00</span></div>
+                <div class="dado"><small>Tipo de valor</small><span>Fechado (viagem)</span></div>
+                <div class="dado"><small>Pedágio por conta de</small><span>Empresa</span></div>
+                <div class="dado"><small>Piso ANTT (ref.)</small><span class="num">R$ 2.762,16 · carreta 5 eixos</span></div>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>Carga e caminhão</h2>
+              <div class="grade">
+                <div class="dado"><small>Peso</small><span class="num">24.000 kg</span></div>
+                <div class="dado"><small>Tipo de carga</small><span>Carga geral</span></div>
+                <div class="dado largo"><small>Veículos aceitos</small><div class="chips"><i>Carreta</i><i>Carreta LS</i><i>Bitrem 7 eixos</i></div></div>
+                <div class="dado largo"><small>Carrocerias aceitas</small><div class="chips"><i>Sider</i><i>Baú</i><i>Grade baixa</i></div></div>
+                <div class="dado largo"><small>Observações</small><div class="obs">Carga paletizada, 22 paletes. Descarga com empilhadeira do cliente. Chegar até 7h.</div></div>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>Contato que o motorista vê</h2>
+              <div class="grade">
+                <div class="dado"><small>Nome</small><span>Carlos (logística)</span></div>
+                <div class="dado"><small>Telefone</small><span class="num">(11) 98765-4321</span></div>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>Histórico</h2>
+              <ul class="hist" id="d-hist"></ul>
+              <p class="nota-evid">Fretes não são apagados. Este histórico fica guardado como registro do que foi publicado, quando e por quem.</p>
+            </section>
+          </section>
+        </div>
+
+        <div class="veu" id="veu">
+          <div class="modal">
+            <h2 id="m-titulo">Pausar este frete?</h2>
+            <p id="m-texto">Ele sai da busca do app e das respostas do WhatsApp agora. Você pode publicar de novo quando quiser.</p>
+            <div class="acoes"><button class="btn sec" id="m-nao">Cancelar</button><button class="btn" id="m-sim">Pausar</button></div>
+          </div>
+        </div>
+        <div class="toast" id="toast"></div>
+      </div>
+    </div>
+
+    <!-- ================= PAINEL ================= -->
+    <aside class="sistema">
+      <div class="bloco">
+        <h3>Status e o que cada um faz</h3>
+        <ul>
+          <li><b>Em análise</b> — aguardando o admin. Empresa não mexe.</li>
+          <li><b>Publicado</b> — aparece no app e no WhatsApp. Empresa pode <b>pausar</b> ou <b>fechar</b>.</li>
+          <li><b>Pausado</b> — some de tudo na hora, continua na lista da empresa. Empresa pode <b>publicar de novo</b> ou <b>fechar</b>. Sem nova aprovação (já foi aprovado).</li>
+          <li><b>Fechado</b> — definitivo ("já tem motorista" ou "cancelou"). Fica no histórico; não volta. Pra ofertar de novo, publica outro.</li>
+          <li><b>Não aprovado</b> — admin rejeitou, com motivo. Só leitura.</li>
+        </ul>
+      </div>
+      <div class="bloco">
+        <h3>Evidência: nada é apagado</h3>
+        <p>Botão "Apagar" não existe. Toda mudança grava uma linha em <b>fretes_publicados_historico</b> (status de → para, quando, quem: empresa ou admin, motivo opcional). O detalhe mostra isso em "Histórico". Se um dia precisar provar o que estava publicado em tal data, está lá.</p>
+        <p>Opção a decidir: contar <b>vistos</b> (quantos motoristas abriram no app / receberam no WhatsApp). Já dá pra extrair de <code>analytics_event</code> e <code>wa_freight_query</code> — sem tabela nova.</p>
+      </div>
+      <div class="bloco">
+        <h3>Decisões pra você</h3>
+        <p><b>1. "Fechado" é definitivo ou reversível?</b><br>A) definitivo (recomendo — histórico limpo; reabrir = publicar outro, 30 s no formulário).<br>B) reversível, vira "pausado" de novo.</p>
+        <p><b>2. Pausado expira sozinho?</b><br>A) não — fica pausado até a empresa mexer (recomendo pro MVP).<br>B) depois da data de coleta + 7 dias, vira "expirado" automático (job diário). Dá pra ligar depois.</p>
+        <p><b>3. Motivo ao pausar/fechar?</b><br>A) opcional, campo de texto curto no modal (recomendo — vira evidência útil: "já tem motorista", "cliente cancelou").<br>B) sem motivo, só o clique.</p>
+        <p class="rec"><b>Recomendação:</b> 1A · 2A · 3A. Mudança pequena: status novo <code>pausado</code> na constraint, tabela de histórico com trigger, RLS pra empresa mudar só o próprio frete e só entre publicado ↔ pausado → fechado, rota <code>/empresa/frete/:id</code>. App e bot já filtram por <code>status = 'aberto'</code> — pausado some sem mexer neles.</p>
+      </div>
+      <div class="bloco">
+        <h3>Fora deste mockup</h3>
+        <p>Editar o frete publicado (valor, data). Hoje não existe; se quiser, é tela própria e passa de novo pelo admin quando muda valor/rota. Fica pra depois, se precisar.</p>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+  // Dados de exemplo (o que a empresa "Teste" tem hoje + alguns pra mostrar os estados)
+  const STATUS = {
+    publicado: { tag: 'publicado', titulo: 'Aparecendo pros motoristas', texto: 'Está na busca do app e nas respostas do WhatsApp pra caminhão compatível.' },
+    pausado:   { tag: 'pausado',   titulo: 'Pausado — ninguém vê',       texto: 'Saiu da busca e do WhatsApp. Publique de novo quando quiser; não precisa de nova aprovação.' },
+    analise:   { tag: 'em análise', titulo: 'Aguardando aprovação',      texto: 'Nossa equipe está conferindo. Assim que aprovar, ele entra no ar.' },
+    fechado:   { tag: 'fechado',   titulo: 'Fechado',                    texto: 'Este frete foi encerrado. Fica aqui como registro; pra ofertar de novo, publique outro.' },
+    rejeitado: { tag: 'não aprovado', titulo: 'Não aprovado',            texto: 'Motivo informado pela moderação abaixo.' },
+  };
+  const fretes = [
+    { id: 'A', rota: 'São Paulo/SP → Ribeirão Preto/SP', sub: '313 km · carreta, bitrem', valor: 'R$ 6.500,00', coleta: '20/09/2026', st: 'publicado',
+      hist: [['12/09/2026 10:14','Publicado','empresa (Carlos)'],['12/09/2026 15:02','Aprovado','admin']] },
+    { id: 'B', rota: 'São Paulo/SP → Ribeirão Preto/SP', sub: '313 km · por tonelada', valor: 'R$ 450,00/t', coleta: '15/09/2026', st: 'pausado',
+      hist: [['11/09/2026 09:40','Publicado','empresa (Carlos)'],['11/09/2026 11:20','Aprovado','admin'],['16/09/2026 08:05','Pausado — "coleta adiada"','empresa (Carlos)']] },
+    { id: 'C', rota: 'Guarulhos/SP → Curitiba/PR', sub: '410 km · truck', valor: 'a combinar', coleta: '28/09/2026', st: 'analise',
+      hist: [['05/10/2026 09:12','Publicado (aguardando aprovação)','empresa (Carlos)']] },
+    { id: 'D', rota: 'Campinas/SP → Belo Horizonte/MG', sub: '590 km · carreta', valor: 'R$ 9.800,00', coleta: '02/09/2026', st: 'fechado',
+      hist: [['25/08/2026 14:00','Publicado','empresa (Carlos)'],['25/08/2026 16:31','Aprovado','admin'],['01/09/2026 17:48','Fechado — "já tem motorista"','empresa (Carlos)']] },
+  ];
+  let filtro = 'ativos', atual = null, pendente = null;
+
+  const $ = (s) => document.querySelector(s);
+  function ir(tela) {
+    document.querySelectorAll('.tela').forEach(t => t.classList.toggle('on', t.id === 'tela-' + tela));
+    document.querySelectorAll('.aba').forEach(a => a.classList.toggle('on', a.dataset.ir === tela));
+    $('#url').textContent = tela === 'lista' ? 'rode-com-lucro-mvp.vercel.app/empresa' : 'rode-com-lucro-mvp.vercel.app/empresa/frete/' + (atual ? atual.id.toLowerCase() + '8f2a-19' : '');
+  }
+  document.querySelectorAll('[data-ir]').forEach(el => el.addEventListener('click', () => { if (el.dataset.ir === 'detalhe' && !atual) abrir(fretes[0]); else ir(el.dataset.ir); }));
+
+  function botoes(f) {
+    if (f.st === 'publicado') return [['Pausar','sec','pausado'],['Fechar','perigo','fechado']];
+    if (f.st === 'pausado')   return [['Publicar de novo','','publicado'],['Fechar','perigo','fechado']];
+    return [];
+  }
+  function renderLista() {
+    const vis = fretes.filter(f => filtro === 'todos' ? true : filtro === 'ativos' ? (f.st !== 'fechado' && f.st !== 'rejeitado') : f.st === filtro);
+    $('#cont').textContent = '· ' + vis.length;
+    $('#linhas').innerHTML = vis.length ? vis.map(f => `
+      <tr class="linha" data-id="${f.id}">
+        <td class="rota"><b>${f.rota}</b><span>${f.sub}</span></td>
+        <td class="num">${f.valor}</td>
+        <td class="num">${f.coleta}</td>
+        <td><span class="tag ${f.st}">${STATUS[f.st].tag}</span></td>
+        <td class="acoes">${botoes(f).map(b => `<button class="btn mini ${b[1]}" data-acao="${b[2]}" data-id="${f.id}">${b[0]}</button>`).join('')}</td>
+      </tr>`).join('') : '<tr><td colspan="5" class="vazio">Nenhum frete nesse filtro.</td></tr>';
+    $('#linhas').querySelectorAll('tr.linha').forEach(tr => tr.addEventListener('click', (e) => { if (e.target.closest('button')) return; abrir(fretes.find(x => x.id === tr.dataset.id)); }));
+    $('#linhas').querySelectorAll('button[data-acao]').forEach(b => b.addEventListener('click', () => pedir(fretes.find(x => x.id === b.dataset.id), b.dataset.acao)));
+  }
+  function abrir(f) {
+    atual = f;
+    $('#d-titulo').textContent = f.rota;
+    $('#d-eyebrow').textContent = 'Frete · ' + f.hist[0][0].slice(0,10) ;
+    const s = STATUS[f.st];
+    const tag = $('#d-tag'); tag.className = 'tag ' + f.st; tag.textContent = s.tag;
+    $('#d-status-titulo').textContent = s.titulo;
+    $('#d-status-texto').textContent = s.texto;
+    $('#d-acoes').innerHTML = botoes(f).map(b => `<button class="btn ${b[1]}" data-acao="${b[2]}">${b[0]}</button>`).join('');
+    $('#d-acoes').querySelectorAll('button').forEach(b => b.addEventListener('click', () => pedir(f, b.dataset.acao)));
+    $('#d-hist').innerHTML = f.hist.map(h => `<li><span class="quando num">${h[0]}</span><span>${h[1]}<span class="quem">${h[2]}</span></span></li>`).join('');
+    ir('detalhe');
+  }
+  const TXT = {
+    pausado:   ['Pausar este frete?', 'Ele sai da busca do app e das respostas do WhatsApp agora. Você pode publicar de novo quando quiser.', 'Pausar'],
+    publicado: ['Publicar de novo?', 'Volta pra busca do app e pro WhatsApp na hora. Não precisa de nova aprovação.', 'Publicar'],
+    fechado:   ['Fechar este frete?', 'Fechado é definitivo: ele some pros motoristas e fica só no seu histórico. Pra ofertar de novo, publique outro.', 'Fechar'],
+  };
+  function pedir(f, acao) {
+    pendente = { f, acao };
+    const t = TXT[acao];
+    $('#m-titulo').textContent = t[0]; $('#m-texto').textContent = t[1]; $('#m-sim').textContent = t[2];
+    $('#m-sim').className = 'btn' + (acao === 'fechado' ? ' perigo' : '');
+    $('#veu').classList.add('on');
+  }
+  $('#m-nao').addEventListener('click', () => $('#veu').classList.remove('on'));
+  $('#m-sim').addEventListener('click', () => {
+    const { f, acao } = pendente;
+    const agora = new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '');
+    f.st = acao;
+    f.hist.push([agora, acao === 'pausado' ? 'Pausado' : acao === 'publicado' ? 'Publicado de novo' : 'Fechado', 'empresa (você)']);
+    $('#veu').classList.remove('on');
+    renderLista();
+    if (atual && atual.id === f.id && $('#tela-detalhe').classList.contains('on')) abrir(f);
+    const t = $('#toast'); t.textContent = acao === 'pausado' ? 'Frete pausado.' : acao === 'publicado' ? 'Frete publicado de novo.' : 'Frete fechado.'; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 1800);
+  });
+  document.querySelectorAll('#filtros .chip').forEach(c => c.addEventListener('click', () => { filtro = c.dataset.f; document.querySelectorAll('#filtros .chip').forEach(x => x.classList.toggle('on', x === c)); renderLista(); }));
+  renderLista();
+</script>
+</body>
+</html>

@@ -358,9 +358,15 @@ export default function BuscarFrete() {
               f.tiposVeiculoAceitos.length === 0 ||
               f.tiposVeiculoAceitos.includes(tipoVeiculoPerfil as TipoVeiculo);
             const totalEstimado = valorTotalEstimadoCentavos(f, cargaMaximaPerfil);
+            // Frete que veio pelo link do WhatsApp mas a empresa já pausou /
+            // fechou (05/10): mostra com aviso, sem "Analisar" nem contato —
+            // o motorista entende o que houve em vez de achar que o link quebrou.
+            const indisponivel = f.status !== 'aberto';
+            const ehDestacado = f.id === freteDestacado?.id;
             return (
-              <li key={f.id} className={f.id === freteDestacado?.id ? 'linha-analise-item frete-destacado' : 'linha-analise-item'}>
-                {f.id === freteDestacado?.id && <p className="frete-destacado-selo">Você viu esse no WhatsApp</p>}
+              <li key={f.id} className={`linha-analise-item${ehDestacado ? ' frete-destacado' : ''}${indisponivel ? ' frete-indisponivel' : ''}`}>
+                {ehDestacado && !indisponivel && <p className="frete-destacado-selo">Você viu esse no WhatsApp</p>}
+                {indisponivel && <p className="frete-indisponivel-selo">Esse frete não está mais disponível — a empresa tirou do ar</p>}
                 <div className="frete-linha">
                   <div>
                     <p className="linha-analise-rota">
@@ -388,10 +394,12 @@ export default function BuscarFrete() {
                     </span>
                   )}
                 </div>
-                <button type="button" className="btn-frete-analisar" onClick={() => abrirAnalise(f)}>
-                  Analisar frete
-                </button>
-                {f.contatoTelefone && (
+                {!indisponivel && (
+                  <button type="button" className="btn-frete-analisar" onClick={() => abrirAnalise(f)}>
+                    Analisar frete
+                  </button>
+                )}
+                {!indisponivel && f.contatoTelefone && (
                   <p className="contato-frete-linha">
                     <a
                       href={`tel:${f.contatoTelefone.replace(/\D/g, '')}`}

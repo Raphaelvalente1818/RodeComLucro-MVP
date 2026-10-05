@@ -146,6 +146,106 @@ export async function carregarFretesDaEmpresa(empresaId: string): Promise<FreteD
   }));
 }
 
+// ---------------------------------------------------------------------
+// Detalhe + status (05/10/2026 — Docs/mockup-fretes-empresa-status.html).
+// A empresa pausa / republica / fecha o próprio frete pela RPC
+// empresa_mudar_status_frete; cada mudança vira linha no histórico
+// (trigger no banco). Frete nunca é apagado.
+// ---------------------------------------------------------------------
+
+/** Status que a empresa pode escolher. 'fechado' é reversível (decisão 05/10). */
+export type StatusFreteEmpresa = 'aberto' | 'pausado' | 'fechado';
+
+export interface FreteDaEmpresaDetalhe extends FreteDaEmpresa {
+  distanciaKm: number | null;
+  pedagioPorContaDe: string | null;
+  pesoKg: number | null;
+  tiposVeiculoAceitos: string[];
+  tiposCarroceriaAceitos: string[];
+  contatoNome: string | null;
+  contatoTelefone: string | null;
+  observacoes: string | null;
+}
+
+export interface HistoricoFrete {
+  id: number;
+  statusDe: string | null;
+  statusPara: string;
+  ator: 'empresa' | 'admin' | 'sistema';
+  motivo: string | null;
+  criadoEm: string;
+}
+
+export async function carregarFreteDaEmpresa(empresaId: string, freteId: string): Promise<FreteDaEmpresaDetalhe | null> {
+  const { data, error } = await supabase
+    .from('fretes_publicados')
+    .select(
+      'id, origem_cidade, origem_uf, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, data_coleta, status, motivo_rejeicao, created_at, distancia_km, pedagio_por_conta_de, peso_kg, tipos_veiculo_aceitos, tipos_carroceria_aceitos, contato_nome, contato_telefone, observacoes',
+    )
+    .eq('company_id', empresaId)
+    .eq('id', freteId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return {
+    id: data.id,
+    origemCidade: data.origem_cidade,
+    origemUf: data.origem_uf,
+    destinoCidade: data.destino_cidade,
+    destinoUf: data.destino_uf,
+    valorFreteCentavos: data.valor_frete_centavos,
+    valorACombinar: Boolean(data.valor_a_combinar),
+    tipoValor: data.tipo_valor,
+    dataColeta: data.data_coleta,
+    status: data.status,
+    motivoRejeicao: data.motivo_rejeicao ?? null,
+    createdAt: data.created_at,
+    distanciaKm: data.distancia_km == null ? null : Number(data.distancia_km),
+    pedagioPorContaDe: data.pedagio_por_conta_de ?? null,
+    pesoKg: data.peso_kg == null ? null : Number(data.peso_kg),
+    tiposVeiculoAceitos: (data.tipos_veiculo_aceitos as string[] | null) ?? [],
+    tiposCarroceriaAceitos: (data.tipos_carroceria_aceitos as string[] | null) ?? [],
+    contatoNome: data.contato_nome ?? null,
+    contatoTelefone: data.contato_telefone ?? null,
+    observacoes: data.observacoes ?? null,
+  };
+}
+
+export async function carregarHistoricoFrete(freteId: string): Promise<HistoricoFrete[]> {
+  const { data, error } = await supabase
+    .from('fretes_publicados_historico')
+    .select('id, status_de, status_para, ator, motivo, criado_em')
+    .eq('frete_id', freteId)
+    .order('criado_em', { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map((h) => ({
+    id: h.id as number,
+    statusDe: (h.status_de as string | null) ?? null,
+    statusPara: h.status_para as string,
+    ator: h.ator as HistoricoFrete['ator'],
+    motivo: (h.motivo as string | null) ?? null,
+    criadoEm: h.criado_em as string,
+  }));
+}
+
+/** Pausar / publicar de novo / fechar. O banco valida dono e transição. */
+export async function mudarStatusFrete(freteId: string, status: StatusFreteEmpresa, motivo: string): Promise<void> {
+  const { error } = await supabase.rpc('empresa_mudar_status_frete', {
+    p_frete_id: freteId,
+    p_status: status,
+    p_motivo: motivo.trim() || null,
+  });
+  if (error) throw error;
+}
+
+/** Ações que a empresa pode tomar a partir de cada status (ordem = ordem dos botões). */
+export function acoesDoStatus(status: string): { rotulo: string; para: StatusFreteEmpresa; destaque: boolean }[] {
+  if (status === 'aberto') return [{ rotulo: 'Pausar', para: 'pausado', destaque: false }, { rotulo: 'Fechar', para: 'fechado', destaque: false }];
+  if (status === 'pausado') return [{ rotulo: 'Publicar de novo', para: 'aberto', destaque: true }, { rotulo: 'Fechar', para: 'fechado', destaque: false }];
+  if (status === 'fechado') return [{ rotulo: 'Publicar de novo', para: 'aberto', destaque: true }];
+  return [];
+}
+
 /**
  * Publica um frete em nome da empresa. `dado` já validado por
  * lib/validarFrete.ts. Entra SEMPRE como pendente_aprovacao / fonte
