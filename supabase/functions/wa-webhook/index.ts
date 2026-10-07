@@ -47,6 +47,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { calcularFrete, tipoCargaPorCarroceria, fmtBRL, fmtPct, diasPorFaixaKm, definirTabelaANTT, montarTabelaANTT, type Custos, type LinhaTabelaANTT } from "./calc.ts";
 import { extrairFreteDeTexto, EIXOS_PADRAO, type ExtracaoFrete, type TipoCargaBusca, type ContextoConversa, type TipoVeiculoMsg, type TipoCarroceriaMsg } from "./extracao.ts";
+import { lerDocumento, bytesParaBase64, normalizarPlaca, normalizarCategoriaCNH, type DadosCNH, type DadosCRLV } from "./documentos.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -151,6 +152,7 @@ async function registrarEventoAnalytics(
     | "signup_completed"
     | "wa_first_contact"
     | "truck_profile_saved"
+    | "driver_profile_saved"
     | "referral_shared",
   actorId: string | null,
   props: Record<string, unknown>,
@@ -361,6 +363,34 @@ export function extrairMensagens(payload: unknown): MensagemRecebida[] {
     }
   }
   return mensagens;
+}
+
+// Imagens (07/10 — cadastro por foto, Docs/bot-cadastro-por-foto.md): só o id
+// da mídia na Meta; o download acontece depois, e só com consentimento.
+export interface ImagemRecebida {
+  waMessageId: string;
+  fromE164: string;
+  mediaId: string;
+  mimeType: string;
+}
+
+export function extrairImagens(payload: unknown): ImagemRecebida[] {
+  const imagens: ImagemRecebida[] = [];
+  const entradas = (payload as { entry?: unknown[] })?.entry ?? [];
+  for (const entrada of entradas) {
+    const changes = (entrada as { changes?: unknown[] })?.changes ?? [];
+    for (const change of changes) {
+      const msgs = (change as { value?: { messages?: unknown[] } })?.value?.messages ?? [];
+      for (const m of msgs) {
+        const msg = m as { id?: string; from?: string; type?: string; image?: { id?: string; mime_type?: string }; document?: { id?: string; mime_type?: string } };
+        if (!msg.id || !msg.from) continue;
+        const midia = msg.type === "image" ? msg.image : msg.type === "document" && msg.document?.mime_type?.startsWith("image/") ? msg.document : null;
+        if (!midia?.id) continue;
+        imagens.push({ waMessageId: msg.id, fromE164: msg.from, mediaId: midia.id, mimeType: midia.mime_type ?? "image/jpeg" });
+      }
+    }
+  }
+  return imagens;
 }
 
 // ---------------------------------------------------------------------
@@ -709,7 +739,13 @@ async function registrarTentativaFrete(params: {
     | "cotado"
     | "pergunta_calculo"
     | "veiculo_salvo"
-    | "cidade_pendente";
+    | "cidade_pendente"
+    | "doc_convite"
+    | "doc_lido"
+    | "doc_salvo"
+    | "doc_cancelado"
+    | "doc_ilegivel"
+    | "doc_imagem_sem_contexto";
   resultado?: unknown;
 }): Promise<void> {
   const { error } = await supabase.from("wa_freight_query").insert({
@@ -768,6 +804,7 @@ const RE_SAIR = /^sair$/i;
 // faz?", "pra que serve?") vão pra IA (intent pergunta_bot em extracao.ts),
 // que responde a pergunta de verdade em vez de cuspir o menu.
 const RE_AJUDA = /^(ajuda|help|menu|comandos)\s*[?!.]*$/i;
+const RE_CADASTRO = /^cadastro\s*[?!.]*$/i;
 
 // Cota diária (02/10, decisão do Raphael): 20 consultas por número e por dia,
 // contando TUDO que o bot responde (cálculo, cotação, busca, conversa) — cada
@@ -780,7 +817,7 @@ const LIMITE_CONSULTAS_DIA = 20;
 const STATUS_CONSULTA = [
   "calculado", "calculado_novo", "recalculado_perfil", "calculado_anonimo", "cotado",
   "resposta_livre", "pergunta_calculo", "boas_vindas", "dado_faltando", "confirmacao_pendente",
-  "busca_sem_resultado", "busca_origem", "erro_extracao", "nao_cadastrado", "cidade_pendente",
+  "busca_sem_resultado", "busca_origem", "erro_extracao", "nao_cadastrado", "cidade_pendente", "doc_lido", "doc_ilegivel",
 ];
 const AVISO_CADASTRO = `\n\n_Seu número ficou cadastrado no Rode com Lucro. Pra apagar, manda SAIR._`;
 
@@ -790,7 +827,8 @@ function mensagemApresentacao(temConta: boolean): string {
     `Opa! Sou o Rode com Lucro 🚛 — faço três coisas pra você:\n\n` +
     `1️⃣ Digo se um frete *vale a pena* (custo real, lucro e piso ANTT). Manda a rota e o valor. Ex.: *"Sinop pra Santos, 14 mil"*\n\n` +
     `2️⃣ *Coto* uma rota: km, pedágio, piso ANTT e quanto cobrar. Manda só a rota. Ex.: *"Carandaí pra Piracaia"*\n\n` +
-    `3️⃣ Mostro *cargas perto de você*. Manda *BUSCAR*.` +
+    `3️⃣ Mostro *cargas perto de você*. Manda *BUSCAR*.\n\n` +
+    `Manda *CADASTRO* pra eu preencher seu perfil pela foto da CNH e do CRLV.` +
     (temConta ? `\n\n_Pra apagar seu cadastro, manda SAIR._` : "")
   );
 }
@@ -1715,6 +1753,11 @@ async function calcularEResponderFrete(params: {
   // Motorista já com perfil: a cada N cálculos oferece o cartão pra
   // mandar pro colega. Não em todo cálculo (vira ruído e custa mensagem
   // a partir de 1/10) — no 1º recálculo e depois a cada 5.
+  // Cadastro por foto (07/10): uma vez, depois de um cálculo completo (nunca
+  // na 1ª mensagem; onboarding do caminhão tem prioridade). Se mandou o
+  // convite, não manda o cartão viral na mesma rodada.
+  if (!anonimo && motoristaId && (await convidarCadastroPorFoto(fromE164, motoristaId, waMessageId))) return;
+
   if (!anonimo && motoristaId && (recalculoDe != null || (await contarCalculos(motoristaId)) % 5 === 0)) {
     await enviarBotoes(fromE164, "Conhece alguém que ia gostar de saber se o frete vale a pena?", [
       { id: "viral:cartao", titulo: "Mandar pro colega" },
@@ -2250,6 +2293,439 @@ async function tratarRespostaLista(fromE164: string, rowId: string, waMessageId:
   });
 }
 
+// ===========================================================================
+// CADASTRO POR FOTO — CNH + CRLV (07/10/2026). Textos aprovados em
+// Docs/bot-cadastro-por-foto.md. Fluxo:
+//   convite (1× após um cálculo) ou comando CADASTRO → "Pode ler" grava o
+//   consentimento (consentimento.tipo = leitura_documento) → foto chega →
+//   baixa da Meta (só com consentimento) → Haiku visão (documentos.ts) →
+//   mostra o que leu + Salvar/Corrigir/Cancelar → grava só os campos
+//   permitidos. A imagem nunca é gravada; CPF nunca é lido.
+// Estado por número em wa_cadastro_foto (etapa, dados extraídos, media_id
+// enquanto espera consentimento).
+// ===========================================================================
+interface EstadoCadastroFoto {
+  from_e164: string;
+  motorista_id: string;
+  etapa: "aguardando_consentimento" | "aguardando_foto" | "confirmar" | "corrigir" | "tipo_veiculo";
+  tipo_doc: "cnh" | "crlv" | null;
+  dados: (DadosCNH & Partial<DadosCRLV> & { tipoVeiculo?: string | null }) | null;
+  media_id: string | null;
+  convidado_em: string | null;
+}
+
+const TEXTO_CONVITE_CADASTRO =
+  `Quer que eu preencha seu cadastro sozinho? Manda uma *foto da CNH* e eu pego seu nome, categoria e validade. Depois a *foto do CRLV* do caminhão: marca, placa, eixos e capacidade.\n` +
+  `Eu leio e apago a foto na hora — não guardo imagem nem CPF.`;
+const TEXTO_PEDIR_FOTO = "Manda a foto da CNH (frente, aberta, sem dedo em cima). Depois a do CRLV.";
+const TEXTO_CANCELOU = "Beleza, não salvei nada e a foto já foi apagada.";
+
+async function estadoCadastroFoto(fromE164: string): Promise<EstadoCadastroFoto | null> {
+  const { data } = await supabase.from("wa_cadastro_foto").select("*").eq("from_e164", fromE164).maybeSingle();
+  return (data as EstadoCadastroFoto | null) ?? null;
+}
+
+async function gravarEstadoCadastroFoto(fromE164: string, motoristaId: string, patch: Partial<EstadoCadastroFoto>): Promise<void> {
+  const { error } = await supabase
+    .from("wa_cadastro_foto")
+    .upsert({ from_e164: fromE164, motorista_id: motoristaId, etapa: "aguardando_foto", ...patch, updated_at: new Date().toISOString() }, { onConflict: "from_e164" });
+  if (error) await logErro("wa-webhook.cadastroFoto", "Falha ao gravar estado", { erro: error.message, fromE164 });
+}
+
+async function temConsentimentoLeitura(motoristaId: string): Promise<boolean> {
+  const { data } = await supabase
+    .from("consentimento")
+    .select("aceito")
+    .eq("motorista_id", motoristaId)
+    .eq("tipo", "leitura_documento")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return Boolean(data?.aceito);
+}
+
+async function registrarConsentimentoLeitura(motoristaId: string, waMessageId: string): Promise<void> {
+  // O próprio consentimento é o registro (quem, quando, versão); o wa_message_id fica em wa_freight_query.
+  const { error } = await supabase.from("consentimento").insert({ motorista_id: motoristaId, tipo: "leitura_documento", versao: "1", aceito: true });
+  if (error) await logErro("wa-webhook.cadastroFoto", "Falha ao gravar consentimento", { erro: error.message, motoristaId, waMessageId });
+}
+
+/** Convite único, depois de um cálculo completo. True se mandou (o chamador pula o cartão viral). */
+async function convidarCadastroPorFoto(fromE164: string, motoristaId: string, waMessageId: string): Promise<boolean> {
+  const estado = await estadoCadastroFoto(fromE164);
+  if (estado?.convidado_em) return false;
+  if (await temConsentimentoLeitura(motoristaId)) return false;
+  const { data: m } = await supabase.from("motoristas").select("nome, cnh_numero").eq("id", motoristaId).maybeSingle();
+  if (m?.nome && m?.cnh_numero) return false; // já tem cadastro — não precisa
+  await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "aguardando_consentimento", convidado_em: new Date().toISOString() });
+  await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto: "[convite cadastro por foto]", extracao: null, status: "doc_convite" });
+  await enviarBotoes(fromE164, TEXTO_CONVITE_CADASTRO, [
+    { id: "doc:ok", titulo: "Pode ler" },
+    { id: "doc:nao", titulo: "Agora não" },
+  ]);
+  return true;
+}
+
+/** Comando CADASTRO: com consentimento pede a foto; sem, manda o convite. */
+async function tratarComandoCadastro(fromE164: string, texto: string, waMessageId: string): Promise<void> {
+  const { id: motoristaId, novo } = await garantirMotorista(fromE164, texto);
+  if (!motoristaId) return;
+  if (await temConsentimentoLeitura(motoristaId)) {
+    await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "aguardando_foto", media_id: null, dados: null, tipo_doc: null });
+    await enviarMensagemWhatsapp(fromE164, TEXTO_PEDIR_FOTO + (novo ? AVISO_CADASTRO : ""));
+    return;
+  }
+  await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "aguardando_consentimento", convidado_em: new Date().toISOString() });
+  await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao: null, status: "doc_convite" });
+  await enviarBotoes(fromE164, TEXTO_CONVITE_CADASTRO + (novo ? AVISO_CADASTRO : ""), [
+    { id: "doc:ok", titulo: "Pode ler" },
+    { id: "doc:nao", titulo: "Agora não" },
+  ]);
+}
+
+/** Baixa a mídia da Meta (2 passos: id → url assinada → bytes). Nada é gravado. */
+async function baixarMidiaMeta(mediaId: string): Promise<{ bytes: Uint8Array; mime: string } | null> {
+  if (!WA_ACCESS_TOKEN) return null;
+  try {
+    const meta = await fetch(`https://graph.facebook.com/v20.0/${mediaId}`, { headers: { Authorization: `Bearer ${WA_ACCESS_TOKEN}` } });
+    if (!meta.ok) {
+      await logErro("wa-webhook.baixarMidia", "Meta não devolveu a url da mídia", { status: meta.status, detalhe: await meta.text() });
+      return null;
+    }
+    const info = (await meta.json()) as { url?: string; mime_type?: string; file_size?: number };
+    if (!info.url) return null;
+    if ((info.file_size ?? 0) > 5 * 1024 * 1024) return null; // limite da API de visão
+    const bin = await fetch(info.url, { headers: { Authorization: `Bearer ${WA_ACCESS_TOKEN}` } });
+    if (!bin.ok) return null;
+    return { bytes: new Uint8Array(await bin.arrayBuffer()), mime: info.mime_type ?? "image/jpeg" };
+  } catch (e) {
+    await logErro("wa-webhook.baixarMidia", "Download da mídia lançou exceção", { erro: String(e) });
+    return null;
+  }
+}
+
+/** Foto chegou. Com consentimento, lê; sem, guarda o id e pergunta (msg 9). */
+async function tratarImagemRecebida(img: ImagemRecebida): Promise<void> {
+  const { id: motoristaId } = await garantirMotorista(img.fromE164, "[imagem]");
+  if (!motoristaId) return;
+  if (await temConsentimentoLeitura(motoristaId)) {
+    await processarImagemDocumento(img.fromE164, motoristaId, img.mediaId, img.waMessageId);
+    return;
+  }
+  await gravarEstadoCadastroFoto(img.fromE164, motoristaId, { etapa: "aguardando_consentimento", media_id: img.mediaId });
+  await registrarTentativaFrete({ waMessageId: img.waMessageId, motoristaId, fromE164: img.fromE164, texto: "[imagem sem consentimento]", extracao: null, status: "doc_imagem_sem_contexto" });
+  await enviarBotoes(
+    img.fromE164,
+    "Recebi uma imagem. Se for sua *CNH* ou o *CRLV*, posso ler e preencher seu cadastro — não guardo a foto nem o CPF. Se for um frete, me manda em texto: rota e valor.",
+    [
+      { id: "doc:ok", titulo: "Pode ler" },
+      { id: "doc:frete", titulo: "Era um frete" },
+    ],
+  );
+}
+
+function fmtDataBRdoc(iso: string | null): string {
+  if (!iso) return "—";
+  const [a, m, d] = iso.split("-");
+  return `${d}/${m}/${a}`;
+}
+
+function textoConfirmacaoDoc(estado: EstadoCadastroFoto): string {
+  const d = estado.dados ?? ({} as NonNullable<EstadoCadastroFoto["dados"]>);
+  if (estado.tipo_doc === "cnh") {
+    const vencida = d.validade && d.validade < new Date().toISOString().slice(0, 10);
+    return (
+      `📄 Li na sua CNH:\n` +
+      `*Nome:* ${d.nome ?? "—"}\n` +
+      `*Categoria:* ${d.categoria ?? "—"}\n` +
+      `*Validade:* ${fmtDataBRdoc(d.validade ?? null)}\n` +
+      `*Nº da CNH:* ${d.numero ?? "—"}\n` +
+      (vencida ? `⚠️ Essa CNH venceu em ${fmtDataBRdoc(d.validade ?? null)}.\n` : "") +
+      `Tá certo?`
+    );
+  }
+  const veic = [d.marca, d.modelo].filter(Boolean).join(" ") || "—";
+  const ano = d.ano ? ` (${d.ano})` : "";
+  if (d.especie === "semirreboque" || d.especie === "reboque") {
+    return (
+      `🚛 Li no CRLV:\n` +
+      `*Semirreboque:* ${veic}${d.carroceria ? ` ${d.carroceria}` : ""}${ano} · Placa ${d.placa ?? "—"} · ${d.eixos ?? "—"} eixos · ${d.capacidadeT ?? "—"} t\n` +
+      `*Licenciamento:* ${d.exercicio ?? "—"}\n` +
+      `Tá certo?`
+    );
+  }
+  return (
+    `🚛 Li no CRLV:\n` +
+    `*Veículo:* ${veic}${ano}\n` +
+    `*Placa:* ${d.placa ?? "—"}\n` +
+    `*Eixos:* ${d.eixos ?? "—"} · *Capacidade:* ${d.capacidadeT ?? "—"} t\n` +
+    `*Licenciamento:* ${d.exercicio ?? "—"}\n` +
+    `Tá certo?`
+  );
+}
+
+const BOTOES_CONFIRMAR_DOC = [
+  { id: "doc:salvar", titulo: "Salvar" },
+  { id: "doc:corrigir", titulo: "Corrigir" },
+  { id: "doc:cancelar", titulo: "Cancelar" },
+];
+
+async function processarImagemDocumento(fromE164: string, motoristaId: string, mediaId: string, waMessageId: string): Promise<void> {
+  const midia = await baixarMidiaMeta(mediaId);
+  const leitura = midia ? await lerDocumento(bytesParaBase64(midia.bytes), midia.mime) : null;
+  const link = await linkApp(motoristaId, "/motorista");
+  if (!leitura || leitura.tipo === "ilegivel") {
+    await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto: "[imagem]", extracao: null, status: "doc_ilegivel" });
+    await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "aguardando_foto", media_id: null });
+    await enviarMensagemWhatsapp(fromE164, `Não consegui ler. Tira de novo com o documento inteiro na tela, com luz e sem reflexo. Se preferir, manda pelo app: ${link}`);
+    return;
+  }
+  if (leitura.tipo === "outro") {
+    await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto: "[imagem]", extracao: null, status: "doc_ilegivel", resultado: { motivo: "nao_e_documento" } });
+    await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "aguardando_foto", media_id: null });
+    await enviarMensagemWhatsapp(fromE164, "Isso não parece uma CNH nem um CRLV. Manda a foto do documento inteiro, aberto. Se for um frete, me manda em texto: rota e valor.");
+    return;
+  }
+  const dados = leitura.tipo === "cnh" ? { ...leitura.cnh } : { nome: null, categoria: null, validade: null, numero: null, ...leitura.crlv };
+  const estado: EstadoCadastroFoto = { from_e164: fromE164, motorista_id: motoristaId, etapa: "confirmar", tipo_doc: leitura.tipo, dados, media_id: null, convidado_em: null };
+  await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "confirmar", tipo_doc: leitura.tipo, dados, media_id: null });
+  await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto: "[imagem]", extracao: null, status: "doc_lido", resultado: { tipo: leitura.tipo, campos_lidos: Object.entries(dados).filter(([, v]) => v != null).map(([k]) => k) } });
+  await enviarBotoes(fromE164, textoConfirmacaoDoc(estado), BOTOES_CONFIRMAR_DOC);
+}
+
+/** Carroceria do CRLV (texto livre) → valor da lista do app. */
+function carroceriaDoCRLV(texto: string | null): TipoCarroceriaMsg | null {
+  if (!texto) return null;
+  const t = semAcento(texto);
+  const mapa: Array<[RegExp, TipoCarroceriaMsg]> = [
+    [/frigor|refriger/, "Baú Frigorífico"],
+    [/bau|furgao/, "Baú"],
+    [/sider/, "Sider"],
+    [/granel/, "Graneleiro"],
+    [/tanque/, "Tanque"],
+    [/cacamba|bascul/, "Caçamba"],
+    [/prancha/, "Prancha"],
+    [/plataforma/, "Plataforma"],
+    [/grade baixa|carga seca|aberta/, "Grade baixa"],
+    [/cegonh/, "Cegonheiro"],
+    [/silo/, "Silo"],
+    [/cont[aê]iner|porta.?cont/, "Bug Porta Container"],
+    [/gaiola|boiadeir/, "Gaiola"],
+    [/munk|guindaste/, "Munk"],
+  ];
+  for (const [re, v] of mapa) if (re.test(t)) return v;
+  return null;
+}
+
+/** Grava a leitura confirmada. Devolve a mensagem de "pronto" (ou pede o tipo do caminhão). */
+async function salvarLeituraDoc(fromE164: string, estado: EstadoCadastroFoto, waMessageId: string): Promise<void> {
+  const motoristaId = estado.motorista_id;
+  const d = estado.dados ?? ({} as NonNullable<EstadoCadastroFoto["dados"]>);
+
+  if (estado.tipo_doc === "cnh") {
+    const patch: Record<string, unknown> = {};
+    if (d.nome) patch.nome = d.nome;
+    if (d.numero) patch.cnh_numero = d.numero;
+    if (d.validade) patch.cnh_vencimento = d.validade;
+    if (d.categoria) patch.cnh_categoria = d.categoria;
+    const { error } = await supabase.from("motoristas").update(patch).eq("id", motoristaId);
+    if (error) {
+      await logErro("wa-webhook.cadastroFoto", "Falha ao salvar CNH", { erro: error.message, motoristaId });
+      await enviarMensagemWhatsapp(fromE164, "Não consegui salvar agora. Tenta de novo daqui a pouco.");
+      return;
+    }
+    await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto: "[salvar cnh]", extracao: null, status: "doc_salvo", resultado: { tipo: "cnh", campos: Object.keys(patch) } });
+    await registrarEventoAnalytics("driver_profile_saved", motoristaId, { canal: "whatsapp", via: "cnh_foto", campos: Object.keys(patch) });
+    await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "aguardando_foto", tipo_doc: null, dados: null });
+    const primeiroNome = d.nome ? d.nome.split(" ")[0] : null;
+    await enviarMensagemWhatsapp(fromE164, `Pronto${primeiroNome ? `, ${primeiroNome}` : ""}. Cadastro atualizado. Te aviso quando a CNH estiver pra vencer. Agora manda a foto do CRLV, se quiser.`);
+    return;
+  }
+
+  // CRLV
+  const { data: perfil } = await supabase.from("caminhao_perfil").select("tipo_veiculo, numero_eixos, tipo_carroceria").eq("user_id", motoristaId).maybeSingle();
+  const especie = d.especie ?? "outro";
+  let tipoVeiculo: string | null = d.tipoVeiculo ?? perfil?.tipo_veiculo ?? null;
+  if (!tipoVeiculo && especie === "caminhao") {
+    tipoVeiculo = d.eixos === 2 ? "Toco" : d.eixos === 4 ? "BiTruck" : "Truck";
+  }
+  if (!tipoVeiculo && especie === "caminhao_trator") {
+    // Cavalo mecânico: Carreta, Carreta LS ou Bitrem — não dá pra saber pelo CRLV do cavalo.
+    await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "tipo_veiculo" });
+    await enviarBotoes(fromE164, "É uma Carreta?", [
+      { id: "doc:tipo:Carreta", titulo: "Carreta" },
+      { id: "doc:tipo:Carreta LS", titulo: "Carreta LS" },
+      { id: "doc:tipo:Bitrem 7 eixos", titulo: "Bitrem" },
+    ]);
+    return;
+  }
+
+  const patch: Record<string, unknown> = {};
+  const ehReboque = especie === "semirreboque" || especie === "reboque";
+  if (!ehReboque) {
+    if (d.marca) patch.marca = d.marca;
+    if (d.modelo) patch.modelo = d.modelo;
+    if (d.ano) patch.ano = d.ano;
+    if (d.placa) patch.placa = d.placa;
+    if (d.renavam) patch.renavam = d.renavam;
+    if (d.exercicio) patch.crlv_exercicio = d.exercicio;
+    if (tipoVeiculo) {
+      patch.tipo_veiculo = tipoVeiculo;
+      patch.apelido = [d.marca, d.modelo].filter(Boolean).join(" ") || tipoVeiculo;
+    }
+    if (especie === "caminhao_trator") {
+      // eixos/capacidade do cavalo não são os do conjunto — vêm do CRLV do semirreboque
+      if (!perfil?.numero_eixos || perfil.numero_eixos === 5) patch.numero_eixos = EIXOS_PADRAO[(tipoVeiculo as TipoVeiculoMsg) ?? "Carreta"] ?? 5;
+    } else {
+      if (d.eixos) patch.numero_eixos = d.eixos;
+      if (d.capacidadeT) patch.carga_maxima_toneladas = d.capacidadeT;
+    }
+  } else {
+    const carroceria = carroceriaDoCRLV(d.carroceria ?? null);
+    if (carroceria) patch.tipo_carroceria = carroceria;
+    if (d.capacidadeT) patch.carga_maxima_toneladas = d.capacidadeT;
+    // Eixos do conjunto dependem do cavalo + semirreboque; fica o do tipo
+    // escolhido (Carreta 5, LS 6, Bitrem 7) — não mexe aqui.
+    if (d.exercicio && !perfil) patch.crlv_exercicio = d.exercicio;
+  }
+
+  const base = perfil
+    ? {}
+    : {
+        diesel_km_por_lt: PERFIL_CUSTO_DEFAULT.diesel_km_por_lt,
+        diesel_preco_por_litro: PERFIL_CUSTO_DEFAULT.diesel_preco_por_litro,
+        arla_km_por_lt: PERFIL_CUSTO_DEFAULT.arla_km_por_lt,
+        arla_preco_por_litro: PERFIL_CUSTO_DEFAULT.arla_preco_por_litro,
+        manutencao_por_km: PERFIL_CUSTO_DEFAULT.manutencao_por_km,
+        pneus_por_km: PERFIL_CUSTO_DEFAULT.pneus_por_km,
+        depreciacao_por_km: PERFIL_CUSTO_DEFAULT.depreciacao_por_km,
+        alimentacao_dia: PERFIL_CUSTO_DEFAULT.alimentacao_dia,
+        pernoite_dia: PERFIL_CUSTO_DEFAULT.pernoite_dia,
+        estacionamento_padrao: PERFIL_CUSTO_DEFAULT.estacionamento_padrao,
+        chapa_padrao: PERFIL_CUSTO_DEFAULT.chapa_padrao,
+        margem_desejada: PERFIL_CUSTO_DEFAULT.margem_desejada,
+        numero_eixos: 5,
+        apelido: tipoVeiculo ?? "Caminhão",
+        tipo_veiculo: tipoVeiculo,
+      };
+  const { error } = await supabase.from("caminhao_perfil").upsert({ user_id: motoristaId, ...base, ...patch }, { onConflict: "user_id" });
+  if (error) {
+    await logErro("wa-webhook.cadastroFoto", "Falha ao salvar CRLV", { erro: error.message, motoristaId });
+    await enviarMensagemWhatsapp(fromE164, "Não consegui salvar agora. Tenta de novo daqui a pouco.");
+    return;
+  }
+  await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto: "[salvar crlv]", extracao: null, status: "doc_salvo", resultado: { tipo: "crlv", especie, campos: Object.keys(patch) } });
+  await registrarEventoAnalytics("truck_profile_saved", motoristaId, { canal: "whatsapp", via: "crlv_foto", especie, campos: Object.keys(patch) });
+  await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "aguardando_foto", tipo_doc: null, dados: null });
+  const veic = [d.marca, d.modelo].filter(Boolean).join(" ");
+  await enviarMensagemWhatsapp(
+    fromE164,
+    ehReboque
+      ? `Pronto — semirreboque${patch.tipo_carroceria ? ` ${patch.tipo_carroceria}` : ""}${d.placa ? `, placa ${d.placa}` : ""}, salvo no seu caminhão. Os cálculos já usam ele.`
+      : `Pronto — ${veic || tipoVeiculo || "caminhão"}${d.placa ? `, placa ${d.placa}` : ""}, salvo como seu caminhão. Os cálculos já usam ele.`,
+  );
+}
+
+async function tratarBotaoCadastroFoto(fromE164: string, rowId: string, waMessageId: string): Promise<void> {
+  const estado = await estadoCadastroFoto(fromE164);
+  const { data: m } = await supabase.from("motoristas").select("id").eq("telefone_e164", fromE164).maybeSingle();
+  const motoristaId = estado?.motorista_id ?? m?.id ?? null;
+  if (!motoristaId) return;
+
+  if (rowId === "doc:ok") {
+    if (!(await temConsentimentoLeitura(motoristaId))) await registrarConsentimentoLeitura(motoristaId, waMessageId);
+    if (estado?.media_id) {
+      await processarImagemDocumento(fromE164, motoristaId, estado.media_id, waMessageId);
+    } else {
+      await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "aguardando_foto", media_id: null });
+      await enviarMensagemWhatsapp(fromE164, TEXTO_PEDIR_FOTO);
+    }
+    return;
+  }
+  if (rowId === "doc:nao") {
+    await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "aguardando_foto", media_id: null, dados: null, tipo_doc: null });
+    return; // não insiste; CADASTRO traz de volta
+  }
+  if (rowId === "doc:frete") {
+    await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "aguardando_foto", media_id: null });
+    await enviarMensagemWhatsapp(fromE164, 'Beleza. Me manda o frete em texto: rota e valor, ex.: *"Sinop pra Santos, 14 mil"*.');
+    return;
+  }
+  if (!estado?.dados || !estado.tipo_doc) {
+    await enviarMensagemWhatsapp(fromE164, "Essa leitura já expirou. Manda a foto de novo.");
+    return;
+  }
+  if (rowId === "doc:salvar") {
+    await salvarLeituraDoc(fromE164, estado, waMessageId);
+    return;
+  }
+  if (rowId === "doc:corrigir") {
+    await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "corrigir" });
+    await enviarMensagemWhatsapp(fromE164, 'O que tá errado? Manda só o campo, tipo *"placa ABC1D23"* ou *"validade 14/03/2029"*.');
+    return;
+  }
+  if (rowId === "doc:cancelar") {
+    await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto: "[cancelar leitura]", extracao: null, status: "doc_cancelado", resultado: { tipo: estado.tipo_doc } });
+    await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "aguardando_foto", tipo_doc: null, dados: null, media_id: null });
+    await enviarMensagemWhatsapp(fromE164, TEXTO_CANCELOU);
+    return;
+  }
+  if (rowId.startsWith("doc:tipo:")) {
+    const tipo = rowId.slice("doc:tipo:".length);
+    const dados = { ...estado.dados, tipoVeiculo: tipo };
+    await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "confirmar", dados });
+    await salvarLeituraDoc(fromE164, { ...estado, dados }, waMessageId);
+  }
+}
+
+/**
+ * Texto enquanto a leitura está em confirmação/correção: "placa ABC1D23",
+ * "validade 14/03/2029", "nome João da Silva"... Aplica e reapresenta.
+ * True = tratou (o roteador não manda pra IA).
+ */
+async function tratarTextoDuranteCadastroFoto(fromE164: string, texto: string, waMessageId: string): Promise<boolean> {
+  const estado = await estadoCadastroFoto(fromE164);
+  if (!estado || (estado.etapa !== "corrigir" && estado.etapa !== "confirmar") || !estado.dados || !estado.tipo_doc) return false;
+  const t = texto.trim();
+  const m = t.match(/^(nome|categoria|validade|vencimento|numero|número|registro|cnh|placa|renavam|eixos?|capacidade|ano|marca|modelo|exercicio|exercício|licenciamento)\s*[:=]?\s*(.+)$/i);
+  if (!m) {
+    if (estado.etapa === "corrigir") {
+      await enviarMensagemWhatsapp(fromE164, 'Não entendi o campo. Manda assim: *"placa ABC1D23"*, *"validade 14/03/2029"*, *"nome João da Silva"*, *"eixos 6"*.');
+      return true;
+    }
+    return false; // em "confirmar", texto que não é correção segue o fluxo normal (pode ser um frete)
+  }
+  const campo = semAcento(m[1]);
+  const valor = m[2].trim();
+  const d = { ...estado.dados };
+  let ok = true;
+  switch (campo) {
+    case "nome": d.nome = valor.slice(0, 80); break;
+    case "categoria": d.categoria = normalizarCategoriaCNH(valor); ok = d.categoria != null; break;
+    case "validade": case "vencimento": {
+      const br = valor.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      ok = Boolean(br); if (br) d.validade = `${br[3]}-${br[2]}-${br[1]}`; break;
+    }
+    case "numero": case "registro": case "cnh": d.numero = valor.replace(/\D/g, "").slice(0, 11) || null; ok = d.numero != null; break;
+    case "placa": d.placa = normalizarPlaca(valor); ok = d.placa != null; break;
+    case "renavam": d.renavam = valor.replace(/\D/g, ""); ok = /^\d{9,11}$/.test(d.renavam); break;
+    case "eixo": case "eixos": { const n = Number.parseInt(valor, 10); ok = n >= 2 && n <= 9; if (ok) d.eixos = n; break; }
+    case "capacidade": { const n = Number(valor.replace(",", ".").replace(/[^\d.]/g, "")); ok = n > 0 && n < 200; if (ok) d.capacidadeT = n; break; }
+    case "ano": { const n = Number.parseInt(valor, 10); ok = n >= 1970 && n <= 2100; if (ok) d.ano = n; break; }
+    case "marca": d.marca = valor.slice(0, 40); break;
+    case "modelo": d.modelo = valor.slice(0, 60); break;
+    case "exercicio": case "licenciamento": { const n = Number.parseInt(valor, 10); ok = n >= 2000 && n <= 2100; if (ok) d.exercicio = n; break; }
+  }
+  if (!ok) {
+    await enviarMensagemWhatsapp(fromE164, `Não consegui usar "${valor}" como ${m[1].toLowerCase()}. Confere e manda de novo.`);
+    return true;
+  }
+  await gravarEstadoCadastroFoto(fromE164, estado.motorista_id, { etapa: "confirmar", dados: d });
+  await registrarTentativaFrete({ waMessageId, motoristaId: estado.motorista_id, fromE164, texto, extracao: null, status: "doc_lido", resultado: { correcao: campo } });
+  await enviarBotoes(fromE164, textoConfirmacaoDoc({ ...estado, dados: d }), BOTOES_CONFIRMAR_DOC);
+  return true;
+}
+
 Deno.serve(async (req: Request) => {
   try {
     return await tratarRequisicao(req);
@@ -2341,6 +2817,10 @@ async function tratarRequisicao(req: Request): Promise<Response> {
 
     if (RE_SAIR.test(msg.texto.trim())) {
       await tratarSair(msg.fromE164, msg.waMessageId);
+    } else if (RE_CADASTRO.test(msg.texto.trim())) {
+      await tratarComandoCadastro(msg.fromE164, msg.texto, msg.waMessageId);
+    } else if (await tratarTextoDuranteCadastroFoto(msg.fromE164, msg.texto, msg.waMessageId)) {
+      // correção de campo ("placa ABC1D23") enquanto a leitura está em confirmação
     } else if (RE_AJUDA.test(msg.texto.trim())) {
       // "ajuda"/"menu" — apresentação fixa, sem IA (conta nasce se for novo).
       const { id, novo } = await garantirMotorista(msg.fromE164, msg.texto);
@@ -2365,6 +2845,20 @@ async function tratarRequisicao(req: Request): Promise<Response> {
   // Respostas de lista (clique num frete da busca ou em "Abrir o app") —
   // mesmo payload de mensagens, tipo "interactive" em vez de "text", por
   // isso um laço separado com sua própria checagem de idempotência.
+  // Fotos (CNH/CRLV). Mesma idempotência. Não entram na cota diária: a
+  // leitura custa IA, mas é rara e já tem o funil de consentimento.
+  for (const img of extrairImagens(payload)) {
+    const { error: dupError } = await supabase
+      .from("wa_mensagem_recebida")
+      .insert({ wa_message_id: img.waMessageId, from_e164: img.fromE164, intent: "imagem" });
+    if (dupError) {
+      if (dupError.code === "23505") continue;
+      // eslint-disable-next-line no-console
+      console.error("[wa-webhook] falha ao registrar idempotência (imagem), processando mesmo assim", dupError);
+    }
+    await tratarImagemRecebida(img);
+  }
+
   const interacoes = extrairInteracoesLista(payload);
   for (const it of interacoes) {
     const { error: dupError } = await supabase
@@ -2383,6 +2877,8 @@ async function tratarRequisicao(req: Request): Promise<Response> {
       await tratarPedidoCartao(it.fromE164, it.waMessageId);
     } else if (it.rowId.startsWith("cidade:")) {
       await tratarEscolhaCidade(it.fromE164, it.rowId, it.waMessageId);
+    } else if (it.rowId.startsWith("doc:")) {
+      await tratarBotaoCadastroFoto(it.fromE164, it.rowId, it.waMessageId);
     } else if (it.rowId.startsWith("perfil:salvar:")) {
       await tratarSalvarVeiculo(it.fromE164, it.rowId, it.waMessageId);
     } else {

@@ -69,8 +69,15 @@ cd supabase/functions/wa-webhook && deno check index.ts   # Edge Function
 supabase functions deploy wa-webhook --no-verify-jwt       # deploy (3 arquivos; sem bundle)
 ```
 
-A v50 (02/10) foi deployada como bundle esbuild por limite do MCP do Cowork; pelo CLI
-não precisa — ver `Docs/status-sessao.md` 02/10.
+v50–v53 foram deployadas como bundle esbuild pelo MCP do Cowork; a partir da **v54
+(07/10) o bundle passou do limite do MCP (~90 KB)** e o deploy do `wa-webhook` é
+SEMPRE pelo CLI, com os 4 arquivos-fonte (`index`, `calc`, `extracao`, `documentos`):
+
+```
+npx supabase@latest functions deploy wa-webhook --no-verify-jwt --project-ref gastwloozlzthpqhxnzr
+```
+
+(`npx supabase@latest login` uma vez; `config.toml` criado por `npx supabase@latest init`.)
 
 Se `@rode/calc` não resolver, apague `node_modules` na raiz, em `apps/web` e em
 `packages/rode-calc` e rode `npm install` de novo (aconteceu em 10/09).
@@ -94,4 +101,6 @@ checkpoint 30/09 — sem guardar imagem nem CPF); integração Aferi+ (`Docs/int
 motorista; aba "Funil viral" no admin; verificar a empresa na Meta; logo do Sofrete
 (4 propostas em `Docs/propostas-logo-sofrete.html`, ele ainda não escolheu);
 identidade visual em Analisar/Buscar/Perfil; troca de senha no portal; hospedar a
-Barlow localmente; gate de validação está em 1/160 — o gargalo é aquisição.
+Barlow localmente; lojas de app (Play Store via TWA primeiro; App Store só com
+push/câmera — ver status-sessao 05/10); gate de validação está em 1/160 — o
+gargalo é aquisição.
