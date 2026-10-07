@@ -176,6 +176,26 @@ async function registrarEventoAnalytics(
 // ---------------------------------------------------------------------
 // Envio pro WhatsApp — no-op logado enquanto a chave da Meta não chega.
 // ---------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// SIMULADOR (07/10) — testes sem WhatsApp. Números 5590XXXXXXXX não existem
+// na Meta: pra eles, nada é enviado; as respostas ficam em `respostasSimuladas`
+// e voltam no JSON do GET ?simular=1 (ver tratarSimulacao). Token em
+// bot_config.simulacao_token (só service_role). O webhook real (POST com
+// HMAC) não muda em nada.
+// ---------------------------------------------------------------------------
+function ehNumeroSimulado(numero: string): boolean {
+  return /^5590\d{8}$/.test(numero); // DDD 90 não existe no Brasil; passa no check ^55[1-9]… de motoristas
+}
+type RespostaSimulada = { tipo: "texto" | "botoes" | "lista" | "contato"; texto: string; opcoes?: Array<{ id: string; titulo: string }> };
+const respostasSimuladas = new Map<string, RespostaSimulada[]>();
+function coletarSimulada(para: string, r: RespostaSimulada): boolean {
+  if (!ehNumeroSimulado(para)) return false;
+  const lista = respostasSimuladas.get(para) ?? [];
+  lista.push(r);
+  respostasSimuladas.set(para, lista);
+  return true;
+}
+
 /** Memória curta da conversa (07/10): toda mensagem recebida e toda resposta enviada. Nunca bloqueia o fluxo. */
 async function registrarConversa(fromE164: string, papel: "motorista" | "bot", texto: string): Promise<void> {
   const t = texto.trim();
@@ -197,12 +217,14 @@ function rotuloBotao(rowId: string): string {
   if (rowId.startsWith("onb_eixos:")) return `${rowId.slice(10)} eixos`;
   if (rowId.startsWith("onb_consumo:")) return `${rowId.slice(12)} km/L`;
   if (rowId.startsWith("cidade:")) return rowId.split(":").slice(2).join(":");
+  if (rowId.startsWith("busca:origem:")) { const v = rowId.split(":").slice(3).join(":"); return v === "?" ? "Outra cidade" : v; }
   if (rowId.startsWith("perfil:salvar:")) return "Salvar esse caminhão";
   return "um frete da lista";
 }
 
 async function enviarMensagemWhatsapp(paraE164: string, texto: string): Promise<void> {
   await registrarConversa(paraE164, "bot", texto);
+  if (coletarSimulada(paraE164, { tipo: "texto", texto })) return;
   if (!WA_ACCESS_TOKEN || !WA_PHONE_NUMBER_ID) {
     // eslint-disable-next-line no-console
     console.log(`[wa-webhook] envio pulado (chave da Meta pendente) para=${paraE164}: ${texto}`);
@@ -250,6 +272,7 @@ interface LinhaListaFrete {
 
 async function enviarListaFretes(paraE164: string, linhas: LinhaListaFrete[], textoCorpo: string): Promise<void> {
   await registrarConversa(paraE164, "bot", `${textoCorpo} [lista: ${linhas.map((l) => l.title).join(" | ")}]`);
+  if (coletarSimulada(paraE164, { tipo: "lista", texto: textoCorpo, opcoes: linhas.map((l) => ({ id: l.id, titulo: `${l.title} — ${l.description}` })) })) return;
   if (!WA_ACCESS_TOKEN || !WA_PHONE_NUMBER_ID) {
     // eslint-disable-next-line no-console
     console.log(`[wa-webhook] envio de lista pulado (chave da Meta pendente) para=${paraE164}: ${JSON.stringify(linhas)}`);
@@ -292,6 +315,7 @@ async function enviarListaFretes(paraE164: string, linhas: LinhaListaFrete[], te
 // erro das funções acima.
 // ---------------------------------------------------------------------
 async function enviarPayloadWhatsapp(paraE164: string, corpo: Record<string, unknown>, origemLog: string): Promise<void> {
+  if (coletarSimulada(paraE164, { tipo: corpo.type === "contacts" ? "contato" : "texto", texto: `[${origemLog}]` })) return;
   if (!WA_ACCESS_TOKEN || !WA_PHONE_NUMBER_ID) {
     // eslint-disable-next-line no-console
     console.log(`[wa-webhook] envio pulado (chave da Meta pendente) para=${paraE164}: ${JSON.stringify(corpo)}`);
@@ -324,6 +348,7 @@ async function enviarPayloadWhatsapp(paraE164: string, corpo: Record<string, unk
  */
 async function enviarBotoes(paraE164: string, texto: string, botoes: Array<{ id: string; titulo: string }>): Promise<void> {
   await registrarConversa(paraE164, "bot", `${texto} [botões: ${botoes.map((b) => b.titulo).join(" | ")}]`);
+  if (coletarSimulada(paraE164, { tipo: "botoes", texto, opcoes: botoes })) return;
   await enviarPayloadWhatsapp(
     paraE164,
     {
@@ -1448,7 +1473,8 @@ async function tratarTextoDuranteOnboarding(fromE164: string, texto: string, waM
   } else if (onb.etapa === "consumo") {
     const m = t.match(/(\d+(?:[.,]\d+)?)/);
     if (m) {
-      const n = Number(m[1].replace(",", "."));
+      // "2 e meio", "dois e meio" → 2,5 (motorista fala assim)
+      const n = Number(m[1].replace(",", ".")) + (/\be meio\b/.test(t) && !m[1].includes(".") && !m[1].includes(",") ? 0.5 : 0);
       if (n >= 1 && n <= 6) rowId = `onb_consumo:${n}`;
     }
   }
@@ -1481,8 +1507,18 @@ async function despacharExtracao(fromE164: string, texto: string, waMessageId: s
   // Pergunta sobre o último cálculo ("quanto de pedágio?"): a IA já
   // respondeu com os números do contexto — só manda (conta no limite diário).
   if (extracao.intent === "pergunta_calculo") {
-    await tratarConversaLivre(fromE164, texto, waMessageId, extracao, "pergunta_calculo");
-    return;
+    // "e se eu voltar vazio?" (simulador, 07/10): a IA devolve a rota e o
+    // valor do último cálculo com volta_vazia=true e sem resposta — é um
+    // recálculo, não uma pergunta. Roda como "calcular".
+    if (extracao.voltaVazia && extracao.origem && extracao.destino && extracao.valorFreteReais != null && !extracao.respostaLivre) {
+      extracao = { ...extracao, intent: "calcular", ePedidoDeFrete: true, confiancaOrigem: 1, confiancaDestino: 1, confiancaValor: 1 };
+    } else {
+      if (!extracao.respostaLivre) {
+        extracao = { ...extracao, respostaLivre: "Não peguei o que você quer saber do cálculo. Pergunta direto: pedágio, diesel, dias de viagem, margem ou piso ANTT?" };
+      }
+      await tratarConversaLivre(fromE164, texto, waMessageId, extracao, "pergunta_calculo");
+      return;
+    }
   }
 
   // "Posso tirar foto da minha CNH?" → mesmo fluxo do comando CADASTRO (07/10).
@@ -2172,20 +2208,33 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string, opcoes:
   // Origem: digitada > cidade base > pergunta.
   let origem: CidadeGeo | null = null;
   if (origemTexto) {
-    origem = await geocodificarCidade(origemTexto);
+    // Na busca, só casamento EXATO segue direto. "abc paulista" casava 60%
+    // com Paulista/PB e buscava carga na Paraíba (simulador, 07/10) — então
+    // correção ou dúvida vira pergunta com botões; nada parecido, pergunta
+    // em texto. Status busca_origem mantém o contexto pra próxima mensagem.
+    const decisao = await decidirCidade(origemTexto);
+    const cands = decisao.tipo === "nao_achou" ? [] : await sugerirMunicipios(origemTexto, 2);
+    if (decisao.tipo === "ok" && !decisao.corrigiu) {
+      origem = await geocodificarCidade(decisao.canonico);
+    }
     if (!origem) {
-      // Região ("ABC paulista"), apelido ou erro grande: pergunta de qual
-      // cidade, sugerindo parecidas se houver. Status busca_origem mantém o
-      // contexto pra próxima mensagem ser lida como a resposta.
-      const parecidas = (await sugerirMunicipios(origemTexto, 2)).filter((c) => c.similaridade >= LIMIAR_CIDADE_SUGERIR);
       await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto: textoOriginal, extracao: null, status: "busca_origem" });
-      await enviarMensagemWhatsapp(
-        fromE164,
-        `Não achei "${origemTexto}" como cidade. De qual cidade exatamente?` +
-          (parecidas.length ? ` Quis dizer ${parecidas.map((c) => `*${c.nome}/${c.uf}*`).join(" ou ")}?` : "") +
-          ` Manda só o nome, com o estado se puder (ex.: *"Santo André/SP"*).` +
-          avisoNovo,
-      );
+      const plausiveis = cands.filter((c) => c.similaridade >= LIMIAR_CIDADE_SUGERIR);
+      if (plausiveis.length) {
+        await enviarBotoes(
+          fromE164,
+          `Não achei "${origemTexto}" exatamente. Você quer sair de qual cidade?` + avisoNovo,
+          [
+            ...plausiveis.slice(0, 2).map((c) => ({ id: `busca:origem:${tipoCarga ?? "-"}:${c.nome}/${c.uf}`, titulo: `${c.nome}/${c.uf}` })),
+            { id: `busca:origem:${tipoCarga ?? "-"}:?`, titulo: "Outra cidade" },
+          ],
+        );
+      } else {
+        await enviarMensagemWhatsapp(
+          fromE164,
+          `Não achei "${origemTexto}" como cidade. De qual cidade exatamente? Manda só o nome, com o estado se puder (ex.: *"Santo André/SP"*).` + avisoNovo,
+        );
+      }
       return;
     }
     // A cidade que ele digitou vira a "cidade atual" — é de onde a tela
@@ -2291,6 +2340,21 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string, opcoes:
  * clique) antes de calcular — evita responder um cálculo de frete que já
  * saiu do ar.
  */
+
+/** Botão "Paulista/PB" / "Outra cidade" depois de uma origem de busca em dúvida. */
+async function tratarEscolhaOrigemBusca(fromE164: string, rowId: string, waMessageId: string): Promise<void> {
+  const partes = rowId.split(":"); // busca:origem:<tipoCarga|->:<Nome/UF|?>
+  const tipoCarga = partes[2] && partes[2] !== "-" ? (partes[2] as TipoCargaBusca) : null;
+  const escolha = partes.slice(3).join(":");
+  if (!escolha || escolha === "?") {
+    const { data: m } = await supabase.from("motoristas").select("id").eq("telefone_e164", fromE164).maybeSingle();
+    await registrarTentativaFrete({ waMessageId, motoristaId: m?.id ?? null, fromE164, texto: "[outra cidade]", extracao: null, status: "busca_origem" });
+    await enviarMensagemWhatsapp(fromE164, 'De qual cidade você quer sair? Manda só o nome com o estado, ex.: *"Santo André/SP"*.');
+    return;
+  }
+  await tratarBuscaDeFrete(fromE164, waMessageId, { origemTexto: escolha, tipoCarga, textoOriginal: `[botão: ${escolha}]` });
+}
+
 async function tratarRespostaLista(fromE164: string, rowId: string, waMessageId: string): Promise<void> {
   const { data: motorista } = await supabase
     .from("motoristas")
@@ -2768,9 +2832,23 @@ async function tratarBotaoCadastroFoto(fromE164: string, rowId: string, waMessag
  */
 async function tratarTextoDuranteCadastroFoto(fromE164: string, texto: string, waMessageId: string): Promise<boolean> {
   const estado = await estadoCadastroFoto(fromE164);
-  if (!estado || (estado.etapa !== "corrigir" && estado.etapa !== "confirmar") || !estado.dados || !estado.tipo_doc) return false;
+  if (!estado) return false;
   const t = texto.trim();
   const tn = semAcento(t);
+  // Convite no ar e ele responde em texto em vez do botão (simulador, 07/10:
+  // "pode le" → a IA dizia "manda a foto" mas o consentimento não ficava gravado).
+  if (estado.etapa === "aguardando_consentimento") {
+    if (/^(pode|pode ler|pode le|pode sim|sim|s|ok|bora|manda|vai|claro|pode ser|beleza|fechou|isso)[\s!.]*$/.test(tn)) {
+      await tratarBotaoCadastroFoto(fromE164, "doc:ok", waMessageId);
+      return true;
+    }
+    if (/^(nao|n|agora nao|depois|mais tarde|deixa|nao quero)[\s!.]*$/.test(tn)) {
+      await tratarBotaoCadastroFoto(fromE164, "doc:nao", waMessageId);
+      return true;
+    }
+    return false;
+  }
+  if ((estado.etapa !== "corrigir" && estado.etapa !== "confirmar") || !estado.dados || !estado.tipo_doc) return false;
   // "não", "tá errado", "leu errado" → mesmo que o botão Corrigir; "sim", "certo", "pode salvar" → Salvar.
   if (/^(nao|n|errado|ta errado|esta errado|nao esta certo|nao ta certo|leu errado|nao e isso|nao confere)[\s!.]*$|\b(leu errado|ta errado|esta errado|nao esta certo|nao ta certo|errado)\b/.test(tn) && !/^(sim|certo)/.test(tn)) {
     await tratarBotaoCadastroFoto(fromE164, "doc:corrigir", waMessageId);
@@ -2823,6 +2901,58 @@ async function tratarTextoDuranteCadastroFoto(fromE164: string, texto: string, w
   return true;
 }
 
+
+let tokenSimulacaoCache: { valor: string; em: number } | null = null;
+async function tokenSimulacao(): Promise<string | null> {
+  if (tokenSimulacaoCache && Date.now() - tokenSimulacaoCache.em < 10 * 60_000) return tokenSimulacaoCache.valor;
+  const { data } = await supabase.from("bot_config").select("valor").eq("chave", "simulacao_token").maybeSingle();
+  if (!data?.valor) return null;
+  tokenSimulacaoCache = { valor: data.valor as string, em: Date.now() };
+  return data.valor as string;
+}
+
+/**
+ * GET ?simular=1&token=…&de=5590XXXXXXXX&(texto=…|botao=<rowId>|reset=1)
+ * Monta o mesmo payload que a Meta mandaria e roda o pipeline inteiro
+ * (Haiku, cidades, cálculo, banco). As respostas voltam no JSON em vez de
+ * irem pro WhatsApp. `reset=1` apaga a conta simulada (como o SAIR) e a
+ * memória de conversa, pra começar do zero.
+ */
+async function tratarSimulacao(url: URL): Promise<Response> {
+  const token = url.searchParams.get("token") ?? "";
+  const esperado = await tokenSimulacao();
+  if (!esperado || token !== esperado) return json({ erro: "token_invalido" }, 403);
+  const de = url.searchParams.get("de") ?? "";
+  if (!ehNumeroSimulado(de)) return json({ erro: "numero_simulado_invalido", dica: "use 5590 + 8 dígitos (DDD 90 não existe)" }, 400);
+
+  if (url.searchParams.get("reset") === "1") {
+    const { data: m } = await supabase.from("motoristas").select("id").eq("telefone_e164", de).maybeSingle();
+    if (m) await supabase.auth.admin.deleteUser(m.id);
+    await supabase.from("wa_conversa").delete().eq("from_e164", de);
+    await supabase.from("wa_cadastro_foto").delete().eq("from_e164", de);
+    await supabase.from("wa_onboarding").delete().eq("from_e164", de);
+    await supabase.from("wa_freight_query").delete().eq("from_e164", de);
+    respostasSimuladas.delete(de);
+    return json({ ok: true, reset: de, tinhaConta: Boolean(m) });
+  }
+
+  const texto = url.searchParams.get("texto");
+  const botao = url.searchParams.get("botao");
+  if (!texto && !botao) return json({ erro: "faltou_texto_ou_botao" }, 400);
+  const id = `sim-${crypto.randomUUID()}`;
+  const mensagem = botao
+    ? { id, from: de, type: "interactive", interactive: { type: "button_reply", button_reply: { id: botao, title: rotuloBotao(botao) } } }
+    : { id, from: de, type: "text", text: { body: texto } };
+  const payload = { entry: [{ changes: [{ value: { messages: [mensagem] } }] }] };
+
+  respostasSimuladas.delete(de);
+  const inicio = Date.now();
+  await processarPayload(payload);
+  const respostas = respostasSimuladas.get(de) ?? [];
+  respostasSimuladas.delete(de);
+  return json({ de, enviado: botao ? `[botão: ${rotuloBotao(botao)}]` : texto, respostas, ms: Date.now() - inicio });
+}
+
 Deno.serve(async (req: Request) => {
   try {
     return await tratarRequisicao(req);
@@ -2844,6 +2974,7 @@ async function tratarRequisicao(req: Request): Promise<Response> {
   // WhatsApp Business — GET com hub.mode/hub.verify_token/hub.challenge).
   if (req.method === "GET") {
     const url = new URL(req.url);
+    if (url.searchParams.get("simular") === "1") return await tratarSimulacao(url);
     const modo = url.searchParams.get("hub.mode");
     const token = url.searchParams.get("hub.verify_token");
     const challenge = url.searchParams.get("hub.challenge");
@@ -2867,7 +2998,11 @@ async function tratarRequisicao(req: Request): Promise<Response> {
   } catch {
     return json({ erro: "body_invalido" }, 400);
   }
+  return await processarPayload(payload);
+}
 
+/** Tudo que acontece com um payload da Meta já validado (também usado pelo simulador). */
+async function processarPayload(payload: unknown): Promise<Response> {
   await garantirTabelaANTT();
 
   // Diagnóstico: status de entrega (sent/delivered/read/failed) de
@@ -2979,6 +3114,8 @@ async function tratarRequisicao(req: Request): Promise<Response> {
       await tratarEscolhaCidade(it.fromE164, it.rowId, it.waMessageId);
     } else if (it.rowId.startsWith("doc:")) {
       await tratarBotaoCadastroFoto(it.fromE164, it.rowId, it.waMessageId);
+    } else if (it.rowId.startsWith("busca:origem:")) {
+      await tratarEscolhaOrigemBusca(it.fromE164, it.rowId, it.waMessageId);
     } else if (it.rowId.startsWith("perfil:salvar:")) {
       await tratarSalvarVeiculo(it.fromE164, it.rowId, it.waMessageId);
     } else {
