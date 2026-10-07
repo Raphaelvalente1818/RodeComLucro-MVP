@@ -52,6 +52,17 @@ Escrever como caminhoneiro escreve: sem acento, abreviado, com erro ("truk", "qn
 | 23 | `cadastro` → `bora` | Convite; "bora" registra consentimento (conferido em `consentimento`) e pede a foto | ✅ |
 | 24 | `sair` → `piso antt de bh pra salvador carreta ls` | Apaga; mensagem seguinte cria conta de novo e cota BH→Salvador com Carreta LS | ✅ |
 
+## Rodada 3 (07/10, v63 no ar) — número 559000000003
+
+| # | Mensagem | Esperado | Resultado |
+|---|---|---|---|
+| 25 | `tenho um frete de goiania` → `pra fortaleza` → `pagam 14 mil` | Mensagem picada em 3: pede destino, cota, depois calcula com 14 mil (memória) | ✅ (onboarding mandou os botões 2× → v64 não repete em 10 min) |
+| 26 | `cuiaba santos soja 180 a tonelada bitrem graneleiro` (com onboarding pendente) | Calcular por tonelada | ❌ engolido como resposta "Bitrem" do onboarding → v64: só resposta curta (≤4 palavras) conta como onboarding; frase longa com caminhão encerra o onboarding |
+| 27 | `cuiaba santos soja 180 a tonelada graneleiro` | 180/t × capacidade (ou pergunta toneladas) | ❌ ignorou o valor, cotou → v64: `valor_por_tonelada` + `toneladas` na extração; sem capacidade pergunta "quantas toneladas?" |
+| 28 | `manaus pra belem 20 mil` | Belém/PA direto (capital), rota 3.045 km | ⚠️ perguntou PB/AL/PA → v64: homônimo capital ganha e avisa |
+| 29 | `vlw irmao` | Uma linha, sem apresentação | ❌ reapresentou → v64: qualquer conversa anterior = já apresentado; agradecimento = resposta de uma linha |
+| 30 | "Bitrem 7 eixos de 7 eixos" | Nome sem redundância em todas as mensagens | v64: `nomeVeiculo()` |
+
 ## Pra acrescentar (próximas rodadas)
 - `Quero sair do abc paulista` logo depois de "de que cidade?" (memória da pergunta).
 - `nao esta certo, leu errado` / `validade 23/03/2035` depois de uma leitura (precisa de foto real).

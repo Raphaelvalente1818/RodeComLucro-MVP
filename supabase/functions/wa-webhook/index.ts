@@ -663,6 +663,12 @@ async function tratarDesvincular(fromE164: string, waMessageId: string): Promise
 
 const CONFIANCA_MINIMA = 0.6;
 
+/** "Bitrem 7 eixos" (sem repetir "de 7 eixos"), "Truck de 3 eixos", "caminhão de 5 eixos". */
+function nomeVeiculo(tipo: string | null | undefined, eixos: number): string {
+  if (!tipo) return `caminhão de ${eixos} eixos`;
+  return /\beixos?\b/i.test(tipo) ? tipo : `${tipo} de ${eixos} eixos`;
+}
+
 const PERFIL_CUSTO_DEFAULT: PerfilCusto = {
   numero_eixos: 5,
   diesel_km_por_lt: 2.5,
@@ -975,7 +981,7 @@ async function montarContexto(fromE164: string): Promise<ContextoConversa> {
       .from("wa_freight_query")
       .select("id", { count: "exact", head: true })
       .eq("from_e164", fromE164)
-      .in("status", ["resposta_livre", "boas_vindas", "calculado_novo", "pergunta_calculo"]),
+      .not("status", "in", "(limite_diario,nao_cadastrado)"), // qualquer conversa anterior = já se apresentou (07/10: "vlw" após 10 msgs reapresentava)
     supabase.from("motoristas").select("id").eq("telefone_e164", fromE164).maybeSingle(),
     supabase
       .from("wa_freight_query")
@@ -1097,7 +1103,7 @@ async function resolverVeiculoDaMensagem(motoristaId: string | null, ex: Extraca
   const tipo = ex.tipoVeiculo ?? ((perfil?.tipo_veiculo as TipoVeiculoMsg | null) ?? null);
   const eixos = ex.numeroEixos ?? (ex.tipoVeiculo ? EIXOS_PADRAO[ex.tipoVeiculo] : (perfil?.numero_eixos as number | null) ?? 5);
   const carroceria = ex.tipoCarroceria ?? ((perfil?.tipo_carroceria as TipoCarroceriaMsg | null) ?? null);
-  const descricao = `${tipo ?? "caminhão"}${/\beixos?\b/i.test(tipo ?? "") ? "" : ` de ${eixos} eixos`}${carroceria ? ` (${carroceria})` : ""}`;
+  const descricao = `${nomeVeiculo(tipo, eixos)}${carroceria ? ` (${carroceria})` : ""}`;
 
   if (motoristaId && !perfil?.tipo_veiculo && tipo) {
     // Sem perfil: a mensagem vira o cadastro. Consumo/custos no default do app.
@@ -1125,6 +1131,7 @@ async function resolverVeiculoDaMensagem(motoristaId: string | null, ex: Extraca
     );
     if (!error) {
       await registrarEventoAnalytics("truck_profile_saved", motoristaId, { canal: "whatsapp", via: "mensagem", tipo_veiculo: tipo, eixos });
+      await supabase.from("wa_onboarding").delete().eq("from_e164", (await supabase.from("motoristas").select("telefone_e164").eq("id", motoristaId).maybeSingle()).data?.telefone_e164 ?? "");
       return { tipoVeiculo: tipo, numeroEixos: eixos, tipoCarroceria: carroceria, nota: `Salvei seu ${descricao} como seu caminhão. Ajusta consumo e custos no app quando quiser.`, botaoSalvar: null, perfilCriado: true };
     }
     await logErro("wa-webhook.veiculoMensagem", "Falha ao salvar perfil a partir da mensagem", { erro: error.message, motoristaId });
@@ -1136,7 +1143,7 @@ async function resolverVeiculoDaMensagem(motoristaId: string | null, ex: Extraca
       tipoVeiculo: tipo,
       numeroEixos: eixos,
       tipoCarroceria: carroceria,
-      nota: `Calculei com ${descricao}, como você disse (seu cadastro é ${perfil!.tipo_veiculo} de ${perfil!.numero_eixos} eixos).`,
+      nota: `Calculei com ${descricao}, como você disse (seu cadastro é ${nomeVeiculo(perfil!.tipo_veiculo, perfil!.numero_eixos)}).`,
       botaoSalvar: { id: `perfil:salvar:${tipo}:${eixos}:${carroceria ?? ""}`, titulo: "Salvar esse caminhão" },
       perfilCriado: false,
     };
@@ -1226,7 +1233,7 @@ async function tratarCotacao(fromE164: string, texto: string, waMessageId: strin
   await registrarEventoAnalytics("simulation_run", motoristaId, { origem: origem, destino: destino, distancia_km: rota.distanciaKm, cotacao: true, valor_sugerido: valorSugerido, piso_antt: base.pisoANTT });
 
   const d = base.custoDetalhado;
-  const descVeiculo = veiculo?.tipoVeiculo ? `${veiculo.tipoVeiculo} de ${perfil.numero_eixos} eixos` : temPerfil ? `seu caminhão (${perfil.numero_eixos} eixos)` : `carreta padrão de ${perfil.numero_eixos} eixos`;
+  const descVeiculo = veiculo?.tipoVeiculo ? nomeVeiculo(veiculo.tipoVeiculo, perfil.numero_eixos) : temPerfil ? `seu caminhão (${perfil.numero_eixos} eixos)` : `carreta padrão de ${perfil.numero_eixos} eixos`;
   const resposta =
     `📍 ${origem} → ${destino}: *${rota.distanciaKm.toFixed(0)} km*${rota.distanciaEstimada ? " (estimado)" : ""}, ${dias} dia${dias > 1 ? "s" : ""} de viagem${ex.voltaVazia ? ", voltando vazio" : ""}\n` +
     `Pedágio: ${fmtBRL(d.pedagio)}\n` +
@@ -1300,13 +1307,18 @@ const TIPOS_VEICULO_BOTOES: Array<{ id: string; titulo: string; eixosPadrao: num
 
 /** Passo 2 → 3: depois do primeiro veredito, pergunta o tipo do caminhão. */
 async function iniciarOnboardingCaminhao(fromE164: string, motoristaId: string, ultimoFrete: Record<string, unknown>): Promise<void> {
+  // Já perguntou há pouco e ele ignorou: atualiza o frete guardado, mas não
+  // repete os botões (custa mensagem e vira ruído).
+  const { data: existente } = await supabase.from("wa_onboarding").select("etapa, updated_at").eq("from_e164", fromE164).maybeSingle();
+  const perguntouHaPouco = existente && Date.now() - new Date(existente.updated_at as string).getTime() < 10 * 60_000;
   await supabase.from("wa_onboarding").upsert({
     from_e164: fromE164,
     motorista_id: motoristaId,
-    etapa: "tipo",
+    etapa: perguntouHaPouco ? existente!.etapa : "tipo",
     ultimo_frete: ultimoFrete,
     updated_at: new Date().toISOString(),
   });
+  if (perguntouHaPouco) return;
   await enviarBotoes(
     fromE164,
     "Quer o número certo pro *seu* caminhão? Me diz só o tipo:",
@@ -1402,7 +1414,7 @@ async function tratarRespostaOnboarding(fromE164: string, rowId: string, waMessa
     };
     if (f.cotacao && f.origem && f.destino) {
       await tratarCotacao(fromE164, "(cotação pós-onboarding)", waMessageId, {
-        intent: "cotar", ePedidoDeFrete: false, ePedidoDeBusca: false, origem: f.origem, destino: f.destino, valorFreteReais: null,
+        intent: "cotar", ePedidoDeFrete: false, ePedidoDeBusca: false, origem: f.origem, destino: f.destino, valorFreteReais: null, valorPorToneladaReais: null, toneladas: null,
         voltaVazia: Boolean(f.voltaVazia), tipoCarga: null, tipoVeiculo: null, numeroEixos: null, tipoCarroceria: null, respostaLivre: null,
         confiancaOrigem: 1, confiancaDestino: 1, confiancaValor: 0,
       });
@@ -1462,6 +1474,11 @@ async function tratarTextoDuranteOnboarding(fromE164: string, texto: string, waM
   const { data: onb } = await supabase.from("wa_onboarding").select("etapa").eq("from_e164", fromE164).maybeSingle();
   if (!onb) return false;
   const t = texto.trim().toLowerCase();
+  // Só resposta curta conta como resposta ao onboarding. "cuiaba santos soja
+  // 180 a tonelada bitrem graneleiro" era engolido como "Bitrem" e o frete
+  // se perdia (simulador, 07/10). Frase longa segue o fluxo normal — se
+  // trouxer o caminhão, resolverVeiculoDaMensagem salva e encerra o onboarding.
+  if (t.split(/\s+/).length > 4) return false;
   let rowId: string | null = null;
   if (onb.etapa === "tipo") {
     if (/\bcarreta\b|\bcavalo\b/.test(t)) rowId = "onb_tipo:Carreta";
@@ -1510,7 +1527,7 @@ async function despacharExtracao(fromE164: string, texto: string, waMessageId: s
     // "e se eu voltar vazio?", "e se pagar 3500?" (simulador, 07/10): a IA
     // devolve a rota do último cálculo com o valor/volta novos e sem
     // resposta — é um recálculo, não uma pergunta. Roda como "calcular".
-    if (extracao.origem && extracao.destino && extracao.valorFreteReais != null && (extracao.voltaVazia || !extracao.respostaLivre)) {
+    if (extracao.origem && extracao.destino && (extracao.valorFreteReais != null || extracao.valorPorToneladaReais != null) && (extracao.voltaVazia || !extracao.respostaLivre)) {
       extracao = { ...extracao, intent: "calcular", ePedidoDeFrete: true, confiancaOrigem: 1, confiancaDestino: 1, confiancaValor: 1 };
     } else if (extracao.origem && extracao.destino && extracao.voltaVazia) {
       // Último cálculo era cotação (sem valor): recota com volta vazia.
@@ -1532,7 +1549,7 @@ async function despacharExtracao(fromE164: string, texto: string, waMessageId: s
   }
 
   // Cotação: rota sem valor (ou "calcular" que veio sem valor — mesma coisa).
-  if (extracao.intent === "cotar" || (extracao.intent === "calcular" && extracao.valorFreteReais == null && extracao.origem && extracao.destino)) {
+  if (extracao.intent === "cotar" || (extracao.intent === "calcular" && extracao.valorFreteReais == null && extracao.valorPorToneladaReais == null && extracao.origem && extracao.destino)) {
     await tratarCotacao(fromE164, texto, waMessageId, extracao);
     return;
   }
@@ -1581,6 +1598,30 @@ async function despacharExtracao(fromE164: string, texto: string, waMessageId: s
     }
   }
 
+  // Valor por tonelada (07/10): × tonelagem dita, senão × capacidade do
+  // cadastro; sem nenhuma das duas, pergunta quantas toneladas (a memória
+  // da conversa junta a resposta com a rota e o valor/t).
+  let notaTonelada: string | null = null;
+  if (extracao.valorFreteReais == null && extracao.valorPorToneladaReais != null && extracao.origem && extracao.destino) {
+    let ton = extracao.toneladas;
+    if (ton == null && motoristaId) {
+      const { data: p } = await supabase.from("caminhao_perfil").select("carga_maxima_toneladas").eq("user_id", motoristaId).maybeSingle();
+      ton = p?.carga_maxima_toneladas != null ? Number(p.carga_maxima_toneladas) : null;
+    }
+    if (ton == null) {
+      await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao, status: "dado_faltando" });
+      await enviarMensagemWhatsapp(
+        fromE164,
+        `${fmtBRL(extracao.valorPorToneladaReais)} por tonelada — quantas toneladas você leva nessa? Manda só o número (ex.: *"32 ton"*) que eu calculo o total.` + (novo && motoristaId ? AVISO_CADASTRO : ""),
+      );
+      return;
+    }
+    const porTon = extracao.valorPorToneladaReais;
+    const total = Math.round(porTon * ton * 100) / 100;
+    extracao = { ...extracao, valorFreteReais: total, confiancaValor: 1 };
+    notaTonelada = `${fmtBRL(porTon)}/t × ${ton} t = ${fmtBRL(total)}`;
+  }
+
   const faltando: string[] = [];
   if (!extracao.origem) faltando.push("origem");
   if (!extracao.destino) faltando.push("destino");
@@ -1601,7 +1642,8 @@ async function despacharExtracao(fromE164: string, texto: string, waMessageId: s
   const cidades = await corrigirCidades(fromE164, texto, waMessageId, motoristaId, extracao);
   if (!cidades) return;
   extracao = cidades.ex;
-  const { origem, destino, nota: notaCidade } = cidades;
+  const { origem, destino } = cidades;
+  const notaCidade = [cidades.nota, notaTonelada].filter(Boolean).join("; ") || null;
   const valorFreteReais = extracao.valorFreteReais as number;
 
   const confiancaMinima = Math.min(extracao.confiancaOrigem, extracao.confiancaDestino, extracao.confiancaValor);
@@ -2026,6 +2068,13 @@ const LIMIAR_CIDADE_AUTO = 0.45;
 const FOLGA_CIDADE_AUTO = 0.12;
 /** Abaixo disso nem sugere. */
 const LIMIAR_CIDADE_SUGERIR = 0.3;
+/** Homônimo que é capital ganha ("belem" = Belém/PA, não Belém/PB) — avisa em vez de perguntar. */
+const CAPITAIS = new Set([
+  "Rio Branco/AC", "Maceió/AL", "Macapá/AP", "Manaus/AM", "Salvador/BA", "Fortaleza/CE", "Brasília/DF", "Vitória/ES", "Goiânia/GO",
+  "São Luís/MA", "Cuiabá/MT", "Campo Grande/MS", "Belo Horizonte/MG", "Belém/PA", "João Pessoa/PB", "Curitiba/PR", "Recife/PE",
+  "Teresina/PI", "Rio de Janeiro/RJ", "Natal/RN", "Porto Alegre/RS", "Porto Velho/RO", "Boa Vista/RR", "Florianópolis/SC",
+  "São Paulo/SP", "Aracaju/SE", "Palmas/TO",
+]);
 /** Apelidos que o motorista usa como se fossem cidade. */
 const APELIDOS_CIDADE: Record<string, string> = {
   sp: "sao paulo/sp", sampa: "sao paulo/sp", rj: "rio de janeiro/rj", rio: "rio de janeiro/rj",
@@ -2059,13 +2108,17 @@ type DecisaoCidade =
   | { tipo: "nao_achou" };
 
 async function decidirCidade(texto: string): Promise<DecisaoCidade> {
-  const cands = await sugerirMunicipios(texto, 3);
+  const cands = await sugerirMunicipios(texto, 5); // 5 pra capital não ficar de fora entre homônimos
   if (cands.length === 0) return { tipo: "nao_achou" };
   const [a, b] = cands;
   const canonico = `${a.nome}/${a.uf}`;
   const exatos = cands.filter((c) => c.similaridade >= 0.999);
   if (exatos.length === 1) return { tipo: "ok", canonico, corrigiu: false };
-  if (exatos.length > 1) return { tipo: "perguntar", candidatos: exatos }; // homônimos sem UF
+  if (exatos.length > 1) {
+    const capital = exatos.find((c) => CAPITAIS.has(`${c.nome}/${c.uf}`));
+    if (capital) return { tipo: "ok", canonico: `${capital.nome}/${capital.uf}`, corrigiu: true };
+    return { tipo: "perguntar", candidatos: exatos }; // homônimos sem UF e sem capital
+  }
   if (a.similaridade >= LIMIAR_CIDADE_AUTO && (!b || a.similaridade - b.similaridade >= FOLGA_CIDADE_AUTO)) {
     return { tipo: "ok", canonico, corrigiu: true };
   }

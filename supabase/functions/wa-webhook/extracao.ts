@@ -100,6 +100,10 @@ export interface ExtracaoFrete {
   origem: string | null;
   destino: string | null;
   valorFreteReais: number | null;
+  /** "180 a tonelada", "R$ 180/t": valor por tonelada (07/10). O sistema multiplica pela capacidade. */
+  valorPorToneladaReais: number | null;
+  /** "32 ton", "vou com 30 toneladas": tonelagem dita na mensagem. */
+  toneladas: number | null;
   voltaVazia: boolean;
   tipoCarga: TipoCargaBusca | null;
   /** Caminhão dito NA MENSAGEM ("truck grade baixa", "carreta LS 6 eixos"). Null se não citou. */
@@ -131,7 +135,7 @@ CLASSIFIQUE em UM intent:
 - "pergunta_calculo": pergunta sobre o último cálculo do CONTEXTO (pedágio, diesel, dias, margem, piso, "e se voltar vazio?", "por que ruim?"). Só se existir ultimo_calculo no contexto; senão trate como "cotar" (se tiver rota) ou "outro". ATENÇÃO: se o contexto tiver ultima_falha, uma pergunta tipo "por que não conseguiu?" / "deu erro?" é sobre a FALHA, não sobre o último cálculo — classifique como "outro" e explique a falha na resposta_livre.
 - "cadastro": quer mandar/tirar foto da CNH ou do CRLV, pergunta se pode mandar documento, quer preencher/atualizar o cadastro ou o perfil pelo documento ("posso tirar foto da minha cnh?", "como cadastro meu caminhão?", "manda o documento?"). resposta_livre = null (o sistema conduz).
 - "pergunta_bot": o que você é/faz, pra que serve, como funciona, é grátis, quem está por trás.
-- "saudacao": só "oi", "bom dia", "opa", "tudo bem?", sem pedido. TAMBÉM é saudacao o PRIMEIRO CONTATO POR INDICAÇÃO: "recebi seu contato do João", "o Fulano me passou seu número", "me indicaram você", "vi seu cartão no grupo" — é um motorista novo chegando por indicação de um colega. NUNCA trate isso como spam ou mensagem pra outra pessoa.
+- "saudacao": só "oi", "bom dia", "opa", "tudo bem?", sem pedido. Agradecimento/encerramento ("vlw", "obrigado", "show", "tamo junto", "boa") também é saudacao — resposta_livre curtíssima, uma linha ("Tamo junto! Qualquer frete, manda."), SEM apresentação e sem repetir o que o bot faz. TAMBÉM é saudacao o PRIMEIRO CONTATO POR INDICAÇÃO: "recebi seu contato do João", "o Fulano me passou seu número", "me indicaram você", "vi seu cartão no grupo" — é um motorista novo chegando por indicação de um colega. NUNCA trate isso como spam ou mensagem pra outra pessoa.
 - "outro": qualquer outra coisa (fora do escopo, reclamação, spam, mensagem pra outra pessoa).
 
 CAMINHÃO NA MENSAGEM (qualquer intent): se ele citar o veículo, preencha tipo_veiculo com UM destes valores exatos: Carreta, Carreta LS, Vanderléia, Carreta 4º eixo, Bitrem 7 eixos, Bitrem 9 eixos, Rodotrem, Truck, BiTruck, Fiorino, VLC, 3/4, Toco. Sinônimos: "LS"/"carreta LS"="Carreta LS"; "bitrem"="Bitrem 7 eixos" (9 se disser 9 eixos); "truck"/"truque"="Truck"; "bitruck"="BiTruck"; "toco"="Toco"; "3/4"/"três quartos"="3/4"; "cavalo"/"carreta"/"semi-reboque"="Carreta". numero_eixos: só se ele disser o número ("6 eixos"). tipo_carroceria: UM destes, se citar: Graneleiro, Grade baixa, Prancha, Caçamba, Plataforma, Sider, Baú, Baú Frigorífico, Baú Refrigerado, Silo, Cegonheiro, Gaiola, Tanque, Bug Porta Container, Munk, Apenas Cavalo, Cavaqueira, Hoper. "palete"/"paletizado" não é carroceria (null). Nunca invente: sem menção = null.
@@ -156,7 +160,7 @@ RESPOSTA LIVRE (só pra pergunta_calculo, pergunta_bot, saudacao, outro; nos dem
 
 Extração:
 - origem/destino: cidade (e UF se dita), COPIADA LETRA POR LETRA como ele escreveu — não corrija grafia, não acrescente nem tire acento, não invente UF ("coruipe" fica "coruipe"; o sistema é quem corrige).
-- valor_frete_reais: "8 mil"→8000, "R$ 4.500"→4500, "3500 reais"→3500. null se não mencionou.
+- valor_frete_reais: "8 mil"→8000, "R$ 4.500"→4500, "3500 reais"→3500. null se não mencionou. Valor POR TONELADA ("180 a tonelada", "180/t", "180 o ton", "R$ 180 por tonelada") vai em valor_por_tonelada_reais, e valor_frete_reais fica null (o sistema multiplica pela capacidade do caminhão). Tonelagem dita ("32 ton", "vou com 30 toneladas", "carrego 37t") vai em toneladas. Se ele responde só a tonelagem depois que o bot perguntou, repita origem/destino/valor_por_tonelada do histórico e preencha toneladas — intent calcular.
 - volta_vazia: true SÓ se disser que volta vazio.
 - tipo_carga (busca): container / frigorificada / granel / liquido / veiculos / carga_geral; null se não citou.
 - confianca_*: 0 a 1. Em busca/pergunta/outro, 0.`;
@@ -171,6 +175,8 @@ const FERRAMENTA_LEITURA = {
       origem: { type: ["string", "null"] },
       destino: { type: ["string", "null"] },
       valor_frete_reais: { type: ["number", "null"] },
+      valor_por_tonelada_reais: { type: ["number", "null"] },
+      toneladas: { type: ["number", "null"] },
       volta_vazia: { type: "boolean" },
       tipo_carga: { type: ["string", "null"], enum: ["container", "frigorificada", "granel", "liquido", "carga_geral", "veiculos", null] },
       tipo_veiculo: { type: ["string", "null"], enum: [...TIPOS_VEICULO, null] },
@@ -210,6 +216,8 @@ function normalizar(input: Record<string, unknown>, contexto: ContextoConversa):
     origem: typeof input.origem === "string" && input.origem.trim() ? input.origem.trim() : null,
     destino: typeof input.destino === "string" && input.destino.trim() ? input.destino.trim() : null,
     valorFreteReais: typeof input.valor_frete_reais === "number" && input.valor_frete_reais > 0 ? input.valor_frete_reais : null,
+    valorPorToneladaReais: typeof input.valor_por_tonelada_reais === "number" && input.valor_por_tonelada_reais > 0 ? input.valor_por_tonelada_reais : null,
+    toneladas: typeof input.toneladas === "number" && input.toneladas > 0 && input.toneladas < 200 ? input.toneladas : null,
     voltaVazia: Boolean(input.volta_vazia),
     tipoCarga,
     tipoVeiculo,
