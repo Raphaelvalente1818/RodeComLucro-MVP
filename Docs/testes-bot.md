@@ -36,6 +36,22 @@ Escrever como caminhoneiro escreve: sem acento, abreviado, com erro ("truk", "qn
 | 12 | `tem carga saino de cuiaba?` | Lista de fretes perto de Cuiabá/MT | ✅ |
 | 13 | `sorocaba curitiba 8500 ta bom?` | Cálculo Sorocaba/SP → Curitiba/PR | ✅ |
 
+## Rodada 2 (07/10, v61 no ar) — número 559000000002
+
+| # | Mensagem | Esperado | Resultado |
+|---|---|---|---|
+| 14 | `blz` | Apresentação curta + rodapé cadastro | ✅ |
+| 15 | `vc faz oq?` | Diz o que faz sem se apresentar de novo | ✅ |
+| 16 | `sp x rj 4,5 mil bitrem` | SP→RJ, R$ 4.500, Bitrem 7 eixos salvo como caminhão | ✅ (nota dizia "Bitrem 7 eixos de 7 eixos" → corrigido v62) |
+| 17 | `e se pagar 3500?` | Recalcula com 3.500 | ❌ "não peguei" → corrigido v62 (rota+valor sem resposta = recálculo) |
+| 18 | `tem carga no abc paulista?` | Botões Paulista/PB · Paulista/PE · Outra cidade (não assume) | ✅ |
+| 19 | botão Outra cidade → `sto andre` | Botões Santo André/SP · /PB | ✅ (v62: "sto"→"santo", "sta", "pto", "s " expandidos antes do trigram) |
+| 20 | botão Santo André/SP | Lista de 3 fretes perto de Santo André | ✅ |
+| 21 | `e se eu volta vazio de sp pro rio?` | Recálculo pelo motor com volta vazia | ⚠️ Haiku respondeu calculando de cabeça → corrigido v62 (volta vazia sempre recalcula; prompt proíbe estimar) |
+| 22 | `oi mae chego as 8 pode deixar a janta` | "não era pra mim", curto | ✅ |
+| 23 | `cadastro` → `bora` | Convite; "bora" registra consentimento (conferido em `consentimento`) e pede a foto | ✅ |
+| 24 | `sair` → `piso antt de bh pra salvador carreta ls` | Apaga; mensagem seguinte cria conta de novo e cota BH→Salvador com Carreta LS | ✅ |
+
 ## Pra acrescentar (próximas rodadas)
 - `Quero sair do abc paulista` logo depois de "de que cidade?" (memória da pergunta).
 - `nao esta certo, leu errado` / `validade 23/03/2035` depois de uma leitura (precisa de foto real).

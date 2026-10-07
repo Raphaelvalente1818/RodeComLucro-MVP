@@ -1097,7 +1097,7 @@ async function resolverVeiculoDaMensagem(motoristaId: string | null, ex: Extraca
   const tipo = ex.tipoVeiculo ?? ((perfil?.tipo_veiculo as TipoVeiculoMsg | null) ?? null);
   const eixos = ex.numeroEixos ?? (ex.tipoVeiculo ? EIXOS_PADRAO[ex.tipoVeiculo] : (perfil?.numero_eixos as number | null) ?? 5);
   const carroceria = ex.tipoCarroceria ?? ((perfil?.tipo_carroceria as TipoCarroceriaMsg | null) ?? null);
-  const descricao = `${tipo ?? "caminhão"} de ${eixos} eixos${carroceria ? ` (${carroceria})` : ""}`;
+  const descricao = `${tipo ?? "caminhão"}${/\beixos?\b/i.test(tipo ?? "") ? "" : ` de ${eixos} eixos`}${carroceria ? ` (${carroceria})` : ""}`;
 
   if (motoristaId && !perfil?.tipo_veiculo && tipo) {
     // Sem perfil: a mensagem vira o cadastro. Consumo/custos no default do app.
@@ -1507,10 +1507,10 @@ async function despacharExtracao(fromE164: string, texto: string, waMessageId: s
   // Pergunta sobre o último cálculo ("quanto de pedágio?"): a IA já
   // respondeu com os números do contexto — só manda (conta no limite diário).
   if (extracao.intent === "pergunta_calculo") {
-    // "e se eu voltar vazio?" (simulador, 07/10): a IA devolve a rota e o
-    // valor do último cálculo com volta_vazia=true e sem resposta — é um
-    // recálculo, não uma pergunta. Roda como "calcular".
-    if (extracao.voltaVazia && extracao.origem && extracao.destino && extracao.valorFreteReais != null && !extracao.respostaLivre) {
+    // "e se eu voltar vazio?", "e se pagar 3500?" (simulador, 07/10): a IA
+    // devolve a rota do último cálculo com o valor/volta novos e sem
+    // resposta — é um recálculo, não uma pergunta. Roda como "calcular".
+    if (extracao.origem && extracao.destino && extracao.valorFreteReais != null && (extracao.voltaVazia || !extracao.respostaLivre)) {
       extracao = { ...extracao, intent: "calcular", ePedidoDeFrete: true, confiancaOrigem: 1, confiancaDestino: 1, confiancaValor: 1 };
     } else {
       if (!extracao.respostaLivre) {
@@ -2032,6 +2032,8 @@ const APELIDOS_CIDADE: Record<string, string> = {
 async function sugerirMunicipios(texto: string, limite = 3): Promise<CandidatoCidade[]> {
   let t = semAcento(texto).replace(/[.,;:!?]+$/g, "");
   if (APELIDOS_CIDADE[t]) t = APELIDOS_CIDADE[t];
+  // Abreviações que o motorista digita ("sto andre", "sta maria", "pto alegre", "s jose dos campos").
+  t = t.replace(/\bsto\.?\s/g, "santo ").replace(/\bsta\.?\s/g, "santa ").replace(/\bpto\.?\s/g, "porto ").replace(/^s\.?\s(?=\w)/, "sao ");
   if (!t) return [];
   const { data, error } = await supabase.rpc("municipio_sugerir", { p_texto: t, p_limite: limite });
   if (error) {
