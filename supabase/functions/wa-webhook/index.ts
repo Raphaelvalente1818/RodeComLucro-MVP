@@ -1860,6 +1860,8 @@ async function calcularEResponderFrete(params: {
       `Seu número ficou cadastrado no Rode com Lucro. Pra apagar tudo, manda *SAIR*. Termos: ${URL_APP}/termos`;
   } else if (semPerfil && !veiculo?.perfilCriado) {
     rodape = `_(estimativa com uma carreta padrão de ${perfil.numero_eixos} eixos — você ainda não cadastrou o seu)_`;
+  } else if (veiculo?.perfilCriado) {
+    rodape = `_(estimativa com ${nomeVeiculo(veiculo.tipoVeiculo, perfil.numero_eixos)}, consumo e custos padrão — ajusta no app)_\n\n📲 ${fraseLink}: ${linkBusca}`;
   } else if (recalculoDe != null) {
     const dif = resultado.lucro - recalculoDe;
     const difTxt = Math.abs(dif) < 1 ? "praticamente o mesmo" : dif > 0 ? `${fmtBRL(dif)} a mais que a estimativa` : `${fmtBRL(-dif)} a menos que a estimativa`;
@@ -2105,9 +2107,24 @@ async function sugerirMunicipios(texto: string, limite = 3): Promise<CandidatoCi
 type DecisaoCidade =
   | { tipo: "ok"; canonico: string; corrigiu: boolean }
   | { tipo: "perguntar"; candidatos: CandidatoCidade[] }
+  | { tipo: "estado"; uf: string; nome: string }
   | { tipo: "nao_achou" };
 
+/** Nome de estado escrito como se fosse cidade ("pra Minas", "saindo da Bahia"). SP/RJ ficam de fora: são capital também. */
+const ESTADOS: Record<string, [string, string]> = {
+  acre: ["AC", "Acre"], alagoas: ["AL", "Alagoas"], amapa: ["AP", "Amapá"], amazonas: ["AM", "Amazonas"], bahia: ["BA", "Bahia"],
+  ceara: ["CE", "Ceará"], "espirito santo": ["ES", "Espírito Santo"], goias: ["GO", "Goiás"], maranhao: ["MA", "Maranhão"],
+  "mato grosso": ["MT", "Mato Grosso"], "mato grosso do sul": ["MS", "Mato Grosso do Sul"], minas: ["MG", "Minas"], "minas gerais": ["MG", "Minas Gerais"],
+  para: ["PA", "Pará"], paraiba: ["PB", "Paraíba"], parana: ["PR", "Paraná"], pernambuco: ["PE", "Pernambuco"], piaui: ["PI", "Piauí"],
+  "rio grande do norte": ["RN", "Rio Grande do Norte"], "rio grande do sul": ["RS", "Rio Grande do Sul"], rondonia: ["RO", "Rondônia"],
+  roraima: ["RR", "Roraima"], "santa catarina": ["SC", "Santa Catarina"], sergipe: ["SE", "Sergipe"], tocantins: ["TO", "Tocantins"],
+  nordeste: ["--", "Nordeste"], sul: ["--", "Sul"], norte: ["--", "Norte"], "centro oeste": ["--", "Centro-Oeste"], sudeste: ["--", "Sudeste"],
+};
+
 async function decidirCidade(texto: string): Promise<DecisaoCidade> {
+  const chave = semAcento(texto).replace(/^(o|a|do|da|de|no|na)\s+/, "").replace(/\/\w{2}$/, "").trim();
+  const estado = ESTADOS[chave];
+  if (estado) return { tipo: "estado", uf: estado[0], nome: estado[1] };
   const cands = await sugerirMunicipios(texto, 5); // 5 pra capital não ficar de fora entre homônimos
   if (cands.length === 0) return { tipo: "nao_achou" };
   const [a, b] = cands;
@@ -2148,6 +2165,15 @@ async function corrigirCidades(
       if (d.corrigiu) notas.push(`entendi "${original}" como ${d.canonico}`);
       novo[campo] = d.canonico;
       continue;
+    }
+    if (d.tipo === "estado") {
+      await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao: novo, status: "dado_faltando" });
+      const outro = campo === "origem" ? novo.destino : novo.origem;
+      await enviarMensagemWhatsapp(
+        fromE164,
+        `${d.nome} é ${d.uf === "--" ? "uma região" : "um estado"} — qual cidade? Manda ex.: *"${campo === "origem" ? `Uberlândia${d.uf !== "--" ? `/${d.uf}` : ""} pra ${outro ?? "Santos"}` : `${outro ?? "Campinas"} pra Uberlândia${d.uf !== "--" ? `/${d.uf}` : ""}`}${novo.valorFreteReais ? `, ${novo.valorFreteReais} reais` : ""}"*`,
+      );
+      return null;
     }
     // Pendência: guarda o pedido inteiro (com o que já foi corrigido) e pergunta.
     await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao: novo, status: d.tipo === "perguntar" ? "cidade_pendente" : "erro_extracao" });
@@ -2272,6 +2298,11 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string, opcoes:
     // correção ou dúvida vira pergunta com botões; nada parecido, pergunta
     // em texto. Status busca_origem mantém o contexto pra próxima mensagem.
     const decisao = await decidirCidade(origemTexto);
+    if (decisao.tipo === "estado") {
+      await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto: textoOriginal, extracao: null, status: "busca_origem" });
+      await enviarMensagemWhatsapp(fromE164, `${decisao.nome} é ${decisao.uf === "--" ? "uma região" : "um estado"} — de qual cidade você quer sair? Manda só o nome (ex.: *"Uberlândia/MG"*).` + avisoNovo);
+      return;
+    }
     const cands = decisao.tipo === "nao_achou" ? [] : await sugerirMunicipios(origemTexto, 2);
     if (decisao.tipo === "ok" && !decisao.corrigiu) {
       origem = await geocodificarCidade(decisao.canonico);

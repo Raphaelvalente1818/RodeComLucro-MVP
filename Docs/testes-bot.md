@@ -63,6 +63,17 @@ Escrever como caminhoneiro escreve: sem acento, abreviado, com erro ("truk", "qn
 | 29 | `vlw irmao` | Uma linha, sem apresentação | ❌ reapresentou → v64: qualquer conversa anterior = já apresentado; agradecimento = resposta de uma linha |
 | 30 | "Bitrem 7 eixos de 7 eixos" | Nome sem redundância em todas as mensagens | v64: `nomeVeiculo()` |
 
+**Reconferência na v64** (559000000003/04): "valeu parceiro, show" → "Tamo junto! Qualquer frete, manda." ✅ · "rondonopolis santos soja 190 o ton" → pergunta toneladas → "37" → R$ 7.030 ✅ · "goiania pra belem 12 mil" → Belém/PA direto com aviso ✅ · frete longo com "bitrem graneleiro 32 ton" com onboarding pendente → calcula e salva o caminhão ✅. v65: rodapé de caminhão recém-criado pela mensagem deixa de dizer "perfil cadastrado no app".
+
+## Rodada 4 (07/10, v64 no ar)
+
+| # | Mensagem | Esperado | Resultado |
+|---|---|---|---|
+| 31 | `TENHO FRETE DE CAMPINAS PRA MINAS 6 MIL` | Maiúsculas ok; "Minas" é estado → pergunta a cidade em MG | ❌ ofereceu "Minas Novas/MG" → v65: nomes de estado/região viram pergunta "Minas é um estado — qual cidade?" (cálculo e busca) |
+| 32 | 20ª consulta do dia (`qto deu de diesel?`) | Responde + aviso "última consulta de hoje" com link logado | ✅ |
+| 33 | 21ª (`e o pedagio?`) | Silêncio | ✅ |
+| 34 | `SAIR` com a cota estourada | Apaga mesmo assim | ✅ (cota continua contando pelo número depois — não zera com SAIR, de propósito) |
+
 ## Pra acrescentar (próximas rodadas)
 - `Quero sair do abc paulista` logo depois de "de que cidade?" (memória da pergunta).
 - `nao esta certo, leu errado` / `validade 23/03/2035` depois de uma leitura (precisa de foto real).
