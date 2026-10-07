@@ -26,7 +26,7 @@
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const MODELO = "claude-haiku-4-5";
 
-export type IntentMensagem = "calcular" | "cotar" | "buscar" | "pergunta_calculo" | "pergunta_bot" | "saudacao" | "outro";
+export type IntentMensagem = "calcular" | "cotar" | "buscar" | "pergunta_calculo" | "pergunta_bot" | "saudacao" | "cadastro" | "outro";
 
 /** Tipos de carga que o motorista costuma citar numa busca; mapeados pra carroceria em index.ts. */
 export type TipoCargaBusca = "container" | "frigorificada" | "granel" | "liquido" | "carga_geral" | "veiculos";
@@ -110,14 +110,16 @@ O QUE O RODE COM LUCRO FAZ:
 2. COTA uma rota sem valor: motorista pergunta "quanto posso cobrar de X pra Y?", "qual a distância / pedágio / piso ANTT de X pra Y?" → o sistema informa km, pedágio, custo real, piso ANTT e o valor mínimo pra ele ter a margem dele. SIM, o sistema CONSULTA distância, pedágio e tabela ANTT — nunca diga que não faz isso.
 3. BUSCA cargas disponíveis perto dele ("BUSCAR", "tem carga saindo de Cuiabá?").
 4. RESPONDE perguntas sobre o último cálculo que ele recebeu ("quanto de pedágio?", "e o diesel?", "quantos dias?") — os números vêm no CONTEXTO abaixo.
+5. PREENCHE O CADASTRO pela foto da CNH (nome, categoria, validade) e do CRLV (marca, placa, eixos, capacidade). Ele manda a foto aqui mesmo; o sistema lê, mostra o que leu e só grava com o OK dele. Não guarda a foto nem o CPF. Comando: CADASTRO.
 O cálculo usa o caminhão dele (tipo, eixos, consumo), cadastrado em 3 toques no próprio WhatsApp; se ele disser o caminhão na mensagem, o sistema usa esse. Existe um app (link vem nas respostas) com histórico e mais fretes. Pra apagar o cadastro, manda SAIR. É grátis.
-O que NÃO faz: não fecha frete, não negocia com a empresa, não faz pagamento, não rastreia carga, não consulta multa/CNH/documento, não tem atendimento humano, não sabe o preço de mercado que outros estão pagando (só o custo dele e o piso ANTT).
+O que NÃO faz: não fecha frete, não negocia com a empresa, não faz pagamento, não rastreia carga, não consulta multa nem pontos na CNH, não valida se documento é verdadeiro, não tem atendimento humano, não sabe o preço de mercado que outros estão pagando (só o custo dele e o piso ANTT).
 
 CLASSIFIQUE em UM intent:
 - "calcular": oferta concreta com VALOR em reais pra avaliar (rota + valor). Extraia origem, destino, valor_frete_reais, volta_vazia, confianças.
 - "cotar": rota SEM valor — quer saber quanto cobrar, ou distância/pedágio/piso ANTT/custo de uma rota. Extraia origem e destino. Se faltar origem ou destino, deixe null (o sistema pergunta).
 - "buscar": quer VER cargas disponíveis, sem valor pra avaliar. Extraia origem (de onde quer sair; "daqui" = null), destino, tipo_carga.
 - "pergunta_calculo": pergunta sobre o último cálculo do CONTEXTO (pedágio, diesel, dias, margem, piso, "e se voltar vazio?", "por que ruim?"). Só se existir ultimo_calculo no contexto; senão trate como "cotar" (se tiver rota) ou "outro". ATENÇÃO: se o contexto tiver ultima_falha, uma pergunta tipo "por que não conseguiu?" / "deu erro?" é sobre a FALHA, não sobre o último cálculo — classifique como "outro" e explique a falha na resposta_livre.
+- "cadastro": quer mandar/tirar foto da CNH ou do CRLV, pergunta se pode mandar documento, quer preencher/atualizar o cadastro ou o perfil pelo documento ("posso tirar foto da minha cnh?", "como cadastro meu caminhão?", "manda o documento?"). resposta_livre = null (o sistema conduz).
 - "pergunta_bot": o que você é/faz, pra que serve, como funciona, é grátis, quem está por trás.
 - "saudacao": só "oi", "bom dia", "opa", "tudo bem?", sem pedido.
 - "outro": qualquer outra coisa (fora do escopo, reclamação, spam, mensagem pra outra pessoa).
@@ -128,7 +130,7 @@ RESPOSTA LIVRE (só pra pergunta_calculo, pergunta_bot, saudacao, outro; nos dem
 - Uma mensagem, até 400 caracteres, português de motorista, direto, sem formalidade, sem "como posso ajudar".
 - Se o contexto diz ja_apresentado=true, NÃO se apresente de novo (não escreva "Sou o Rode com Lucro"); comece direto ("Opa!" ou direto na resposta). Só se apresente quando ja_apresentado=false.
 - pergunta_calculo: responda com os NÚMEROS do contexto (ex.: "Pedágio nesse trecho: R$ 412,00, já tá dentro do custo de R$ 10.215,22"). Formato R$ 1.234,56. Não recalcule nada, não invente número que não está no contexto; se o que ele perguntou não está lá, diga que não tem essa quebra e o que tem.
-- pergunta_bot/saudacao: diga o que faz (os 4 itens, resumido) e termine com UM exemplo concreto: 'manda a rota e o valor (ex.: *"Sinop pra Santos, 14 mil"*), ou só a rota pra eu cotar, ou *BUSCAR*'.
+- pergunta_bot/saudacao: diga o que faz (os 5 itens, resumido) e termine com UM exemplo concreto: 'manda a rota e o valor (ex.: *"Sinop pra Santos, 14 mil"*), ou só a rota pra eu cotar, ou *BUSCAR*'.
 - outro: diga em uma frase que não faz isso, sem inventar, e termine com o exemplo acima.
 - Pergunta sobre ultima_falha ("por que não conseguiu?"): explique o motivo que está no contexto, em uma frase, e peça a correção. Ex.: 'Não achei a cidade "coruipe" no mapa. Manda com o estado, tipo *"Diadema pra Coruripe/AL, 15 mil"*'. NUNCA diga "consegui sim" nem mostre números de outro cálculo.
 - Spam/mensagem pra outra pessoa: "Opa! Acho que essa mensagem não era pra mim — sou um assistente pra caminhoneiro. Se quiser saber se um frete vale a pena, manda a rota e o valor."
@@ -148,7 +150,7 @@ const FERRAMENTA_LEITURA = {
   input_schema: {
     type: "object",
     properties: {
-      intent: { type: "string", enum: ["calcular", "cotar", "buscar", "pergunta_calculo", "pergunta_bot", "saudacao", "outro"] },
+      intent: { type: "string", enum: ["calcular", "cotar", "buscar", "pergunta_calculo", "pergunta_bot", "saudacao", "cadastro", "outro"] },
       origem: { type: ["string", "null"] },
       destino: { type: ["string", "null"] },
       valor_frete_reais: { type: ["number", "null"] },
@@ -170,7 +172,7 @@ const FERRAMENTA_LEITURA = {
   },
 };
 
-const INTENTS: IntentMensagem[] = ["calcular", "cotar", "buscar", "pergunta_calculo", "pergunta_bot", "saudacao", "outro"];
+const INTENTS: IntentMensagem[] = ["calcular", "cotar", "buscar", "pergunta_calculo", "pergunta_bot", "saudacao", "cadastro", "outro"];
 const TIPOS_CARGA: TipoCargaBusca[] = ["container", "frigorificada", "granel", "liquido", "carga_geral", "veiculos"];
 
 function normalizar(input: Record<string, unknown>, contexto: ContextoConversa): ExtracaoFrete {

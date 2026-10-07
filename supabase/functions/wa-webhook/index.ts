@@ -1422,6 +1422,12 @@ async function despacharExtracao(fromE164: string, texto: string, waMessageId: s
     return;
   }
 
+  // "Posso tirar foto da minha CNH?" → mesmo fluxo do comando CADASTRO (07/10).
+  if (extracao.intent === "cadastro") {
+    await tratarComandoCadastro(fromE164, texto, waMessageId);
+    return;
+  }
+
   // Cotação: rota sem valor (ou "calcular" que veio sem valor — mesma coisa).
   if (extracao.intent === "cotar" || (extracao.intent === "calcular" && extracao.valorFreteReais == null && extracao.origem && extracao.destino)) {
     await tratarCotacao(fromE164, texto, waMessageId, extracao);
