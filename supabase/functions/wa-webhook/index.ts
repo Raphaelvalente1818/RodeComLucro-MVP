@@ -979,7 +979,18 @@ async function montarContexto(fromE164: string): Promise<ContextoConversa> {
           quandoMinutos: ultimo?.criado_em ? Math.max(0, Math.round((Date.now() - new Date(ultimo.criado_em as string).getTime()) / 60_000)) : 0,
         }
       : null;
-  return { jaApresentado: (apresentacoes ?? 0) > 0, caminhaoCadastrado, ultimoCalculo, ultimaFalha };
+  // Última coisa que o bot fez foi perguntar a cidade de saída (busca)? Se
+  // sim e faz menos de 30 min, a próxima mensagem é quase sempre a resposta.
+  const { data: ultimaLinha } = await supabase
+    .from("wa_freight_query")
+    .select("status, criado_em")
+    .eq("from_e164", fromE164)
+    .order("criado_em", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const aguardandoOrigemBusca =
+    ultimaLinha?.status === "busca_origem" && Date.now() - new Date(ultimaLinha.criado_em as string).getTime() < 30 * 60_000;
+  return { jaApresentado: (apresentacoes ?? 0) > 0, caminhaoCadastrado, ultimoCalculo, ultimaFalha, aguardandoOrigemBusca };
 }
 
 /** Caminhão dito na mensagem, já resolvido contra o perfil cadastrado. */
@@ -2112,10 +2123,17 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string, opcoes:
   if (origemTexto) {
     origem = await geocodificarCidade(origemTexto);
     if (!origem) {
-      await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto: textoOriginal, extracao: null, status: "busca_sem_resultado" });
+      // Região ("ABC paulista"), apelido ou erro grande: pergunta de qual
+      // cidade, sugerindo parecidas se houver. Status busca_origem mantém o
+      // contexto pra próxima mensagem ser lida como a resposta.
+      const parecidas = (await sugerirMunicipios(origemTexto, 2)).filter((c) => c.similaridade >= LIMIAR_CIDADE_SUGERIR);
+      await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto: textoOriginal, extracao: null, status: "busca_origem" });
       await enviarMensagemWhatsapp(
         fromE164,
-        `Não achei a cidade "${origemTexto}". Manda com o estado, ex.: *"tem ${descCarga} saindo de ${origemTexto}/SP?"*` + avisoNovo,
+        `Não achei "${origemTexto}" como cidade. De qual cidade exatamente?` +
+          (parecidas.length ? ` Quis dizer ${parecidas.map((c) => `*${c.nome}/${c.uf}*`).join(" ou ")}?` : "") +
+          ` Manda só o nome, com o estado se puder (ex.: *"Santo André/SP"*).` +
+          avisoNovo,
       );
       return;
     }

@@ -80,6 +80,8 @@ export interface ContextoConversa {
     motivo: string;
     quandoMinutos: number;
   } | null;
+  /** O bot acabou de perguntar "de que cidade você quer sair?" (busca) — a próxima mensagem provavelmente é a resposta. */
+  aguardandoOrigemBusca: boolean;
 }
 
 export interface ExtracaoFrete {
@@ -117,7 +119,7 @@ O que NÃO faz: não fecha frete, não negocia com a empresa, não faz pagamento
 CLASSIFIQUE em UM intent:
 - "calcular": oferta concreta com VALOR em reais pra avaliar (rota + valor). Extraia origem, destino, valor_frete_reais, volta_vazia, confianças.
 - "cotar": rota SEM valor — quer saber quanto cobrar, ou distância/pedágio/piso ANTT/custo de uma rota. Extraia origem e destino. Se faltar origem ou destino, deixe null (o sistema pergunta).
-- "buscar": quer VER cargas disponíveis, sem valor pra avaliar. Extraia origem (de onde quer sair; "daqui" = null), destino, tipo_carga.
+- "buscar": quer VER cargas disponíveis, sem valor pra avaliar. Extraia origem (de onde quer sair; "daqui" = null), destino, tipo_carga. Se o contexto diz bot_acabou_de_perguntar a cidade de saída e a mensagem é só um lugar ("Santo André", "quero sair do ABC paulista", "de Cuiabá"), é "buscar" com origem = o lugar como ele escreveu (mesmo que seja região, não cidade — o sistema trata).
 - "pergunta_calculo": pergunta sobre o último cálculo do CONTEXTO (pedágio, diesel, dias, margem, piso, "e se voltar vazio?", "por que ruim?"). Só se existir ultimo_calculo no contexto; senão trate como "cotar" (se tiver rota) ou "outro". ATENÇÃO: se o contexto tiver ultima_falha, uma pergunta tipo "por que não conseguiu?" / "deu erro?" é sobre a FALHA, não sobre o último cálculo — classifique como "outro" e explique a falha na resposta_livre.
 - "cadastro": quer mandar/tirar foto da CNH ou do CRLV, pergunta se pode mandar documento, quer preencher/atualizar o cadastro ou o perfil pelo documento ("posso tirar foto da minha cnh?", "como cadastro meu caminhão?", "manda o documento?"). resposta_livre = null (o sistema conduz).
 - "pergunta_bot": o que você é/faz, pra que serve, como funciona, é grátis, quem está por trás.
@@ -233,6 +235,9 @@ function descreverContexto(c: ContextoConversa): string {
   const f = c.ultimaFalha;
   if (f) {
     linhas.push(`ultima_falha (há ${f.quandoMinutos} min, DEPOIS do último cálculo): tentou ${f.origem ?? "?"} → ${f.destino ?? "?"} e ${f.motivo}`);
+  }
+  if (c.aguardandoOrigemBusca) {
+    linhas.push("bot_acabou_de_perguntar=de que cidade ele quer sair (busca de carga). Se a mensagem for um lugar, é a resposta.");
   }
   return linhas.join("\n");
 }
