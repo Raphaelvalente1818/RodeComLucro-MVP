@@ -384,9 +384,10 @@ export function extrairImagens(payload: unknown): ImagemRecebida[] {
       for (const m of msgs) {
         const msg = m as { id?: string; from?: string; type?: string; image?: { id?: string; mime_type?: string }; document?: { id?: string; mime_type?: string } };
         if (!msg.id || !msg.from) continue;
-        const midia = msg.type === "image" ? msg.image : msg.type === "document" && msg.document?.mime_type?.startsWith("image/") ? msg.document : null;
+        // Imagem, ou documento (a CNH-e do gov.br chega como PDF — caso mais comum).
+        const midia = msg.type === "image" ? msg.image : msg.type === "document" ? msg.document : null;
         if (!midia?.id) continue;
-        imagens.push({ waMessageId: msg.id, fromE164: msg.from, mediaId: midia.id, mimeType: midia.mime_type ?? "image/jpeg" });
+        imagens.push({ waMessageId: msg.id, fromE164: msg.from, mediaId: midia.id, mimeType: midia.mime_type ?? (msg.type === "image" ? "image/jpeg" : "application/octet-stream") });
       }
     }
   }
@@ -2400,7 +2401,7 @@ async function baixarMidiaMeta(mediaId: string): Promise<{ bytes: Uint8Array; mi
     }
     const info = (await meta.json()) as { url?: string; mime_type?: string; file_size?: number };
     if (!info.url) return null;
-    if ((info.file_size ?? 0) > 5 * 1024 * 1024) return null; // limite da API de visão
+    if ((info.file_size ?? 0) > 8 * 1024 * 1024) return null; // foto de celular fica bem abaixo; PDF do gov.br tem ~300 KB
     const bin = await fetch(info.url, { headers: { Authorization: `Bearer ${WA_ACCESS_TOKEN}` } });
     if (!bin.ok) return null;
     return { bytes: new Uint8Array(await bin.arrayBuffer()), mime: info.mime_type ?? "image/jpeg" };
@@ -2411,9 +2412,16 @@ async function baixarMidiaMeta(mediaId: string): Promise<{ bytes: Uint8Array; mi
 }
 
 /** Foto chegou. Com consentimento, lê; sem, guarda o id e pergunta (msg 9). */
+const MIMES_LEGIVEIS = ["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"];
+
 async function tratarImagemRecebida(img: ImagemRecebida): Promise<void> {
   const { id: motoristaId } = await garantirMotorista(img.fromE164, "[imagem]");
   if (!motoristaId) return;
+  if (!MIMES_LEGIVEIS.includes(img.mimeType)) {
+    await registrarTentativaFrete({ waMessageId: img.waMessageId, motoristaId, fromE164: img.fromE164, texto: `[arquivo ${img.mimeType}]`, extracao: null, status: "doc_ilegivel", resultado: { motivo: "tipo_nao_suportado" } });
+    await enviarMensagemWhatsapp(img.fromE164, "Esse arquivo não deu pra abrir. Manda a CNH ou o CRLV como *foto* (JPG/PNG) ou *PDF* — a CNH digital do gov.br em PDF funciona.");
+    return;
+  }
   if (await temConsentimentoLeitura(motoristaId)) {
     await processarImagemDocumento(img.fromE164, motoristaId, img.mediaId, img.waMessageId);
     return;

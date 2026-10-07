@@ -168,7 +168,12 @@ export async function lerDocumento(base64: string, mediaType: string): Promise<L
     console.log("[wa-webhook] leitura de documento pulada (ANTHROPIC_API_KEY pendente)");
     return null;
   }
+  const ehPdf = mediaType === "application/pdf";
   const tipoImagem = ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(mediaType) ? mediaType : "image/jpeg";
+  // CNH-e e CRLV-e saem do gov.br como PDF: vai como bloco "document" (a API lê PDF nativamente).
+  const blocoArquivo = ehPdf
+    ? { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } }
+    : { type: "image", source: { type: "base64", media_type: tipoImagem, data: base64 } };
   try {
     const resp = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -185,7 +190,7 @@ export async function lerDocumento(base64: string, mediaType: string): Promise<L
           {
             role: "user",
             content: [
-              { type: "image", source: { type: "base64", media_type: tipoImagem, data: base64 } },
+              blocoArquivo,
               { type: "text", text: "Leia este documento e preencha a ferramenta." },
             ],
           },
