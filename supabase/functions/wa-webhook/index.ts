@@ -176,7 +176,33 @@ async function registrarEventoAnalytics(
 // ---------------------------------------------------------------------
 // Envio pro WhatsApp — no-op logado enquanto a chave da Meta não chega.
 // ---------------------------------------------------------------------
+/** Memória curta da conversa (07/10): toda mensagem recebida e toda resposta enviada. Nunca bloqueia o fluxo. */
+async function registrarConversa(fromE164: string, papel: "motorista" | "bot", texto: string): Promise<void> {
+  const t = texto.trim();
+  if (!t) return;
+  const { error } = await supabase.from("wa_conversa").insert({ from_e164: fromE164, papel, texto: t.slice(0, 1500) });
+  if (error) console.error("[wa-webhook] falha ao gravar wa_conversa", error.message);
+}
+
+
+/** Texto humano do botão/linha pro histórico (ids são técnicos). */
+function rotuloBotao(rowId: string): string {
+  const fixos: Record<string, string> = {
+    "doc:ok": "Pode ler", "doc:nao": "Agora não", "doc:frete": "Era um frete", "doc:salvar": "Salvar", "doc:corrigir": "Corrigir", "doc:cancelar": "Cancelar",
+    "viral:cartao": "Mandar pro colega", abrir_app: "Abrir o app",
+  };
+  if (fixos[rowId]) return fixos[rowId];
+  if (rowId.startsWith("doc:tipo:")) return rowId.slice(9);
+  if (rowId.startsWith("onb_tipo:")) return rowId.slice(9);
+  if (rowId.startsWith("onb_eixos:")) return `${rowId.slice(10)} eixos`;
+  if (rowId.startsWith("onb_consumo:")) return `${rowId.slice(12)} km/L`;
+  if (rowId.startsWith("cidade:")) return rowId.split(":").slice(2).join(":");
+  if (rowId.startsWith("perfil:salvar:")) return "Salvar esse caminhão";
+  return "um frete da lista";
+}
+
 async function enviarMensagemWhatsapp(paraE164: string, texto: string): Promise<void> {
+  await registrarConversa(paraE164, "bot", texto);
   if (!WA_ACCESS_TOKEN || !WA_PHONE_NUMBER_ID) {
     // eslint-disable-next-line no-console
     console.log(`[wa-webhook] envio pulado (chave da Meta pendente) para=${paraE164}: ${texto}`);
@@ -223,6 +249,7 @@ interface LinhaListaFrete {
 }
 
 async function enviarListaFretes(paraE164: string, linhas: LinhaListaFrete[], textoCorpo: string): Promise<void> {
+  await registrarConversa(paraE164, "bot", `${textoCorpo} [lista: ${linhas.map((l) => l.title).join(" | ")}]`);
   if (!WA_ACCESS_TOKEN || !WA_PHONE_NUMBER_ID) {
     // eslint-disable-next-line no-console
     console.log(`[wa-webhook] envio de lista pulado (chave da Meta pendente) para=${paraE164}: ${JSON.stringify(linhas)}`);
@@ -296,6 +323,7 @@ async function enviarPayloadWhatsapp(paraE164: string, corpo: Record<string, unk
  * interactive.button_reply.id — ver extrairInteracoesLista.
  */
 async function enviarBotoes(paraE164: string, texto: string, botoes: Array<{ id: string; titulo: string }>): Promise<void> {
+  await registrarConversa(paraE164, "bot", `${texto} [botões: ${botoes.map((b) => b.titulo).join(" | ")}]`);
   await enviarPayloadWhatsapp(
     paraE164,
     {
@@ -992,7 +1020,28 @@ async function montarContexto(fromE164: string): Promise<ContextoConversa> {
     ultimaLinha?.status === "busca_origem" && Date.now() - new Date(ultimaLinha.criado_em as string).getTime() < 30 * 60_000;
   const estadoDoc = await estadoCadastroFoto(fromE164);
   const aguardandoConfirmacaoDoc = estadoDoc && (estadoDoc.etapa === "confirmar" || estadoDoc.etapa === "corrigir") && estadoDoc.dados ? estadoDoc.tipo_doc : null;
-  return { jaApresentado: (apresentacoes ?? 0) > 0, caminhaoCadastrado, ultimoCalculo, ultimaFalha, aguardandoOrigemBusca, aguardandoConfirmacaoDoc };
+  let cadastroFoto: ContextoConversa["cadastroFoto"] = null;
+  let primeiroNome: string | null = null;
+  if (m) {
+    const [{ data: mot }, { data: perf }] = await Promise.all([
+      supabase.from("motoristas").select("nome, cnh_numero").eq("id", m.id).maybeSingle(),
+      supabase.from("caminhao_perfil").select("placa, renavam").eq("user_id", m.id).maybeSingle(),
+    ]);
+    primeiroNome = mot?.nome ? String(mot.nome).trim().split(/\s+/)[0] || null : null;
+    if (estadoDoc) {
+      cadastroFoto = { etapa: estadoDoc.etapa, cnhSalva: Boolean(mot?.cnh_numero), crlvSalvo: Boolean(perf?.placa || perf?.renavam), nome: mot?.nome ?? null };
+    }
+  }
+  const { data: conversa } = await supabase
+    .from("wa_conversa")
+    .select("papel, texto")
+    .eq("from_e164", fromE164)
+    .gte("criado_em", new Date(Date.now() - 2 * 60 * 60_000).toISOString())
+    .order("criado_em", { ascending: false })
+    .limit(9);
+  // A última linha é a própria mensagem atual (já gravada no roteador) — sai do histórico.
+  const historico = ((conversa ?? []) as Array<{ papel: "motorista" | "bot"; texto: string }>).slice(1).reverse();
+  return { jaApresentado: (apresentacoes ?? 0) > 0, caminhaoCadastrado, ultimoCalculo, ultimaFalha, aguardandoOrigemBusca, aguardandoConfirmacaoDoc, cadastroFoto, historico, primeiroNome };
 }
 
 /** Caminhão dito na mensagem, já resolvido contra o perfil cadastrado. */
@@ -2853,6 +2902,7 @@ async function tratarRequisicao(req: Request): Promise<Response> {
       // eslint-disable-next-line no-console
       console.error("[wa-webhook] falha ao registrar idempotência, processando mesmo assim", dupError);
     }
+    await registrarConversa(msg.fromE164, "motorista", msg.texto);
 
     // Cota diária (ver LIMITE_CONSULTAS_DIA). SAIR passa sempre.
     const usadas = RE_SAIR.test(msg.texto.trim()) ? 0 : await contarConsultasHoje(msg.fromE164);
@@ -2904,6 +2954,7 @@ async function tratarRequisicao(req: Request): Promise<Response> {
       // eslint-disable-next-line no-console
       console.error("[wa-webhook] falha ao registrar idempotência (imagem), processando mesmo assim", dupError);
     }
+    await registrarConversa(img.fromE164, "motorista", img.mimeType === "application/pdf" ? "[mandou um PDF]" : "[mandou uma foto]");
     await tratarImagemRecebida(img);
   }
 
@@ -2919,6 +2970,7 @@ async function tratarRequisicao(req: Request): Promise<Response> {
     }
     // Roteia pelo prefixo do id: onboarding do caminhão, pedido do cartão
     // de contato, ou (sem prefixo) clique num frete da lista de busca.
+    await registrarConversa(it.fromE164, "motorista", `[tocou no botão: ${rotuloBotao(it.rowId)}]`);
     if (it.rowId.startsWith("onb_")) {
       await tratarRespostaOnboarding(it.fromE164, it.rowId, it.waMessageId);
     } else if (it.rowId === "viral:cartao") {

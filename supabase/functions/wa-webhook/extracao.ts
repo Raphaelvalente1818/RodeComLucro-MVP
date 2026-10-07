@@ -84,6 +84,12 @@ export interface ContextoConversa {
   aguardandoOrigemBusca: boolean;
   /** O bot mostrou a leitura de um documento e está esperando Salvar/Corrigir/Cancelar. */
   aguardandoConfirmacaoDoc: "cnh" | "crlv" | null;
+  /** Situação do cadastro por foto — pra não inventar que "já fez" nem dizer que não faz. */
+  cadastroFoto: { etapa: string; cnhSalva: boolean; crlvSalvo: boolean; nome: string | null } | null;
+  /** Últimas trocas (2 h, até 8), da mais antiga pra mais nova — a memória curta da conversa (07/10). */
+  historico: Array<{ papel: "motorista" | "bot"; texto: string }>;
+  /** Primeiro nome do motorista, quando o cadastro tem (CNH ou app). */
+  primeiroNome: string | null;
 }
 
 export interface ExtracaoFrete {
@@ -125,20 +131,25 @@ CLASSIFIQUE em UM intent:
 - "pergunta_calculo": pergunta sobre o último cálculo do CONTEXTO (pedágio, diesel, dias, margem, piso, "e se voltar vazio?", "por que ruim?"). Só se existir ultimo_calculo no contexto; senão trate como "cotar" (se tiver rota) ou "outro". ATENÇÃO: se o contexto tiver ultima_falha, uma pergunta tipo "por que não conseguiu?" / "deu erro?" é sobre a FALHA, não sobre o último cálculo — classifique como "outro" e explique a falha na resposta_livre.
 - "cadastro": quer mandar/tirar foto da CNH ou do CRLV, pergunta se pode mandar documento, quer preencher/atualizar o cadastro ou o perfil pelo documento ("posso tirar foto da minha cnh?", "como cadastro meu caminhão?", "manda o documento?"). resposta_livre = null (o sistema conduz).
 - "pergunta_bot": o que você é/faz, pra que serve, como funciona, é grátis, quem está por trás.
-- "saudacao": só "oi", "bom dia", "opa", "tudo bem?", sem pedido.
+- "saudacao": só "oi", "bom dia", "opa", "tudo bem?", sem pedido. TAMBÉM é saudacao o PRIMEIRO CONTATO POR INDICAÇÃO: "recebi seu contato do João", "o Fulano me passou seu número", "me indicaram você", "vi seu cartão no grupo" — é um motorista novo chegando por indicação de um colega. NUNCA trate isso como spam ou mensagem pra outra pessoa.
 - "outro": qualquer outra coisa (fora do escopo, reclamação, spam, mensagem pra outra pessoa).
 
 CAMINHÃO NA MENSAGEM (qualquer intent): se ele citar o veículo, preencha tipo_veiculo com UM destes valores exatos: Carreta, Carreta LS, Vanderléia, Carreta 4º eixo, Bitrem 7 eixos, Bitrem 9 eixos, Rodotrem, Truck, BiTruck, Fiorino, VLC, 3/4, Toco. Sinônimos: "LS"/"carreta LS"="Carreta LS"; "bitrem"="Bitrem 7 eixos" (9 se disser 9 eixos); "truck"/"truque"="Truck"; "bitruck"="BiTruck"; "toco"="Toco"; "3/4"/"três quartos"="3/4"; "cavalo"/"carreta"/"semi-reboque"="Carreta". numero_eixos: só se ele disser o número ("6 eixos"). tipo_carroceria: UM destes, se citar: Graneleiro, Grade baixa, Prancha, Caçamba, Plataforma, Sider, Baú, Baú Frigorífico, Baú Refrigerado, Silo, Cegonheiro, Gaiola, Tanque, Bug Porta Container, Munk, Apenas Cavalo, Cavaqueira, Hoper. "palete"/"paletizado" não é carroceria (null). Nunca invente: sem menção = null.
 
+HISTÓRICO: o bloco <historico> traz as últimas trocas (motorista e bot). A mensagem atual quase sempre responde à ÚLTIMA fala do bot — use isso pra entender respostas curtas ("sim", "esse mesmo", "já mandei", "não", "e o outro?"). Se o bot pediu algo (cidade, foto, confirmação) e a mensagem responde a isso, classifique de acordo (cidade → buscar; sobre documento → outro com resposta que dá continuidade). Nunca repita uma apresentação ou instrução que já está no histórico; continue de onde parou.
+
 RESPOSTA LIVRE (só pra pergunta_calculo, pergunta_bot, saudacao, outro; nos demais = null):
 - Uma mensagem, até 400 caracteres, português de motorista, direto, sem formalidade, sem "como posso ajudar".
+- NOME: se o contexto tem nome_motorista, use o primeiro nome onde uma pessoa usaria — na saudação, ao confirmar que algo foi salvo, ao pedir correção, ao dar uma notícia ("Raphael, não achei essa cidade"). Não em toda frase e não no meio de resposta técnica. NUNCA use apelidos como "brother", "chefe", "amigão", "parceiro" — com ou sem nome. Sem nome: "você", sem apelido.
 - Se o contexto diz ja_apresentado=true, NÃO se apresente de novo (não escreva "Sou o Rode com Lucro"); comece direto ("Opa!" ou direto na resposta). Só se apresente quando ja_apresentado=false.
 - pergunta_calculo: responda com os NÚMEROS do contexto (ex.: "Pedágio nesse trecho: R$ 412,00, já tá dentro do custo de R$ 10.215,22"). Formato R$ 1.234,56. Não recalcule nada, não invente número que não está no contexto; se o que ele perguntou não está lá, diga que não tem essa quebra e o que tem.
+- Primeiro contato por indicação ("recebi seu contato do João"): comece agradecendo e citando quem indicou pelo nome ("Opa! Que bom que o João te passou meu contato."), aí se apresente (como em saudacao) e termine com o exemplo. Tom de boas-vindas, sem perguntar o que ele quer.
 - pergunta_bot/saudacao: diga o que faz (os 5 itens, resumido) e termine com UM exemplo concreto: 'manda a rota e o valor (ex.: *"Sinop pra Santos, 14 mil"*), ou só a rota pra eu cotar, ou *BUSCAR*'.
 - outro: diga em uma frase que não faz isso, sem inventar, e termine com o exemplo acima.
+- Se o contexto tem cadastro_por_foto e ele pergunta/afirma algo sobre o cadastro ou documento ("fez o cadastro?", "já mandei", "recebeu?", "e o CRLV?"): intent "outro", responda SÓ com o que está no contexto — o que já foi salvo e o que falta ("Sua CNH tá salva. Falta o CRLV — manda a foto ou o PDF dele"). Se ele diz que já mandou e o contexto mostra NÃO lido: "Não chegou nada que desse pra ler — manda de novo, foto ou PDF". NUNCA diga que fez um cadastro que o contexto mostra como não lido, e NUNCA diga que não lê documento.
 - Se o contexto tem documento_aguardando_confirmacao e a mensagem é sobre a leitura (reclamação, dúvida, "leu errado", "e agora?"): intent "outro", resposta_livre curta dizendo pra tocar em *Corrigir* e mandar só o campo errado (ex.: *"validade 14/03/2029"*), ou *Salvar* se estiver certo. Não fale de frete.
 - Pergunta sobre ultima_falha ("por que não conseguiu?"): explique o motivo que está no contexto, em uma frase, e peça a correção. Ex.: 'Não achei a cidade "coruipe" no mapa. Manda com o estado, tipo *"Diadema pra Coruripe/AL, 15 mil"*'. NUNCA diga "consegui sim" nem mostre números de outro cálculo.
-- Spam/mensagem pra outra pessoa: "Opa! Acho que essa mensagem não era pra mim — sou um assistente pra caminhoneiro. Se quiser saber se um frete vale a pena, manda a rota e o valor."
+- Spam/mensagem claramente pra outra pessoa (ex.: "oi mãe, chego às 8", corrente, propaganda) — NÃO quando ele cita que recebeu o contato de alguém: "Opa! Acho que essa mensagem não era pra mim — sou um assistente pra caminhoneiro. Se quiser saber se um frete vale a pena, manda a rota e o valor."
 - NUNCA termine com pergunta de sim/não ("quer testar?"). Termine com o exemplo.
 - Formatação do WhatsApp: *negrito* com asterisco simples. No máximo 1 emoji.
 
@@ -217,7 +228,11 @@ function fmtBRL(v: number): string {
 
 /** Contexto em texto, curto, pra ir junto da mensagem (a IA lê como dado, não como instrução). */
 function descreverContexto(c: ContextoConversa): string {
-  const linhas: string[] = [`ja_apresentado=${c.jaApresentado}`, `caminhao_cadastrado=${c.caminhaoCadastrado ?? "nenhum (cálculo genérico, carreta 5 eixos)"}`];
+  const linhas: string[] = [
+    `ja_apresentado=${c.jaApresentado}`,
+    `nome_motorista=${c.primeiroNome ?? "desconhecido"}`,
+    `caminhao_cadastrado=${c.caminhaoCadastrado ?? "nenhum (cálculo genérico, carreta 5 eixos)"}`,
+  ];
   const u = c.ultimoCalculo;
   if (u) {
     const custos = Object.entries(u.custos)
@@ -245,6 +260,14 @@ function descreverContexto(c: ContextoConversa): string {
   if (c.aguardandoConfirmacaoDoc) {
     linhas.push(`documento_aguardando_confirmacao=${c.aguardandoConfirmacaoDoc.toUpperCase()} (o bot mostrou o que leu e tem botões Salvar / Corrigir / Cancelar).`);
   }
+  if (c.cadastroFoto) {
+    const cf = c.cadastroFoto;
+    linhas.push(
+      `cadastro_por_foto: CNH ${cf.cnhSalva ? `SALVA (nome ${cf.nome ?? "?"})` : "NÃO lida ainda"}; CRLV ${cf.crlvSalvo ? "SALVO" : "NÃO lido ainda"}; etapa=${cf.etapa}` +
+        (cf.etapa === "aguardando_foto" ? " (o bot está esperando ele mandar a foto/PDF do documento que falta)" : "") +
+        (cf.etapa === "aguardando_consentimento" ? " (o bot perguntou se pode ler e ele ainda não tocou em 'Pode ler')" : ""),
+    );
+  }
   return linhas.join("\n");
 }
 
@@ -269,7 +292,12 @@ export async function extrairFreteDeTexto(texto: string, contexto: ContextoConve
         messages: [
           {
             role: "user",
-            content: `<contexto>\n${descreverContexto(contexto)}\n</contexto>\n<mensagem_do_motorista>\n${texto}\n</mensagem_do_motorista>`,
+            content:
+              `<contexto>\n${descreverContexto(contexto)}\n</contexto>\n` +
+              (contexto.historico.length
+                ? `<historico>\n${contexto.historico.map((h) => `${h.papel === "bot" ? "BOT" : "MOTORISTA"}: ${h.texto.replace(/\s+/g, " ").slice(0, 400)}`).join("\n")}\n</historico>\n`
+                : "") +
+              `<mensagem_do_motorista>\n${texto}\n</mensagem_do_motorista>`,
           },
         ],
         tools: [FERRAMENTA_LEITURA],
