@@ -990,7 +990,9 @@ async function montarContexto(fromE164: string): Promise<ContextoConversa> {
     .maybeSingle();
   const aguardandoOrigemBusca =
     ultimaLinha?.status === "busca_origem" && Date.now() - new Date(ultimaLinha.criado_em as string).getTime() < 30 * 60_000;
-  return { jaApresentado: (apresentacoes ?? 0) > 0, caminhaoCadastrado, ultimoCalculo, ultimaFalha, aguardandoOrigemBusca };
+  const estadoDoc = await estadoCadastroFoto(fromE164);
+  const aguardandoConfirmacaoDoc = estadoDoc && (estadoDoc.etapa === "confirmar" || estadoDoc.etapa === "corrigir") && estadoDoc.dados ? estadoDoc.tipo_doc : null;
+  return { jaApresentado: (apresentacoes ?? 0) > 0, caminhaoCadastrado, ultimoCalculo, ultimaFalha, aguardandoOrigemBusca, aguardandoConfirmacaoDoc };
 }
 
 /** Caminhão dito na mensagem, já resolvido contra o perfil cadastrado. */
@@ -2719,6 +2721,20 @@ async function tratarTextoDuranteCadastroFoto(fromE164: string, texto: string, w
   const estado = await estadoCadastroFoto(fromE164);
   if (!estado || (estado.etapa !== "corrigir" && estado.etapa !== "confirmar") || !estado.dados || !estado.tipo_doc) return false;
   const t = texto.trim();
+  const tn = semAcento(t);
+  // "não", "tá errado", "leu errado" → mesmo que o botão Corrigir; "sim", "certo", "pode salvar" → Salvar.
+  if (/^(nao|n|errado|ta errado|esta errado|nao esta certo|nao ta certo|leu errado|nao e isso|nao confere)[\s!.]*$|\b(leu errado|ta errado|esta errado|nao esta certo|nao ta certo|errado)\b/.test(tn) && !/^(sim|certo)/.test(tn)) {
+    await tratarBotaoCadastroFoto(fromE164, "doc:corrigir", waMessageId);
+    return true;
+  }
+  if (/^(sim|s|certo|ta certo|esta certo|isso|ok|pode salvar|salva|salvar|confirmo|correto|confere)[\s!.]*$/.test(tn)) {
+    await tratarBotaoCadastroFoto(fromE164, "doc:salvar", waMessageId);
+    return true;
+  }
+  if (/^(cancela|cancelar|deixa|esquece|nao quero)[\s!.]*$/.test(tn)) {
+    await tratarBotaoCadastroFoto(fromE164, "doc:cancelar", waMessageId);
+    return true;
+  }
   const m = t.match(/^(nome|categoria|validade|vencimento|numero|número|registro|cnh|placa|renavam|eixos?|capacidade|ano|marca|modelo|exercicio|exercício|licenciamento)\s*[:=]?\s*(.+)$/i);
   if (!m) {
     if (estado.etapa === "corrigir") {

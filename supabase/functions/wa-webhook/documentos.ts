@@ -44,7 +44,7 @@ export type LeituraDocumento =
 const SYSTEM_PROMPT = `Você lê fotos de documentos brasileiros de motorista de caminhão e preenche a ferramenta "ler_documento". Nunca responda fora da ferramenta.
 
 Documentos possíveis:
-- CNH (Carteira Nacional de Habilitação), física ou digital (CNH-e). Extraia: nome completo do condutor, categoria (A, B, C, D, E, AB, AC, AD, AE), validade (campo "VALIDADE"), número de registro (campo "Nº REGISTRO", 11 dígitos).
+- CNH (Carteira Nacional de Habilitação), física ou digital (CNH-e). Extraia: nome completo do condutor, categoria (campo "CAT. HAB." — A, B, C, D, E, AB, AC, AD, AE), validade (campo "VALIDADE" — ATENÇÃO: a CNH tem várias datas: "DATA NASCIMENTO", "1ª HABILITAÇÃO", "DATA EMISSÃO" e "VALIDADE"; use SÓ a que está rotulada VALIDADE, que normalmente é a mais futura; se não conseguir distinguir, deixe null), número de registro (campo "Nº REGISTRO", 11 dígitos — não confundir com o número do RG, CPF nem com o código de segurança/renach).
 - CRLV / CRLV-e (Certificado de Registro e Licenciamento de Veículo). Extraia: marca/modelo (campo "MARCA/MODELO/VERSÃO" — separe marca e modelo), ano (ANO FAB/ANO MOD — use o ano modelo), placa, RENAVAM (campo "CÓDIGO RENAVAM", 9 a 11 dígitos), eixos (campo "EIXOS", se existir), capacidade em toneladas (prefira "CAP. CARGA" ou "CAPACIDADE"; senão PBT ou "PESO BRUTO TOTAL"; valores em kg divida por 1000), exercício (campo "EXERCÍCIO", ano), espécie/tipo (campo "ESPÉCIE/TIPO": "CAMINHÃO TRATOR" → caminhao_trator; "CAMINHÃO" → caminhao; "SEMI-REBOQUE"/"SEMIRREBOQUE" → semirreboque; "REBOQUE" → reboque; outro → outro), carroceria (campo "CARROCERIA", texto como está).
 
 Regras:

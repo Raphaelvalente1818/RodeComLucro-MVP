@@ -82,6 +82,8 @@ export interface ContextoConversa {
   } | null;
   /** O bot acabou de perguntar "de que cidade você quer sair?" (busca) — a próxima mensagem provavelmente é a resposta. */
   aguardandoOrigemBusca: boolean;
+  /** O bot mostrou a leitura de um documento e está esperando Salvar/Corrigir/Cancelar. */
+  aguardandoConfirmacaoDoc: "cnh" | "crlv" | null;
 }
 
 export interface ExtracaoFrete {
@@ -134,6 +136,7 @@ RESPOSTA LIVRE (só pra pergunta_calculo, pergunta_bot, saudacao, outro; nos dem
 - pergunta_calculo: responda com os NÚMEROS do contexto (ex.: "Pedágio nesse trecho: R$ 412,00, já tá dentro do custo de R$ 10.215,22"). Formato R$ 1.234,56. Não recalcule nada, não invente número que não está no contexto; se o que ele perguntou não está lá, diga que não tem essa quebra e o que tem.
 - pergunta_bot/saudacao: diga o que faz (os 5 itens, resumido) e termine com UM exemplo concreto: 'manda a rota e o valor (ex.: *"Sinop pra Santos, 14 mil"*), ou só a rota pra eu cotar, ou *BUSCAR*'.
 - outro: diga em uma frase que não faz isso, sem inventar, e termine com o exemplo acima.
+- Se o contexto tem documento_aguardando_confirmacao e a mensagem é sobre a leitura (reclamação, dúvida, "leu errado", "e agora?"): intent "outro", resposta_livre curta dizendo pra tocar em *Corrigir* e mandar só o campo errado (ex.: *"validade 14/03/2029"*), ou *Salvar* se estiver certo. Não fale de frete.
 - Pergunta sobre ultima_falha ("por que não conseguiu?"): explique o motivo que está no contexto, em uma frase, e peça a correção. Ex.: 'Não achei a cidade "coruipe" no mapa. Manda com o estado, tipo *"Diadema pra Coruripe/AL, 15 mil"*'. NUNCA diga "consegui sim" nem mostre números de outro cálculo.
 - Spam/mensagem pra outra pessoa: "Opa! Acho que essa mensagem não era pra mim — sou um assistente pra caminhoneiro. Se quiser saber se um frete vale a pena, manda a rota e o valor."
 - NUNCA termine com pergunta de sim/não ("quer testar?"). Termine com o exemplo.
@@ -238,6 +241,9 @@ function descreverContexto(c: ContextoConversa): string {
   }
   if (c.aguardandoOrigemBusca) {
     linhas.push("bot_acabou_de_perguntar=de que cidade ele quer sair (busca de carga). Se a mensagem for um lugar, é a resposta.");
+  }
+  if (c.aguardandoConfirmacaoDoc) {
+    linhas.push(`documento_aguardando_confirmacao=${c.aguardandoConfirmacaoDoc.toUpperCase()} (o bot mostrou o que leu e tem botões Salvar / Corrigir / Cancelar).`);
   }
   return linhas.join("\n");
 }
