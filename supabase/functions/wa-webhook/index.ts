@@ -1512,6 +1512,10 @@ async function despacharExtracao(fromE164: string, texto: string, waMessageId: s
     // resposta — é um recálculo, não uma pergunta. Roda como "calcular".
     if (extracao.origem && extracao.destino && extracao.valorFreteReais != null && (extracao.voltaVazia || !extracao.respostaLivre)) {
       extracao = { ...extracao, intent: "calcular", ePedidoDeFrete: true, confiancaOrigem: 1, confiancaDestino: 1, confiancaValor: 1 };
+    } else if (extracao.origem && extracao.destino && extracao.voltaVazia) {
+      // Último cálculo era cotação (sem valor): recota com volta vazia.
+      await tratarCotacao(fromE164, texto, waMessageId, { ...extracao, intent: "cotar" });
+      return;
     } else {
       if (!extracao.respostaLivre) {
         extracao = { ...extracao, respostaLivre: "Não peguei o que você quer saber do cálculo. Pergunta direto: pedágio, diesel, dias de viagem, margem ou piso ANTT?" };
@@ -1829,7 +1833,7 @@ async function calcularEResponderFrete(params: {
   }
 
   const resposta =
-    `📦 ${origem} → ${destino} (${rota.distanciaKm.toFixed(0)} km${rota.distanciaEstimada ? ", estimado" : ""})\n` +
+    `📦 ${origem} → ${destino} (${rota.distanciaKm.toFixed(0)} km${rota.distanciaEstimada ? ", estimado" : ""}${voltaVazia ? ", voltando vazio" : ""})\n` +
     `Valor ofertado: ${fmtBRL(valorFreteReais)}\n` +
     `Custo estimado: ${fmtBRL(resultado.custoTotal)}\n` +
     `Lucro estimado: ${fmtBRL(resultado.lucro)} (margem ${fmtPct(resultado.margemReal)})\n` +
