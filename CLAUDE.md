@@ -40,8 +40,11 @@ e `Docs/status-sessao.md` 03/10. Limiares: `LIMIAR_CIDADE_AUTO`/`FOLGA_CIDADE_AU
 Motor de cálculo em `packages/rode-calc` (`@rode/calc`), fórmula do Emerson,
 piso ANTT. **Tabela ANTT vigente vem do banco** (`antt_piso_tabela` via RPC
 `antt_piso_vigente`; app em `lib/antt.ts`, bot em `garantirTabelaANTT`); as
-constantes no código são fallback. Reajuste = INSERT com `versao` + `vigencia_inicio`. `supabase/functions/wa-webhook/calc.ts` é uma CÓPIA isomórfica dele
-pro Deno — se a fórmula mudar, atualizar os dois.
+constantes no código são fallback. Reajuste = INSERT com `versao` + `vigencia_inicio`
+(exemplo real: `20261008180000_antt_piso_portaria_suroc_22_2026.sql`). Vigente desde
+30/09/2026: **Portaria SUROC nº 22/2026** (gatilho do diesel — pode sair em qualquer
+semana, não só jan/jul; conferir no ANTTlegis). `supabase/functions/wa-webhook/calc.ts`
+é uma CÓPIA isomórfica dele pro Deno — se a fórmula mudar, atualizar os dois.
 
 ## Infra
 

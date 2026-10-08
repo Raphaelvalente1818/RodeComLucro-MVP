@@ -67,6 +67,13 @@ const RUBRICAS: Array<[keyof FreteResultado['custoDetalhado'], string]> = [
   ['depreciacao', 'Depreciação'],
 ];
 
+/** "resolucao-6084-2026" → "Res. 6084/2026"; "portaria-suroc-22-2026" → "Portaria SUROC 22/2026". */
+function rotuloVersaoANTT(versao: string): string {
+  const m = versao.match(/^(resolucao|portaria-suroc)-(\d+)-(\d{4})$/);
+  if (!m) return versao;
+  return `${m[1] === 'resolucao' ? 'Res.' : 'Portaria SUROC'} ${m[2]}/${m[3]}`;
+}
+
 function fmtDataHora(iso: string): string {
   return new Date(iso).toLocaleString('pt-BR', {
     day: '2-digit',
@@ -343,7 +350,7 @@ export default function Resultado() {
 
       <p className="disclaimer">
         Estimativa com base em modelo de custo transparente. O piso ANTT é referência regulatória
-        {resultado.anttVersao ? ` (tabela ${resultado.anttVersao.replace('resolucao-', 'Res. ').replace(/-(\d{4})$/, '/$1')})` : ''}; este
+        {resultado.anttVersao ? ` (tabela ${rotuloVersaoANTT(resultado.anttVersao)})` : ''}; este
         veredito não é aconselhamento jurídico ou financeiro.
       </p>
 

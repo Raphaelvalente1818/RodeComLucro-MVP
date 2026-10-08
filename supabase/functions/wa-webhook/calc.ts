@@ -25,52 +25,52 @@ export type TipoCarga = 'carga_geral' | 'granel_solido' | 'granel_liquido' | 'fr
 type CoeficientesPorEixo = Record<number, { ccd: number; cc: number }>;
 
 const ANTT_GRANEL_SOLIDO: CoeficientesPorEixo = {
-  2: { ccd: 4.0144, cc: 460.59 },
-  3: { ccd: 5.1355, cc: 552.24 },
-  4: { ccd: 5.8118, cc: 597.0 },
-  5: { ccd: 6.6983, cc: 664.83 },
-  6: { ccd: 7.3841, cc: 680.01 },
-  7: { ccd: 8.0516, cc: 820.34 },
-  9: { ccd: 9.2231, cc: 908.91 },
+  2: { ccd: 4.1056, cc: 460.59 },
+  3: { ccd: 5.2555, cc: 552.24 },
+  4: { ccd: 5.9476, cc: 597.0 },
+  5: { ccd: 6.8548, cc: 664.83 },
+  6: { ccd: 7.5641, cc: 680.01 },
+  7: { ccd: 8.2316, cc: 820.34 },
+  9: { ccd: 9.4318, cc: 908.91 },
 };
 
 const ANTT_GRANEL_LIQUIDO: CoeficientesPorEixo = {
-  2: { ccd: 4.0884, cc: 471.98 },
-  3: { ccd: 5.2311, cc: 569.57 },
-  4: { ccd: 5.9661, cc: 621.52 },
-  5: { ccd: 6.8661, cc: 693.08 },
-  6: { ccd: 7.5572, cc: 709.72 },
-  7: { ccd: 8.19, cc: 840.5 },
-  9: { ccd: 9.3822, cc: 934.76 },
+  2: { ccd: 4.1796, cc: 471.98 },
+  3: { ccd: 5.3511, cc: 569.57 },
+  4: { ccd: 6.1019, cc: 621.52 },
+  5: { ccd: 7.0226, cc: 693.08 },
+  6: { ccd: 7.7372, cc: 709.72 },
+  7: { ccd: 8.37, cc: 840.5 },
+  9: { ccd: 9.5909, cc: 934.76 },
 };
 
 const ANTT_FRIGORIFICADA: CoeficientesPorEixo = {
-  2: { ccd: 4.7095, cc: 520.07 },
-  3: { ccd: 6.0159, cc: 623.27 },
-  4: { ccd: 6.8646, cc: 686.63 },
-  5: { ccd: 7.8666, cc: 757.98 },
-  6: { ccd: 8.6661, cc: 772.35 },
-  7: { ccd: 9.5884, cc: 982.76 },
-  9: { ccd: 10.887, cc: 1067.06 },
+  2: { ccd: 4.8234, cc: 520.07 },
+  3: { ccd: 6.1659, cc: 623.27 },
+  4: { ccd: 7.0345, cc: 686.63 },
+  5: { ccd: 8.0623, cc: 757.98 },
+  6: { ccd: 8.8911, cc: 772.35 },
+  7: { ccd: 9.8134, cc: 982.76 },
+  9: { ccd: 11.1479, cc: 1067.06 },
 };
 
 const ANTT_CONTEINERIZADA: CoeficientesPorEixo = {
-  3: { ccd: 5.1082, cc: 544.75 },
-  4: { ccd: 5.7396, cc: 577.15 },
-  5: { ccd: 6.6345, cc: 647.29 },
-  6: { ccd: 7.3186, cc: 662.01 },
-  7: { ccd: 8.0492, cc: 819.69 },
-  9: { ccd: 9.1399, cc: 886.05 },
+  3: { ccd: 5.2282, cc: 544.75 },
+  4: { ccd: 5.8755, cc: 577.15 },
+  5: { ccd: 6.791, cc: 647.29 },
+  6: { ccd: 7.4986, cc: 662.01 },
+  7: { ccd: 8.2292, cc: 819.69 },
+  9: { ccd: 9.3486, cc: 886.05 },
 };
 
 const ANTT_CARGA_GERAL: CoeficientesPorEixo = {
-  2: { ccd: 3.9826, cc: 451.84 },
-  3: { ccd: 5.0977, cc: 541.86 },
-  4: { ccd: 5.7822, cc: 588.86 },
-  5: { ccd: 6.6718, cc: 657.56 },
-  6: { ccd: 7.3547, cc: 671.93 },
-  7: { ccd: 8.0927, cc: 831.66 },
-  9: { ccd: 9.2027, cc: 903.32 },
+  2: { ccd: 4.0738, cc: 451.84 },
+  3: { ccd: 5.2177, cc: 541.86 },
+  4: { ccd: 5.918, cc: 588.86 },
+  5: { ccd: 6.8284, cc: 657.56 },
+  6: { ccd: 7.5347, cc: 671.93 },
+  7: { ccd: 8.2727, cc: 831.66 },
+  9: { ccd: 9.4114, cc: 903.32 },
 };
 
 const ANTT_TABELA_A: Record<TipoCarga, CoeficientesPorEixo> = {
@@ -88,8 +88,8 @@ function eixosOrdenados(tabela: CoeficientesPorEixo): number[] {
 // 02/10/2026 — tabela vigente vinda do banco (espelho de pisoANTT.ts no
 // pacote): as constantes acima viram fallback; index.ts chama
 // definirTabelaANTT() com as linhas de antt_piso_vigente() antes de calcular.
-export const ANTT_VERSAO = 'resolucao-6084-2026';
-export const ANTT_FONTE = 'Resolução ANTT Nº 6.084/2026 (altera Anexo II da Resolução ANTT 5.867/2020), Tabela A, DOU 17/07/2026';
+export const ANTT_VERSAO = 'portaria-suroc-22-2026';
+export const ANTT_FONTE = 'Portaria SUROC Nº 22/2026 (reajusta Anexo II da Resolução ANTT 5.867/2020), Tabela A, DOU 29/09/2026 Ed. Extra';
 
 export interface TabelaANTT {
   versao: string;
@@ -108,7 +108,7 @@ export interface LinhaTabelaANTT {
   vigencia_inicio: string;
 }
 
-const TABELA_EMBUTIDA: TabelaANTT = { versao: ANTT_VERSAO, fonte: ANTT_FONTE, vigenciaInicio: '2026-07-17', tabela: ANTT_TABELA_A };
+const TABELA_EMBUTIDA: TabelaANTT = { versao: ANTT_VERSAO, fonte: ANTT_FONTE, vigenciaInicio: '2026-09-30', tabela: ANTT_TABELA_A };
 let tabelaAtiva: TabelaANTT = TABELA_EMBUTIDA;
 
 export function montarTabelaANTT(linhas: LinhaTabelaANTT[]): TabelaANTT | null {

@@ -1564,13 +1564,22 @@ Textos: `Docs/bot-cadastro-por-foto.md`. Escopo: item 6 da fila (nome da CNH val
 - **Fase 1 (feita)**: `components/LayoutMotorista.tsx` como rota de layout em `main.tsx` envolvendo `/`, `/motorista`, `/analisar`, `/resultado(/:id)`, `/perfil`, `/buscar-frete` — Entrada/Verificação/empresa/admin ficam fora. Telas NÃO mudaram por dentro. Resultado acende "Calcular"; Meu perfil acende "Início". CSS `.barra-abas` + `.com-abas .tela` (padding pra barra) em `index.css`; `viewport-fit=cover` no `index.html` pra `env(safe-area-inset-bottom)` funcionar no iPhone. `tsc --strict`: 0 erros.
 - **Fase 2 (feita, aprovada pelo print do iPhone)**: ícones corrigidos (Caminhão = caminhão, Fretes = caixa — o relógio era provisório do mockup). Garagem: saíram os CTAs "Analisar frete"/"Buscar frete" e o card "Meu Caminhão" ("os de baixo guiarão o motorista" — Raphael); fica só "Meu Perfil"; título "Garagem do Raphael", eyebrow "Rode com Lucro". Analisar: título "Calcular frete", botão "Calcular". Saíram todos os "Voltar (para a Garagem)" de Analisar, Resultado, Fretes, Perfil do caminhão e Meu perfil (Resultado em modo histórico fica sem botão; "Nova análise" continua). Mantido o "Voltar" só na tela de erro "Análise não encontrada".
 
+## 08/10 (fim do dia) — Piso ANTT atualizado: Portaria SUROC nº 22/2026 (estávamos 8 dias atrasados)
+
+**Pergunta do Raphael**: "a tabela da ANTT está sendo atualizada com qual frequência? Já é sistêmica?" → leitura é sistêmica (banco), atualização é manual com lembrete dia 10. "Então confira se estamos up to date" → **não estávamos**: a Portaria SUROC nº 22, de 28/09/2026 (DOU 29/09, Ed. Extra 1-A; vigor **30/09**) reajustou o Anexo II pelo gatilho do diesel (R$ 6,97 → R$ 7,33/L, ANP 20–26/09). Só o CCD (R$/km) subiu (~2,4%); CC igual. O lembrete do dia 10 não pegou porque a portaria saiu dia 29.
+
+**Feito**: conferência linha a linha no ANTTlegis (CC bateram 1:1 com a 6.084 — sanidade); migration `20261008180000_antt_piso_portaria_suroc_22_2026.sql` aplicada (34 linhas, `versao='portaria-suroc-22-2026'`, `vigencia_inicio='2026-09-30'`) — `antt_piso_vigente()` já devolve a nova (carga geral 3 eixos: 5,0977 → 5,2177); fallback nas constantes de `pisoANTT.ts` e `wa-webhook/calc.ts` (+ `ANTT_VERSAO`/`ANTT_FONTE`/vigência); `Resultado.tsx` ganhou `rotuloVersaoANTT()` ("Portaria SUROC 22/2026"). App pega na hora (cache localStorage é regravado no boot); bot pega no deploy da v72 (cache de 1 h em memória).
+
+**Lição**: o gatilho do diesel (variação >5%) pode disparar em qualquer semana — o lembrete mensal fixo não basta. Fila: a tarefa agendada passa a rodar **semanal** e, quando achar ato novo, já montar o INSERT com os coeficientes pra eu só conferir contra o DOU. Testes do `@rode/calc` (`pisoANTT.test.ts`) são relativos às constantes — não quebram; `npm test` em `packages/rode-calc` pra confirmar (vitest não roda no sandbox).
+
 ## CHECKPOINT — 08/10 (fim de sessão, v70 no ar, barra de abas pronta pra push)
 
 **Estado**: wa-webhook **v70** no ar (diesel/consumo ditos; regressão completa; 50 cenários em `Docs/testes-bot.md`). App: barra de abas codificada (fase 1), **precisa do push** pra ir pra Vercel e o Raphael olhar no iPhone. Pendente de teste manual: CRLV por foto/PDF (cavalo e semirreboque) e botões no celular.
 
 **AO RETOMAR**:
 0. Barra de abas fases 1 e 2 no ar (aprovada pelo print). Mudanças futuras de navegação: só em `LayoutMotorista.tsx`/CSS.
-1. **v71 no ar e reconferida** (rodapé "seu Truck de 3 eixos" quando o caminhão veio da mensagem). **v72 pendente de deploy**: só uma linha no prompt (seção 2) — "sao carlos sp" tem que manter a UF (testes-bot #51: o Haiku soltou o "sp" uma vez e perguntou SP/SC). Reconferir #51 depois do deploy. CNH/CRLV por foto: o Rapha vai testar.
+1. **v71 no ar e reconferida** (rodapé "seu Truck de 3 eixos" quando o caminhão veio da mensagem). **v72 pendente de deploy**: linha no prompt (seção 2) — "sao carlos sp" mantém a UF (testes-bot #51) — **e fallback ANTT novo em `calc.ts`**. Reconferir #51 depois do deploy. CNH/CRLV por foto: o Rapha vai testar.
+1b. **Piso ANTT**: banco já na Portaria SUROC 22/2026 (seção acima). Mudar a tarefa agendada `antt-piso-reajuste` pra semanal e fazê-la montar o INSERT. Conta do Oscar (5511999996212) apagada a pedido pra retestar como número novo.
 2. Demais itens do checkpoint 07/10 (abaixo): CRLV manual, pg_cron (`limpar_tokens_wa`, `limpar_wa_conversa`), semeadura, fila (Aferi+, `codigo_indicacao`, Funil viral, Meta, lojas, logo Sofrete, identidade visual, senha, Barlow local). População IBGE em `municipios_brasil` pra desempatar homônimos.
 
 ## CHECKPOINT — 08/10 (v66 no ar)
