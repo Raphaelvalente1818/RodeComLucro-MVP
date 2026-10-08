@@ -52,12 +52,11 @@ const ABAS: Aba[] = [
     rotulo: 'Fretes',
     para: '/buscar-frete',
     acendeEm: [],
+    // caixa de carga: é a lista de fretes publicados pra pegar
     icone: () => (
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M3 7h11v9H3z" />
-        <path d="M14 10h4l3 3v3h-7z" />
-        <circle cx="7" cy="18" r="1.6" />
-        <circle cx="17" cy="18" r="1.6" />
+        <path d="M12 3 20 7v10l-8 4-8-4V7z" />
+        <path d="M4 7l8 4 8-4M12 11v10" />
       </svg>
     ),
   },
@@ -65,10 +64,14 @@ const ABAS: Aba[] = [
     rotulo: 'Caminhão',
     para: '/perfil',
     acendeEm: [],
+    // mesmo desenho do card "Meu Caminhão" da Garagem (IconesCard.tsx)
     icone: () => (
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="12" cy="12" r="8" />
-        <path d="M12 8v4l3 2" />
+        <path d="M1 4.5h13v11H1z" />
+        <path d="M14 9h4.2l3.3 3.3v3.2H14z" />
+        <circle cx="5.5" cy="18.2" r="2.2" />
+        <circle cx="17.5" cy="18.2" r="2.2" />
+        <path d="M7.7 18.2h7.1" />
       </svg>
     ),
   },
