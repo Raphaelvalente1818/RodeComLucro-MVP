@@ -90,6 +90,18 @@ Estado "CNH lida, esperando confirmação" montado direto no banco (559000000005
 | 42 | `pode le sim` | Registra consentimento e pede a foto | ✅ |
 | 43 | `frete campinas pra minas 6 mil vale?` | "Minas é um estado — qual cidade?" | ✅ |
 
+## Rodada 6 (08/10, regressão completa na v66/v67 antes de avisar o Rapha) — números 06/07/08
+
+22 cenários das rodadas 1–4 reexecutados: 19 ✅ de primeira. Falhas e correções (v67/v68):
+
+| # | Mensagem | Problema | Correção |
+|---|---|---|---|
+| 44 | `Oi, recebi esse contato do João da boca` | "Valeu, João!" — chamou o motorista pelo nome do indicador (regressão da reescrita do prompt) | exemplo explícito + "quem indicou é outra pessoa" (seção 4) ✅ reconferido |
+| 45 | `rondonopolis santos soja 190 o ton` | IA extraiu 190/t mas rotulou "cotar"; o código cotou sem valor | regra no código: valor (fixo ou /t) presente = calcular ✅ reconferido ("e se pagar 200 o ton?" lembrou 37 t) |
+| 46 | `tem carga no abc paulista?` → `nenhuma, sao bernardo` | casou exato com **São Bernardo/MA** e listou carga no Maranhão | apelidos de cidade grande com nome curto (São Bernardo do Campo, São Caetano do Sul, Ribeirão Preto, Rio Preto, Mogi, Feira, SJC…) ✅ reconferido. Fila: população IBGE em `municipios_brasil` pra desempatar de verdade |
+| 47 | `bom dia` (já apresentado) | "Bom dia, Tamo junto - qualquer frete, manda" — fechamento no lugar de abertura (achado do Raphael) | seção 4: abertura abre as duas portas com exemplo e *BUSCAR*; fechamento continua uma linha |
+| 48 | mensagem longa de cálculo com cliente desconectando | função cortada no meio: cálculo gravado, resposta nunca enviada | v68: responde 200 pra Meta na hora e processa com `EdgeRuntime.waitUntil` (simulador segue síncrono) |
+
 ## Pra acrescentar (próximas rodadas)
 - `Quero sair do abc paulista` logo depois de "de que cidade?" (memória da pergunta).
 - `nao esta certo, leu errado` / `validade 23/03/2035` depois de uma leitura (precisa de foto real).

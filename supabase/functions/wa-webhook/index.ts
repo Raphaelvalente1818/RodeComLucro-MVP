@@ -1559,6 +1559,10 @@ async function despacharExtracao(fromE164: string, texto: string, waMessageId: s
   }
 
   // Cotação: rota sem valor (ou "calcular" que veio sem valor — mesma coisa).
+  // Valor (fixo ou por tonelada) presente = cálculo, mesmo que a IA tenha dito "cotar" (08/10: "190 o ton" cotava).
+  if (extracao.intent === "cotar" && (extracao.valorFreteReais != null || extracao.valorPorToneladaReais != null) && extracao.origem && extracao.destino) {
+    extracao = { ...extracao, intent: "calcular", ePedidoDeFrete: true, confiancaOrigem: Math.max(extracao.confiancaOrigem, 0.9), confiancaDestino: Math.max(extracao.confiancaDestino, 0.9), confiancaValor: 1 };
+  }
   if (extracao.intent === "cotar" || (extracao.intent === "calcular" && extracao.valorFreteReais == null && extracao.valorPorToneladaReais == null && extracao.origem && extracao.destino)) {
     await tratarCotacao(fromE164, texto, waMessageId, extracao);
     return;
@@ -2092,6 +2096,14 @@ const APELIDOS_CIDADE: Record<string, string> = {
   sp: "sao paulo/sp", sampa: "sao paulo/sp", rj: "rio de janeiro/rj", rio: "rio de janeiro/rj",
   bh: "belo horizonte/mg", poa: "porto alegre/rs", cwb: "curitiba/pr", bsb: "brasilia/df",
   floripa: "florianopolis/sc", ssa: "salvador/ba", cuiaba: "cuiaba/mt", "campo grande": "campo grande/ms",
+  // Nome curto de cidade grande que bate EXATO com município pequeno homônimo
+  // (08/10: "sao bernardo" virou São Bernardo/MA e listou carga no Maranhão).
+  "sao bernardo": "sao bernardo do campo/sp", sbc: "sao bernardo do campo/sp",
+  "sao caetano": "sao caetano do sul/sp", scs: "sao caetano do sul/sp",
+  ribeirao: "ribeirao preto/sp", "rio preto": "sao jose do rio preto/sp", sjc: "sao jose dos campos/sp",
+  mogi: "mogi das cruzes/sp", feira: "feira de santana/ba", "juiz": "juiz de fora/mg",
+  "montes claros": "montes claros/mg", "sao luis": "sao luis/ma", "pres prudente": "presidente prudente/sp",
+  "sao goncalo": "sao goncalo/rj", "nova iguacu": "nova iguacu/rj", "duque de caxias": "duque de caxias/rj",
 };
 
 async function sugerirMunicipios(texto: string, limite = 3): Promise<CandidatoCidade[]> {
@@ -3151,6 +3163,21 @@ async function tratarRequisicao(req: Request): Promise<Response> {
     payload = JSON.parse(corpoCru);
   } catch {
     return json({ erro: "body_invalido" }, 400);
+  }
+  // 08/10: responde 200 pra Meta NA HORA e processa em segundo plano. Antes,
+  // IA + rota + envio (3–8 s) aconteciam antes do 200; se a conexão caía no
+  // meio, a função era cortada (vimos no simulador: cálculo gravado, resposta
+  // nunca enviada) e a Meta reentregava. A idempotência por wa_message_id
+  // continua valendo. Simulador segue síncrono (precisa das respostas).
+  const runtime = (globalThis as { EdgeRuntime?: { waitUntil(p: Promise<unknown>): void } }).EdgeRuntime;
+  if (runtime?.waitUntil) {
+    runtime.waitUntil(
+      processarPayload(payload).catch(async (e) => {
+        console.error("[wa-webhook] exceção no processamento em segundo plano", e);
+        await logErro("wa-webhook.background", "Exceção no processamento em segundo plano", { erro: String(e) });
+      }),
+    );
+    return json({ recebido: true, background: true });
   }
   return await processarPayload(payload);
 }
