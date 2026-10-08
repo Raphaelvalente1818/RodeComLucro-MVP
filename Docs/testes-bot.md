@@ -113,7 +113,7 @@ Achado do Raphael pelo WhatsApp: "São Carlos SP para Goiânia 6700 com diesel a
 
 Detalhe visto de passagem: no cenário 49 o rodapé disse "estimativa com uma carreta padrão de 3 eixos" e logo abaixo "Salvei seu Truck de 3 eixos" — o rodapé do primeiro contato usava o nome genérico mesmo quando o caminhão veio da própria mensagem. **Corrigido na v71** e reconferido: "estimativa com seu Truck de 3 eixos, consumo e custos padrão" ✅.
 
-| 51 | `sao carlos sp pra goiania 6700 com diesel a 15 truck grade baixa vale?` (v71) | São Carlos/SP direto (a UF veio na mensagem) | ⚠️ perguntou SP ou SC — o Haiku soltou o "sp" desta vez (no #49 tinha mantido). Prompt seção 2: "se ele escreveu a UF junto, mantenha" → v72, reconferir |
+| 51 | `sao carlos sp pra goiania 6700 com diesel a 15 truck grade baixa vale?` (v71) | São Carlos/SP direto (a UF veio na mensagem) | ⚠️ perguntou SP ou SC — o Haiku soltou o "sp" desta vez (no #49 tinha mantido). Prompt seção 2: "se ele escreveu a UF junto, mantenha" → v72 ✅ reconferido na v73 (São Carlos/SP direto). Bônus: piso ANTT já na Portaria SUROC 22/2026 — R$ 4.031,98 (era 3.951,71 na 6.084) |
 
 ## Pra acrescentar (próximas rodadas)
 - `Quero sair do abc paulista` logo depois de "de que cidade?" (memória da pergunta).
