@@ -46,7 +46,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { calcularFrete, tipoCargaPorCarroceria, fmtBRL, fmtPct, diasPorFaixaKm, definirTabelaANTT, montarTabelaANTT, type Custos, type LinhaTabelaANTT } from "./calc.ts";
-import { extrairFreteDeTexto, EIXOS_PADRAO, type ExtracaoFrete, type TipoCargaBusca, type ContextoConversa, type TipoVeiculoMsg, type TipoCarroceriaMsg } from "./extracao.ts";
+import { extrairFreteDeTexto, EIXOS_PADRAO, TIPOS_VEICULO, type ExtracaoFrete, type TipoCargaBusca, type ContextoConversa, type TipoVeiculoMsg, type TipoCarroceriaMsg, type Pendencia, type Correcoes } from "./extracao.ts";
 import { lerDocumento, bytesParaBase64, normalizarPlaca, normalizarCategoriaCNH, type DadosCNH, type DadosCRLV } from "./documentos.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -1038,19 +1038,7 @@ async function montarContexto(fromE164: string): Promise<ContextoConversa> {
           quandoMinutos: ultimo?.criado_em ? Math.max(0, Math.round((Date.now() - new Date(ultimo.criado_em as string).getTime()) / 60_000)) : 0,
         }
       : null;
-  // Última coisa que o bot fez foi perguntar a cidade de saída (busca)? Se
-  // sim e faz menos de 30 min, a próxima mensagem é quase sempre a resposta.
-  const { data: ultimaLinha } = await supabase
-    .from("wa_freight_query")
-    .select("status, criado_em")
-    .eq("from_e164", fromE164)
-    .order("criado_em", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  const aguardandoOrigemBusca =
-    ultimaLinha?.status === "busca_origem" && Date.now() - new Date(ultimaLinha.criado_em as string).getTime() < 30 * 60_000;
   const estadoDoc = await estadoCadastroFoto(fromE164);
-  const aguardandoConfirmacaoDoc = estadoDoc && (estadoDoc.etapa === "confirmar" || estadoDoc.etapa === "corrigir") && estadoDoc.dados ? estadoDoc.tipo_doc : null;
   let cadastroFoto: ContextoConversa["cadastroFoto"] = null;
   let primeiroNome: string | null = null;
   if (m) {
@@ -1059,10 +1047,9 @@ async function montarContexto(fromE164: string): Promise<ContextoConversa> {
       supabase.from("caminhao_perfil").select("placa, renavam").eq("user_id", m.id).maybeSingle(),
     ]);
     primeiroNome = mot?.nome ? String(mot.nome).trim().split(/\s+/)[0] || null : null;
-    if (estadoDoc) {
-      cadastroFoto = { etapa: estadoDoc.etapa, cnhSalva: Boolean(mot?.cnh_numero), crlvSalvo: Boolean(perf?.placa || perf?.renavam), nome: mot?.nome ?? null };
-    }
+    if (estadoDoc) cadastroFoto = { cnhSalva: Boolean(mot?.cnh_numero), crlvSalvo: Boolean(perf?.placa || perf?.renavam) };
   }
+  const pendencia = await obterPendencia(fromE164, estadoDoc);
   const { data: conversa } = await supabase
     .from("wa_conversa")
     .select("papel, texto")
@@ -1072,7 +1059,60 @@ async function montarContexto(fromE164: string): Promise<ContextoConversa> {
     .limit(9);
   // A última linha é a própria mensagem atual (já gravada no roteador) — sai do histórico.
   const historico = ((conversa ?? []) as Array<{ papel: "motorista" | "bot"; texto: string }>).slice(1).reverse();
-  return { jaApresentado: (apresentacoes ?? 0) > 0, caminhaoCadastrado, ultimoCalculo, ultimaFalha, aguardandoOrigemBusca, aguardandoConfirmacaoDoc, cadastroFoto, historico, primeiroNome };
+  return { jaApresentado: (apresentacoes ?? 0) > 0, caminhaoCadastrado, ultimoCalculo, ultimaFalha, cadastroFoto, historico, primeiroNome, pendencia };
+}
+
+/**
+ * A ÚNICA coisa que o bot está esperando agora (08/10). Prioridade: leitura
+ * de documento em confirmação > tipo do cavalo > consentimento > onboarding
+ * do caminhão > cidade em dúvida (1 h) > origem da busca (30 min) >
+ * aguardando foto. Vai pro Haiku como `pendencia`; a resposta volta como
+ * `acao` e é executada em executarAcaoPendencia. Substitui os cinco
+ * "porteiros" de regex que interceptavam o texto antes da IA.
+ */
+async function obterPendencia(fromE164: string, estadoDoc?: EstadoCadastroFoto | null): Promise<Pendencia | null> {
+  const doc = estadoDoc === undefined ? await estadoCadastroFoto(fromE164) : estadoDoc;
+  if (doc?.dados && doc.tipo_doc && (doc.etapa === "confirmar" || doc.etapa === "corrigir")) {
+    const d = doc.dados;
+    const leitura: Record<string, string | number | null> =
+      doc.tipo_doc === "cnh"
+        ? { nome: d.nome ?? null, categoria: d.categoria ?? null, validade: d.validade ?? null, numero: d.numero ?? null }
+        : { marca: d.marca ?? null, modelo: d.modelo ?? null, ano: d.ano ?? null, placa: d.placa ?? null, renavam: d.renavam ?? null, eixos: d.eixos ?? null, capacidade_t: d.capacidadeT ?? null, exercicio: d.exercicio ?? null, especie: d.especie ?? null };
+    return { tipo: "confirmar_leitura", documento: doc.tipo_doc, leitura };
+  }
+  if (doc?.etapa === "tipo_veiculo") return { tipo: "tipo_veiculo_crlv", opcoes: ["Carreta", "Carreta LS", "Bitrem 7 eixos"] };
+  if (doc?.etapa === "aguardando_consentimento") return { tipo: "consentimento_documento" };
+
+  const { data: onb } = await supabase.from("wa_onboarding").select("etapa, updated_at").eq("from_e164", fromE164).maybeSingle();
+  if (onb && Date.now() - new Date(onb.updated_at as string).getTime() < 60 * 60_000) {
+    const etapa = onb.etapa as "tipo" | "eixos" | "consumo";
+    const opcoes = etapa === "tipo" ? TIPOS_VEICULO_BOTOES.map((t) => t.titulo) : etapa === "eixos" ? ["2 a 9"] : ["km por litro, ex.: 2,5"];
+    return { tipo: "onboarding_caminhao", etapa, opcoes };
+  }
+
+  const { data: ultima } = await supabase
+    .from("wa_freight_query")
+    .select("status, criado_em, extracao_snapshot, resultado_snapshot")
+    .eq("from_e164", fromE164)
+    .order("criado_em", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (ultima) {
+    const idadeMin = (Date.now() - new Date(ultima.criado_em as string).getTime()) / 60_000;
+    if (ultima.status === "cidade_pendente" && idadeMin < 60) {
+      const res = (ultima.resultado_snapshot ?? {}) as { campo?: string; texto?: string; candidatos?: string[] };
+      return { tipo: "cidade_em_duvida", campo: res.campo === "destino" ? "destino" : "origem", texto: res.texto ?? "", candidatos: res.candidatos ?? [] };
+    }
+    if (ultima.status === "busca_origem" && idadeMin < 30) {
+      const res = (ultima.resultado_snapshot ?? {}) as { candidatos?: string[] };
+      return { tipo: "busca_origem", candidatos: res.candidatos ?? [] };
+    }
+  }
+  // "Aguardando foto" só conta se ele aceitou ler (quem tocou "Agora não" também fica nessa etapa, sem pendência real).
+  if (doc?.etapa === "aguardando_foto" && (await temConsentimentoLeitura(doc.motorista_id))) {
+    return { tipo: "aguardando_foto", faltam: "CNH e/ou CRLV" };
+  }
+  return null;
 }
 
 /** Caminhão dito na mensagem, já resolvido contra o perfil cadastrado. */
@@ -1414,7 +1454,7 @@ async function tratarRespostaOnboarding(fromE164: string, rowId: string, waMessa
     };
     if (f.cotacao && f.origem && f.destino) {
       await tratarCotacao(fromE164, "(cotação pós-onboarding)", waMessageId, {
-        intent: "cotar", ePedidoDeFrete: false, ePedidoDeBusca: false, origem: f.origem, destino: f.destino, valorFreteReais: null, valorPorToneladaReais: null, toneladas: null,
+        intent: "cotar", ePedidoDeFrete: false, ePedidoDeBusca: false, origem: f.origem, destino: f.destino, valorFreteReais: null, valorPorToneladaReais: null, toneladas: null, acao: "nenhuma", opcaoEscolhida: null, correcoes: null,
         voltaVazia: Boolean(f.voltaVazia), tipoCarga: null, tipoVeiculo: null, numeroEixos: null, tipoCarroceria: null, respostaLivre: null,
         confiancaOrigem: 1, confiancaDestino: 1, confiancaValor: 0,
       });
@@ -1464,46 +1504,10 @@ async function tratarSair(fromE164: string, waMessageId: string): Promise<void> 
   await enviarMensagemWhatsapp(fromE164, "Pronto — apaguei seu cadastro e seus dados. Se quiser voltar, é só mandar uma rota e um valor. 👋");
 }
 
-/**
- * Motorista no meio do onboarding que DIGITA em vez de tocar no botão
- * ("carreta", "5 eixos", "2,3") — casa o texto com a etapa pendente e
- * segue como se fosse o botão. Retorna false se não tinha onboarding ou
- * o texto não casou (aí a mensagem segue o fluxo normal).
- */
-async function tratarTextoDuranteOnboarding(fromE164: string, texto: string, waMessageId: string): Promise<boolean> {
-  const { data: onb } = await supabase.from("wa_onboarding").select("etapa").eq("from_e164", fromE164).maybeSingle();
-  if (!onb) return false;
-  const t = texto.trim().toLowerCase();
-  // Só resposta curta conta como resposta ao onboarding. "cuiaba santos soja
-  // 180 a tonelada bitrem graneleiro" era engolido como "Bitrem" e o frete
-  // se perdia (simulador, 07/10). Frase longa segue o fluxo normal — se
-  // trouxer o caminhão, resolverVeiculoDaMensagem salva e encerra o onboarding.
-  if (t.split(/\s+/).length > 4) return false;
-  let rowId: string | null = null;
-  if (onb.etapa === "tipo") {
-    if (/\bcarreta\b|\bcavalo\b/.test(t)) rowId = "onb_tipo:Carreta";
-    else if (/\bbi-?trem\b|\brodotrem\b/.test(t)) rowId = "onb_tipo:Bitrem 7 eixos";
-    else if (/\btruck\b|\btruc\b|\btoco\b|\b3\/4\b/.test(t)) rowId = "onb_tipo:Truck";
-  } else if (onb.etapa === "eixos") {
-    const m = t.match(/\b([2-9])\b/);
-    if (m) rowId = `onb_eixos:${m[1]}`;
-  } else if (onb.etapa === "consumo") {
-    const m = t.match(/(\d+(?:[.,]\d+)?)/);
-    if (m) {
-      // "2 e meio", "dois e meio" → 2,5 (motorista fala assim)
-      const n = Number(m[1].replace(",", ".")) + (/\be meio\b/.test(t) && !m[1].includes(".") && !m[1].includes(",") ? 0.5 : 0);
-      if (n >= 1 && n <= 6) rowId = `onb_consumo:${n}`;
-    }
-  }
-  if (!rowId) return false;
-  await tratarRespostaOnboarding(fromE164, rowId, waMessageId);
-  return true;
-}
 
 async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageId: string): Promise<void> {
-  // Digitou em vez de tocar no botão do onboarding? Casa com a etapa e segue.
-  if (await tratarTextoDuranteOnboarding(fromE164, texto, waMessageId)) return;
-
+  // 08/10: sem porteiros. Tudo passa pela IA com a pendência no contexto;
+  // a resposta dela (acao) é executada em despacharExtracao.
   const contexto = await montarContexto(fromE164);
   const extracao = await extrairFreteDeTexto(texto, contexto);
   if (!extracao) {
@@ -1512,7 +1516,7 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
     await tratarConversaLivre(fromE164, texto, waMessageId, null);
     return;
   }
-  await despacharExtracao(fromE164, texto, waMessageId, extracao);
+  await despacharExtracao(fromE164, texto, waMessageId, extracao, contexto.pendencia);
 }
 
 /**
@@ -1520,7 +1524,13 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
  * reexecutar o MESMO pedido depois que o motorista toca no botão de
  * confirmação de cidade ("é Coruripe/AL?") — ver tratarEscolhaCidade.
  */
-async function despacharExtracao(fromE164: string, texto: string, waMessageId: string, extracao: ExtracaoFrete): Promise<void> {
+async function despacharExtracao(fromE164: string, texto: string, waMessageId: string, extracao: ExtracaoFrete, pendencia?: Pendencia | null): Promise<void> {
+  // A mensagem respondeu ao que o bot estava esperando? Executa a ação e pronto.
+  if (extracao.acao !== "nenhuma") {
+    const p = pendencia === undefined ? await obterPendencia(fromE164) : pendencia;
+    if (p && (await executarAcaoPendencia(fromE164, texto, waMessageId, extracao, p))) return;
+  }
+
   // Pergunta sobre o último cálculo ("quanto de pedágio?"): a IA já
   // respondeu com os números do contexto — só manda (conta no limite diário).
   if (extracao.intent === "pergunta_calculo") {
@@ -2176,7 +2186,11 @@ async function corrigirCidades(
       return null;
     }
     // Pendência: guarda o pedido inteiro (com o que já foi corrigido) e pergunta.
-    await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao: novo, status: d.tipo === "perguntar" ? "cidade_pendente" : "erro_extracao" });
+    await registrarTentativaFrete({
+      waMessageId, motoristaId, fromE164, texto, extracao: novo,
+      status: d.tipo === "perguntar" ? "cidade_pendente" : "erro_extracao",
+      resultado: d.tipo === "perguntar" ? { campo, texto: original, candidatos: d.candidatos.slice(0, 3).map((c) => `${c.nome}/${c.uf}`) } : { campo, texto: original, motivo: "nao_achou" },
+    });
     const rotulo = campo === "origem" ? "saída" : "destino";
     if (d.tipo === "perguntar") {
       await enviarBotoes(
@@ -2308,8 +2322,8 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string, opcoes:
       origem = await geocodificarCidade(decisao.canonico);
     }
     if (!origem) {
-      await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto: textoOriginal, extracao: null, status: "busca_origem" });
       const plausiveis = cands.filter((c) => c.similaridade >= LIMIAR_CIDADE_SUGERIR);
+      await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto: textoOriginal, extracao: null, status: "busca_origem", resultado: { candidatos: plausiveis.slice(0, 2).map((c) => `${c.nome}/${c.uf}`) } });
       if (plausiveis.length) {
         await enviarBotoes(
           fromE164,
@@ -2863,6 +2877,131 @@ async function salvarLeituraDoc(fromE164: string, estado: EstadoCadastroFoto, wa
   );
 }
 
+
+// ---------------------------------------------------------------------------
+// AÇÕES SOBRE A PENDÊNCIA (08/10) — a IA disse o que o motorista quis; aqui
+// o código executa, validando cada valor. Devolve true se tratou.
+// ---------------------------------------------------------------------------
+function normalizarOpcaoVeiculo(opcao: string): TipoVeiculoMsg | null {
+  const o = semAcento(opcao);
+  const exato = TIPOS_VEICULO.find((t) => semAcento(t) === o);
+  if (exato) return exato;
+  if (/bitrem/.test(o)) return /9/.test(o) ? "Bitrem 9 eixos" : "Bitrem 7 eixos";
+  if (/\bls\b/.test(o)) return "Carreta LS";
+  if (/truck|truk|truque/.test(o)) return "Truck";
+  if (/bitruck/.test(o)) return "BiTruck";
+  if (/carreta|cavalo/.test(o)) return "Carreta";
+  if (/toco/.test(o)) return "Toco";
+  if (/3\/4|tres quartos/.test(o)) return "3/4";
+  return null;
+}
+
+/** Aplica correções ditas pelo motorista sobre a leitura pendente, validando formato. Devolve o que não deu pra usar. */
+function aplicarCorrecoes(dados: NonNullable<EstadoCadastroFoto["dados"]>, c: Correcoes): { dados: NonNullable<EstadoCadastroFoto["dados"]>; rejeitados: string[] } {
+  const d = { ...dados };
+  const rejeitados: string[] = [];
+  if (c.nome) d.nome = c.nome;
+  if (c.categoria) {
+    const v = normalizarCategoriaCNH(c.categoria);
+    if (v) d.categoria = v; else rejeitados.push("categoria");
+  }
+  if (c.validade) {
+    const iso = c.validade.match(/^\d{4}-\d{2}-\d{2}$/) ? c.validade : (() => { const m = c.validade!.match(/^(\d{2})\/(\d{2})\/(\d{4})$/); return m ? `${m[3]}-${m[2]}-${m[1]}` : null; })();
+    if (iso) d.validade = iso; else rejeitados.push("validade");
+  }
+  if (c.numero) {
+    const n = c.numero.replace(/\D/g, "");
+    if (n.length >= 9 && n.length <= 11) d.numero = n; else rejeitados.push("número");
+  }
+  if (c.placa) {
+    const p = normalizarPlaca(c.placa);
+    if (p) d.placa = p; else rejeitados.push("placa");
+  }
+  if (c.renavam) {
+    const r = c.renavam.replace(/\D/g, "");
+    if (/^\d{9,11}$/.test(r)) d.renavam = r; else rejeitados.push("renavam");
+  }
+  if (c.eixos != null) { if (c.eixos >= 2 && c.eixos <= 9) d.eixos = c.eixos; else rejeitados.push("eixos"); }
+  if (c.capacidade_t != null) { if (c.capacidade_t > 0 && c.capacidade_t < 200) d.capacidadeT = c.capacidade_t; else rejeitados.push("capacidade"); }
+  if (c.ano != null) { if (c.ano >= 1970 && c.ano <= 2100) d.ano = c.ano; else rejeitados.push("ano"); }
+  if (c.marca) d.marca = c.marca;
+  if (c.modelo) d.modelo = c.modelo;
+  if (c.exercicio != null) { if (c.exercicio >= 2000 && c.exercicio <= 2100) d.exercicio = c.exercicio; else rejeitados.push("licenciamento"); }
+  return { dados: d, rejeitados };
+}
+
+async function executarAcaoPendencia(fromE164: string, texto: string, waMessageId: string, ex: ExtracaoFrete, p: Pendencia): Promise<boolean> {
+  const acao = ex.acao;
+  const opcao = ex.opcaoEscolhida;
+
+  if (p.tipo === "onboarding_caminhao" && acao === "escolher" && opcao) {
+    if (p.etapa === "tipo") {
+      const tipo = normalizarOpcaoVeiculo(opcao);
+      if (!tipo) return false;
+      await tratarRespostaOnboarding(fromE164, `onb_tipo:${tipo}`, waMessageId);
+      return true;
+    }
+    const n = Number(String(opcao).replace(",", ".").replace(/[^\d.]/g, ""));
+    if (p.etapa === "eixos" && n >= 2 && n <= 9) { await tratarRespostaOnboarding(fromE164, `onb_eixos:${Math.round(n)}`, waMessageId); return true; }
+    if (p.etapa === "consumo" && n >= 1 && n <= 6) { await tratarRespostaOnboarding(fromE164, `onb_consumo:${n}`, waMessageId); return true; }
+    return false;
+  }
+
+  if (p.tipo === "cidade_em_duvida" && acao === "escolher" && opcao) {
+    await tratarEscolhaCidade(fromE164, `cidade:${p.campo === "origem" ? "o" : "d"}:${opcao}`, waMessageId);
+    return true;
+  }
+
+  if (p.tipo === "busca_origem" && acao === "escolher" && opcao) {
+    await tratarBuscaDeFrete(fromE164, waMessageId, { origemTexto: opcao, textoOriginal: texto });
+    return true;
+  }
+
+  if (p.tipo === "consentimento_documento") {
+    if (acao === "aceitar") { await tratarBotaoCadastroFoto(fromE164, "doc:ok", waMessageId); return true; }
+    if (acao === "recusar") { await tratarBotaoCadastroFoto(fromE164, "doc:nao", waMessageId); return true; }
+    return false;
+  }
+
+  if (p.tipo === "tipo_veiculo_crlv" && acao === "escolher" && opcao) {
+    const tipo = normalizarOpcaoVeiculo(opcao);
+    if (!tipo) return false;
+    await tratarBotaoCadastroFoto(fromE164, `doc:tipo:${tipo}`, waMessageId);
+    return true;
+  }
+
+  if (p.tipo === "confirmar_leitura") {
+    const estado = await estadoCadastroFoto(fromE164);
+    if (!estado?.dados || !estado.tipo_doc) return false;
+    const motoristaId = estado.motorista_id;
+    if (acao === "confirmar") { await tratarBotaoCadastroFoto(fromE164, "doc:salvar", waMessageId); return true; }
+    if (acao === "cancelar") { await tratarBotaoCadastroFoto(fromE164, "doc:cancelar", waMessageId); return true; }
+    if (acao === "reler") {
+      await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao: null, status: "doc_cancelado", resultado: { tipo: estado.tipo_doc, motivo: "reler" } });
+      await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "aguardando_foto", tipo_doc: null, dados: null, media_id: null });
+      await enviarMensagemWhatsapp(fromE164, `Beleza, descartei essa leitura. Manda a ${estado.tipo_doc === "cnh" ? "CNH" : "CRLV"} de novo — foto mais perto, com luz e sem reflexo, ou o PDF.`);
+      return true;
+    }
+    if (acao === "pular_para_crlv") {
+      await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao: null, status: "doc_cancelado", resultado: { tipo: estado.tipo_doc, motivo: "pular_para_crlv" } });
+      await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "aguardando_foto", tipo_doc: null, dados: null, media_id: null });
+      await enviarMensagemWhatsapp(fromE164, "Beleza, deixa a CNH pra depois. Manda o CRLV do caminhão (foto ou PDF).");
+      return true;
+    }
+    if (acao === "corrigir" && ex.correcoes) {
+      const { dados, rejeitados } = aplicarCorrecoes(estado.dados, ex.correcoes);
+      await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "confirmar", dados });
+      await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao: null, status: "doc_lido", resultado: { correcao: Object.keys(ex.correcoes).filter((k) => (ex.correcoes as Record<string, unknown>)[k] != null) } });
+      const aviso = rejeitados.length ? `Não consegui usar o que você mandou pra ${rejeitados.join(", ")} — confere o formato.\n\n` : "";
+      await enviarBotoes(fromE164, aviso + textoConfirmacaoDoc({ ...estado, dados }), BOTOES_CONFIRMAR_DOC);
+      return true;
+    }
+    return false;
+  }
+
+  return false;
+}
+
 async function tratarBotaoCadastroFoto(fromE164: string, rowId: string, waMessageId: string): Promise<void> {
   const estado = await estadoCadastroFoto(fromE164);
   const { data: m } = await supabase.from("motoristas").select("id").eq("telefone_e164", fromE164).maybeSingle();
@@ -2915,81 +3054,6 @@ async function tratarBotaoCadastroFoto(fromE164: string, rowId: string, waMessag
   }
 }
 
-/**
- * Texto enquanto a leitura está em confirmação/correção: "placa ABC1D23",
- * "validade 14/03/2029", "nome João da Silva"... Aplica e reapresenta.
- * True = tratou (o roteador não manda pra IA).
- */
-async function tratarTextoDuranteCadastroFoto(fromE164: string, texto: string, waMessageId: string): Promise<boolean> {
-  const estado = await estadoCadastroFoto(fromE164);
-  if (!estado) return false;
-  const t = texto.trim();
-  const tn = semAcento(t);
-  // Convite no ar e ele responde em texto em vez do botão (simulador, 07/10:
-  // "pode le" → a IA dizia "manda a foto" mas o consentimento não ficava gravado).
-  if (estado.etapa === "aguardando_consentimento") {
-    if (/^(pode|pode ler|pode le|pode sim|sim|s|ok|bora|manda|vai|claro|pode ser|beleza|fechou|isso)[\s!.]*$/.test(tn)) {
-      await tratarBotaoCadastroFoto(fromE164, "doc:ok", waMessageId);
-      return true;
-    }
-    if (/^(nao|n|agora nao|depois|mais tarde|deixa|nao quero)[\s!.]*$/.test(tn)) {
-      await tratarBotaoCadastroFoto(fromE164, "doc:nao", waMessageId);
-      return true;
-    }
-    return false;
-  }
-  if ((estado.etapa !== "corrigir" && estado.etapa !== "confirmar") || !estado.dados || !estado.tipo_doc) return false;
-  // "não", "tá errado", "leu errado" → mesmo que o botão Corrigir; "sim", "certo", "pode salvar" → Salvar.
-  if (/^(nao|n|errado|ta errado|esta errado|nao esta certo|nao ta certo|leu errado|nao e isso|nao confere)[\s!.]*$|\b(leu errado|ta errado|esta errado|nao esta certo|nao ta certo|errado)\b/.test(tn) && !/^(sim|certo)/.test(tn)) {
-    await tratarBotaoCadastroFoto(fromE164, "doc:corrigir", waMessageId);
-    return true;
-  }
-  if (/^(sim|s|certo|ta certo|esta certo|isso|ok|pode salvar|salva|salvar|confirmo|correto|confere)[\s!.]*$/.test(tn)) {
-    await tratarBotaoCadastroFoto(fromE164, "doc:salvar", waMessageId);
-    return true;
-  }
-  if (/^(cancela|cancelar|deixa|esquece|nao quero)[\s!.]*$/.test(tn)) {
-    await tratarBotaoCadastroFoto(fromE164, "doc:cancelar", waMessageId);
-    return true;
-  }
-  const m = t.match(/^(nome|categoria|validade|vencimento|numero|número|registro|cnh|placa|renavam|eixos?|capacidade|ano|marca|modelo|exercicio|exercício|licenciamento)\s*[:=]?\s*(.+)$/i);
-  if (!m) {
-    if (estado.etapa === "corrigir") {
-      await enviarMensagemWhatsapp(fromE164, 'Não entendi o campo. Manda assim: *"placa ABC1D23"*, *"validade 14/03/2029"*, *"nome João da Silva"*, *"eixos 6"*.');
-      return true;
-    }
-    return false; // em "confirmar", texto que não é correção segue o fluxo normal (pode ser um frete)
-  }
-  const campo = semAcento(m[1]);
-  const valor = m[2].trim();
-  const d = { ...estado.dados };
-  let ok = true;
-  switch (campo) {
-    case "nome": d.nome = valor.slice(0, 80); break;
-    case "categoria": d.categoria = normalizarCategoriaCNH(valor); ok = d.categoria != null; break;
-    case "validade": case "vencimento": {
-      const br = valor.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-      ok = Boolean(br); if (br) d.validade = `${br[3]}-${br[2]}-${br[1]}`; break;
-    }
-    case "numero": case "registro": case "cnh": d.numero = valor.replace(/\D/g, "").slice(0, 11) || null; ok = d.numero != null; break;
-    case "placa": d.placa = normalizarPlaca(valor); ok = d.placa != null; break;
-    case "renavam": d.renavam = valor.replace(/\D/g, ""); ok = /^\d{9,11}$/.test(d.renavam); break;
-    case "eixo": case "eixos": { const n = Number.parseInt(valor, 10); ok = n >= 2 && n <= 9; if (ok) d.eixos = n; break; }
-    case "capacidade": { const n = Number(valor.replace(",", ".").replace(/[^\d.]/g, "")); ok = n > 0 && n < 200; if (ok) d.capacidadeT = n; break; }
-    case "ano": { const n = Number.parseInt(valor, 10); ok = n >= 1970 && n <= 2100; if (ok) d.ano = n; break; }
-    case "marca": d.marca = valor.slice(0, 40); break;
-    case "modelo": d.modelo = valor.slice(0, 60); break;
-    case "exercicio": case "licenciamento": { const n = Number.parseInt(valor, 10); ok = n >= 2000 && n <= 2100; if (ok) d.exercicio = n; break; }
-  }
-  if (!ok) {
-    await enviarMensagemWhatsapp(fromE164, `Não consegui usar "${valor}" como ${m[1].toLowerCase()}. Confere e manda de novo.`);
-    return true;
-  }
-  await gravarEstadoCadastroFoto(fromE164, estado.motorista_id, { etapa: "confirmar", dados: d });
-  await registrarTentativaFrete({ waMessageId, motoristaId: estado.motorista_id, fromE164, texto, extracao: null, status: "doc_lido", resultado: { correcao: campo } });
-  await enviarBotoes(fromE164, textoConfirmacaoDoc({ ...estado, dados: d }), BOTOES_CONFIRMAR_DOC);
-  return true;
-}
 
 
 let tokenSimulacaoCache: { valor: string; em: number } | null = null;
@@ -3142,8 +3206,6 @@ async function processarPayload(payload: unknown): Promise<Response> {
       await tratarSair(msg.fromE164, msg.waMessageId);
     } else if (RE_CADASTRO.test(msg.texto.trim())) {
       await tratarComandoCadastro(msg.fromE164, msg.texto, msg.waMessageId);
-    } else if (await tratarTextoDuranteCadastroFoto(msg.fromE164, msg.texto, msg.waMessageId)) {
-      // correção de campo ("placa ABC1D23") enquanto a leitura está em confirmação
     } else if (RE_AJUDA.test(msg.texto.trim())) {
       // "ajuda"/"menu" — apresentação fixa, sem IA (conta nasce se for novo).
       const { id, novo } = await garantirMotorista(msg.fromE164, msg.texto);

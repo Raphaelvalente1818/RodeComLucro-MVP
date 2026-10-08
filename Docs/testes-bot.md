@@ -74,6 +74,22 @@ Escrever como caminhoneiro escreve: sem acento, abreviado, com erro ("truk", "qn
 | 33 | 21ª (`e o pedagio?`) | Silêncio | ✅ |
 | 34 | `SAIR` com a cota estourada | Apaga mesmo assim | ✅ (cota continua contando pelo número depois — não zera com SAIR, de propósito) |
 
+## Rodada 5 (08/10, v66 — consolidação "IA interpreta, código executa")
+
+Estado "CNH lida, esperando confirmação" montado direto no banco (559000000005) — as frases do Raphael de 07/10 à noite:
+
+| # | Mensagem | Esperado | Resultado |
+|---|---|---|---|
+| 35 | `Tá tudo errado a data o número, só meu nome está correto` | Descarta a leitura e pede foto nova (sem inventar valor) | ✅ |
+| 36 | `Esquece a cnh, vou mandar o documento do cavalo` | Deixa a CNH pra depois e espera o CRLV | ✅ |
+| 37 | `a validade certa eh 23/03/2035 e a categoria eh E` | Corrige só esses dois campos e reapresenta com botões | ✅ |
+| 38 | `agora sim, pode salvar` | Salva | ✅ |
+| 39 | `quero uma carga` → `carreta ls` → `6` → `faz uns 2 e meio` | Onboarding inteiro por texto (inclusive "Carreta LS", que os botões não têm) | ✅ |
+| 40 | `sto andre sp` | Busca em Santo André/SP | ✅ |
+| 41 | `sinop pra bom jesus 10 mil` → `o do piaui` | Escolhe Bom Jesus/PI pelo texto, sem botão | ✅ |
+| 42 | `pode le sim` | Registra consentimento e pede a foto | ✅ |
+| 43 | `frete campinas pra minas 6 mil vale?` | "Minas é um estado — qual cidade?" | ✅ |
+
 ## Pra acrescentar (próximas rodadas)
 - `Quero sair do abc paulista` logo depois de "de que cidade?" (memória da pergunta).
 - `nao esta certo, leu errado` / `validade 23/03/2035` depois de uma leitura (precisa de foto real).

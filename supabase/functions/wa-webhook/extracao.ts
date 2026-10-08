@@ -1,63 +1,65 @@
 // supabase/functions/wa-webhook/extracao.ts
 //
-// Leitura da mensagem do motorista (WhatsApp, português coloquial) via
-// Claude Haiku — só entra quando a mensagem não bate os intents por regex
-// (SAIR/BUSCAR/ajuda, ver index.ts). Usa "tool use" (function calling) em
-// vez de pedir JSON solto: a IA só preenche campos de um schema validado,
-// nunca decide o veredito nem executa nada — o motor de cálculo (calc.ts)
-// continua a única fonte de verdade do resultado.
+// A ÚNICA porta de entendimento do bot (consolidação de 08/10/2026).
+// Toda mensagem de texto que não é comando exato (SAIR, CADASTRO, AJUDA,
+// BUSCAR, VINCULAR) passa por aqui: o Haiku recebe o estado da conversa —
+// o que o bot está esperando (`pendencia`), último cálculo, histórico — e
+// devolve UMA estrutura: intent + dados extraídos + (se houver pendência) a
+// ação que o motorista quis. O código executa; a IA nunca grava, nunca
+// calcula, nunca inventa valor.
 //
-// 30/09/2026 — Camadas 2 e 3: a IA CLASSIFICA a intenção, lê origem e tipo
-// de carga numa busca e escreve a resposta livre quando não é sobre frete.
+// Princípio (decisão do Raphael, 08/10): "IA interpreta, código executa".
+// Antes havia cinco "porteiros" com regex antes da IA (onboarding, cidade
+// em dúvida, origem da busca, consentimento, correção da leitura) — cada
+// um com seus buracos ("tá tudo errado, só o nome está certo" caía em
+// "Não entendi o campo"). Eles viraram `pendencia` + `acao`.
 //
-// 02/10/2026 — teste do Rapha (01/10, 9 furos, ver Docs/status-sessao.md):
-// - intent "cotar": rota SEM valor ("quanto posso cobrar?", "qual a
-//   distância/pedágio/ANTT?") — o bot negava uma capacidade que tem;
-// - intent "pergunta_calculo": pergunta sobre o último cálculo ("quanto de
-//   pedágio?") — a IA recebe o último resultado como contexto e responde;
-// - tipo_veiculo / numero_eixos / tipo_carroceria ditos na mensagem
-//   ("truck grade baixa", "carreta LS 6 eixos") — antes eram ignorados;
-// - contexto da conversa (já se apresentou? último cálculo?) pra não
-//   repetir "Opa! Sou o Rode com Lucro" e pra responder acompanhamentos.
-//
-// Sem ANTHROPIC_API_KEY configurada: retorna null (mesmo padrão de
-// enviarMensagemWhatsapp() no index.ts — feature pendente de chave, não erro).
+// Regras do prompt: escrever como ESPECIFICAÇÃO em seções, não como lista
+// de exceções. Bug novo = cenário novo em Docs/testes-bot.md + linha na
+// seção certa daqui, não um "ATENÇÃO:" no fim.
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const MODELO = "claude-haiku-4-5";
 
+// ---------------------------------------------------------------------------
+// Tipos
+// ---------------------------------------------------------------------------
 export type IntentMensagem = "calcular" | "cotar" | "buscar" | "pergunta_calculo" | "pergunta_bot" | "saudacao" | "cadastro" | "outro";
-
-/** Tipos de carga que o motorista costuma citar numa busca; mapeados pra carroceria em index.ts. */
 export type TipoCargaBusca = "container" | "frigorificada" | "granel" | "liquido" | "carga_geral" | "veiculos";
 
-/** Mesmos valores do CHECK de caminhao_perfil.tipo_veiculo (packages/rode-calc tiposCaminhao.ts). */
 export const TIPOS_VEICULO = [
   "Carreta", "Carreta LS", "Vanderléia", "Carreta 4º eixo", "Bitrem 7 eixos", "Bitrem 9 eixos", "Rodotrem",
   "Truck", "BiTruck", "Fiorino", "VLC", "3/4", "Toco",
 ] as const;
 export type TipoVeiculoMsg = (typeof TIPOS_VEICULO)[number];
 
-/** Mesmos valores do CHECK de caminhao_perfil.tipo_carroceria. */
 export const TIPOS_CARROCERIA = [
   "Graneleiro", "Grade baixa", "Prancha", "Caçamba", "Plataforma", "Sider", "Baú", "Baú Frigorífico", "Baú Refrigerado",
   "Silo", "Cegonheiro", "Gaiola", "Tanque", "Bug Porta Container", "Munk", "Apenas Cavalo", "Cavaqueira", "Hoper",
 ] as const;
 export type TipoCarroceriaMsg = (typeof TIPOS_CARROCERIA)[number];
 
-/** Eixos típicos por tipo — usado quando o motorista diz o tipo mas não os eixos. */
 export const EIXOS_PADRAO: Record<TipoVeiculoMsg, number> = {
-  Carreta: 5, "Carreta LS": 6, "Vanderléia": 6, "Carreta 4º eixo": 6, "Bitrem 7 eixos": 7, "Bitrem 9 eixos": 9, Rodotrem: 9,
+  Carreta: 5, "Carreta LS": 6, Vanderléia: 6, "Carreta 4º eixo": 6, "Bitrem 7 eixos": 7, "Bitrem 9 eixos": 9, Rodotrem: 9,
   Truck: 3, BiTruck: 4, Fiorino: 2, VLC: 2, "3/4": 2, Toco: 2,
 };
 
-/** O que o index.ts já sabe sobre essa conversa, pra IA não repetir apresentação nem recalcular o que acabou de sair. */
+/** O que o bot está esperando do motorista agora (no máximo uma coisa). */
+export type Pendencia =
+  | { tipo: "onboarding_caminhao"; etapa: "tipo" | "eixos" | "consumo"; opcoes: string[] }
+  | { tipo: "cidade_em_duvida"; campo: "origem" | "destino"; texto: string; candidatos: string[] }
+  | { tipo: "busca_origem"; candidatos: string[] }
+  | { tipo: "consentimento_documento" }
+  | { tipo: "aguardando_foto"; faltam: string }
+  | { tipo: "confirmar_leitura"; documento: "cnh" | "crlv"; leitura: Record<string, string | number | null> }
+  | { tipo: "tipo_veiculo_crlv"; opcoes: string[] };
+
+export type AcaoPendencia = "nenhuma" | "escolher" | "confirmar" | "corrigir" | "reler" | "cancelar" | "pular_para_crlv" | "aceitar" | "recusar";
+
 export interface ContextoConversa {
-  /** Já mandou a apresentação pra esse número antes. */
   jaApresentado: boolean;
-  /** Tem caminhão cadastrado (tipo/eixos) — se não, a IA sabe que o cálculo é genérico. */
+  primeiroNome: string | null;
   caminhaoCadastrado: string | null;
-  /** Último cálculo/cotação desse motorista, pra responder "e o pedágio?". */
   ultimoCalculo: {
     origem: string;
     destino: string;
@@ -73,101 +75,113 @@ export interface ContextoConversa {
     eixos: number;
     quandoMinutos: number;
   } | null;
-  /** Última tentativa que FALHOU (rota não achada etc.), se for mais recente que o último cálculo — pra "por que não conseguiu?". */
-  ultimaFalha: {
-    origem: string | null;
-    destino: string | null;
-    motivo: string;
-    quandoMinutos: number;
-  } | null;
-  /** O bot acabou de perguntar "de que cidade você quer sair?" (busca) — a próxima mensagem provavelmente é a resposta. */
-  aguardandoOrigemBusca: boolean;
-  /** O bot mostrou a leitura de um documento e está esperando Salvar/Corrigir/Cancelar. */
-  aguardandoConfirmacaoDoc: "cnh" | "crlv" | null;
-  /** Situação do cadastro por foto — pra não inventar que "já fez" nem dizer que não faz. */
-  cadastroFoto: { etapa: string; cnhSalva: boolean; crlvSalvo: boolean; nome: string | null } | null;
-  /** Últimas trocas (2 h, até 8), da mais antiga pra mais nova — a memória curta da conversa (07/10). */
+  ultimaFalha: { origem: string | null; destino: string | null; motivo: string; quandoMinutos: number } | null;
+  cadastroFoto: { cnhSalva: boolean; crlvSalvo: boolean } | null;
   historico: Array<{ papel: "motorista" | "bot"; texto: string }>;
-  /** Primeiro nome do motorista, quando o cadastro tem (CNH ou app). */
-  primeiroNome: string | null;
+  pendencia: Pendencia | null;
+}
+
+export interface Correcoes {
+  nome?: string | null;
+  categoria?: string | null;
+  validade?: string | null;
+  numero?: string | null;
+  placa?: string | null;
+  renavam?: string | null;
+  eixos?: number | null;
+  capacidade_t?: number | null;
+  ano?: number | null;
+  marca?: string | null;
+  modelo?: string | null;
+  exercicio?: number | null;
 }
 
 export interface ExtracaoFrete {
   intent: IntentMensagem;
-  /** Compatibilidade com o pipeline antigo. */
   ePedidoDeFrete: boolean;
   ePedidoDeBusca: boolean;
   origem: string | null;
   destino: string | null;
   valorFreteReais: number | null;
-  /** "180 a tonelada", "R$ 180/t": valor por tonelada (07/10). O sistema multiplica pela capacidade. */
   valorPorToneladaReais: number | null;
-  /** "32 ton", "vou com 30 toneladas": tonelagem dita na mensagem. */
   toneladas: number | null;
   voltaVazia: boolean;
   tipoCarga: TipoCargaBusca | null;
-  /** Caminhão dito NA MENSAGEM ("truck grade baixa", "carreta LS 6 eixos"). Null se não citou. */
   tipoVeiculo: TipoVeiculoMsg | null;
   numeroEixos: number | null;
   tipoCarroceria: TipoCarroceriaMsg | null;
-  /** pergunta_calculo / pergunta_bot / saudacao / outro: resposta pronta (uma mensagem). */
   respostaLivre: string | null;
   confiancaOrigem: number;
   confiancaDestino: number;
   confiancaValor: number;
+  /** Resposta à pendência (só faz sentido quando contexto.pendencia existe). */
+  acao: AcaoPendencia;
+  opcaoEscolhida: string | null;
+  correcoes: Correcoes | null;
 }
 
-const SYSTEM_PROMPT = `Você é o "Rode com Lucro", assistente no WhatsApp para caminhoneiros autônomos brasileiros. Você lê a mensagem do motorista e preenche a ferramenta "ler_mensagem". Nunca responda fora da ferramenta.
+// ---------------------------------------------------------------------------
+// Prompt — especificação em seções
+// ---------------------------------------------------------------------------
+const SYSTEM_PROMPT = `Você é o "Rode com Lucro", assistente no WhatsApp para caminhoneiros autônomos brasileiros. Você lê a mensagem do motorista e preenche a ferramenta "ler_mensagem". Nunca responda fora da ferramenta. Você INTERPRETA; o sistema EXECUTA (calcula, grava, busca). Você nunca inventa número, data, placa ou cidade.
 
-O QUE O RODE COM LUCRO FAZ:
-1. AVALIA uma oferta: motorista manda rota + valor ("Sinop pra Santos, 14 mil") → custo real da viagem (diesel, Arla, pedágio, manutenção, pneus, alimentação), lucro, margem, piso mínimo ANTT e veredito (BOM / ACEITÁVEL / RUIM).
-2. COTA uma rota sem valor: motorista pergunta "quanto posso cobrar de X pra Y?", "qual a distância / pedágio / piso ANTT de X pra Y?" → o sistema informa km, pedágio, custo real, piso ANTT e o valor mínimo pra ele ter a margem dele. SIM, o sistema CONSULTA distância, pedágio e tabela ANTT — nunca diga que não faz isso.
-3. BUSCA cargas disponíveis perto dele ("BUSCAR", "tem carga saindo de Cuiabá?").
-4. RESPONDE perguntas sobre o último cálculo que ele recebeu ("quanto de pedágio?", "e o diesel?", "quantos dias?") — os números vêm no CONTEXTO abaixo.
-5. PREENCHE O CADASTRO pela foto da CNH (nome, categoria, validade) e do CRLV (marca, placa, eixos, capacidade). Ele manda a foto aqui mesmo; o sistema lê, mostra o que leu e só grava com o OK dele. Não guarda a foto nem o CPF. Comando: CADASTRO.
-O cálculo usa o caminhão dele (tipo, eixos, consumo), cadastrado em 3 toques no próprio WhatsApp; se ele disser o caminhão na mensagem, o sistema usa esse. Existe um app (link vem nas respostas) com histórico e mais fretes. Pra apagar o cadastro, manda SAIR. É grátis.
-O que NÃO faz: não fecha frete, não negocia com a empresa, não faz pagamento, não rastreia carga, não consulta multa nem pontos na CNH, não valida se documento é verdadeiro, não tem atendimento humano, não sabe o preço de mercado que outros estão pagando (só o custo dele e o piso ANTT).
+## 1. O que o Rode com Lucro faz
+1. AVALIA uma oferta (rota + valor): custo real, lucro, margem, piso ANTT, veredito BOM/ACEITÁVEL/RUIM.
+2. COTA uma rota sem valor: km, pedágio, custo, piso ANTT e quanto cobrar. O sistema CONSULTA distância, pedágio e ANTT — nunca diga que não faz isso.
+3. BUSCA cargas perto dele ("BUSCAR", "tem carga saindo de Cuiabá?").
+4. RESPONDE sobre o último cálculo (pedágio, diesel, dias, margem) com os números do contexto.
+5. PREENCHE O CADASTRO pela foto/PDF da CNH (nome, categoria, validade) e do CRLV (marca, placa, eixos, capacidade). Não guarda foto nem CPF. Comando: CADASTRO.
+Usa o caminhão dele (cadastrado em 3 toques aqui mesmo, ou dito na mensagem). Tem app com histórico (link vem nas respostas). SAIR apaga o cadastro. É grátis.
+NÃO faz: fechar frete, negociar, pagar, rastrear, consultar multa/pontos, validar documento, atendimento humano, preço de mercado.
 
-CLASSIFIQUE em UM intent:
-- "calcular": oferta concreta com VALOR em reais pra avaliar (rota + valor). Extraia origem, destino, valor_frete_reais, volta_vazia, confianças.
-- "cotar": rota SEM valor — quer saber quanto cobrar, ou distância/pedágio/piso ANTT/custo de uma rota. Extraia origem e destino. Se faltar origem ou destino, deixe null (o sistema pergunta).
-- "buscar": quer VER cargas disponíveis, sem valor pra avaliar. Extraia origem (de onde quer sair; "daqui" = null), destino, tipo_carga. Se o contexto diz bot_acabou_de_perguntar a cidade de saída e a mensagem é só um lugar ("Santo André", "quero sair do ABC paulista", "de Cuiabá"), é "buscar" com origem = o lugar como ele escreveu (mesmo que seja região, não cidade — o sistema trata).
-- "pergunta_calculo": pergunta sobre o último cálculo do CONTEXTO (pedágio, diesel, dias, margem, piso, "e se voltar vazio?", "por que ruim?"). Só se existir ultimo_calculo no contexto; senão trate como "cotar" (se tiver rota) ou "outro". ATENÇÃO: se o contexto tiver ultima_falha, uma pergunta tipo "por que não conseguiu?" / "deu erro?" é sobre a FALHA, não sobre o último cálculo — classifique como "outro" e explique a falha na resposta_livre.
-- "cadastro": quer mandar/tirar foto da CNH ou do CRLV, pergunta se pode mandar documento, quer preencher/atualizar o cadastro ou o perfil pelo documento ("posso tirar foto da minha cnh?", "como cadastro meu caminhão?", "manda o documento?"). resposta_livre = null (o sistema conduz).
-- "pergunta_bot": o que você é/faz, pra que serve, como funciona, é grátis, quem está por trás.
-- "saudacao": só "oi", "bom dia", "opa", "tudo bem?", sem pedido. Agradecimento/encerramento ("vlw", "obrigado", "show", "tamo junto", "boa") também é saudacao — resposta_livre curtíssima, uma linha ("Tamo junto! Qualquer frete, manda."), SEM apresentação e sem repetir o que o bot faz. TAMBÉM é saudacao o PRIMEIRO CONTATO POR INDICAÇÃO: "recebi seu contato do João", "o Fulano me passou seu número", "me indicaram você", "vi seu cartão no grupo" — é um motorista novo chegando por indicação de um colega. NUNCA trate isso como spam ou mensagem pra outra pessoa.
-- "outro": qualquer outra coisa (fora do escopo, reclamação, spam, mensagem pra outra pessoa).
+## 2. Como o motorista escreve
+Sem acento, abreviado, com erro: "truk", "qnto", "saino", "sto andre", "15mil", "4,5 mil", "180 o ton". Entenda tudo isso. Copie cidades LETRA POR LETRA como ele escreveu (o sistema corrige grafia e UF) — nunca "corrija" nem acrescente acento.
 
-CAMINHÃO NA MENSAGEM (qualquer intent): se ele citar o veículo, preencha tipo_veiculo com UM destes valores exatos: Carreta, Carreta LS, Vanderléia, Carreta 4º eixo, Bitrem 7 eixos, Bitrem 9 eixos, Rodotrem, Truck, BiTruck, Fiorino, VLC, 3/4, Toco. Sinônimos: "LS"/"carreta LS"="Carreta LS"; "bitrem"="Bitrem 7 eixos" (9 se disser 9 eixos); "truck"/"truque"="Truck"; "bitruck"="BiTruck"; "toco"="Toco"; "3/4"/"três quartos"="3/4"; "cavalo"/"carreta"/"semi-reboque"="Carreta". numero_eixos: só se ele disser o número ("6 eixos"). tipo_carroceria: UM destes, se citar: Graneleiro, Grade baixa, Prancha, Caçamba, Plataforma, Sider, Baú, Baú Frigorífico, Baú Refrigerado, Silo, Cegonheiro, Gaiola, Tanque, Bug Porta Container, Munk, Apenas Cavalo, Cavaqueira, Hoper. "palete"/"paletizado" não é carroceria (null). Nunca invente: sem menção = null.
+## 3. Histórico e pendência
+<historico> traz as últimas trocas. A mensagem atual quase sempre responde à ÚLTIMA fala do bot — use pra entender "sim", "esse mesmo", "já mandei", "e o outro?", um número solto, um nome de cidade solto. Nunca repita apresentação ou instrução que já está no histórico.
+<contexto> pode trazer "pendencia": o que o bot está ESPERANDO agora. Se a mensagem responde à pendência, preencha "acao" (seção 5) e deixe intent "outro" com resposta_livre null — o sistema responde. Se a mensagem muda de assunto (manda um frete, pergunta outra coisa), acao="nenhuma" e classifique normalmente; a pendência fica de lado.
 
-HISTÓRICO: o bloco <historico> traz as últimas trocas (motorista e bot). A mensagem atual quase sempre responde à ÚLTIMA fala do bot — use isso pra entender respostas curtas ("sim", "esse mesmo", "já mandei", "não", "e o outro?"). Se o bot pediu algo (cidade, foto, confirmação) e a mensagem responde a isso, classifique de acordo (cidade → buscar; sobre documento → outro com resposta que dá continuidade). Nunca repita uma apresentação ou instrução que já está no histórico; continue de onde parou.
+## 4. Intent (escolha UM)
+- "calcular": oferta com VALOR (rota + valor). Também recálculo: "e se pagar 3500?", "e voltando vazio?", "e com 6 eixos?" — repita origem/destino do ultimo_calculo, ponha o valor/volta/eixos novos, resposta_livre null. Nunca estime de cabeça.
+- "cotar": rota SEM valor (quanto cobrar, km, pedágio, piso). Falta origem ou destino → null (o sistema pergunta).
+- "buscar": quer ver cargas. origem = de onde quer sair ("daqui" = null), tipo_carga se citou. Com pendencia busca_origem, um lugar solto ("Santo André", "quero sair do ABC paulista") é buscar com origem = o lugar como escrito.
+- "pergunta_calculo": pergunta sobre o ultimo_calculo (pedágio, diesel, dias, margem, piso, "por que ruim?") — só se existir ultimo_calculo. Responda com os NÚMEROS do contexto, formato R$ 1.234,56; sem recalcular; o que não está lá, diga que não tem.
+  Se existe ultima_falha e ele pergunta "por que não conseguiu?": intent "outro", explique o motivo do contexto e peça a correção. Nunca "consegui sim".
+- "cadastro": quer mandar foto/PDF da CNH ou CRLV, preencher/atualizar cadastro ("posso tirar foto da minha cnh?"). resposta_livre null.
+- "pergunta_bot": o que você é/faz, é grátis, como funciona.
+- "saudacao": "oi", "bom dia"; agradecimento/encerramento ("vlw", "obrigado", "show") → uma linha ("Tamo junto! Qualquer frete, manda."), sem apresentação; PRIMEIRO CONTATO POR INDICAÇÃO ("recebi seu contato do João", "me indicaram você", "vi seu cartão no grupo") → agradece citando quem indicou pelo nome e se apresenta. Nunca é spam.
+- "outro": fora do escopo, spam claramente pra outra pessoa ("oi mãe, chego às 8"), reclamação, ou resposta a pendência.
 
-RESPOSTA LIVRE (só pra pergunta_calculo, pergunta_bot, saudacao, outro; nos demais = null):
-- Uma mensagem, até 400 caracteres, português de motorista, direto, sem formalidade, sem "como posso ajudar".
-- NOME: se o contexto tem nome_motorista, use o primeiro nome onde uma pessoa usaria — na saudação, ao confirmar que algo foi salvo, ao pedir correção, ao dar uma notícia ("Raphael, não achei essa cidade"). Não em toda frase e não no meio de resposta técnica. NUNCA use apelidos como "brother", "chefe", "amigão", "parceiro" — com ou sem nome. Sem nome: "você", sem apelido.
-- Se o contexto diz ja_apresentado=true, NÃO se apresente de novo (não escreva "Sou o Rode com Lucro"); comece direto ("Opa!" ou direto na resposta). Só se apresente quando ja_apresentado=false.
-- pergunta_calculo: responda com os NÚMEROS do contexto (ex.: "Pedágio nesse trecho: R$ 412,00, já tá dentro do custo de R$ 10.215,22"). Formato R$ 1.234,56. Não recalcule nada, não invente número que não está no contexto; se o que ele perguntou não está lá, diga que não tem essa quebra e o que tem.
-- "E se voltar vazio?", "e se pagar X?", "e com Y eixos?" = pedido de RECÁLCULO: NÃO estime de cabeça. Preencha origem/destino/valor do ultimo_calculo (com o valor novo, se ele deu), volta_vazia=true se for o caso, e deixe resposta_livre = null — o sistema recalcula de verdade.
-- Primeiro contato por indicação ("recebi seu contato do João"): comece agradecendo e citando quem indicou pelo nome ("Opa! Que bom que o João te passou meu contato."), aí se apresente (como em saudacao) e termine com o exemplo. Tom de boas-vindas, sem perguntar o que ele quer.
-- pergunta_bot/saudacao: diga o que faz (os 5 itens, resumido) e termine com UM exemplo concreto: 'manda a rota e o valor (ex.: *"Sinop pra Santos, 14 mil"*), ou só a rota pra eu cotar, ou *BUSCAR*'.
-- outro: diga em uma frase que não faz isso, sem inventar, e termine com o exemplo acima.
-- Se o contexto tem cadastro_por_foto e ele pergunta/afirma algo sobre o cadastro ou documento ("fez o cadastro?", "já mandei", "recebeu?", "e o CRLV?"): intent "outro", responda SÓ com o que está no contexto — o que já foi salvo e o que falta ("Sua CNH tá salva. Falta o CRLV — manda a foto ou o PDF dele"). Se ele diz que já mandou e o contexto mostra NÃO lido: "Não chegou nada que desse pra ler — manda de novo, foto ou PDF". NUNCA diga que fez um cadastro que o contexto mostra como não lido, e NUNCA diga que não lê documento.
-- Se o contexto tem documento_aguardando_confirmacao e a mensagem é sobre a leitura (reclamação, dúvida, "leu errado", "e agora?"): intent "outro", resposta_livre curta dizendo pra tocar em *Corrigir* e mandar só o campo errado (ex.: *"validade 14/03/2029"*), ou *Salvar* se estiver certo. Não fale de frete.
-- Pergunta sobre ultima_falha ("por que não conseguiu?"): explique o motivo que está no contexto, em uma frase, e peça a correção. Ex.: 'Não achei a cidade "coruipe" no mapa. Manda com o estado, tipo *"Diadema pra Coruripe/AL, 15 mil"*'. NUNCA diga "consegui sim" nem mostre números de outro cálculo.
-- Spam/mensagem claramente pra outra pessoa (ex.: "oi mãe, chego às 8", corrente, propaganda) — NÃO quando ele cita que recebeu o contato de alguém: "Opa! Acho que essa mensagem não era pra mim — sou um assistente pra caminhoneiro. Se quiser saber se um frete vale a pena, manda a rota e o valor."
-- NUNCA termine com pergunta de sim/não ("quer testar?"). Termine com o exemplo.
-- Formatação do WhatsApp: *negrito* com asterisco simples. No máximo 1 emoji.
+## 5. Ação sobre a pendência (só quando contexto.pendencia existe e a mensagem responde a ela)
+- onboarding_caminhao: ele responde o tipo/eixos/consumo em texto ("carreta", "6", "uns 2 e meio", "faz 2,3") → acao "escolher", opcao_escolhida = o valor normalizado (tipo exato da lista; eixos como "6"; consumo como "2.5").
+- cidade_em_duvida / busca_origem: ele escolhe um candidato ou escreve outra cidade → "escolher", opcao_escolhida = o candidato exato (Nome/UF) ou a cidade como ele escreveu.
+- consentimento_documento: "pode", "bora", "sim", "manda" → "aceitar"; "não", "depois", "agora não" → "recusar".
+- confirmar_leitura (o bot mostrou o que leu da CNH/CRLV — valores em contexto.pendencia.leitura):
+  · "tá certo", "sim", "salva", "isso" → "confirmar".
+  · Ele dá o valor certo de um ou mais campos ("placa ABC1D23", "validade 23/03/2035", "o nome é João da Silva", "são 6 eixos") → "corrigir", correcoes com SÓ os campos que ele deu, no formato: validade AAAA-MM-DD, placa sem hífen maiúscula, numero só dígitos, categoria A/B/C/D/E/AB…, eixos/ano/exercicio inteiros, capacidade_t número.
+  · Ele diz que está errado SEM dar o valor certo ("leu errado", "tá tudo errado", "a data tá errada, só o nome tá certo") → "reler" (o sistema pede a foto de novo). Nunca invente o valor.
+  · "esquece", "cancela", "deixa pra lá" → "cancelar".
+  · "vou mandar o do cavalo", "esquece a CNH, manda o CRLV", "deixa a CNH pra depois" → "pular_para_crlv".
+- tipo_veiculo_crlv: ele responde Carreta / Carreta LS / Bitrem → "escolher", opcao_escolhida = o tipo exato.
+- aguardando_foto não tem ação: se ele diz "já mandei" e o contexto mostra que nada foi lido, intent "outro" com resposta "Não chegou nada que desse pra ler — manda de novo, foto ou PDF". Nunca diga que já fez um cadastro que o contexto mostra como não feito; nunca diga que não lê documento.
 
-Extração:
-- origem/destino: cidade (e UF se dita), COPIADA LETRA POR LETRA como ele escreveu — não corrija grafia, não acrescente nem tire acento, não invente UF ("coruipe" fica "coruipe"; o sistema é quem corrige).
-- valor_frete_reais: "8 mil"→8000, "R$ 4.500"→4500, "3500 reais"→3500. null se não mencionou. Valor POR TONELADA ("180 a tonelada", "180/t", "180 o ton", "R$ 180 por tonelada") vai em valor_por_tonelada_reais, e valor_frete_reais fica null (o sistema multiplica pela capacidade do caminhão). Tonelagem dita ("32 ton", "vou com 30 toneladas", "carrego 37t") vai em toneladas. Se ele responde só a tonelagem depois que o bot perguntou, repita origem/destino/valor_por_tonelada do histórico e preencha toneladas — intent calcular.
-- volta_vazia: true SÓ se disser que volta vazio.
-- tipo_carga (busca): container / frigorificada / granel / liquido / veiculos / carga_geral; null se não citou.
-- confianca_*: 0 a 1. Em busca/pergunta/outro, 0.`;
+## 6. Caminhão na mensagem (qualquer intent)
+tipo_veiculo com UM valor exato: Carreta, Carreta LS, Vanderléia, Carreta 4º eixo, Bitrem 7 eixos, Bitrem 9 eixos, Rodotrem, Truck, BiTruck, Fiorino, VLC, 3/4, Toco. Sinônimos: "LS"=Carreta LS; "bitrem"=Bitrem 7 eixos (9 se disser); "truck"/"truk"/"truque"=Truck; "bitruck"=BiTruck; "cavalo"/"carreta"/"semi-reboque"=Carreta. numero_eixos só se ele disser. tipo_carroceria com UM valor exato da lista: Graneleiro, Grade baixa, Prancha, Caçamba, Plataforma, Sider, Baú, Baú Frigorífico, Baú Refrigerado, Silo, Cegonheiro, Gaiola, Tanque, Bug Porta Container, Munk, Apenas Cavalo, Cavaqueira, Hoper. "palete" não é carroceria. Sem menção = null.
+
+## 7. Valores
+valor_frete_reais: "8 mil"→8000, "4,5 mil"→4500, "R$ 4.500"→4500, "15mil"→15000. Valor POR TONELADA ("180 a tonelada", "180/t", "180 o ton") → valor_por_tonelada_reais, valor_frete_reais null. Tonelagem dita ("32 ton", "vou com 30 toneladas", ou só "37" quando o bot perguntou toneladas) → toneladas. volta_vazia true SÓ se disser que volta vazio. confianca_* 0..1 (0 em busca/pergunta/outro).
+
+## 8. Resposta livre (só pergunta_calculo, pergunta_bot, saudacao, outro; nos demais null)
+- Até 400 caracteres, português de motorista, direto, sem "como posso ajudar".
+- Nome: se o contexto tem nome_motorista, use o primeiro nome onde uma pessoa usaria (saudação, confirmação, notícia) — não em toda frase. NUNCA apelidos ("brother", "chefe", "amigão", "parceiro").
+- ja_apresentado=true → não se apresente de novo. false → "Sou o Rode com Lucro…" com o que faz (5 itens, resumido) e UM exemplo: 'manda a rota e o valor (ex.: *"Sinop pra Santos, 14 mil"*), ou só a rota pra eu cotar, ou *BUSCAR*'.
+- cadastro_por_foto no contexto e ele pergunta do cadastro ("fez?", "e o CRLV?"): responda SÓ com o que está lá — o que foi salvo e o que falta.
+- Spam: "Opa! Acho que essa mensagem não era pra mim — sou um assistente pra caminhoneiro. Se quiser saber se um frete vale a pena, manda a rota e o valor."
+- Nunca termine com pergunta de sim/não. *negrito* com asterisco simples. No máximo 1 emoji.`;
 
 const FERRAMENTA_LEITURA = {
   name: "ler_mensagem",
-  description: "Classifica a mensagem do motorista e extrai os dados de frete, o caminhão citado ou a resposta livre.",
+  description: "Interpreta a mensagem do motorista: intent, dados de frete, caminhão citado, resposta livre e, se houver pendência, a ação.",
   input_schema: {
     type: "object",
     properties: {
@@ -186,21 +200,31 @@ const FERRAMENTA_LEITURA = {
       confianca_origem: { type: "number" },
       confianca_destino: { type: "number" },
       confianca_valor: { type: "number" },
+      acao: { type: "string", enum: ["nenhuma", "escolher", "confirmar", "corrigir", "reler", "cancelar", "pular_para_crlv", "aceitar", "recusar"] },
+      opcao_escolhida: { type: ["string", "null"] },
+      correcoes: {
+        type: ["object", "null"],
+        properties: {
+          nome: { type: ["string", "null"] }, categoria: { type: ["string", "null"] }, validade: { type: ["string", "null"] }, numero: { type: ["string", "null"] },
+          placa: { type: ["string", "null"] }, renavam: { type: ["string", "null"] }, eixos: { type: ["integer", "null"] }, capacidade_t: { type: ["number", "null"] },
+          ano: { type: ["integer", "null"] }, marca: { type: ["string", "null"] }, modelo: { type: ["string", "null"] }, exercicio: { type: ["integer", "null"] },
+        },
+      },
     },
     required: [
       "intent", "origem", "destino", "valor_frete_reais", "volta_vazia", "tipo_carga",
       "tipo_veiculo", "numero_eixos", "tipo_carroceria", "resposta_livre",
-      "confianca_origem", "confianca_destino", "confianca_valor",
+      "confianca_origem", "confianca_destino", "confianca_valor", "acao",
     ],
   },
 };
 
 const INTENTS: IntentMensagem[] = ["calcular", "cotar", "buscar", "pergunta_calculo", "pergunta_bot", "saudacao", "cadastro", "outro"];
 const TIPOS_CARGA: TipoCargaBusca[] = ["container", "frigorificada", "granel", "liquido", "carga_geral", "veiculos"];
+const ACOES: AcaoPendencia[] = ["nenhuma", "escolher", "confirmar", "corrigir", "reler", "cancelar", "pular_para_crlv", "aceitar", "recusar"];
 
 function normalizar(input: Record<string, unknown>, contexto: ContextoConversa): ExtracaoFrete {
   let intent = INTENTS.includes(input.intent as IntentMensagem) ? (input.intent as IntentMensagem) : "outro";
-  // pergunta_calculo sem cálculo no contexto não existe — vira "outro" (a IA já escreveu a resposta).
   if (intent === "pergunta_calculo" && !contexto.ultimoCalculo) intent = "outro";
   const tipoCarga = TIPOS_CARGA.includes(input.tipo_carga as TipoCargaBusca) ? (input.tipo_carga as TipoCargaBusca) : null;
   const tipoVeiculo = (TIPOS_VEICULO as readonly string[]).includes(input.tipo_veiculo as string) ? (input.tipo_veiculo as TipoVeiculoMsg) : null;
@@ -209,6 +233,25 @@ function normalizar(input: Record<string, unknown>, contexto: ContextoConversa):
   const numeroEixos = eixosBruto != null && eixosBruto >= 2 && eixosBruto <= 9 ? eixosBruto : null;
   const respostaBruta = typeof input.resposta_livre === "string" ? input.resposta_livre.trim() : "";
   const conversa = intent === "pergunta_calculo" || intent === "pergunta_bot" || intent === "saudacao" || intent === "outro";
+  // Ação só existe se há pendência; sem pendência, "nenhuma" — a IA não manda no fluxo sozinha.
+  const acao = contexto.pendencia && ACOES.includes(input.acao as AcaoPendencia) ? (input.acao as AcaoPendencia) : "nenhuma";
+  const correcoesBrutas = input.correcoes && typeof input.correcoes === "object" ? (input.correcoes as Record<string, unknown>) : null;
+  const correcoes: Correcoes | null = correcoesBrutas
+    ? {
+        nome: typeof correcoesBrutas.nome === "string" ? correcoesBrutas.nome.trim().slice(0, 80) : null,
+        categoria: typeof correcoesBrutas.categoria === "string" ? correcoesBrutas.categoria : null,
+        validade: typeof correcoesBrutas.validade === "string" ? correcoesBrutas.validade : null,
+        numero: typeof correcoesBrutas.numero === "string" ? correcoesBrutas.numero : null,
+        placa: typeof correcoesBrutas.placa === "string" ? correcoesBrutas.placa : null,
+        renavam: typeof correcoesBrutas.renavam === "string" ? correcoesBrutas.renavam : null,
+        eixos: typeof correcoesBrutas.eixos === "number" ? Math.round(correcoesBrutas.eixos) : null,
+        capacidade_t: typeof correcoesBrutas.capacidade_t === "number" ? correcoesBrutas.capacidade_t : null,
+        ano: typeof correcoesBrutas.ano === "number" ? Math.round(correcoesBrutas.ano) : null,
+        marca: typeof correcoesBrutas.marca === "string" ? correcoesBrutas.marca.trim().slice(0, 40) : null,
+        modelo: typeof correcoesBrutas.modelo === "string" ? correcoesBrutas.modelo.trim().slice(0, 60) : null,
+        exercicio: typeof correcoesBrutas.exercicio === "number" ? Math.round(correcoesBrutas.exercicio) : null,
+      }
+    : null;
   return {
     intent,
     ePedidoDeFrete: intent === "calcular",
@@ -223,16 +266,37 @@ function normalizar(input: Record<string, unknown>, contexto: ContextoConversa):
     tipoVeiculo,
     numeroEixos,
     tipoCarroceria,
-    // Teto duro: o prompt pede ≤400, mas quem paga a mensagem somos nós.
     respostaLivre: conversa && respostaBruta ? respostaBruta.slice(0, 600) : null,
     confiancaOrigem: typeof input.confianca_origem === "number" ? input.confianca_origem : 0,
     confiancaDestino: typeof input.confianca_destino === "number" ? input.confianca_destino : 0,
     confiancaValor: typeof input.confianca_valor === "number" ? input.confianca_valor : 0,
+    acao,
+    opcaoEscolhida: typeof input.opcao_escolhida === "string" && input.opcao_escolhida.trim() ? input.opcao_escolhida.trim() : null,
+    correcoes: acao === "corrigir" ? correcoes : null,
   };
 }
 
 function fmtBRL(v: number): string {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
+}
+
+function descreverPendencia(p: Pendencia): string {
+  switch (p.tipo) {
+    case "onboarding_caminhao":
+      return `pendencia=onboarding_caminhao etapa=${p.etapa} (o bot perguntou ${p.etapa === "tipo" ? "o tipo do caminhão" : p.etapa === "eixos" ? "quantos eixos" : "quantos km por litro"}; opções: ${p.opcoes.join(" | ")})`;
+    case "cidade_em_duvida":
+      return `pendencia=cidade_em_duvida campo=${p.campo} escrito="${p.texto}" candidatos: ${p.candidatos.join(" | ")} (o bot perguntou qual é)`;
+    case "busca_origem":
+      return `pendencia=busca_origem (o bot perguntou de que cidade ele quer sair${p.candidatos.length ? `; sugeriu: ${p.candidatos.join(" | ")}` : ""})`;
+    case "consentimento_documento":
+      return "pendencia=consentimento_documento (o bot perguntou se pode ler a foto da CNH/CRLV: botões Pode ler / Agora não)";
+    case "aguardando_foto":
+      return `pendencia=aguardando_foto (o bot está esperando a foto/PDF: ${p.faltam})`;
+    case "confirmar_leitura":
+      return `pendencia=confirmar_leitura documento=${p.documento.toUpperCase()} leitura=${JSON.stringify(p.leitura)} (botões Salvar / Corrigir / Cancelar)`;
+    case "tipo_veiculo_crlv":
+      return `pendencia=tipo_veiculo_crlv (o bot perguntou se o cavalo é ${p.opcoes.join(" / ")})`;
+  }
 }
 
 /** Contexto em texto, curto, pra ir junto da mensagem (a IA lê como dado, não como instrução). */
@@ -244,10 +308,7 @@ function descreverContexto(c: ContextoConversa): string {
   ];
   const u = c.ultimoCalculo;
   if (u) {
-    const custos = Object.entries(u.custos)
-      .filter(([, v]) => v > 0)
-      .map(([k, v]) => `${k} ${fmtBRL(v)}`)
-      .join(", ");
+    const custos = Object.entries(u.custos).filter(([, v]) => v > 0).map(([k, v]) => `${k} ${fmtBRL(v)}`).join(", ");
     linhas.push(
       `ultimo_calculo (há ${u.quandoMinutos} min): ${u.origem} → ${u.destino}, ${u.distanciaKm.toFixed(0)} km, ${u.dias} dia(s), caminhão ${u.eixos} eixos; ` +
         (u.valorFrete != null ? `valor ofertado ${fmtBRL(u.valorFrete)}; ` : `sem valor (cotação); `) +
@@ -259,31 +320,21 @@ function descreverContexto(c: ContextoConversa): string {
   } else {
     linhas.push("ultimo_calculo=nenhum");
   }
-  const f = c.ultimaFalha;
-  if (f) {
+  if (c.ultimaFalha) {
+    const f = c.ultimaFalha;
     linhas.push(`ultima_falha (há ${f.quandoMinutos} min, DEPOIS do último cálculo): tentou ${f.origem ?? "?"} → ${f.destino ?? "?"} e ${f.motivo}`);
   }
-  if (c.aguardandoOrigemBusca) {
-    linhas.push("bot_acabou_de_perguntar=de que cidade ele quer sair (busca de carga). Se a mensagem for um lugar, é a resposta.");
-  }
-  if (c.aguardandoConfirmacaoDoc) {
-    linhas.push(`documento_aguardando_confirmacao=${c.aguardandoConfirmacaoDoc.toUpperCase()} (o bot mostrou o que leu e tem botões Salvar / Corrigir / Cancelar).`);
-  }
   if (c.cadastroFoto) {
-    const cf = c.cadastroFoto;
-    linhas.push(
-      `cadastro_por_foto: CNH ${cf.cnhSalva ? `SALVA (nome ${cf.nome ?? "?"})` : "NÃO lida ainda"}; CRLV ${cf.crlvSalvo ? "SALVO" : "NÃO lido ainda"}; etapa=${cf.etapa}` +
-        (cf.etapa === "aguardando_foto" ? " (o bot está esperando ele mandar a foto/PDF do documento que falta)" : "") +
-        (cf.etapa === "aguardando_consentimento" ? " (o bot perguntou se pode ler e ele ainda não tocou em 'Pode ler')" : ""),
-    );
+    linhas.push(`cadastro_por_foto: CNH ${c.cadastroFoto.cnhSalva ? "SALVA" : "NÃO lida ainda"}; CRLV ${c.cadastroFoto.crlvSalvo ? "SALVO" : "NÃO lido ainda"}`);
   }
+  if (c.pendencia) linhas.push(descreverPendencia(c.pendencia));
   return linhas.join("\n");
 }
 
 export async function extrairFreteDeTexto(texto: string, contexto: ContextoConversa): Promise<ExtracaoFrete | null> {
   if (!ANTHROPIC_API_KEY) {
     // eslint-disable-next-line no-console
-    console.log(`[wa-webhook] extração de frete pulada (ANTHROPIC_API_KEY pendente): "${texto}"`);
+    console.log(`[wa-webhook] extração pulada (ANTHROPIC_API_KEY pendente): "${texto}"`);
     return null;
   }
   try {
@@ -297,7 +348,9 @@ export async function extrairFreteDeTexto(texto: string, contexto: ContextoConve
       body: JSON.stringify({
         model: MODELO,
         max_tokens: 700,
-        system: SYSTEM_PROMPT,
+        // Cache do prompt fixo (08/10): o system é ~2.500 tokens e é a maior parte da conta;
+        // com cache ele custa 10% nas chamadas seguintes (TTL 5 min, renova a cada uso).
+        system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
         messages: [
           {
             role: "user",
@@ -319,10 +372,9 @@ export async function extrairFreteDeTexto(texto: string, contexto: ContextoConve
       return null;
     }
     const dados = await resp.json();
-    const blocos = (dados.content ?? []) as Array<{ type: string; input?: Record<string, unknown> }>;
-    const bloco = blocos.find((b) => b.type === "tool_use");
+    const bloco = (dados.content ?? []).find((b: { type: string }) => b.type === "tool_use");
     if (!bloco?.input) return null;
-    return normalizar(bloco.input, contexto);
+    return normalizar(bloco.input as Record<string, unknown>, contexto);
   } catch (e) {
     // eslint-disable-next-line no-console
     console.error("[wa-webhook] extração lançou exceção", e);

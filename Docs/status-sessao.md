@@ -1535,6 +1535,24 @@ Textos: `Docs/bot-cadastro-por-foto.md`. Escopo: item 6 da fila (nome da CNH val
 
 - **Rodadas 2–4 do simulador** (v61→v65, tudo em `Docs/testes-bot.md`, 34 cenários): recálculo por pergunta ("e se pagar 3500?", "e voltando vazio?") passa pelo motor, nunca estimado pela IA; **valor por tonelada** (`valor_por_tonelada` + `toneladas` na extração; sem capacidade pergunta "quantas toneladas?"); onboarding do caminhão só aceita resposta curta (≤4 palavras) e não repete botões em 10 min — frase longa com caminhão encerra o onboarding; busca só aceita cidade exata (corrigida/ambígua vira botões `busca:origem:*`); homônimo capital ganha ("belem" → Belém/PA); nome de estado/região pergunta a cidade; "sto/sta/pto/s " expandidos; agradecimento = uma linha e "já apresentado" vale pra qualquer conversa anterior; `nomeVeiculo()` tira "Bitrem 7 eixos de 7 eixos"; rodapé honesto pra caminhão criado pela mensagem. Cota diária conferida (20ª com aviso, 21ª silêncio, SAIR passa).
 
+## 08/10 — CONSOLIDAÇÃO: "IA interpreta, código executa" (wa-webhook v66)
+
+**Gatilho**: teste do Raphael (07/10 à noite) na correção da CNH — "tá tudo errado, só o nome está certo", "esquece a CNH", "vou mandar o documento do cavalo" voltaram três vezes com "O que tá errado? Manda só o campo…". Diagnóstico: nessa etapa havia um porteiro de regex na frente do Haiku. Pergunta do Raphael: "a gente corrige o último teste e vira colcha de retalhos — corremos esse risco?" Resposta: sim, já estávamos (13 remendos em 07/10). Decisão: consolidar antes de corrigir.
+
+**O que mudou**:
+- `extracao.ts` reescrito como ESPECIFICAÇÃO em 8 seções (o que faz, como o motorista escreve, histórico/pendência, intents, ações, caminhão, valores, resposta livre). Regra: bug novo = cenário em `testes-bot.md` + linha na seção certa, nunca "ATENÇÃO:" no fim.
+- Contexto ganha **`pendencia`** (uma só, por prioridade): `confirmar_leitura` (com os valores lidos) > `tipo_veiculo_crlv` > `consentimento_documento` > `onboarding_caminhao` (1 h) > `cidade_em_duvida` (1 h, candidatos gravados em `resultado_snapshot`) > `busca_origem` (30 min) > `aguardando_foto` (só com consentimento). Fonte única: `obterPendencia()`.
+- Resposta da IA ganha **`acao`** (nenhuma | escolher | confirmar | corrigir | reler | cancelar | pular_para_crlv | aceitar | recusar), `opcao_escolhida` e `correcoes` (só os campos que o motorista DISSE). `executarAcaoPendencia()` executa validando (placa, data, categoria, faixas) — a IA nunca grava nem inventa valor; "tá errado" sem o valor certo = `reler`.
+- **Porteiros removidos**: `tratarTextoDuranteOnboarding` e `tratarTextoDuranteCadastroFoto` (regex de "placa X", "pode ler", "não", ≤4 palavras…). Comandos exatos continuam (SAIR, CADASTRO, AJUDA, BUSCAR, VINCULAR). Todo o resto: uma chamada só ao Haiku.
+- **Cache de prompt** ligado (`cache_control: ephemeral` no system): prompt fixo cobrado a 10% nas chamadas seguintes — custo por mensagem cai mesmo com as chamadas a mais (estimativa ~R$ 0,012 vs ~R$ 0,025).
+- Rodada 5 do simulador (cenários 35–43): as 4 frases do Raphael + regressão dos fluxos que tinham porteiro, todos ✅. Bônus: onboarding por texto aceita qualquer tipo ("carreta ls"), "o do piaui" escolhe o candidato sem botão.
+
+## CHECKPOINT — 08/10 (v66 no ar)
+
+**Estado**: wa-webhook **v66** (consolidação) no ar; app/portal sem mudança desde 05/10. Simulador + 43 cenários em `Docs/testes-bot.md`. Pendente de teste manual: CRLV por foto/PDF (cavalo e semirreboque) e botões no celular.
+
+**AO RETOMAR**: mesma lista do checkpoint 07/10 (abaixo), menos o deploy da v65 (já incluído na v66). Regra nova pra qualquer bug do bot: primeiro cenário no `testes-bot.md`, depois a linha na seção do prompt ou na ação — nunca regex antes da IA.
+
 ## CHECKPOINT — 07/10 (fim de sessão, v65 — deploy pendente da v65)
 
 **Estado**: wa-webhook **v64 no ar**; v65 (estado/região + rodapé) compilada, aguardando `npx supabase@latest functions deploy …`. Portal Sofrete com status/detalhe/impressão no ar. Migrations do dia aplicadas: cadastro por foto, `wa_conversa`, `bot_config`. Simulador funcionando (token em `bot_config`; números 5590…). Conta de teste do Raphael (554199871818) foi zerada 1× e recriada nos testes; CNH dele está salva (validade corrigida 23/03/2035).

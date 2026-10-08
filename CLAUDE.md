@@ -70,6 +70,13 @@ Roteiro e resultados em `Docs/testes-bot.md` — rodar depois de cada deploy, es
 caminhoneiro escreve ("truk", "qnto", "sto andre"). Foto/PDF não dá pra simular.
 O Haiku recebe as últimas 8 trocas (`wa_conversa`) — a memória curta da conversa.
 
+**Princípio do bot (08/10): IA interpreta, código executa.** Toda mensagem de texto
+que não é comando exato passa por UMA chamada ao Haiku com `pendencia` (o que o bot
+está esperando) e volta com intent + `acao`. Nunca colocar regex na frente da IA pra
+"tratar um caso"; bug novo = cenário em `Docs/testes-bot.md` + linha na seção certa
+do prompt (`extracao.ts`, escrito em seções) ou em `executarAcaoPendencia`. A IA não
+grava, não calcula, não inventa valor — isso é só do código.
+
 ## Como validar
 
 ```
