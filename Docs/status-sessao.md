@@ -1562,14 +1562,14 @@ Textos: `Docs/bot-cadastro-por-foto.md`. Escopo: item 6 da fila (nome da CNH val
 - "Garagem" fica no **título da tela** ("Garagem do Raphael"), não na aba — evita colidir com "Caminhão".
 - Perfil do motorista fora da barra (muda pouco): link no topo do Início + botão dentro de Caminhão. Alternativas registradas: aba "Perfil" com você+caminhão, ou 5ª aba.
 - **Fase 1 (feita)**: `components/LayoutMotorista.tsx` como rota de layout em `main.tsx` envolvendo `/`, `/motorista`, `/analisar`, `/resultado(/:id)`, `/perfil`, `/buscar-frete` — Entrada/Verificação/empresa/admin ficam fora. Telas NÃO mudaram por dentro. Resultado acende "Calcular"; Meu perfil acende "Início". CSS `.barra-abas` + `.com-abas .tela` (padding pra barra) em `index.css`; `viewport-fit=cover` no `index.html` pra `env(safe-area-inset-bottom)` funcionar no iPhone. `tsc --strict`: 0 erros.
-- **Fase 2 (depois do print)**: tirar "← Voltar para a Garagem" e os botões de navegação repetidos (CTAs Analisar/Buscar/Meu Caminhão na Garagem viram opcionais), título "Garagem do Raphael", topo com seta nas telas filhas se fizer falta.
+- **Fase 2 (feita, aprovada pelo print do iPhone)**: ícones corrigidos (Caminhão = caminhão, Fretes = caixa — o relógio era provisório do mockup). Garagem: saíram os CTAs "Analisar frete"/"Buscar frete" e o card "Meu Caminhão" ("os de baixo guiarão o motorista" — Raphael); fica só "Meu Perfil"; título "Garagem do Raphael", eyebrow "Rode com Lucro". Analisar: título "Calcular frete", botão "Calcular". Saíram todos os "Voltar (para a Garagem)" de Analisar, Resultado, Fretes, Perfil do caminhão e Meu perfil (Resultado em modo histórico fica sem botão; "Nova análise" continua). Mantido o "Voltar" só na tela de erro "Análise não encontrada".
 
 ## CHECKPOINT — 08/10 (fim de sessão, v70 no ar, barra de abas pronta pra push)
 
 **Estado**: wa-webhook **v70** no ar (diesel/consumo ditos; regressão completa; 50 cenários em `Docs/testes-bot.md`). App: barra de abas codificada (fase 1), **precisa do push** pra ir pra Vercel e o Raphael olhar no iPhone. Pendente de teste manual: CRLV por foto/PDF (cavalo e semirreboque) e botões no celular.
 
 **AO RETOMAR**:
-0. Raphael aprova a barra pelo print → fase 2 (limpar botões/links redundantes). Se reprovar, ajustar o `LayoutMotorista.tsx`/CSS — não as telas.
+0. Barra de abas fases 1 e 2 no ar (aprovada pelo print). Mudanças futuras de navegação: só em `LayoutMotorista.tsx`/CSS.
 1. Rodapé "carreta padrão" quando o caminhão veio da mensagem (testes-bot #49) — ajuste pequeno no texto do rodapé.
 2. Demais itens do checkpoint 07/10 (abaixo): CRLV manual, pg_cron (`limpar_tokens_wa`, `limpar_wa_conversa`), semeadura, fila (Aferi+, `codigo_indicacao`, Funil viral, Meta, lojas, logo Sofrete, identidade visual, senha, Barlow local). População IBGE em `municipios_brasil` pra desempatar homônimos.
 

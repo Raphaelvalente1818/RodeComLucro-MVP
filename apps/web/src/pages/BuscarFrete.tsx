@@ -266,10 +266,6 @@ export default function BuscarFrete() {
         </div>
       </header>
 
-      <button type="button" className="link-secundario" onClick={() => navigate('/')}>
-        ← Voltar para a Garagem
-      </button>
-
       <label>
         Minha cidade agora
         <input

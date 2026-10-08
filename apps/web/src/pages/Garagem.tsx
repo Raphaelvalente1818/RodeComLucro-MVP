@@ -24,7 +24,7 @@ import { carregarMotorista, type Motorista } from '../lib/motorista';
 import { carregarPerfil } from '../lib/frete';
 import { contarPendentes } from '../lib/filaOffline';
 import { track } from '../lib/track';
-import { IconeCaminhao, IconePerfil } from '../components/IconesCard';
+import { IconePerfil } from '../components/IconesCard';
 // PROVISÓRIO — remover esta linha e o bloco marcado abaixo quando os
 // testes de backlog com os sócios acabarem (ver components/BacklogModal.tsx).
 import BacklogModal from '../components/BacklogModal';
@@ -249,8 +249,10 @@ export default function Garagem() {
     <main className="tela tela-garagem">
       <header className="garagem-header">
         <div>
-          <p className="garagem-eyebrow">Garagem</p>
-          <h1>Olá{primeiroNome ? `, ${primeiroNome}` : ''}</h1>
+          {/* "Garagem" no título, não na aba (decisão 08/10): a aba se chama
+              Início pra não colidir com "Caminhão"; a personalidade fica aqui. */}
+          <p className="garagem-eyebrow">Rode com Lucro</p>
+          <h1>Garagem{primeiroNome ? ` do ${primeiroNome}` : ''}</h1>
         </div>
         {/* PROVISÓRIO — botões de teste/backlog para os sócios testando o
             app. Remover junto com components/TestesModal.tsx,
@@ -312,30 +314,16 @@ export default function Garagem() {
         </span>
       </div>
 
-      <button type="button" className="cta-primaria" onClick={() => navigate('/analisar')}>
-        <span className="cta-titulo">Analisar frete</span>
-        <span className="cta-subtitulo">Calcular lucro de uma nova rota</span>
+      {/* Fase 2 da barra de abas (08/10): os botões "Analisar frete",
+          "Buscar frete" e o card "Meu Caminhão" saíram daqui — a barra
+          embaixo faz esse papel. Fica só "Meu Perfil", o único destino que
+          não está na barra. */}
+      <button type="button" className="card-secundaria" onClick={() => navigate('/motorista')}>
+        <span className="card-titulo card-titulo-icone">
+          <IconePerfil />
+          Meu Perfil
+        </span>
       </button>
-
-      <button type="button" className="cta-primaria cta-frete" onClick={() => navigate('/buscar-frete')}>
-        <span className="cta-titulo">Buscar frete</span>
-        <span className="cta-subtitulo">Ver fretes publicados por transportadoras</span>
-      </button>
-
-      <div className="grid-2">
-        <button type="button" className="card-secundaria" onClick={() => navigate('/perfil')}>
-          <span className="card-titulo card-titulo-icone">
-            <IconeCaminhao />
-            Meu Caminhão
-          </span>
-        </button>
-        <button type="button" className="card-secundaria" onClick={() => navigate('/motorista')}>
-          <span className="card-titulo card-titulo-icone">
-            <IconePerfil />
-            Meu Perfil
-          </span>
-        </button>
-      </div>
 
       {metaReais != null && progresso != null && (
         <div className="meta-lucro">

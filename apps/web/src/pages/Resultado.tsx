@@ -347,11 +347,9 @@ export default function Resultado() {
         veredito não é aconselhamento jurídico ou financeiro.
       </p>
 
-      {modoHistorico ? (
-        <button type="button" onClick={() => navigate('/')}>
-          Voltar para a Garagem
-        </button>
-      ) : (
+      {/* Fase 2 da barra de abas (08/10): os "Voltar para a Garagem" saíram —
+          a aba Início faz isso. No histórico não sobra ação nenhuma. */}
+      {modoHistorico ? null : (
         <>
           {salvo ? (
             <p className="sucesso">
@@ -368,9 +366,6 @@ export default function Resultado() {
 
           <button type="button" className="link-secundario" onClick={() => navigate('/analisar')}>
             Nova análise
-          </button>
-          <button type="button" className="link-secundario" onClick={() => navigate('/')}>
-            Voltar para a Garagem
           </button>
         </>
       )}

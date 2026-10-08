@@ -244,10 +244,6 @@ export default function Motorista() {
       </button>
       {salvo && <p className="sucesso">Perfil salvo.</p>}
       {erro && <p className="aviso-erro">Não foi possível salvar: {erro}</p>}
-
-      <button type="button" className="link-secundario" onClick={() => navigate('/')}>
-        Voltar
-      </button>
     </main>
   );
 }

@@ -649,10 +649,6 @@ export default function Perfil() {
       </button>
       <p className="aviso">Use ao trocar de caminhão — limpa marca, modelo, custos e demais dados deste perfil.</p>
 
-      <button type="button" className="link-secundario" onClick={() => navigate('/')}>
-        Voltar
-      </button>
-
       {confirmarApagar && (
         <div className="modal-overlay" onClick={() => !apagando && setConfirmarApagar(false)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>

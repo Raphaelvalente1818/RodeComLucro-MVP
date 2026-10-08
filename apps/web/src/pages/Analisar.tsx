@@ -313,7 +313,7 @@ export default function Analisar() {
 
   return (
     <main className="tela tela-analisar">
-      <h1 className="faixa-rodovia">Analisar frete</h1>
+      <h1 className="faixa-rodovia">Calcular frete</h1>
 
       <label>
         Origem
@@ -504,11 +504,7 @@ export default function Analisar() {
       )}
 
       <button type="button" disabled={!podeCalcular} onClick={calcularEIr}>
-        Analisar Frete
-      </button>
-
-      <button type="button" className="link-secundario" onClick={() => navigate('/')}>
-        Voltar para a Garagem
+        Calcular
       </button>
     </main>
   );
