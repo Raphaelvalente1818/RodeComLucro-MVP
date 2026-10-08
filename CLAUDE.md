@@ -61,6 +61,15 @@ pro Deno — se a fórmula mudar, atualizar os dois.
   `wa-webhook/index.ts` (hoje 20/24 h; a última consulta sai com aviso + link do app,
   depois silêncio). Raphael vai pedir pra baixar pra 5 — só trocar a constante.
 
+## Testar o bot sem WhatsApp (simulador, 07/10)
+
+`GET https://gastwloozlzthpqhxnzr.supabase.co/functions/v1/wa-webhook?simular=1&token=<token>&de=5590XXXXXXXX&texto=…`
+(ou `&botao=<rowId>`, ou `&reset=1`). Token: `select valor from bot_config where chave='simulacao_token'`
+(só service_role — ler pelo MCP). Números 5590… não vão pra Meta; as respostas voltam no JSON.
+Roteiro e resultados em `Docs/testes-bot.md` — rodar depois de cada deploy, escrevendo como
+caminhoneiro escreve ("truk", "qnto", "sto andre"). Foto/PDF não dá pra simular.
+O Haiku recebe as últimas 8 trocas (`wa_conversa`) — a memória curta da conversa.
+
 ## Como validar
 
 ```
