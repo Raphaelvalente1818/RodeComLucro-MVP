@@ -1570,7 +1570,7 @@ Textos: `Docs/bot-cadastro-por-foto.md`. Escopo: item 6 da fila (nome da CNH val
 
 **AO RETOMAR**:
 0. Barra de abas fases 1 e 2 no ar (aprovada pelo print). Mudanças futuras de navegação: só em `LayoutMotorista.tsx`/CSS.
-1. Rodapé "carreta padrão" quando o caminhão veio da mensagem (testes-bot #49) — ajuste pequeno no texto do rodapé.
+1. **v71** (rodapé "carreta padrão" → "seu Truck de 3 eixos" quando o caminhão veio da mensagem, testes-bot #49): `deno check` ok, deploy pelo CLI + reconferir cenário 49 no simulador. CNH/CRLV por foto: o Rapha vai testar.
 2. Demais itens do checkpoint 07/10 (abaixo): CRLV manual, pg_cron (`limpar_tokens_wa`, `limpar_wa_conversa`), semeadura, fila (Aferi+, `codigo_indicacao`, Funil viral, Meta, lojas, logo Sofrete, identidade visual, senha, Barlow local). População IBGE em `municipios_brasil` pra desempatar homônimos.
 
 ## CHECKPOINT — 08/10 (v66 no ar)

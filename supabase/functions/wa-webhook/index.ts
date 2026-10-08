@@ -1900,8 +1900,14 @@ async function calcularEResponderFrete(params: {
       `(estimativa com um caminhão padrão — cadastre o seu em instantes pra ter o valor exato do SEU caminhão)\n\n` +
       `🚀 Gostou? Cadastre-se grátis: ${URL_APP}/entrar`;
   } else if (primeiroContato) {
+    // Se o caminhão veio na própria mensagem ("truck grade baixa"), o
+    // cálculo já usou ele — dizer "carreta padrão" aqui contradizia a linha
+    // "Salvei seu Truck…" logo abaixo (testes-bot #49, 08/10).
+    const comQue = veiculo?.tipoVeiculo
+      ? `seu ${nomeVeiculo(veiculo.tipoVeiculo, perfil.numero_eixos)}, consumo e custos padrão`
+      : `uma carreta padrão de ${perfil.numero_eixos} eixos`;
     rodape =
-      `_(estimativa com uma carreta padrão de ${perfil.numero_eixos} eixos)_\n\n` +
+      `_(estimativa com ${comQue})_\n\n` +
       `Seu número ficou cadastrado no Rode com Lucro. Pra apagar tudo, manda *SAIR*. Termos: ${URL_APP}/termos`;
   } else if (semPerfil && !veiculo?.perfilCriado) {
     rodape = `_(estimativa com uma carreta padrão de ${perfil.numero_eixos} eixos — você ainda não cadastrou o seu)_`;
