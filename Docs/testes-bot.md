@@ -115,6 +115,16 @@ Detalhe visto de passagem: no cenário 49 o rodapé disse "estimativa com uma ca
 
 | 51 | `sao carlos sp pra goiania 6700 com diesel a 15 truck grade baixa vale?` (v71) | São Carlos/SP direto (a UF veio na mensagem) | ⚠️ perguntou SP ou SC — o Haiku soltou o "sp" desta vez (no #49 tinha mantido). Prompt seção 2: "se ele escreveu a UF junto, mantenha" → v72 ✅ reconferido na v73 (São Carlos/SP direto). Bônus: piso ANTT já na Portaria SUROC 22/2026 — R$ 4.031,98 (era 3.951,71 na 6.084) |
 
+## Rodada 8 (08/10 à noite, v74 — IA inventando número) — caso real do Rapha
+
+Linha do tempo (554199871818): cálculo pela lista (SBC → Aparecida de Goiânia, R$ 8.000, 6 eixos) com diesel **6,10** do perfil; "Quanto tá o diesel em Santo André?" → IA: "usei **5,87**" (inventado); "atualiza, diesel 6,03" → recálculo certo (custo 3.776 → 3.751, porque 6,03 < 6,10); "como o custo foi menor?" → IA inventou causa ("diesel subiu de 2.225 pra 2.200"). **Motor certo, IA errada 2×.** v74: contexto leva `insumos` (diesel, km/L, custos por km) e `calculo_anterior`; prompt seção 8: só número do contexto, comparação insumo por insumo.
+
+| # | Mensagem | Esperado | Resultado |
+|---|---|---|---|
+| 52 | cálculo → `quanto vc usou de diesel?` | Cita o valor dos insumos (ex.: R$ 6,10/L), sem inventar | pendente de deploy |
+| 53 | `atualiza que o diesel aqui ta 6,03` → `por que o custo ficou menor?` | Recalcula; depois compara: "antes 6,10, agora 6,03, por isso caiu R$ 25" | pendente de deploy |
+| 54 | `quanto ta o diesel em santo andre?` | "Não tenho preço de posto; no cálculo usei X; manda o preço que eu recalculo" | pendente de deploy |
+
 ## Pra acrescentar (próximas rodadas)
 - `Quero sair do abc paulista` logo depois de "de que cidade?" (memória da pergunta).
 - `nao esta certo, leu errado` / `validade 23/03/2035` depois de uma leitura (precisa de foto real).

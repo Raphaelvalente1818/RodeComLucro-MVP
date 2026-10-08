@@ -73,8 +73,19 @@ export interface ContextoConversa {
     veredicto: string | null;
     dias: number;
     eixos: number;
+    voltaVazia: boolean;
+    /** O que entrou na conta (08/10): pra IA responder "quanto usei de diesel?" com o dado, não com chute. */
+    insumos: {
+      dieselPrecoLitro: number | null;
+      consumoKmPorLitro: number | null;
+      manutencaoPorKm: number | null;
+      pneusPorKm: number | null;
+      depreciacaoPorKm: number | null;
+    };
     quandoMinutos: number;
   } | null;
+  /** O cálculo imediatamente anterior ao último (08/10): pra comparar "por que ficou menor?" com os dois na mão. */
+  calculoAnterior: ContextoConversa["ultimoCalculo"];
   ultimaFalha: { origem: string | null; destino: string | null; motivo: string; quandoMinutos: number } | null;
   cadastroFoto: { cnhSalva: boolean; crlvSalvo: boolean } | null;
   historico: Array<{ papel: "motorista" | "bot"; texto: string }>;
@@ -182,6 +193,7 @@ valor_frete_reais: "8 mil"→8000, "4,5 mil"→4500, "R$ 4.500"→4500, "15mil"�
 - Até 400 caracteres, português de motorista, direto, sem "como posso ajudar".
 - Nome: se o contexto tem nome_motorista, use o primeiro nome onde uma pessoa usaria (saudação, confirmação, notícia) — não em toda frase. NUNCA apelidos ("brother", "chefe", "amigão", "parceiro").
 - ja_apresentado=true → não se apresente de novo. false → "Sou o Rode com Lucro…" com o que faz (5 itens, resumido) e UM exemplo: 'manda a rota e o valor (ex.: *"Sinop pra Santos, 14 mil"*), ou só a rota pra eu cotar, ou *BUSCAR*'.
+- NÚMEROS: só os que estão no contexto (ultimo_calculo, calculo_anterior e seus "insumos usados"). "Quanto usei de diesel?" → o valor em insumos. Preço do diesel na cidade, valor de mercado, dado que não está no contexto → diga que não tem e peça o dado ("manda o preço que eu recalculo"). NUNCA invente um valor nem uma causa: se ele pergunta por que um cálculo mudou, compare os dois cálculos do contexto insumo por insumo (ex.: "antes diesel R$ 6,10/L, agora R$ 6,03/L — por isso caiu R$ 25"); se não dá pra ver a diferença nos dados, diga isso.
 - cadastro_por_foto no contexto e ele pergunta do cadastro ("fez?", "e o CRLV?"): responda SÓ com o que está lá — o que foi salvo e o que falta.
 - Spam: "Opa! Acho que essa mensagem não era pra mim — sou um assistente pra caminhoneiro. Se quiser saber se um frete vale a pena, manda a rota e o valor."
 - Nunca termine com pergunta de sim/não. *negrito* com asterisco simples. No máximo 1 emoji.`;
@@ -317,17 +329,30 @@ function descreverContexto(c: ContextoConversa): string {
     `nome_motorista=${c.primeiroNome ?? "desconhecido"}`,
     `caminhao_cadastrado=${c.caminhaoCadastrado ?? "nenhum (cálculo genérico, carreta 5 eixos)"}`,
   ];
+  const descreverCalculo = (rotulo: string, u: NonNullable<ContextoConversa["ultimoCalculo"]>): string => {
+    const custos = Object.entries(u.custos).filter(([, v]) => v > 0).map(([k, v]) => `${k} ${fmtBRL(v)}`).join(", ");
+    const i = u.insumos;
+    const insumos = [
+      i.dieselPrecoLitro != null ? `diesel ${fmtBRL(i.dieselPrecoLitro)}/L` : null,
+      i.consumoKmPorLitro != null ? `${i.consumoKmPorLitro} km/L` : null,
+      i.manutencaoPorKm != null ? `manutenção ${fmtBRL(i.manutencaoPorKm)}/km` : null,
+      i.pneusPorKm != null ? `pneus ${fmtBRL(i.pneusPorKm)}/km` : null,
+      i.depreciacaoPorKm != null ? `depreciação ${fmtBRL(i.depreciacaoPorKm)}/km` : null,
+    ].filter(Boolean).join(", ");
+    return (
+      `${rotulo} (há ${u.quandoMinutos} min): ${u.origem} → ${u.destino}, ${u.distanciaKm.toFixed(0)} km, ${u.dias} dia(s), caminhão ${u.eixos} eixos${u.voltaVazia ? ", volta vazia" : ""}; ` +
+      (u.valorFrete != null ? `valor ofertado ${fmtBRL(u.valorFrete)}; ` : `sem valor (cotação); `) +
+      `custo total ${fmtBRL(u.custoTotal)} (${custos}); ` +
+      (insumos ? `insumos usados: ${insumos}; ` : "") +
+      (u.lucro != null ? `lucro ${fmtBRL(u.lucro)}, margem ${u.margemReal?.toFixed(1)}%; ` : "") +
+      `piso ANTT ${fmtBRL(u.pisoANTT)}` +
+      (u.veredicto ? `; veredito ${u.veredicto}` : "")
+    );
+  };
   const u = c.ultimoCalculo;
   if (u) {
-    const custos = Object.entries(u.custos).filter(([, v]) => v > 0).map(([k, v]) => `${k} ${fmtBRL(v)}`).join(", ");
-    linhas.push(
-      `ultimo_calculo (há ${u.quandoMinutos} min): ${u.origem} → ${u.destino}, ${u.distanciaKm.toFixed(0)} km, ${u.dias} dia(s), caminhão ${u.eixos} eixos; ` +
-        (u.valorFrete != null ? `valor ofertado ${fmtBRL(u.valorFrete)}; ` : `sem valor (cotação); `) +
-        `custo total ${fmtBRL(u.custoTotal)} (${custos}); ` +
-        (u.lucro != null ? `lucro ${fmtBRL(u.lucro)}, margem ${u.margemReal?.toFixed(1)}%; ` : "") +
-        `piso ANTT ${fmtBRL(u.pisoANTT)}` +
-        (u.veredicto ? `; veredito ${u.veredicto}` : ""),
-    );
+    linhas.push(descreverCalculo("ultimo_calculo", u));
+    if (c.calculoAnterior) linhas.push(descreverCalculo("calculo_anterior (o de antes do último)", c.calculoAnterior));
   } else {
     linhas.push("ultimo_calculo=nenhum");
   }

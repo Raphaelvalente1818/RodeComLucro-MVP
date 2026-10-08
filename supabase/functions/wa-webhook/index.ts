@@ -990,7 +990,15 @@ async function tratarConversaLivre(fromE164: string, texto: string, waMessageId:
 // =====================================================================
 
 type SnapshotCalculo = {
-  entrada?: { origem?: string; destino?: string; distanciaKm?: number; valorFrete?: number; numeroEixos?: number };
+  entrada?: {
+    origem?: string;
+    destino?: string;
+    distanciaKm?: number;
+    valorFrete?: number;
+    numeroEixos?: number;
+    voltaVazia?: boolean;
+    custos?: { dieselPrecoPorLitro?: number; dieselKmPorLt?: number; pedagio?: number; manutencaoPorKm?: number; pneusPorKm?: number; depreciacaoPorKm?: number; alimentacao?: number };
+  };
   custoTotal?: number;
   custoDetalhado?: Record<string, number>;
   lucro?: number;
@@ -1004,7 +1012,7 @@ type SnapshotCalculo = {
 
 /** O que a IA precisa saber antes de ler a mensagem: já apresentado? tem caminhão? último cálculo? */
 async function montarContexto(fromE164: string): Promise<ContextoConversa> {
-  const [{ count: apresentacoes }, { data: m }, { data: ultimo }, { data: falha }] = await Promise.all([
+  const [{ count: apresentacoes }, { data: m }, { data: ultimos }, { data: falha }] = await Promise.all([
     supabase
       .from("wa_freight_query")
       .select("id", { count: "exact", head: true })
@@ -1017,8 +1025,7 @@ async function montarContexto(fromE164: string): Promise<ContextoConversa> {
       .eq("from_e164", fromE164)
       .in("status", ["calculado", "calculado_novo", "recalculado_perfil", "cotado"])
       .order("criado_em", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+      .limit(2),
     supabase
       .from("wa_freight_query")
       .select("extracao_snapshot, criado_em")
@@ -1031,6 +1038,8 @@ async function montarContexto(fromE164: string): Promise<ContextoConversa> {
   // 03/10: "Por que não conseguiu calcular?" caía no último cálculo que deu
   // certo (horas antes) e o Haiku respondia "consegui sim!" com números de
   // outra rota. Agora a falha mais recente vai no contexto, se for posterior.
+  const ultimo = ultimos?.[0] ?? null;
+  const anterior = ultimos?.[1] ?? null;
   const falhaDepois = falha?.criado_em && (!ultimo?.criado_em || new Date(falha.criado_em as string) > new Date(ultimo.criado_em as string));
   const exFalha = (falha?.extracao_snapshot ?? null) as { origem?: string | null; destino?: string | null } | null;
   const ultimaFalha: ContextoConversa["ultimaFalha"] = falhaDepois
@@ -1046,26 +1055,41 @@ async function montarContexto(fromE164: string): Promise<ContextoConversa> {
     const { data: p } = await supabase.from("caminhao_perfil").select("tipo_veiculo, numero_eixos").eq("user_id", m.id).maybeSingle();
     if (p?.tipo_veiculo) caminhaoCadastrado = `${p.tipo_veiculo} ${p.numero_eixos} eixos`;
   }
-  const snap = (ultimo?.resultado_snapshot ?? null) as SnapshotCalculo | null;
-  const e = snap?.entrada;
-  const ultimoCalculo: ContextoConversa["ultimoCalculo"] =
-    snap && e?.origem && e?.destino && e.distanciaKm != null && snap.custoTotal != null && snap.pisoANTT != null
-      ? {
-          origem: e.origem,
-          destino: e.destino,
-          distanciaKm: e.distanciaKm,
-          valorFrete: snap.cotacao ? null : (e.valorFrete ?? null),
-          custoTotal: snap.custoTotal,
-          custos: snap.custoDetalhado ?? {},
-          lucro: snap.cotacao ? null : (snap.lucro ?? null),
-          margemReal: snap.cotacao ? null : (snap.margemReal ?? null),
-          pisoANTT: snap.pisoANTT,
-          veredicto: snap.cotacao ? null : (snap.veredicto ?? null),
-          dias: snap.dias ?? diasPorFaixaKm(e.distanciaKm),
-          eixos: e.numeroEixos ?? 5,
-          quandoMinutos: ultimo?.criado_em ? Math.max(0, Math.round((Date.now() - new Date(ultimo.criado_em as string).getTime()) / 60_000)) : 0,
-        }
-      : null;
+  // 08/10 (caso do Rapha): a IA disse "usei diesel a 5,87" (foi 6,10) e depois
+  // inventou por que o custo caiu. Agora o contexto leva os INSUMOS do cálculo
+  // (diesel, consumo, custos por km) e também o cálculo anterior, pra ela
+  // comparar com dado em vez de chutar.
+  const resumirCalculo = (linha: { resultado_snapshot?: unknown; criado_em?: string } | null): ContextoConversa["ultimoCalculo"] => {
+    const snap = (linha?.resultado_snapshot ?? null) as SnapshotCalculo | null;
+    const e = snap?.entrada;
+    if (!(snap && e?.origem && e?.destino && e.distanciaKm != null && snap.custoTotal != null && snap.pisoANTT != null)) return null;
+    const c = e.custos ?? {};
+    return {
+      origem: e.origem,
+      destino: e.destino,
+      distanciaKm: e.distanciaKm,
+      valorFrete: snap.cotacao ? null : (e.valorFrete ?? null),
+      custoTotal: snap.custoTotal,
+      custos: snap.custoDetalhado ?? {},
+      lucro: snap.cotacao ? null : (snap.lucro ?? null),
+      margemReal: snap.cotacao ? null : (snap.margemReal ?? null),
+      pisoANTT: snap.pisoANTT,
+      veredicto: snap.cotacao ? null : (snap.veredicto ?? null),
+      dias: snap.dias ?? diasPorFaixaKm(e.distanciaKm),
+      eixos: e.numeroEixos ?? 5,
+      voltaVazia: Boolean(e.voltaVazia),
+      insumos: {
+        dieselPrecoLitro: c.dieselPrecoPorLitro ?? null,
+        consumoKmPorLitro: c.dieselKmPorLt ?? null,
+        manutencaoPorKm: c.manutencaoPorKm ?? null,
+        pneusPorKm: c.pneusPorKm ?? null,
+        depreciacaoPorKm: c.depreciacaoPorKm ?? null,
+      },
+      quandoMinutos: linha?.criado_em ? Math.max(0, Math.round((Date.now() - new Date(linha.criado_em as string).getTime()) / 60_000)) : 0,
+    };
+  };
+  const ultimoCalculo = resumirCalculo(ultimo);
+  const calculoAnterior = ultimoCalculo ? resumirCalculo(anterior) : null;
   const estadoDoc = await estadoCadastroFoto(fromE164);
   let cadastroFoto: ContextoConversa["cadastroFoto"] = null;
   let primeiroNome: string | null = null;
@@ -1087,7 +1111,7 @@ async function montarContexto(fromE164: string): Promise<ContextoConversa> {
     .limit(9);
   // A última linha é a própria mensagem atual (já gravada no roteador) — sai do histórico.
   const historico = ((conversa ?? []) as Array<{ papel: "motorista" | "bot"; texto: string }>).slice(1).reverse();
-  return { jaApresentado: (apresentacoes ?? 0) > 0, caminhaoCadastrado, ultimoCalculo, ultimaFalha, cadastroFoto, historico, primeiroNome, pendencia };
+  return { jaApresentado: (apresentacoes ?? 0) > 0, caminhaoCadastrado, ultimoCalculo, calculoAnterior, ultimaFalha, cadastroFoto, historico, primeiroNome, pendencia };
 }
 
 /**

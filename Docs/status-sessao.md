@@ -1572,6 +1572,19 @@ Textos: `Docs/bot-cadastro-por-foto.md`. Escopo: item 6 da fila (nome da CNH val
 
 **Lição**: o gatilho do diesel (variação >5%) pode disparar em qualquer semana — o lembrete mensal fixo não basta. Fila: a tarefa agendada passa a rodar **semanal** e, quando achar ato novo, já montar o INSERT com os coeficientes pra eu só conferir contra o DOU. Testes do `@rode/calc` (`pisoANTT.test.ts`) são relativos às constantes — não quebram; `npm test` em `packages/rode-calc` pra confirmar (vitest não roda no sandbox).
 
+## 08/10 (noite) — Caso "diesel 5,87" + AUDITORIA DO CÁLCULO (bot v74)
+
+**Caso** (testes-bot rodada 8): a IA disse ter usado diesel a 5,87 (foi 6,10) e depois inventou a causa de o custo ter caído. Motor certo. v74: `ultimoCalculo.insumos` + `calculoAnterior` no contexto; seção 8 do prompt proíbe número fora do contexto.
+
+**Auditoria do motor (`calcularFrete`, emerson-v1) — o que está certo e o que não está**:
+- Diesel: preço × km ÷ km/L ✅; volta vazia dobra km ✅. Padrão 6,10 quando o perfil não tem (ANP média nacional S10 em set/26: 7,33 — padrão baixo).
+- Pedágio: Google devolve tarifa de carro (2 eixos) e app/bot multiplicam por eixos/2 ✅ (tarifa por eixo). Não modela eixo suspenso.
+- Pneus: **R$/km fixo (0,12) independente de eixos** ❌ — não escala com o nº de pneus (2 na direção + 4 por eixo restante). Proposta: preço do pneu + vida útil → R$/km = nº pneus × preço ÷ vida.
+- Depreciação: R$/km do perfil; quando tem FIPE, (valor ano − valor ano anterior) ÷ km/ano ✅ só pro cavalo — **semirreboque/bitrem não deprecia** ❌.
+- Manutenção: R$/km fixo (0,35) — não escala com eixos (aceitável, mas pode escalar).
+- ARLA ✅; alimentação/pernoite × dias ✅; estacionamento/chapa fixos ✅.
+- Piso ANTT: km de ida × CCD + CC, por eixos e tipo de carga ✅. **A conferir na Res. 5.867**: retorno vazio (acréscimo de 92% do deslocamento?) e pedágio fora do piso — hoje o piso ignora volta vazia.
+
 ## CHECKPOINT — 08/10 (fim de sessão, v70 no ar, barra de abas pronta pra push)
 
 **Estado**: wa-webhook **v70** no ar (diesel/consumo ditos; regressão completa; 50 cenários em `Docs/testes-bot.md`). App: barra de abas codificada (fase 1), **precisa do push** pra ir pra Vercel e o Raphael olhar no iPhone. Pendente de teste manual: CRLV por foto/PDF (cavalo e semirreboque) e botões no celular.
