@@ -9,6 +9,7 @@ import Analisar from './pages/Analisar';
 import Resultado from './pages/Resultado';
 import Perfil from './pages/Perfil';
 import BuscarFrete from './pages/BuscarFrete';
+import LayoutMotorista from './components/LayoutMotorista';
 import AdminLayout from './admin/AdminLayout';
 import VisaoGeral from './admin/pages/VisaoGeral';
 import Motoristas from './admin/pages/Motoristas';
@@ -44,13 +45,18 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <Routes>
         <Route path="/entrar" element={<Entrada />} />
         <Route path="/verificar" element={<Verificacao />} />
-        <Route path="/" element={<Garagem />} />
-        <Route path="/motorista" element={<Motorista />} />
-        <Route path="/analisar" element={<Analisar />} />
-        <Route path="/resultado" element={<Resultado />} />
-        <Route path="/resultado/:id" element={<Resultado />} />
-        <Route path="/perfil" element={<Perfil />} />
-        <Route path="/buscar-frete" element={<BuscarFrete />} />
+        {/* App do motorista: LayoutMotorista só acrescenta a barra de abas
+            embaixo (Início · Calcular · Fretes · Caminhão); as telas são as
+            mesmas de antes. Entrada/Verificação ficam fora — sem barra. */}
+        <Route element={<LayoutMotorista />}>
+          <Route path="/" element={<Garagem />} />
+          <Route path="/motorista" element={<Motorista />} />
+          <Route path="/analisar" element={<Analisar />} />
+          <Route path="/resultado" element={<Resultado />} />
+          <Route path="/resultado/:id" element={<Resultado />} />
+          <Route path="/perfil" element={<Perfil />} />
+          <Route path="/buscar-frete" element={<BuscarFrete />} />
+        </Route>
         {/* Portal Sofrete (lado da empresa): EmpresaLayout aplica o tema
             claro/escuro no body e o cabeçalho com navegação. */}
         <Route path="/empresa" element={<EmpresaLayout />}>

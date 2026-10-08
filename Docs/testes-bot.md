@@ -102,6 +102,17 @@ Estado "CNH lida, esperando confirmação" montado direto no banco (559000000005
 | 47 | `bom dia` (já apresentado) | "Bom dia, Tamo junto - qualquer frete, manda" — fechamento no lugar de abertura (achado do Raphael) | seção 4: abertura abre as duas portas com exemplo e *BUSCAR*; fechamento continua uma linha |
 | 48 | mensagem longa de cálculo com cliente desconectando | função cortada no meio: cálculo gravado, resposta nunca enviada | v68: responde 200 pra Meta na hora e processa com `EdgeRuntime.waitUntil` (simulador segue síncrono) |
 
+## Rodada 7 (08/10, v70 — diesel e consumo ditos na mensagem) — número 559000000009
+
+Achado do Raphael pelo WhatsApp: "São Carlos SP para Goiânia 6700 com diesel a 15,00" ignorava o diesel; "diesel a 6,50" voltava o mesmo valor. Correção: `diesel_preco_litro` e `consumo_km_por_litro` na extração → `aplicarCustosDitos` ajusta o perfil do cálculo e grava em `caminhao_perfil` ("guardei como seu valor atual").
+
+| # | Mensagem | Esperado | Resultado |
+|---|---|---|---|
+| 49 | `sao carlos sp pra goiania 6700 com diesel a 15,00 truck grade baixa` | Calcula com diesel a 15 (custo alto), nota "calculei com diesel a R$ 15,00/L" | ✅ custo R$ 4.974,91 |
+| 50 | `e se o diesel for 6,50?` | Recalcula a mesma rota com 6,50 | ✅ custo R$ 2.700,65, lucro R$ 3.999 |
+
+Detalhe visto de passagem (fila): no cenário 49 o rodapé disse "estimativa com uma carreta padrão de 3 eixos" e logo abaixo "Salvei seu Truck de 3 eixos" — o texto do rodapé usa o nome genérico quando o caminhão veio da própria mensagem.
+
 ## Pra acrescentar (próximas rodadas)
 - `Quero sair do abc paulista` logo depois de "de que cidade?" (memória da pergunta).
 - `nao esta certo, leu errado` / `validade 23/03/2035` depois de uma leitura (precisa de foto real).

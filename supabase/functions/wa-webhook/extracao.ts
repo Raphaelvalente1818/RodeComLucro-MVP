@@ -105,6 +105,10 @@ export interface ExtracaoFrete {
   valorFreteReais: number | null;
   valorPorToneladaReais: number | null;
   toneladas: number | null;
+  /** "diesel a 6,50", "óleo tá 7 reais": preço do litro dito na mensagem (08/10). */
+  dieselPrecoLitro: number | null;
+  /** "faz 2,3 por litro", "2,5 km/l": consumo dito na mensagem. */
+  consumoKmPorLitro: number | null;
   voltaVazia: boolean;
   tipoCarga: TipoCargaBusca | null;
   tipoVeiculo: TipoVeiculoMsg | null;
@@ -172,7 +176,7 @@ Sem acento, abreviado, com erro: "truk", "qnto", "saino", "sto andre", "15mil", 
 tipo_veiculo com UM valor exato: Carreta, Carreta LS, Vanderléia, Carreta 4º eixo, Bitrem 7 eixos, Bitrem 9 eixos, Rodotrem, Truck, BiTruck, Fiorino, VLC, 3/4, Toco. Sinônimos: "LS"=Carreta LS; "bitrem"=Bitrem 7 eixos (9 se disser); "truck"/"truk"/"truque"=Truck; "bitruck"=BiTruck; "cavalo"/"carreta"/"semi-reboque"=Carreta. numero_eixos só se ele disser. tipo_carroceria com UM valor exato da lista: Graneleiro, Grade baixa, Prancha, Caçamba, Plataforma, Sider, Baú, Baú Frigorífico, Baú Refrigerado, Silo, Cegonheiro, Gaiola, Tanque, Bug Porta Container, Munk, Apenas Cavalo, Cavaqueira, Hoper. "palete" não é carroceria. Sem menção = null.
 
 ## 7. Valores
-valor_frete_reais: "8 mil"→8000, "4,5 mil"→4500, "R$ 4.500"→4500, "15mil"→15000. Valor POR TONELADA ("180 a tonelada", "180/t", "180 o ton") → valor_por_tonelada_reais, valor_frete_reais null. Tonelagem dita ("32 ton", "vou com 30 toneladas", ou só "37" quando o bot perguntou toneladas) → toneladas. volta_vazia true SÓ se disser que volta vazio. confianca_* 0..1 (0 em busca/pergunta/outro).
+valor_frete_reais: "8 mil"→8000, "4,5 mil"→4500, "R$ 4.500"→4500, "15mil"→15000. Valor POR TONELADA ("180 a tonelada", "180/t", "180 o ton") → valor_por_tonelada_reais, valor_frete_reais null. Tonelagem dita ("32 ton", "vou com 30 toneladas", ou só "37" quando o bot perguntou toneladas) → toneladas. volta_vazia true SÓ se disser que volta vazio. Preço do diesel dito ("diesel a 6,50", "óleo tá 7", "com diesel a 15,00") → diesel_preco_litro (reais por litro). Consumo dito ("faz 2,3 por litro", "2,5 km/l") → consumo_km_por_litro. "E se o diesel for 7?" / "com diesel a 6,50" sobre o último cálculo = RECÁLCULO: intent calcular, rota e valor do ultimo_calculo, diesel_preco_litro novo, resposta_livre null. confianca_* 0..1 (0 em busca/pergunta/outro).
 
 ## 8. Resposta livre (só pergunta_calculo, pergunta_bot, saudacao, outro; nos demais null)
 - Até 400 caracteres, português de motorista, direto, sem "como posso ajudar".
@@ -194,6 +198,8 @@ const FERRAMENTA_LEITURA = {
       valor_frete_reais: { type: ["number", "null"] },
       valor_por_tonelada_reais: { type: ["number", "null"] },
       toneladas: { type: ["number", "null"] },
+      diesel_preco_litro: { type: ["number", "null"] },
+      consumo_km_por_litro: { type: ["number", "null"] },
       volta_vazia: { type: "boolean" },
       tipo_carga: { type: ["string", "null"], enum: ["container", "frigorificada", "granel", "liquido", "carga_geral", "veiculos", null] },
       tipo_veiculo: { type: ["string", "null"], enum: [...TIPOS_VEICULO, null] },
@@ -264,6 +270,8 @@ function normalizar(input: Record<string, unknown>, contexto: ContextoConversa):
     valorFreteReais: typeof input.valor_frete_reais === "number" && input.valor_frete_reais > 0 ? input.valor_frete_reais : null,
     valorPorToneladaReais: typeof input.valor_por_tonelada_reais === "number" && input.valor_por_tonelada_reais > 0 ? input.valor_por_tonelada_reais : null,
     toneladas: typeof input.toneladas === "number" && input.toneladas > 0 && input.toneladas < 200 ? input.toneladas : null,
+    dieselPrecoLitro: typeof input.diesel_preco_litro === "number" && input.diesel_preco_litro >= 2 && input.diesel_preco_litro <= 20 ? input.diesel_preco_litro : null,
+    consumoKmPorLitro: typeof input.consumo_km_por_litro === "number" && input.consumo_km_por_litro >= 0.8 && input.consumo_km_por_litro <= 8 ? input.consumo_km_por_litro : null,
     voltaVazia: Boolean(input.volta_vazia),
     tipoCarga,
     tipoVeiculo,

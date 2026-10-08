@@ -663,6 +663,34 @@ async function tratarDesvincular(fromE164: string, waMessageId: string): Promise
 
 const CONFIANCA_MINIMA = 0.6;
 
+/**
+ * Diesel/consumo DITOS na mensagem (08/10: "São Carlos pra Goiânia 6700 com
+ * diesel a 15,00" ignorava o diesel). Vale pro cálculo de agora e vira o
+ * valor atual do perfil (preço muda a cada abastecida; o último dito é o
+ * melhor padrão). Devolve o perfil ajustado e a nota pra resposta.
+ */
+async function aplicarCustosDitos(motoristaId: string | null, perfil: PerfilCusto, ex: ExtracaoFrete | null): Promise<{ perfil: PerfilCusto; nota: string | null }> {
+  if (!ex || (ex.dieselPrecoLitro == null && ex.consumoKmPorLitro == null)) return { perfil, nota: null };
+  const ajustado = { ...perfil };
+  const partes: string[] = [];
+  const patch: Record<string, number> = {};
+  if (ex.dieselPrecoLitro != null) {
+    ajustado.diesel_preco_por_litro = ex.dieselPrecoLitro;
+    patch.diesel_preco_por_litro = ex.dieselPrecoLitro;
+    partes.push(`diesel a ${fmtBRL(ex.dieselPrecoLitro)}/L`);
+  }
+  if (ex.consumoKmPorLitro != null) {
+    ajustado.diesel_km_por_lt = ex.consumoKmPorLitro;
+    patch.diesel_km_por_lt = ex.consumoKmPorLitro;
+    partes.push(`${ex.consumoKmPorLitro.toLocaleString("pt-BR")} km/L`);
+  }
+  if (motoristaId) {
+    const { data: existe } = await supabase.from("caminhao_perfil").select("user_id").eq("user_id", motoristaId).maybeSingle();
+    if (existe) await supabase.from("caminhao_perfil").update(patch).eq("user_id", motoristaId);
+  }
+  return { perfil: ajustado, nota: `calculei com ${partes.join(" e ")}, como você disse — guardei como seu valor atual` };
+}
+
 /** "Bitrem 7 eixos" (sem repetir "de 7 eixos"), "Truck de 3 eixos", "caminhão de 5 eixos". */
 function nomeVeiculo(tipo: string | null | undefined, eixos: number): string {
   if (!tipo) return `caminhão de ${eixos} eixos`;
@@ -1241,7 +1269,8 @@ async function tratarCotacao(fromE164: string, texto: string, waMessageId: strin
     return;
   }
 
-  const perfilBase = motoristaId ? await buscarPerfilOuDefault(motoristaId) : PERFIL_CUSTO_DEFAULT;
+  const custosDitos = await aplicarCustosDitos(motoristaId, motoristaId ? await buscarPerfilOuDefault(motoristaId) : PERFIL_CUSTO_DEFAULT, ex);
+  const perfilBase = custosDitos.perfil;
   const perfil: PerfilCusto = veiculo
     ? { ...perfilBase, numero_eixos: veiculo.numeroEixos, tipo_carroceria: veiculo.tipoCarroceria ?? perfilBase.tipo_carroceria }
     : perfilBase;
@@ -1285,6 +1314,7 @@ async function tratarCotacao(fromE164: string, texto: string, waMessageId: strin
     `💰 Pra ter ${margem.toFixed(0)}% de margem, cobre a partir de *${fmtBRL(valorSugerido)}*` +
     (abaixoPiso ? ` (o piso ANTT manda — é o mínimo legal)` : ` (acima do piso ANTT)`) +
     `\n\n_estimativa com ${descVeiculo}_` +
+    (custosDitos.nota ? `\n_${custosDitos.nota}_` : "") +
     (notaCidade ? `\n_${notaCidade}_` : "") +
     (veiculo?.nota ? `\n_${veiculo.nota}_` : "") +
     avisoNovo;
@@ -1454,7 +1484,7 @@ async function tratarRespostaOnboarding(fromE164: string, rowId: string, waMessa
     };
     if (f.cotacao && f.origem && f.destino) {
       await tratarCotacao(fromE164, "(cotação pós-onboarding)", waMessageId, {
-        intent: "cotar", ePedidoDeFrete: false, ePedidoDeBusca: false, origem: f.origem, destino: f.destino, valorFreteReais: null, valorPorToneladaReais: null, toneladas: null, acao: "nenhuma", opcaoEscolhida: null, correcoes: null,
+        intent: "cotar", ePedidoDeFrete: false, ePedidoDeBusca: false, origem: f.origem, destino: f.destino, valorFreteReais: null, valorPorToneladaReais: null, toneladas: null, dieselPrecoLitro: null, consumoKmPorLitro: null, acao: "nenhuma", opcaoEscolhida: null, correcoes: null,
         voltaVazia: Boolean(f.voltaVazia), tipoCarga: null, tipoVeiculo: null, numeroEixos: null, tipoCarroceria: null, respostaLivre: null,
         confiancaOrigem: 1, confiancaDestino: 1, confiancaValor: 0,
       });
@@ -1537,7 +1567,7 @@ async function despacharExtracao(fromE164: string, texto: string, waMessageId: s
     // "e se eu voltar vazio?", "e se pagar 3500?" (simulador, 07/10): a IA
     // devolve a rota do último cálculo com o valor/volta novos e sem
     // resposta — é um recálculo, não uma pergunta. Roda como "calcular".
-    if (extracao.origem && extracao.destino && (extracao.valorFreteReais != null || extracao.valorPorToneladaReais != null) && (extracao.voltaVazia || !extracao.respostaLivre)) {
+    if (extracao.origem && extracao.destino && (extracao.valorFreteReais != null || extracao.valorPorToneladaReais != null) && (extracao.voltaVazia || extracao.dieselPrecoLitro != null || extracao.consumoKmPorLitro != null || !extracao.respostaLivre)) {
       extracao = { ...extracao, intent: "calcular", ePedidoDeFrete: true, confiancaOrigem: 1, confiancaDestino: 1, confiancaValor: 1 };
     } else if (extracao.origem && extracao.destino && extracao.voltaVazia) {
       // Último cálculo era cotação (sem valor): recota com volta vazia.
@@ -1754,7 +1784,8 @@ async function calcularEResponderFrete(params: {
   // de propósito: é o que permite o TS estreitar `motoristaId` pra `string`
   // no branch do buscarPerfilOuDefault (ele não propaga a narrowing através
   // de uma variável booleana calculada separadamente).
-  const perfilBase = motoristaId == null ? PERFIL_CUSTO_DEFAULT : await buscarPerfilOuDefault(motoristaId);
+  const custosDitos = await aplicarCustosDitos(motoristaId, motoristaId == null ? PERFIL_CUSTO_DEFAULT : await buscarPerfilOuDefault(motoristaId), extracao);
+  const perfilBase = custosDitos.perfil;
   const perfil: PerfilCusto = veiculo
     ? { ...perfilBase, numero_eixos: veiculo.numeroEixos, tipo_carroceria: veiculo.tipoCarroceria ?? perfilBase.tipo_carroceria }
     : perfilBase;
@@ -1898,6 +1929,7 @@ async function calcularEResponderFrete(params: {
     `Piso ANTT: ${fmtBRL(resultado.pisoANTT)}${avisoPiso}\n\n` +
     `${emoji} Veredito: ${resultado.veredicto}\n\n` +
     rodape +
+    (custosDitos.nota ? `\n_${custosDitos.nota}_` : "") +
     (notaCidade ? `\n_${notaCidade}_` : "") +
     (veiculo?.nota ? `\n_${veiculo.nota}_` : "");
 

@@ -1547,6 +1547,32 @@ Textos: `Docs/bot-cadastro-por-foto.md`. Escopo: item 6 da fila (nome da CNH val
 - **Cache de prompt** ligado (`cache_control: ephemeral` no system): prompt fixo cobrado a 10% nas chamadas seguintes — custo por mensagem cai mesmo com as chamadas a mais (estimativa ~R$ 0,012 vs ~R$ 0,025).
 - Rodada 5 do simulador (cenários 35–43): as 4 frases do Raphael + regressão dos fluxos que tinham porteiro, todos ✅. Bônus: onboarding por texto aceita qualquer tipo ("carreta ls"), "o do piaui" escolhe o candidato sem botão.
 
+## 08/10 (tarde) — Bot v67–v70: regressão completa, "bom dia", diesel dito na mensagem
+
+- **v67/v68** (rodada 6, 22 cenários das rodadas 1–4 reexecutados antes de avisar o Rapha): "Valeu, João!" (nome do indicador no lugar do motorista) → exemplo na seção 4 do prompt; "190 o ton" rotulado como cotar → regra no código: valor presente = calcular; "sao bernardo" casava São Bernardo/MA → `APELIDOS_CIDADE` (São Bernardo do Campo, São Caetano do Sul, Ribeirão Preto, Rio Preto, Mogi, Feira, SJC…); "bom dia" respondido como fechamento (achado do Raphael) → abertura abre as duas portas (exemplo + *BUSCAR*); mensagem longa cortava a função quando o cliente desconectava → responde 200 pra Meta na hora e processa com `EdgeRuntime.waitUntil` (simulador continua síncrono).
+- **v69/v70** (achado do Raphael: "São Carlos SP para Goiânia 6700 com diesel a 15,00" ignorava o diesel): `diesel_preco_litro` e `consumo_km_por_litro` na extração (seção 7 do prompt); `aplicarCustosDitos()` ajusta o perfil do cálculo e grava em `caminhao_perfil`; rodapé "calculei com diesel a R$ 15,00/L, como você disse — guardei como seu valor atual". Recálculo "e se o diesel for 6,50?" refaz a mesma rota. Conferido no simulador (cenários 49–50): custo R$ 4.974 → R$ 2.700. Pequeno na fila: rodapé diz "carreta padrão de 3 eixos" quando o caminhão veio da própria mensagem (cenário 49).
+
+## 08/10 (tarde) — Navegação do app: barra de abas (fase 1 codificada, aguardando print do iPhone)
+
+**Gatilho**: Raphael — "fica confuso saber onde estou, quantas telas tem, pra qual tela eu vou"; sugeriu menu em cima. Recomendação aceita: **barra de abas embaixo** (padrão de celular, dedão alcança, sempre visível).
+
+**Decisões (mockup `Docs/mockup-navegacao-app.html`, navegável, com os dados do Raphael)**:
+- 4 abas: **Início · Calcular · Fretes · Caminhão**. "Calcular" no lugar de "Analisar" (palavra do motorista); "Fretes" no plural (lista de cargas) — "Obter frete" descartado por formal.
+- Ícone + uma palavra. Testados e descartados: rótulo em duas linhas, só palavras com retângulo neon (grande demais; tira a âncora visual de quem lê mal). Pesquisa de usabilidade (NN/g): ícone+texto > texto > ícone sozinho.
+- "Garagem" fica no **título da tela** ("Garagem do Raphael"), não na aba — evita colidir com "Caminhão".
+- Perfil do motorista fora da barra (muda pouco): link no topo do Início + botão dentro de Caminhão. Alternativas registradas: aba "Perfil" com você+caminhão, ou 5ª aba.
+- **Fase 1 (feita)**: `components/LayoutMotorista.tsx` como rota de layout em `main.tsx` envolvendo `/`, `/motorista`, `/analisar`, `/resultado(/:id)`, `/perfil`, `/buscar-frete` — Entrada/Verificação/empresa/admin ficam fora. Telas NÃO mudaram por dentro. Resultado acende "Calcular"; Meu perfil acende "Início". CSS `.barra-abas` + `.com-abas .tela` (padding pra barra) em `index.css`; `viewport-fit=cover` no `index.html` pra `env(safe-area-inset-bottom)` funcionar no iPhone. `tsc --strict`: 0 erros.
+- **Fase 2 (depois do print)**: tirar "← Voltar para a Garagem" e os botões de navegação repetidos (CTAs Analisar/Buscar/Meu Caminhão na Garagem viram opcionais), título "Garagem do Raphael", topo com seta nas telas filhas se fizer falta.
+
+## CHECKPOINT — 08/10 (fim de sessão, v70 no ar, barra de abas pronta pra push)
+
+**Estado**: wa-webhook **v70** no ar (diesel/consumo ditos; regressão completa; 50 cenários em `Docs/testes-bot.md`). App: barra de abas codificada (fase 1), **precisa do push** pra ir pra Vercel e o Raphael olhar no iPhone. Pendente de teste manual: CRLV por foto/PDF (cavalo e semirreboque) e botões no celular.
+
+**AO RETOMAR**:
+0. Raphael aprova a barra pelo print → fase 2 (limpar botões/links redundantes). Se reprovar, ajustar o `LayoutMotorista.tsx`/CSS — não as telas.
+1. Rodapé "carreta padrão" quando o caminhão veio da mensagem (testes-bot #49) — ajuste pequeno no texto do rodapé.
+2. Demais itens do checkpoint 07/10 (abaixo): CRLV manual, pg_cron (`limpar_tokens_wa`, `limpar_wa_conversa`), semeadura, fila (Aferi+, `codigo_indicacao`, Funil viral, Meta, lojas, logo Sofrete, identidade visual, senha, Barlow local). População IBGE em `municipios_brasil` pra desempatar homônimos.
+
 ## CHECKPOINT — 08/10 (v66 no ar)
 
 **Estado**: wa-webhook **v66** (consolidação) no ar; app/portal sem mudança desde 05/10. Simulador + 43 cenários em `Docs/testes-bot.md`. Pendente de teste manual: CRLV por foto/PDF (cavalo e semirreboque) e botões no celular.

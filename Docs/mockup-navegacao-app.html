@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Rode com Lucro — navegação por abas (mockup 08/10/2026)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  /* =================================================================
+     MOCKUP — navegação do app do motorista por BARRA DE ABAS embaixo
+     (08/10/2026). Pedido do Raphael: "fica confuso saber onde estou,
+     quantas telas tem, pra qual tela eu vou". Resposta: 4 abas fixas
+     (Início · Analisar · Fretes · Caminhão) + topo que diz onde você está;
+     telas filhas (Resultado, Meu perfil) têm seta de voltar e NÃO têm aba.
+     Dados fictícios inspirados nos testes do Raphael. Mesmas variáveis
+     do app (apps/web/src/index.css :root).
+     Abra no iPhone: fica em tela cheia como o app. No PC: moldura de celular.
+     ================================================================= */
+  :root {
+    --fonte: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --fonte-cond: "Barlow Condensed", "Barlow", system-ui, sans-serif;
+    --bg: #0b0e0d; --bg-fundo: #060807; --surf: #141a18; --surf-2: #1c2421; --surf-3: #222c29;
+    --linha: #2a3330; --linha-forte: #3d4a46;
+    --txt: #f2f5f4; --txt-2: #c3ceca; --txt-dim: #93a29e; --txt-fraco: #7e8c88;
+    --marca: #f2b01e; --marca-escura: #c9901a; --marca-tx: #10130f; --marca-bg: #33260a;
+    --bom: #2fd46e; --bom-bg: #0e2e1c; --atencao: #ff9f1c; --atencao-bg: #33220a; --ruim: #ff5a5a; --ruim-bg: #331414;
+    --r-card: 14px; --r-campo: 12px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { background: #1a1f1d; font-family: var(--fonte); color: var(--txt); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* moldura no PC; no celular ocupa a tela toda */
+  .palco { min-height: 100%; display: flex; align-items: center; justify-content: center; gap: 40px; padding: 24px; }
+  .fone { width: 390px; height: 844px; background: var(--bg); border-radius: 44px; border: 10px solid #0a0c0b; box-shadow: 0 30px 80px rgba(0,0,0,.6); overflow: hidden; position: relative; display: flex; flex-direction: column; }
+  .notas { max-width: 360px; color: #c3ceca; font-size: 14px; line-height: 1.55; }
+  .notas h3 { font-family: var(--fonte-cond); letter-spacing: .08em; text-transform: uppercase; font-size: 13px; color: #93a29e; margin: 18px 0 6px; }
+  .notas p { margin: 0 0 8px; }
+  .notas b { color: #f2f5f4; }
+  .notas .rec { border-left: 3px solid var(--marca); padding-left: 10px; }
+  @media (max-width: 820px) {
+    body { background: var(--bg); }
+    .palco { padding: 0; }
+    .fone { width: 100%; height: 100dvh; border: 0; border-radius: 0; box-shadow: none; }
+    .notas { display: none; }
+  }
+
+  /* ---------- topo: diz ONDE você está ---------- */
+  .topo { padding: 54px 20px 12px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--linha); background: var(--bg); position: relative; }
+  .topo::after { content: ""; position: absolute; left: 20px; right: 20px; bottom: -1px; height: 3px; background: var(--marca); border-radius: 2px 2px 0 0; width: 56px; }
+  .topo h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; flex: 1; }
+  .topo .voltar { display: none; width: 36px; height: 36px; border-radius: 10px; background: var(--surf-2); border: 1px solid var(--linha); color: var(--txt); font-size: 18px; align-items: center; justify-content: center; cursor: pointer; }
+  .topo.filha .voltar { display: flex; }
+  .topo .acao { font-size: 13px; color: var(--marca); font-weight: 600; cursor: pointer; }
+  .topo .eyebrow { display: block; font-family: var(--fonte-cond); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--txt-dim); margin-bottom: 2px; }
+
+  /* ---------- conteúdo ---------- */
+  .conteudo { flex: 1; overflow-y: auto; padding: 16px 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+  .tela { display: none; } .tela.on { display: contents; }
+  .card { background: var(--surf); border: 1px solid var(--linha); border-radius: var(--r-card); padding: 16px; }
+  .card h2 { margin: 0 0 10px; font-size: 13px; font-family: var(--fonte-cond); letter-spacing: .12em; text-transform: uppercase; color: var(--txt-dim); font-weight: 700; }
+  .ola { font-size: 15px; color: var(--txt-2); margin: 0; }
+  .ola b { color: var(--txt); font-size: 20px; display: block; }
+  .alerta { display: flex; gap: 10px; align-items: flex-start; background: var(--atencao-bg); border: 1px solid #8a5a14; border-radius: var(--r-card); padding: 12px 14px; font-size: 13.5px; }
+  .alerta i { font-style: normal; color: var(--atencao); font-weight: 700; }
+  .meta { display: flex; justify-content: space-between; align-items: flex-end; }
+  .meta .valor { font-size: 26px; font-weight: 700; }
+  .meta small { color: var(--txt-dim); font-size: 12.5px; }
+  .barra { height: 8px; background: var(--surf-2); border-radius: 999px; overflow: hidden; margin-top: 10px; }
+  .barra i { display: block; height: 100%; width: 62%; background: var(--marca); }
+  .lista { list-style: none; margin: 0; padding: 0; }
+  .lista li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 11px 0; border-top: 1px solid var(--linha); cursor: pointer; }
+  .lista li:first-child { border-top: 0; padding-top: 0; }
+  .lista .rota { font-weight: 600; font-size: 14.5px; }
+  .lista .sub { color: var(--txt-dim); font-size: 12.5px; }
+  .badge { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; letter-spacing: .04em; white-space: nowrap; }
+  .badge.bom { background: var(--bom-bg); color: var(--bom); }
+  .badge.ruim { background: var(--ruim-bg); color: var(--ruim); }
+  .badge.aceitavel { background: var(--atencao-bg); color: var(--atencao); }
+  .btn { background: var(--marca); color: var(--marca-tx); border: 0; border-radius: var(--r-campo); padding: 14px; font-weight: 700; font-size: 16px; font-family: inherit; width: 100%; cursor: pointer; }
+  .btn.sec { background: var(--surf-2); color: var(--txt); border: 1px solid var(--linha-forte); }
+  .campo { display: flex; flex-direction: column; gap: 6px; }
+  .campo label { font-size: 13px; color: var(--txt-2); }
+  .campo input, .campo select { background: var(--bg-fundo); border: 1px solid var(--linha-forte); color: var(--txt); border-radius: var(--r-campo); padding: 12px 14px; font-size: 16px; font-family: inherit; }
+  .grade2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .linha-dado { display: flex; justify-content: space-between; padding: 8px 0; border-top: 1px solid var(--linha); font-size: 14.5px; }
+  .linha-dado:first-of-type { border-top: 0; }
+  .linha-dado b { font-weight: 600; }
+  .veredito { text-align: center; padding: 18px; border-radius: var(--r-card); }
+  .veredito.bom { background: var(--bom-bg); border: 1px solid #1d7a45; }
+  .veredito .rotulo { font-family: var(--fonte-cond); letter-spacing: .14em; text-transform: uppercase; font-size: 12px; color: var(--txt-dim); }
+  .veredito .grande { font-size: 32px; font-weight: 700; color: var(--bom); }
+  .veredito p { margin: 6px 0 0; color: var(--txt-2); font-size: 14px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { background: var(--surf-2); border: 1px solid var(--linha-forte); color: var(--txt-2); padding: 7px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+  .chip.on { background: var(--marca); color: var(--marca-tx); border-color: var(--marca); }
+  .atalhos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .atalho { background: var(--surf); border: 1px solid var(--linha); border-radius: var(--r-card); padding: 14px; cursor: pointer; }
+  .atalho span { display: block; font-size: 22px; margin-bottom: 6px; }
+  .atalho b { display: block; font-size: 14.5px; }
+  .atalho small { color: var(--txt-dim); font-size: 12px; }
+
+  /* ---------- barra de abas: diz PRA ONDE dá pra ir ---------- */
+  .abas { display: flex; border-top: 1px solid var(--linha); background: var(--bg-fundo); padding: 8px 6px calc(10px + env(safe-area-inset-bottom)); }
+  .aba { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 4px; border-radius: 12px; cursor: pointer; color: var(--txt-dim); font-size: 11.5px; font-weight: 600; letter-spacing: .02em; position: relative; }
+  .aba svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  .aba.on { color: var(--marca); }
+  .aba.on::before { content: ""; position: absolute; top: -9px; width: 28px; height: 3px; background: var(--marca); border-radius: 0 0 3px 3px; }
+  .aba .ponto { position: absolute; top: 4px; right: 18px; width: 9px; height: 9px; border-radius: 50%; background: var(--atencao); border: 2px solid var(--bg-fundo); }
+  .abas.escondida { display: none; }
+  /* variante: rótulo em duas linhas (pedido do Raphael 08/10) */
+  .aba .rot1 { display: block; } .aba .rot2 { display: none; }
+  .abas.duas .rot1 { display: none; } .abas.duas .rot2 { display: block; text-align: center; line-height: 1.1; font-family: var(--fonte-cond); font-size: 13px; letter-spacing: .03em; white-space: pre-line; }
+  .abas.duas .aba { gap: 4px; padding-top: 7px; }
+  /* variante: só palavras, retângulo em volta, neon (pedido do Raphael 08/10) */
+  .abas.neon { gap: 5px; padding: 7px 10px calc(6px + env(safe-area-inset-bottom)); }
+  .abas.neon .aba svg, .abas.neon .aba .rot1, .abas.neon .aba.on::before { display: none; }
+  .abas.neon .aba .rot2 { display: block; text-align: center; line-height: 1.05; font-family: var(--fonte-cond); font-size: 12px; letter-spacing: .05em; white-space: pre-line; text-transform: uppercase; }
+  .abas.neon .aba { border: 1px solid var(--linha-forte); border-radius: 8px; padding: 5px 2px; color: var(--txt-dim); justify-content: center; min-height: 38px; gap: 0; }
+  .abas.neon .aba.on { --neon: var(--marca); border-color: var(--neon); color: var(--neon); box-shadow: 0 0 6px color-mix(in srgb, var(--neon) 50%, transparent), inset 0 0 6px color-mix(in srgb, var(--neon) 12%, transparent); text-shadow: 0 0 5px color-mix(in srgb, var(--neon) 60%, transparent); }
+  .abas.neon.ciano .aba.on { --neon: #38e8ff; }   /* fora da paleta — só pra comparar */
+  .abas.neon .aba .ponto { top: -4px; right: -4px; }
+  .alternar { position: absolute; top: 14px; right: 16px; z-index: 5; font-size: 11px; font-weight: 600; color: var(--txt-dim); background: var(--surf-2); border: 1px solid var(--linha); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="palco">
+  <div class="fone">
+    <header class="topo" id="topo">
+      <div class="voltar" id="voltar">‹</div>
+      <h1 id="titulo"><span class="eyebrow" id="eyebrow">Rode com Lucro</span>Garagem do Raphael</h1>
+      <span class="acao" id="acao-topo" data-ir="meuperfil">Meu perfil</span>
+    </header>
+
+    <div class="conteudo" id="conteudo">
+      <!-- ============ INÍCIO ============ -->
+      <section class="tela on" id="tela-inicio">
+        <div class="alerta"><i>⚠</i><div><b>Licenciamento 2026 do caminhão vence em 23 dias.</b><br><span style="color:var(--txt-dim)">CNH ok até 23/03/2035.</span></div></div>
+        <div class="card">
+          <h2>Meta do mês · outubro</h2>
+          <div class="meta"><div class="valor num">R$ 11.240</div><small>de R$ 18.000 · 62%</small></div>
+          <div class="barra"><i></i></div>
+        </div>
+        <div class="atalhos">
+          <div class="atalho" data-ir="analisar"><span>🧮</span><b>Analisar frete</b><small>vale a pena?</small></div>
+          <div class="atalho" data-ir="fretes"><span>📦</span><b>Buscar carga</b><small>perto de Santo André</small></div>
+        </div>
+        <div class="card">
+          <h2>Últimas análises</h2>
+          <ul class="lista">
+            <li data-ir="resultado"><div><div class="rota">Diadema/SP → Coruripe/AL</div><div class="sub">R$ 15.000 · Truck · ontem</div></div><span class="badge bom">BOM</span></li>
+            <li data-ir="resultado"><div><div class="rota">Sinop/MT → Bom Jesus/PI</div><div class="sub">R$ 10.000 · 07/10</div></div><span class="badge ruim">RUIM</span></li>
+            <li data-ir="resultado"><div><div class="rota">São Paulo/SP → Rio de Janeiro/RJ</div><div class="sub">R$ 4.500 · 07/10 · realizado ✓</div></div><span class="badge bom">BOM</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ============ ANALISAR ============ -->
+      <section class="tela" id="tela-analisar">
+        <div class="card">
+          <div class="grade2">
+            <div class="campo"><label>Origem</label><input value="Santo André/SP"></div>
+            <div class="campo"><label>Destino</label><input placeholder="Cidade/UF"></div>
+          </div>
+          <div class="campo" style="margin-top:10px"><label>Valor do frete (R$)</label><input inputmode="numeric" placeholder="ex.: 5600"></div>
+          <div class="grade2" style="margin-top:10px">
+            <div class="campo"><label>Diesel (R$/L)</label><input value="6,10"></div>
+            <div class="campo"><label>Dias de viagem</label><input value="1"></div>
+          </div>
+          <div class="chips" style="margin-top:12px"><span class="chip on">Com volta</span><span class="chip">Volta vazia</span></div>
+        </div>
+        <button class="btn" data-ir="resultado">Calcular</button>
+        <p style="margin:0;color:var(--txt-dim);font-size:12.5px;text-align:center">Usa seu Truck de 3 eixos · piso ANTT Res. 6084/2026</p>
+      </section>
+
+      <!-- ============ RESULTADO (filha de Analisar) ============ -->
+      <section class="tela" id="tela-resultado">
+        <div class="veredito bom"><div class="rotulo">Veredito</div><div class="grande">BOM</div><p>Lucro R$ 6.388,77 · margem 42,6%</p></div>
+        <div class="card">
+          <h2>Diadema/SP → Coruripe/AL · 2.395 km · 4 dias</h2>
+          <div class="linha-dado"><span>Valor ofertado</span><b class="num">R$ 15.000,00</b></div>
+          <div class="linha-dado"><span>Custo estimado</span><b class="num">R$ 8.611,23</b></div>
+          <div class="linha-dado"><span>Piso ANTT</span><b class="num">R$ 12.752,89</b></div>
+          <div class="linha-dado"><span>Diesel</span><span class="num">R$ 5.843,80</span></div>
+          <div class="linha-dado"><span>Pedágio</span><span class="num">R$ 142,80</span></div>
+          <div class="linha-dado"><span>Manutenção + pneus</span><span class="num">R$ 1.125,65</span></div>
+        </div>
+        <button class="btn">Salvar análise</button>
+        <button class="btn sec">Marcar como realizado</button>
+      </section>
+
+      <!-- ============ FRETES ============ -->
+      <section class="tela" id="tela-fretes">
+        <div class="chips"><span class="chip on">Perto de Santo André</span><span class="chip">Raio 300 km</span><span class="chip">Meu caminhão</span></div>
+        <div class="card">
+          <ul class="lista">
+            <li><div><div class="rota">→ Curitiba/PR</div><div class="sub">de São Paulo/SP · R$ 4.500 · a 19 km · Transp. Alfa</div></div><span class="badge bom">Compatível</span></li>
+            <li><div><div class="rota">→ Ribeirão Preto/SP</div><div class="sub">de Guarulhos/SP · R$ 450/t · a 27 km</div></div><span class="badge bom">Compatível</span></li>
+            <li><div><div class="rota">→ Belo Horizonte/MG</div><div class="sub">de Campinas/SP · R$ 180/t · a 101 km</div></div><span class="badge aceitavel">Por tonelada</span></li>
+            <li><div><div class="rota">→ Aparecida de Goiânia/GO</div><div class="sub">de São Bernardo do Campo/SP · R$ 8.000 · a 3 km</div></div><span class="badge ruim">Só bitrem</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ============ CAMINHÃO ============ -->
+      <section class="tela" id="tela-caminhao">
+        <div class="card">
+          <h2>Seu caminhão</h2>
+          <div class="linha-dado"><span>Tipo</span><b>Truck · 3 eixos</b></div>
+          <div class="linha-dado"><span>Carroceria</span><b>Grade baixa</b></div>
+          <div class="linha-dado"><span>Placa</span><b>ABC1D23</b></div>
+          <div class="linha-dado"><span>Licenciamento</span><b style="color:var(--atencao)">2026 · vence em 23 dias</b></div>
+          <div class="linha-dado"><span>Capacidade</span><b>14 t</b></div>
+        </div>
+        <div class="card">
+          <h2>Custos que o cálculo usa</h2>
+          <div class="grade2">
+            <div class="campo"><label>Diesel (R$/L)</label><input value="6,10"></div>
+            <div class="campo"><label>Consumo (km/L)</label><input value="2,5"></div>
+            <div class="campo"><label>Manutenção (R$/km)</label><input value="0,35"></div>
+            <div class="campo"><label>Margem desejada (%)</label><input value="20"></div>
+          </div>
+        </div>
+        <button class="btn sec" data-ir="meuperfil">Meu perfil (CNH, cidade base)</button>
+        <button class="btn">Salvar</button>
+      </section>
+
+      <!-- ============ MEU PERFIL (filha) ============ -->
+      <section class="tela" id="tela-meuperfil">
+        <div class="card">
+          <div class="linha-dado"><span>Nome</span><b>Raphael Valente Gomes</b></div>
+          <div class="linha-dado"><span>CNH</span><b>Categoria E · até 23/03/2035</b></div>
+          <div class="linha-dado"><span>Exame toxicológico</span><b>até 10/02/2027</b></div>
+          <div class="linha-dado"><span>Cidade base</span><b>Santo André/SP</b></div>
+          <div class="linha-dado"><span>WhatsApp</span><b style="color:var(--bom)">vinculado ✓</b></div>
+        </div>
+        <button class="btn sec">Editar</button>
+        <p style="margin:0;color:var(--txt-dim);font-size:12.5px">Pra apagar a conta, manda SAIR no WhatsApp.</p>
+      </section>
+    </div>
+
+    <nav class="abas" id="abas">
+      <div class="aba on" data-aba="inicio"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg><span class="rot1">Início</span><span class="rot2">Início</span></div>
+      <div class="aba" data-aba="analisar"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h3M13 11h3M8 15h3M13 15h3"/></svg><span class="rot1">Calcular</span><span class="rot2">Calcular
+frete</span></div>
+      <div class="aba" data-aba="fretes"><svg viewBox="0 0 24 24"><path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg><span class="rot1">Fretes</span><span class="rot2">Buscar
+frete</span></div>
+      <div class="aba" data-aba="caminhao"><span class="ponto"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg><span class="rot1">Caminhão</span><span class="rot2">Meu
+caminhão</span></div>
+    </nav>
+    <div class="alternar" id="alternar">rótulos: 2 linhas</div>
+  </div>
+
+  <aside class="notas">
+    <h3>O que este mockup mostra</h3>
+    <p><b>Barra embaixo = pra onde dá pra ir.</b> Quatro destinos, sempre visíveis, o atual em amarelo. Um toque troca de tela; nunca precisa "voltar" pra ir pra outra aba.</p>
+    <p><b>Garagem (decidido 08/10):</b> a aba continua "Início" (palavra óbvia na barra); a personalidade vai no título da tela, "Garagem do Raphael".</p>
+    <p><b>Rótulos (decidido 08/10):</b> ícone + uma palavra — Início · Calcular · Fretes · Caminhão. "Calcular" no lugar de "Analisar" porque é a palavra do motorista. Testamos e descartamos: só palavras com retângulo neon (grande demais, e tira a âncora visual de quem lê mal). O botão do canto ainda alterna pra duas linhas (Calcular frete · Buscar frete · Meu caminhão), só pra comparar.</p>
+    <p><b>Topo = onde você está.</b> Título da tela + faixa amarela. Telas filhas (Resultado, Meu perfil) ganham a seta ‹ e a barra some — o foco é terminar a tarefa e voltar.</p>
+    <p><b>Bolinha laranja na aba</b> = tem algo pra ver lá (licenciamento vencendo). Mesma cor de "atenção" do app; amarelo continua só marca/ação.</p>
+    <h3>Decisões pra você</h3>
+    <p><b>1. Quatro abas ou cinco?</b> Quatro (Início · Analisar · Fretes · Caminhão), com "Meu perfil" como link no topo do Início e botão no Caminhão. Cinco cabe, mas começa a apertar o dedão e o rótulo.</p>
+    <p><b>2. Analisar como aba ou como botão grande no Início?</b> Aba (recomendo): é a função principal, merece estar a um toque de qualquer lugar. O Início ainda tem o atalho.</p>
+    <p><b>3. Resultado com ou sem a barra?</b> Sem (recomendo): resultado é fim de tarefa. "Salvar" e "Realizado" ficam na tela; a seta volta pro Analisar.</p>
+    <p class="rec"><b>Se aprovar:</b> um componente de layout com topo + abas envolvendo as rotas atuais, sem mudar as telas por dentro; depois, uma a uma, tirar os botões de navegação improvisados. Meio dia pra estrutura, mais meio pra limpar as telas.</p>
+  </aside>
+</div>
+
+<script>
+  const TELAS = {
+    inicio:    { titulo: "Garagem do Raphael", filha: false, eyebrow: "Rode com Lucro", acao: "Meu perfil", acaoIr: "meuperfil" },
+    analisar:  { titulo: "Analisar frete", filha: false, eyebrow: "Vale a pena?" },
+    resultado: { titulo: "Resultado",   filha: true,  eyebrow: "Análise de frete", pai: "analisar" },
+    fretes:    { titulo: "Fretes",      filha: false, eyebrow: "Cargas perto de você" },
+    caminhao:  { titulo: "Caminhão",    filha: false, eyebrow: "Perfil de custos" },
+    meuperfil: { titulo: "Meu perfil",  filha: true,  eyebrow: "Motorista", pai: "inicio" },
+  };
+  let atual = "inicio";
+  const pilha = [];
+  function ir(nome, empilha = true) {
+    const t = TELAS[nome]; if (!t) return;
+    if (empilha && TELAS[atual] && !TELAS[atual].filha) pilha.length = 0;
+    if (empilha) pilha.push(atual);
+    atual = nome;
+    document.querySelectorAll(".tela").forEach(s => s.classList.toggle("on", s.id === "tela-" + nome));
+    document.getElementById("titulo").innerHTML = `<span class="eyebrow">${t.eyebrow}</span>${t.titulo}`;
+    document.getElementById("topo").classList.toggle("filha", t.filha);
+    const acao = document.getElementById("acao-topo");
+    acao.style.display = t.acao ? "" : "none"; if (t.acao) { acao.textContent = t.acao; acao.dataset.ir = t.acaoIr; }
+    document.getElementById("abas").classList.toggle("escondida", t.filha);
+    const abaAtiva = t.filha ? t.pai : nome;
+    document.querySelectorAll(".aba").forEach(a => a.classList.toggle("on", a.dataset.aba === abaAtiva));
+    document.getElementById("conteudo").scrollTop = 0;
+  }
+  document.querySelectorAll(".aba").forEach(a => a.addEventListener("click", () => ir(a.dataset.aba)));
+  document.querySelectorAll("[data-ir]").forEach(el => el.addEventListener("click", (e) => { e.stopPropagation(); ir(el.dataset.ir); }));
+  const MODOS = [
+    { rotulo: "1 palavra", classes: "" },
+    { rotulo: "2 linhas", classes: "duas" },
+  ];
+  let modo = 0;
+  function aplicarModo() {
+    const abas = document.getElementById("abas");
+    abas.className = "abas " + MODOS[modo].classes + (abas.classList.contains("escondida") ? " escondida" : "");
+    document.getElementById("alternar").textContent = "estilo: " + MODOS[modo].rotulo;
+  }
+  document.getElementById("alternar").addEventListener("click", () => { modo = (modo + 1) % MODOS.length; aplicarModo(); });
+  aplicarModo();
+  document.getElementById("voltar").addEventListener("click", () => { const anterior = pilha.pop() || TELAS[atual].pai || "inicio"; ir(anterior, false); });
+</script>
+</body>
+</html>
