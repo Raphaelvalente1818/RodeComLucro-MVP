@@ -111,7 +111,9 @@ Achado do Raphael pelo WhatsApp: "São Carlos SP para Goiânia 6700 com diesel a
 | 49 | `sao carlos sp pra goiania 6700 com diesel a 15,00 truck grade baixa` | Calcula com diesel a 15 (custo alto), nota "calculei com diesel a R$ 15,00/L" | ✅ custo R$ 4.974,91 |
 | 50 | `e se o diesel for 6,50?` | Recalcula a mesma rota com 6,50 | ✅ custo R$ 2.700,65, lucro R$ 3.999 |
 
-Detalhe visto de passagem: no cenário 49 o rodapé disse "estimativa com uma carreta padrão de 3 eixos" e logo abaixo "Salvei seu Truck de 3 eixos" — o rodapé do primeiro contato usava o nome genérico mesmo quando o caminhão veio da própria mensagem. **Corrigido na v71**: "estimativa com seu Truck de 3 eixos, consumo e custos padrão". Reconferir: `reset=1` + cenário 49 de novo.
+Detalhe visto de passagem: no cenário 49 o rodapé disse "estimativa com uma carreta padrão de 3 eixos" e logo abaixo "Salvei seu Truck de 3 eixos" — o rodapé do primeiro contato usava o nome genérico mesmo quando o caminhão veio da própria mensagem. **Corrigido na v71** e reconferido: "estimativa com seu Truck de 3 eixos, consumo e custos padrão" ✅.
+
+| 51 | `sao carlos sp pra goiania 6700 com diesel a 15 truck grade baixa vale?` (v71) | São Carlos/SP direto (a UF veio na mensagem) | ⚠️ perguntou SP ou SC — o Haiku soltou o "sp" desta vez (no #49 tinha mantido). Prompt seção 2: "se ele escreveu a UF junto, mantenha" → v72, reconferir |
 
 ## Pra acrescentar (próximas rodadas)
 - `Quero sair do abc paulista` logo depois de "de que cidade?" (memória da pergunta).
