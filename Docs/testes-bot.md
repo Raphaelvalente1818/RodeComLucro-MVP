@@ -158,6 +158,16 @@ Pedido do Raphael: não perguntar "Pode ler?" depois que a foto chegou (a autori
 | 65 | (leitura pendente) `ta tudo errado` | Descarta e pede a foto de novo | pendente de deploy |
 | 66 | (leitura pendente) `a validade certa eh 23/03/2035` | Corrige só a validade e reapresenta com os 2 botões | pendente de deploy |
 
+## Rodada 12 (09/10, v76 — apresentação é texto fixo)
+
+Print do Rapha (08/10 18:58): "Ola" → a IA escreveu a apresentação de cabeça: "**Evalio** se um frete vale a pena", "**coto** rotas sem valor". Mudou: na primeira saudação/pergunta sobre o bot o código manda `mensagemApresentacao()` (a mesma do AJUDA, revisada); a IA só devolve `nome_indicador` quando ele chega por indicação e o código monta "Opa! Que bom que o João te passou meu contato." + apresentação.
+
+| # | Mensagem | Esperado | Resultado |
+|---|---|---|---|
+| 67 | número novo: `Ola` | Apresentação fixa (1️⃣ 2️⃣ 3️⃣ + CADASTRO), sem texto da IA | pendente de deploy |
+| 68 | número novo: `Oi, recebi esse contato do João da boca` | "Opa! Que bom que o João te passou meu contato." + apresentação fixa | pendente de deploy |
+| 69 | já apresentado: `bom dia` | Continua a abertura curta da IA com exemplo e *BUSCAR* (cenário 47) | pendente de deploy |
+
 ## Pra acrescentar (próximas rodadas)
 - `Quero sair do abc paulista` logo depois de "de que cidade?" (memória da pergunta).
 - `nao esta certo, leu errado` / `validade 23/03/2035` depois de uma leitura (precisa de foto real).

@@ -926,9 +926,9 @@ function mensagemApresentacao(temConta: boolean): string {
   return (
     `Opa! Sou o Rode com Lucro 🚛 — faço três coisas pra você:\n\n` +
     `1️⃣ Digo se um frete *vale a pena* (custo real, lucro e piso ANTT). Manda a rota e o valor. Ex.: *"Sinop pra Santos, 14 mil"*\n\n` +
-    `2️⃣ *Coto* uma rota: km, pedágio, piso ANTT e quanto cobrar. Manda só a rota. Ex.: *"Carandaí pra Piracaia"*\n\n` +
-    `3️⃣ Mostro *cargas perto de você*. Manda *BUSCAR*.\n\n` +
-    `Manda *CADASTRO* pra eu preencher seu perfil pela foto da CNH e do CRLV.` +
+    `2️⃣ *Faço a cotação* de uma rota: km, pedágio, piso ANTT e quanto cobrar. Manda só a rota. Ex.: *"Carandaí pra Piracaia"*\n\n` +
+    `3️⃣ Mostro *cargas perto de você*. Escreve *BUSCAR*.\n\n` +
+    `Manda a *foto da CNH e do CRLV* que eu preencho seu cadastro de forma automática — o cálculo do frete fica muito mais preciso!` +
     (temConta ? `\n\n_Pra apagar seu cadastro, manda SAIR._` : "")
   );
 }
@@ -977,9 +977,16 @@ async function avisarUltimaConsulta(fromE164: string): Promise<void> {
  * resposta da IA, cai na apresentação fixa. Nunca fica em silêncio dentro
  * do limite.
  */
-async function tratarConversaLivre(fromE164: string, texto: string, waMessageId: string, extracao: ExtracaoFrete | null, status: "resposta_livre" | "pergunta_calculo" = "resposta_livre"): Promise<void> {
+async function tratarConversaLivre(fromE164: string, texto: string, waMessageId: string, extracao: ExtracaoFrete | null, status: "resposta_livre" | "pergunta_calculo" = "resposta_livre", jaApresentado = true): Promise<void> {
   const { id: motoristaId, novo } = await garantirMotorista(fromE164, texto);
-  const corpo = extracao?.respostaLivre ?? mensagemApresentacao(Boolean(motoristaId) && !novo);
+  // 09/10 (print do Rapha: "Evalio", "coto rotas"): a apresentação nunca é
+  // escrita pela IA. Na primeira saudação/pergunta sobre o bot vai o texto
+  // fixo; se ele chegou por indicação, o código agradece a quem indicou.
+  const primeiraVez = !jaApresentado && (extracao?.intent === "saudacao" || extracao?.intent === "pergunta_bot" || !extracao?.respostaLivre);
+  const agradecimento = extracao?.nomeIndicador ? `Opa! Que bom que ${extracao.nomeIndicador} te passou meu contato. ` : "";
+  const corpo = primeiraVez
+    ? agradecimento + mensagemApresentacao(Boolean(motoristaId) && !novo).replace(/^Opa! /, agradecimento ? "" : "Opa! ")
+    : (extracao?.respostaLivre ?? mensagemApresentacao(Boolean(motoristaId) && !novo));
   const resposta = novo && motoristaId ? corpo + AVISO_CADASTRO : corpo;
   await registrarTentativaFrete({
     waMessageId,
@@ -1526,7 +1533,7 @@ async function tratarRespostaOnboarding(fromE164: string, rowId: string, waMessa
     if (f.cotacao && f.origem && f.destino) {
       await tratarCotacao(fromE164, "(cotação pós-onboarding)", waMessageId, {
         intent: "cotar", ePedidoDeFrete: false, ePedidoDeBusca: false, origem: f.origem, destino: f.destino, valorFreteReais: null, valorPorToneladaReais: null, toneladas: null, dieselPrecoLitro: null, consumoKmPorLitro: null, acao: "nenhuma", opcaoEscolhida: null, correcoes: null,
-        voltaVazia: Boolean(f.voltaVazia), tipoCarga: null, tipoVeiculo: null, numeroEixos: null, tipoCarroceria: null, respostaLivre: null,
+        voltaVazia: Boolean(f.voltaVazia), tipoCarga: null, tipoVeiculo: null, numeroEixos: null, tipoCarroceria: null, respostaLivre: null, nomeIndicador: null,
         confiancaOrigem: 1, confiancaDestino: 1, confiancaValor: 0,
       });
       return;
@@ -1587,7 +1594,7 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
     await tratarConversaLivre(fromE164, texto, waMessageId, null);
     return;
   }
-  await despacharExtracao(fromE164, texto, waMessageId, extracao, contexto.pendencia);
+  await despacharExtracao(fromE164, texto, waMessageId, extracao, contexto.pendencia, contexto.jaApresentado);
 }
 
 /**
@@ -1595,7 +1602,7 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
  * reexecutar o MESMO pedido depois que o motorista toca no botão de
  * confirmação de cidade ("é Coruripe/AL?") — ver tratarEscolhaCidade.
  */
-async function despacharExtracao(fromE164: string, texto: string, waMessageId: string, extracao: ExtracaoFrete, pendencia?: Pendencia | null): Promise<void> {
+async function despacharExtracao(fromE164: string, texto: string, waMessageId: string, extracao: ExtracaoFrete, pendencia?: Pendencia | null, jaApresentado = true): Promise<void> {
   // A mensagem respondeu ao que o bot estava esperando? Executa a ação e pronto.
   if (extracao.acao !== "nenhuma") {
     const p = pendencia === undefined ? await obterPendencia(fromE164) : pendencia;
@@ -1649,7 +1656,7 @@ async function despacharExtracao(fromE164: string, texto: string, waMessageId: s
       return;
     }
     // Camada 3: saudação, pergunta sobre o bot, outro assunto, spam.
-    await tratarConversaLivre(fromE164, texto, waMessageId, extracao);
+    await tratarConversaLivre(fromE164, texto, waMessageId, extracao, "resposta_livre", jaApresentado);
     return;
   }
 

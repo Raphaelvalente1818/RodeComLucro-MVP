@@ -126,6 +126,8 @@ export interface ExtracaoFrete {
   numeroEixos: number | null;
   tipoCarroceria: TipoCarroceriaMsg | null;
   respostaLivre: string | null;
+  /** 09/10: primeiro nome de quem indicou o bot ("recebi seu contato do João") — o código monta o agradecimento; a IA não escreve a apresentação. */
+  nomeIndicador: string | null;
   confiancaOrigem: number;
   confiancaDestino: number;
   confiancaValor: number;
@@ -167,7 +169,7 @@ Sem acento, abreviado, com erro: "truk", "qnto", "saino", "sto andre", "15mil", 
 - "saudacao": três casos, três respostas:
   · ABERTURA ("oi", "bom dia", "opa", "e aí") de quem já foi apresentado → cumprimenta (com o primeiro nome, se houver) e abre as duas portas numa frase só, SEMPRE com o exemplo e a palavra *BUSCAR*: "Bom dia, Raphael! Quer ver se um frete vale a pena (ex.: *São Bernardo pra Rio, 5.600*) ou buscar carga perto de você (*BUSCAR*)?". Se há algo pendente no contexto (CRLV faltando, cálculo recente), ofereça isso no lugar de uma das portas ("Quer mandar o CRLV agora, ou tem frete pra avaliar?"). Abertura de quem NÃO foi apresentado → apresentação (seção 8).
   · FECHAMENTO/agradecimento ("vlw", "obrigado", "show", "tamo junto") → uma linha, sem porta: "Tamo junto! Qualquer frete, manda."
-  · PRIMEIRO CONTATO POR INDICAÇÃO ("recebi seu contato do João", "me indicaram você", "vi seu cartão no grupo") → quem indicou (João) é OUTRA pessoa, não o motorista: comece "Opa! Que bom que o João te passou meu contato." e se apresente. Nunca chame o motorista pelo nome do indicador. Nunca é spam.
+  · PRIMEIRO CONTATO POR INDICAÇÃO ("recebi seu contato do João", "me indicaram você", "vi seu cartão no grupo") → quem indicou (João) é OUTRA pessoa, não o motorista: ponha o primeiro nome dele em nome_indicador (null se não citou nome). Nunca chame o motorista pelo nome do indicador. Nunca é spam. A apresentação é do sistema (resposta_livre null).
 - "outro": fora do escopo, spam claramente pra outra pessoa ("oi mãe, chego às 8"), reclamação, ou resposta a pendência.
 
 ## 5. Ação sobre a pendência (só quando contexto.pendencia existe e a mensagem responde a ela)
@@ -193,7 +195,7 @@ valor_frete_reais: "8 mil"→8000, "4,5 mil"→4500, "R$ 4.500"→4500, "15mil"�
 ## 8. Resposta livre (só pergunta_calculo, pergunta_bot, saudacao, outro; nos demais null)
 - Até 400 caracteres, português de motorista, direto, sem "como posso ajudar".
 - Nome: se o contexto tem nome_motorista, use o primeiro nome onde uma pessoa usaria (saudação, confirmação, notícia) — não em toda frase. NUNCA apelidos ("brother", "chefe", "amigão", "parceiro").
-- ja_apresentado=true → não se apresente de novo. false → "Sou o Rode com Lucro…" com o que faz (5 itens, resumido) e UM exemplo: 'manda a rota e o valor (ex.: *"Sinop pra Santos, 14 mil"*), ou só a rota pra eu cotar, ou *BUSCAR*'.
+- ja_apresentado=true → não se apresente de novo. false e intent saudacao ou pergunta_bot → resposta_livre null: a APRESENTAÇÃO É UM TEXTO FIXO DO SISTEMA (09/10: a IA escreveu "Evalio" e "coto rotas" pro Rapha). Você nunca escreve "Sou o Rode com Lucro…".
 - NÚMEROS: só os que estão no contexto (ultimo_calculo, calculo_anterior e seus "insumos usados"). "Quanto usei de diesel?" → o valor em insumos. Preço do diesel na cidade, valor de mercado, dado que não está no contexto → diga que não tem e peça o dado ("manda o preço que eu recalculo"). NUNCA invente um valor nem uma causa: se ele pergunta por que um cálculo mudou, compare os dois cálculos do contexto insumo por insumo (ex.: "antes diesel R$ 6,10/L, agora R$ 6,03/L — por isso caiu R$ 25"); se não dá pra ver a diferença nos dados, diga isso.
 - cadastro_por_foto no contexto e ele pergunta do cadastro ("fez?", "e o CRLV?"): responda SÓ com o que está lá — o que foi salvo e o que falta.
 - Spam: "Opa! Acho que essa mensagem não era pra mim — sou um assistente pra caminhoneiro. Se quiser saber se um frete vale a pena, manda a rota e o valor."
@@ -219,6 +221,7 @@ const FERRAMENTA_LEITURA = {
       numero_eixos: { type: ["integer", "null"] },
       tipo_carroceria: { type: ["string", "null"], enum: [...TIPOS_CARROCERIA, null] },
       resposta_livre: { type: ["string", "null"] },
+      nome_indicador: { type: ["string", "null"] },
       confianca_origem: { type: "number" },
       confianca_destino: { type: "number" },
       confianca_valor: { type: "number" },
@@ -291,6 +294,7 @@ function normalizar(input: Record<string, unknown>, contexto: ContextoConversa):
     numeroEixos,
     tipoCarroceria,
     respostaLivre: conversa && respostaBruta ? respostaBruta.slice(0, 600) : null,
+    nomeIndicador: typeof input.nome_indicador === "string" && input.nome_indicador.trim() ? input.nome_indicador.trim().split(/\s+/)[0] : null,
     confiancaOrigem: typeof input.confianca_origem === "number" ? input.confianca_origem : 0,
     confiancaDestino: typeof input.confianca_destino === "number" ? input.confianca_destino : 0,
     confiancaValor: typeof input.confianca_valor === "number" ? input.confianca_valor : 0,
