@@ -1,6 +1,6 @@
 # Status da sessão — RODE COM LUCRO
 
-> Última atualização: 2026-09-11 — ver "CHECKPOINT — 11/09 (fim de sessão)" no final do arquivo. A sessão anterior (17/07) foi perdida num reset — este arquivo e `sequencia-construcao.md` foram o que permitiu retomar o contexto. Manter este hábito daqui pra frente.
+> Última atualização: 2026-10-09 — ver "CHECKPOINT — 09/10 (fim de sessão, bot v86…)" perto do fim do arquivo (os checkpoints mais novos ficam ACIMA dos antigos a partir de 05/10). A sessão anterior (17/07) foi perdida num reset — este arquivo e `sequencia-construcao.md` foram o que permitiu retomar o contexto. Manter este hábito daqui pra frente.
 
 ## O que já está pronto (confirmado lendo o repo em 04/08)
 
@@ -1625,12 +1625,19 @@ Pedido do Raphael (os links da Entrada apontavam pro nada — caíam em /entrar)
 
 Movendo o slider de margem, o frete mínimo ia de BOM pra ACEITÁVEL e voltava. Causa: ponto flutuante — o valor é calculado pra dar exatamente a margem (custo ÷ (1 − m)) e a margem real conferida dava 65,999999 < 66. Correção: tolerância `margemReal + 1e-9 >= margemDesejada` no motor (`@rode/calc` e `wa-webhook/calc.ts`) e frete mínimo arredondado pra cima no centavo em `Analisar.tsx`. Testes do `@rode/calc` seguem valendo (`npm test` em `packages/rode-calc`).
 
-## CHECKPOINT — 09/10 (fim de sessão, bot v85, app com barra de abas + compartilhar frete)
+## CHECKPOINT — 09/10 (fim de sessão, bot v86, app com barra de abas + compartilhar frete)
 
-**Estado**: wa-webhook **v85** no ar (v74 insumos no contexto, v75 cota por dia de calendário + `busca_lista` + aviso sem pedágio, v76/77 eixos do conjunto + foto = autorização + "Está correto/Corrigir" + `campo_errado` + apresentação fixa, v78 PRO dormente, v84 compartilhar frete, v85 `semPerfil` no caminho da lista). Regressão completa na v81: 30 cenários ✅; rodada 14 (74–78) ✅ (`Docs/testes-bot.md`, 78 cenários). App na Vercel com barra de abas (fases 1 e 2), rótulos "eixos do conjunto", "Só o meu veículo" ligado por padrão, botão "Mandar pra um colega", páginas /termos e /privacidade (placeholders). Piso ANTT na Portaria SUROC 22/2026. Contas do Oscar e do Rapha zeradas pra reteste; roteiro de 9 passos enviado ao Rapha (cálculo, diesel, CNH/CRLV por foto, busca, contato, vlw).
+**Estado**: wa-webhook **v86** no ar (v74 insumos no contexto, v75 cota por dia de calendário + `busca_lista` + aviso sem pedágio, v76/77 eixos do conjunto + foto = autorização + "Está correto/Corrigir" + `campo_errado` + apresentação fixa, v78 PRO dormente, v84 compartilhar frete, v85 `semPerfil` no caminho da lista, v86 um convite só por rodada). Regressão completa na v81: 30 cenários ✅; rodada 14 (74–79) ✅ (`Docs/testes-bot.md`, 79 cenários). App na Vercel com barra de abas (fases 1 e 2), rótulos "eixos do conjunto", "Só o meu veículo" ligado por padrão, botão "Mandar pra um colega", páginas /termos e /privacidade (placeholders). Piso ANTT na Portaria SUROC 22/2026. Contas do Oscar e do Rapha zeradas pra reteste; roteiro de 9 passos enviado ao Rapha (cálculo, diesel, CNH/CRLV por foto, busca, contato, vlw).
+
+**Último ato (09/10, noite)**: print do Emerson mostrou dois convites na mesma rodada (o "Mandar pra um colega" do frete + o cartão genérico "Mandar pro colega"). Corrigido na **v86** (`fretePublicado?.codigo` encerra antes do cartão; cenário 79). Raphael rodou deploy + commit + push ("bot v85/v86…"). Emerson já encaminhou um frete pro grupo "Projeto Portal de transportes" — se alguém tocar no link, aparece em `indicacao`.
 
 **AO RETOMAR**:
-0b. **Compartilhar frete** no ar (bot v85 + app). Fila: aba "Funil viral" no admin lendo `indicacao`; conferir no iPhone a folha de compartilhar do botão "↗ Mandar pra um colega".
+0b. **Compartilhar frete — funciona de ponta a ponta (bot v86 + app)**. O que falta é o *depois*, nesta ordem (combinada com o Raphael em 09/10):
+   1. Print do iPhone do botão "↗ Mandar pra um colega" no app (folha de compartilhar do sistema — só a lógica foi testada).
+   2. Aba **"Funil viral"** no admin lendo `indicacao` (quem compartilhou, quantos colegas entraram, quem indica mais). ~1 h. Hoje só via SQL.
+   3. Avisar quem indicou ("Seu colega entrou pelo seu link") — fora da janela de 24 h exige template aprovado na Meta; só quando houver volume.
+   4. Recompensa por indicação (ex.: dias de PRO) — depende das decisões de pagamento dos sócios.
+   5. Compartilhar cálculo por texto (sem código de frete) — não recomendado agora; o viral forte é o frete real com valor e contato.
 0a. **PRO/Stripe — aguardando os sócios** (tabela `Docs/decisoes-pagamento-2026-10-09.xlsx`). Quando fecharem: ajustar o que mudar (constante `PRO` nos dois lados, preço no Stripe), Raphael cria a conta (modo teste) → 3 segredos → deploy de `stripe-webhook` (--no-verify-jwt) e `assinar` → cenários 70–73 → chaves live. Contador (NFS-e) e `/termos`.
 0. **Google Play** (quando o Raphael avisar que domínio + conta + D-U-N-S chegaram): seguir `Docs/play-store-twa.md` — eu faço `/privacidade`, service worker + Barlow local, `assetlinks.json`, Bubblewrap (package `br.com.rodecomlucro.app`), gráfico 1024×500 e textos da ficha; trocar `URL_APP` nas Edge Functions e links do bot pro domínio novo. Teste interno com os 4 → fechado com a semeadura → produção.
 1. ~~OTP WhatsApp~~ **RESOLVIDO 09/10 16:45**: o modelo `modelo01` não existia na conta; Raphael criou (Autenticação, pt_BR, Copiar código, validade 10 min) e o segredo `WA_TEMPLATE_OTP` foi corrigido de "NOME_EXATO" pra `modelo01`. `identidade_audit`: canal_pedido=whatsapp, canal=whatsapp ✅. SMS também em português (Raphael trocou o template em Supabase → Authentication → Providers → Phone → SMS Message). Login por código fechado nos dois canais.

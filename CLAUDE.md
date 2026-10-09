@@ -112,6 +112,14 @@ Se `@rode/calc` não resolver, apague `node_modules` na raiz, em `apps/web` e em
   Cores só via variáveis CSS no `:root` de `apps/web/src/index.css` — nunca hex solto.
 - Português, direto, sem enrolação.
 
+## Compartilhar frete / indicação (09/10) — no ar (bot v86 + app)
+
+`fretes_publicados.codigo` (5 letras), `motoristas.codigo_indicacao` (6), tabela `indicacao`.
+Bot: botão "Mandar pra um colega" após frete da lista → mensagem com
+`wa.me/<bot>?text=FRETE <cod> #<ref>`; comando `FRETE <cod>` cria a conta, grava a
+indicação e calcula. App: `lib/compartilharFrete.ts`. Próximos passos (ordem combinada)
+no checkpoint 09/10 do `status-sessao.md`, item 0b.
+
 ## Google Play (09/10)
 
 Guia em `Docs/play-store-twa.md` (TWA via Bubblewrap, conta de organização, domínio
