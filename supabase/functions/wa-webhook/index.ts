@@ -48,7 +48,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { calcularFrete, tipoCargaPorCarroceria, fmtBRL, fmtPct, diasPorFaixaKm, definirTabelaANTT, montarTabelaANTT, type Custos, type LinhaTabelaANTT } from "./calc.ts";
 import { extrairFreteDeTexto, EIXOS_PADRAO, TIPOS_VEICULO, type ExtracaoFrete, type TipoCargaBusca, type ContextoConversa, type TipoVeiculoMsg, type TipoCarroceriaMsg, type Pendencia, type Correcoes } from "./extracao.ts";
 import { lerDocumento, bytesParaBase64, normalizarPlaca, normalizarCategoriaCNH, type DadosCNH, type DadosCRLV } from "./documentos.ts";
-import { PRO, ehAssinante, mensagemPro, textoPreco } from "./assinatura.ts";
+import { PRO, assinaturaConfigurada, ehAssinante, mensagemPro, textoPreco } from "./assinatura.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -2528,9 +2528,11 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string, opcoes:
 
   // PRO (09/10): assinante vê até 9 e os publicados há menos de 2 h; grátis vê
   // 3 e só os que já passaram da "primeira mão" — com aviso de quantos perdeu.
-  const assinante = await ehAssinante(motoristaId);
-  const novosSoPro = assinante ? 0 : candidatos.filter((f) => f.primeiraMao).length;
-  const compativeis = (assinante ? candidatos : candidatos.filter((f) => !f.primeiraMao)).slice(0, assinante ? PRO.listaPro : PRO.listaGratis);
+  // Sem o PRO configurado no Stripe, ninguém é limitado (lista de 3 como sempre foi).
+  const semLimite = assinaturaConfigurada() ? await ehAssinante(motoristaId) : false;
+  const planoExiste = assinaturaConfigurada();
+  const novosSoPro = semLimite || !planoExiste ? 0 : candidatos.filter((f) => f.primeiraMao).length;
+  const compativeis = (semLimite || !planoExiste ? candidatos : candidatos.filter((f) => !f.primeiraMao)).slice(0, semLimite ? PRO.listaPro : PRO.listaGratis);
   const precoPro = novosSoPro > 0 ? await textoPreco() : null;
   const avisoPro = novosSoPro > 0 && precoPro ? `\n\n🔒 Mais ${novosSoPro} frete${novosSoPro > 1 ? "s" : ""} publicado${novosSoPro > 1 ? "s" : ""} nas últimas ${PRO.primeiraMaoHoras} h só no *PRO* (${precoPro}). Manda *PRO*.` : "";
 

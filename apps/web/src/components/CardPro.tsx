@@ -8,7 +8,7 @@
 // Se o plano ainda não está configurado no Stripe, o card nem aparece.
 
 import { useEffect, useState } from 'react';
-import { abrirAssinatura, carregarAssinatura, dentroDoAppDaPlay, type EstadoAssinatura } from '../lib/assinatura';
+import { abrirAssinatura, carregarAssinatura, dentroDoAppDaPlay, planoProDisponivel, type EstadoAssinatura } from '../lib/assinatura';
 
 export default function CardPro({ userId }: { userId: string }) {
   const [estado, setEstado] = useState<EstadoAssinatura | null>(null);
@@ -18,7 +18,14 @@ export default function CardPro({ userId }: { userId: string }) {
   const naPlay = dentroDoAppDaPlay();
 
   useEffect(() => {
-    carregarAssinatura(userId).then(setEstado);
+    // Sem o plano configurado no Stripe o card nem aparece.
+    planoProDisponivel().then((ok) => {
+      if (!ok) {
+        setIndisponivel(true);
+        return;
+      }
+      carregarAssinatura(userId).then(setEstado);
+    });
   }, [userId]);
 
   async function abrir(acao: 'checkout' | 'portal') {

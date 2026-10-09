@@ -733,6 +733,12 @@ button:disabled {
   border-color: var(--marca);
 }
 
+/* "Só o meu veículo" ligado por padrão (09/10, Raphael): brilho neon na cor
+   da marca pra ficar claro que é um filtro ATIVO, não um botão qualquer. */
+.chip-neon {
+  box-shadow: 0 0 0 1px var(--marca), 0 0 10px color-mix(in srgb, var(--marca) 65%, transparent);
+}
+
 .frete-valor-topo {
   display: flex;
   align-items: center;

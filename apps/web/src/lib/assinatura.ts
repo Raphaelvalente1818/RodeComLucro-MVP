@@ -37,6 +37,20 @@ export async function carregarAssinatura(userId: string): Promise<EstadoAssinatu
   };
 }
 
+let cacheDisponivel: boolean | null = null;
+
+/** O plano existe (chaves do Stripe configuradas)? Sem ele, nenhum limite do grátis é aplicado. */
+export async function planoProDisponivel(): Promise<boolean> {
+  if (cacheDisponivel != null) return cacheDisponivel;
+  try {
+    const { data, error } = await supabase.functions.invoke('assinar', { body: { acao: 'status' } });
+    cacheDisponivel = !error && data?.disponivel === true;
+  } catch {
+    cacheDisponivel = false;
+  }
+  return cacheDisponivel;
+}
+
 /** Link do Checkout (não assinante) ou do Portal (assinante). Null = plano não configurado. */
 export async function abrirAssinatura(acao: 'checkout' | 'portal' = 'checkout'): Promise<{ url: string } | { disponivel: false } | { erro: string }> {
   const { data, error } = await supabase.functions.invoke('assinar', { body: { acao } });

@@ -54,6 +54,15 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ erro: "metodo" }, 405);
   if (!STRIPE_SECRET_KEY || !STRIPE_PRICE_ID) return json({ disponivel: false, motivo: "nao_configurado" });
 
+  // acao "status": o app pergunta se o plano existe antes de aplicar qualquer limite.
+  let acaoPedida: string | null = null;
+  try {
+    acaoPedida = ((await req.clone().json()) as { acao?: string }).acao ?? null;
+  } catch {
+    // sem corpo
+  }
+  if (acaoPedida === "status") return json({ disponivel: true });
+
   // Usuário do JWT (verify_jwt=true garante que existe).
   const auth = req.headers.get("Authorization") ?? "";
   const userClient = createClient(SUPABASE_URL, ANON_KEY, { global: { headers: { Authorization: auth } }, auth: { persistSession: false } });
