@@ -2730,6 +2730,14 @@ async function tratarRespostaLista(fromE164: string, rowId: string, waMessageId:
     valorFreteReais = frete.valor_frete_centavos / 100;
   }
 
+  // Sem caminhão cadastrado (conta que nasceu num FRETE compartilhado, ou
+  // que só buscou): rodapé honesto ("carreta padrão") e onboarding dos 3
+  // toques, igual ao cálculo por texto (testes-bot #76, 09/10).
+  const { count: perfis } = await supabase
+    .from("caminhao_perfil")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", motorista.id);
+
   await calcularEResponderFrete({
     fromE164,
     motoristaId: motorista.id,
@@ -2740,6 +2748,7 @@ async function tratarRespostaLista(fromE164: string, rowId: string, waMessageId:
     waMessageId,
     texto: `[busca] ${origem} -> ${destino}`,
     extracao: null,
+    semPerfil: (perfis ?? 0) === 0,
     fretePublicado: {
       id: frete.id as string,
       codigo: (frete.codigo as string | null) ?? null,

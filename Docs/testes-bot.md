@@ -189,11 +189,11 @@ Pedido do Raphael ("última de hoje"): compartilhar um frete; o colega, mesmo se
 
 | # | Mensagem | Esperado | Resultado |
 |---|---|---|---|
-| 74 | clique num frete da lista | Depois do cálculo, botão "Mandar pra um colega" | pendente de deploy |
-| 75 | botão Mandar pra um colega | Mensagem pronta (rota · valor · tipos + link wa.me com FRETE <cod> #<ref>) + "👆 Encaminha…" | pendente de deploy |
-| 76 | número NOVO: `FRETE 82PUW #GTDGKY` | "Opa! … um colega te mandou esse frete" + cálculo SBC→Aparecida + convite do caminhão; linha em `indicacao` (indicador = Emerson) | pendente de deploy |
-| 77 | `FRETE ZZZZZ` (não existe) | "Esse frete já foi fechado ou saiu do ar… manda BUSCAR" | pendente de deploy |
-| 78 | mesmo número manda `FRETE …` de novo com outro #ref | Não cria segunda indicação (unique por indicado) | pendente de deploy |
+| 74 | clique num frete da lista | Depois do cálculo, botão "Mandar pra um colega" | ✅ v84 — botão `frete:share:82PUW` |
+| 75 | botão Mandar pra um colega | Mensagem pronta (rota · valor · tipos + link wa.me com FRETE <cod> #<ref>) + "👆 Encaminha…" | ✅ v84 — `wa.me/5511999919971?text=FRETE%2082PUW%20%23P3JP5Y` |
+| 76 | número NOVO: `FRETE 82PUW #GTDGKY` | "Opa! … um colega te mandou esse frete" + cálculo SBC→Aparecida + convite do caminhão; linha em `indicacao` (indicador = Emerson) | ✅ v84 (Opa + cálculo + `indicacao` com indicador Emerson, `indicado_por_codigo=GTDGKY`) — **mas** o rodapé dizia "com base no seu perfil cadastrado no app" e não puxou o onboarding do caminhão: `tratarRespostaLista` nunca passava `semPerfil` (bug antigo do clique na lista). Corrigido e reconfirmado na v85 ✅: rodapé "carreta padrão de 5 eixos — você ainda não cadastrou o seu" + botões Carreta/Bitrem/Truck |
+| 77 | `FRETE ZZZZZ` (não existe) | "Esse frete já foi fechado ou saiu do ar… manda BUSCAR" | ✅ v84 |
+| 78 | mesmo número manda `FRETE …` de novo com outro #ref | Não cria segunda indicação (unique por indicado) | ✅ v84 — `FRETE 82PUW #P3JP5Y` calculou de novo, `indicacao` continua 1 linha (GTDGKY) |
 
 ## Pra acrescentar (próximas rodadas)
 - `Quero sair do abc paulista` logo depois de "de que cidade?" (memória da pergunta).
