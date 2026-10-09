@@ -132,6 +132,7 @@ Linha do tempo (554199871818): cálculo pela lista (SBC → Aparecida de Goiâni
 | # | Mensagem | Esperado | Resultado |
 |---|---|---|---|
 | 55 | 5 respostas livres + 3 "qual cidade?" + 2 cálculos | Cota usada = 2 (só os cálculos) | pendente de deploy |
+| 57 | `manaus pra boa vista 9 mil` (rota sem pedágio no Google) | Resposta traz "não achei o pedágio dessa rota — o custo está SEM pedágio"; na cotação, linha "Pedágio: não disponível" | pendente de deploy (v75) |
 | 56 | Virada da meia-noite (SP) | Contador zera | conferido na função (`inicioDoDiaSaoPaulo`: 11:30Z → 03:00Z do dia; 02:30Z → 03:00Z do dia anterior) ✅ |
 
 ## Pra acrescentar (próximas rodadas)

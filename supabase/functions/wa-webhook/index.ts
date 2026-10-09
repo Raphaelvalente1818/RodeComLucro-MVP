@@ -908,6 +908,9 @@ const LIMITE_CONSULTAS_DIA = 20;
 // Status que representam uma consulta de verdade (entram na cota).
 const STATUS_CONSULTA = ["calculado", "calculado_novo", "recalculado_perfil", "calculado_anonimo", "cotado", "busca_lista"];
 
+/** 09/10: Google só tem tarifa em rodovias cobertas; quando não vem, o custo fica sem pedágio e o motorista precisa saber. */
+const NOTA_SEM_PEDAGIO = "não achei o pedágio dessa rota — o custo acima está SEM pedágio; se souber o valor, soma por fora";
+
 /** Meia-noite de hoje em São Paulo, em ISO UTC — início do "dia" da cota. */
 function inicioDoDiaSaoPaulo(agora = new Date()): string {
   const partes = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).formatToParts(agora);
@@ -1338,7 +1341,7 @@ async function tratarCotacao(fromE164: string, texto: string, waMessageId: strin
   const descVeiculo = veiculo?.tipoVeiculo ? nomeVeiculo(veiculo.tipoVeiculo, perfil.numero_eixos) : temPerfil ? `seu caminhão (${perfil.numero_eixos} eixos)` : `carreta padrão de ${perfil.numero_eixos} eixos`;
   const resposta =
     `📍 ${origem} → ${destino}: *${rota.distanciaKm.toFixed(0)} km*${rota.distanciaEstimada ? " (estimado)" : ""}, ${dias} dia${dias > 1 ? "s" : ""} de viagem${ex.voltaVazia ? ", voltando vazio" : ""}\n` +
-    `Pedágio: ${fmtBRL(d.pedagio)}\n` +
+    `Pedágio: ${rota.pedagioCentavos == null ? "não disponível" : fmtBRL(d.pedagio)}\n` +
     `Diesel: ${fmtBRL(d.diesel)} · Arla: ${fmtBRL(d.arla)}\n` +
     `Manutenção + pneus + depreciação: ${fmtBRL(d.manutencao + d.pneus + d.depreciacao)}\n` +
     `Alimentação/pernoite: ${fmtBRL(d.alimentacao + d.pernoite)}\n` +
@@ -1347,6 +1350,7 @@ async function tratarCotacao(fromE164: string, texto: string, waMessageId: strin
     `💰 Pra ter ${margem.toFixed(0)}% de margem, cobre a partir de *${fmtBRL(valorSugerido)}*` +
     (abaixoPiso ? ` (o piso ANTT manda — é o mínimo legal)` : ` (acima do piso ANTT)`) +
     `\n\n_estimativa com ${descVeiculo}_` +
+    (rota.pedagioCentavos == null ? `\n_${NOTA_SEM_PEDAGIO}_` : "") +
     (custosDitos.nota ? `\n_${custosDitos.nota}_` : "") +
     (notaCidade ? `\n_${notaCidade}_` : "") +
     (veiculo?.nota ? `\n_${veiculo.nota}_` : "") +
@@ -1968,6 +1972,7 @@ async function calcularEResponderFrete(params: {
     `Piso ANTT: ${fmtBRL(resultado.pisoANTT)}${avisoPiso}\n\n` +
     `${emoji} Veredito: ${resultado.veredicto}\n\n` +
     rodape +
+    (rota.pedagioCentavos == null ? `\n_${NOTA_SEM_PEDAGIO}_` : "") +
     (custosDitos.nota ? `\n_${custosDitos.nota}_` : "") +
     (notaCidade ? `\n_${notaCidade}_` : "") +
     (veiculo?.nota ? `\n_${veiculo.nota}_` : "");
