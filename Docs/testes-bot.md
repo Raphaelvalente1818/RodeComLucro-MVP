@@ -196,6 +196,14 @@ Pedido do Raphael ("última de hoje"): compartilhar um frete; o colega, mesmo se
 | 78 | mesmo número manda `FRETE …` de novo com outro #ref | Não cria segunda indicação (unique por indicado) | ✅ v84 — `FRETE 82PUW #P3JP5Y` calculou de novo, `indicacao` continua 1 linha (GTDGKY) |
 | 79 | motorista com perfil clica num frete da lista no 5º cálculo | Só o botão "Mandar pra um colega" (do frete); o cartão genérico "Mandar pro colega" (vCard, a cada 5 cálculos) não sai na mesma rodada | print do Emerson 09/10: saíram os dois → corrigido na v86 (`fretePublicado?.codigo` encerra antes do cartão) |
 
+## Regressão completa — 09/10 (noite), v86 (depois do compartilhar frete)
+
+Números 19 e 20. Reexecutados: 67 (Ola → apresentação fixa), 5 (coruipe/truck), 6 (pedágio), 7 (volta vazia), 17 (18 mil manteve volta vazia), 8 (cotação Carandaí→Piracaia), 9+41 (Bom Jesus → "o do piaui"), 27 (190 o ton → 14 t, cartão viral no 5º cálculo), 28 (Belém capital), 31 (Minas é estado), 22 (spam), 47 (bom dia — retomou o frete de Campinas pendente, bom), 29 (vlw), 52 (diesel dos insumos: 1.218 L a 6,10), 57 (Manaus→Boa Vista sem pedágio), 68 (João da boca), 18→58→59→"então são 6"→"2 e meio"→19→46 (São Bernardo do Campo/SP, 3 fretes), clique na lista (Santo André→Rio das Ostras: cálculo + "Mandar pra um colega" + convite da foto, **sem** o cartão genérico — cenário 79 ✅), 25 (frete picado em 3), 24 (SAIR + volta com Carreta LS), 64/66/65 (leitura pendente: nome → valor → reapresenta; validade; tudo errado). **Todos ✅.**
+
+| # | Mensagem | Problema | Correção |
+|---|---|---|---|
+| 80 | na etapa eixos: `a carreta tem 3` | Funcionou (não gravou, pediu o cavalo), mas a IA discutiu o número dele: "Uma carreta tem normalmente 2 eixos (reboque)" | prompt seção 5: não corrigir nem discutir o número da parte — só perguntar o cavalo e pedir a soma (v87, reconferir) |
+
 ## Pra acrescentar (próximas rodadas)
 - `Quero sair do abc paulista` logo depois de "de que cidade?" (memória da pergunta).
 - `nao esta certo, leu errado` / `validade 23/03/2035` depois de uma leitura (precisa de foto real).
