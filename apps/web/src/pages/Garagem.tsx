@@ -25,6 +25,7 @@ import { carregarPerfil } from '../lib/frete';
 import { contarPendentes } from '../lib/filaOffline';
 import { track } from '../lib/track';
 import { IconePerfil } from '../components/IconesCard';
+import CardPro from '../components/CardPro';
 // PROVISÓRIO — remover esta linha e o bloco marcado abaixo quando os
 // testes de backlog com os sócios acabarem (ver components/BacklogModal.tsx).
 import BacklogModal from '../components/BacklogModal';
@@ -324,6 +325,9 @@ export default function Garagem() {
           Meu Perfil
         </span>
       </button>
+
+      {/* PRO (09/10): some sozinho se o plano não estiver configurado no Stripe. */}
+      {userId && <CardPro userId={userId} />}
 
       {metaReais != null && progresso != null && (
         <div className="meta-lucro">

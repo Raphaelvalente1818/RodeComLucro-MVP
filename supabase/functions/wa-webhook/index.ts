@@ -48,6 +48,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { calcularFrete, tipoCargaPorCarroceria, fmtBRL, fmtPct, diasPorFaixaKm, definirTabelaANTT, montarTabelaANTT, type Custos, type LinhaTabelaANTT } from "./calc.ts";
 import { extrairFreteDeTexto, EIXOS_PADRAO, TIPOS_VEICULO, type ExtracaoFrete, type TipoCargaBusca, type ContextoConversa, type TipoVeiculoMsg, type TipoCarroceriaMsg, type Pendencia, type Correcoes } from "./extracao.ts";
 import { lerDocumento, bytesParaBase64, normalizarPlaca, normalizarCategoriaCNH, type DadosCNH, type DadosCRLV } from "./documentos.ts";
+import { PRO, ehAssinante, mensagemPro, textoPreco } from "./assinatura.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -894,6 +895,8 @@ const RE_SAIR = /^sair$/i;
 // que responde a pergunta de verdade em vez de cuspir o menu.
 const RE_AJUDA = /^(ajuda|help|menu|comandos)\s*[?!.]*$/i;
 const RE_CADASTRO = /^cadastro\s*[?!.]*$/i;
+// 09/10: assinatura PRO (Docs/pagamentos-assinatura.md). Vende pra quem não tem, gerencia pra quem tem.
+const RE_PRO = /^(pro|assinar|assinatura|plano)\s*[?!.]*$/i;
 
 // Cota diária (02/10, decisão do Raphael): 20 consultas por número e por dia.
 // Na 20ª o bot avisa e manda o link do app (abre logado, sem limite); da 21ª
@@ -964,10 +967,21 @@ async function contarConsultasHoje(fromE164: string): Promise<number> {
 async function avisarUltimaConsulta(fromE164: string): Promise<void> {
   const { data: m } = await supabase.from("motoristas").select("id").eq("telefone_e164", fromE164).maybeSingle();
   const link = await linkApp(m?.id ?? null, "/");
+  const preco = await textoPreco();
   await enviarMensagemWhatsapp(
     fromE164,
-    `⚠️ Essa foi sua última consulta de hoje aqui no WhatsApp. No app você faz quantas quiser, sem limite — e já abre logado: ${link}`,
+    `⚠️ Essa foi sua última consulta de hoje aqui no WhatsApp. No app você faz quantas quiser, sem limite — e já abre logado: ${link}` +
+      (preco ? `\n\nOu vira *PRO* (${preco}) e usa o WhatsApp sem limite: manda *PRO*.` : ""),
   );
+}
+
+/** Comando PRO / ASSINAR / PLANO: link do checkout (não assinante) ou do portal (assinante). */
+async function tratarComandoPro(fromE164: string, texto: string, waMessageId: string): Promise<void> {
+  const { id: motoristaId, novo } = await garantirMotorista(fromE164, texto);
+  if (!motoristaId) return;
+  const resposta = await mensagemPro(motoristaId, fromE164, URL_APP);
+  await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao: null, status: "resposta_livre", resultado: { intent: "assinar", resposta } });
+  await enviarMensagemWhatsapp(fromE164, resposta + (novo ? AVISO_CADASTRO : ""));
 }
 
 /**
@@ -1639,6 +1653,12 @@ async function despacharExtracao(fromE164: string, texto: string, waMessageId: s
     return;
   }
 
+  // "quanto custa o pro?", "quero assinar", "como cancelo?" → mesmo fluxo do comando PRO (09/10).
+  if (extracao.intent === "assinar") {
+    await tratarComandoPro(fromE164, texto, waMessageId);
+    return;
+  }
+
   // Cotação: rota sem valor (ou "calcular" que veio sem valor — mesma coisa).
   // Valor (fixo ou por tonelada) presente = cálculo, mesmo que a IA tenha dito "cotar" (08/10: "190 o ton" cotava).
   if (extracao.intent === "cotar" && (extracao.valorFreteReais != null || extracao.valorPorToneladaReais != null) && extracao.origem && extracao.destino) {
@@ -2051,7 +2071,6 @@ async function tratarPedidoCartao(fromE164: string, waMessageId: string): Promis
 // Function não importa de apps/web, mesmo padrão já usado por calc.ts.
 // ---------------------------------------------------------------------
 
-const RAIO_BUSCA_MAX_RESULTADOS = 3;
 const URL_APP = "https://rode-com-lucro-mvp.vercel.app";
 // Mesmo pepper do otp-solicitar/sessao-wa — o hash do token de login usa ele.
 const TELEFONE_PEPPER = Deno.env.get("TELEFONE_PEPPER");
@@ -2468,7 +2487,7 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string, opcoes:
   const { data: fretesRaw, error } = await supabase
     .from("fretes_publicados")
     .select(
-      "id, origem_cidade, origem_uf, origem_lat, origem_lng, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, tipos_veiculo_aceitos, tipos_carroceria_aceitos",
+      "id, origem_cidade, origem_uf, origem_lat, origem_lng, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, tipos_veiculo_aceitos, tipos_carroceria_aceitos, created_at",
     )
     .eq("status", "aberto")
     .order("created_at", { ascending: false })
@@ -2482,7 +2501,7 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string, opcoes:
   }
 
   const carroceriasCarga = tipoCarga ? CARROCERIAS_POR_TIPO_CARGA[tipoCarga] : null;
-  const compativeis = (fretesRaw as Array<Record<string, unknown>>)
+  const candidatos = (fretesRaw as Array<Record<string, unknown>>)
     .filter((f) => {
       const tipos = (f.tipos_veiculo_aceitos as string[] | null) ?? [];
       return tipos.length === 0 || tipos.includes(tipoVeiculo);
@@ -2503,9 +2522,17 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string, opcoes:
       valorACombinar: Boolean(f.valor_a_combinar),
       tipoValor: (f.tipo_valor as "fixo" | "por_tonelada" | null) ?? null,
       distanciaOrigemKm: distanciaKm(origem.lat, origem.lng, f.origem_lat as number, f.origem_lng as number),
+      primeiraMao: Date.now() - new Date(f.created_at as string).getTime() < PRO.primeiraMaoHoras * 60 * 60_000,
     }))
-    .sort((a, b) => a.distanciaOrigemKm - b.distanciaOrigemKm)
-    .slice(0, RAIO_BUSCA_MAX_RESULTADOS);
+    .sort((a, b) => a.distanciaOrigemKm - b.distanciaOrigemKm);
+
+  // PRO (09/10): assinante vê até 9 e os publicados há menos de 2 h; grátis vê
+  // 3 e só os que já passaram da "primeira mão" — com aviso de quantos perdeu.
+  const assinante = await ehAssinante(motoristaId);
+  const novosSoPro = assinante ? 0 : candidatos.filter((f) => f.primeiraMao).length;
+  const compativeis = (assinante ? candidatos : candidatos.filter((f) => !f.primeiraMao)).slice(0, assinante ? PRO.listaPro : PRO.listaGratis);
+  const precoPro = novosSoPro > 0 ? await textoPreco() : null;
+  const avisoPro = novosSoPro > 0 && precoPro ? `\n\n🔒 Mais ${novosSoPro} frete${novosSoPro > 1 ? "s" : ""} publicado${novosSoPro > 1 ? "s" : ""} nas últimas ${PRO.primeiraMaoHoras} h só no *PRO* (${precoPro}). Manda *PRO*.` : "";
 
   const lugar = `${origem.nome}${origem.uf ? `/${origem.uf}` : ""}`;
 
@@ -2514,6 +2541,7 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string, opcoes:
     await enviarMensagemWhatsapp(
       fromE164,
       `${opcoes.prefixo ?? ""}Não achei ${descCarga} pra ${tipoVeiculo} perto de ${lugar} agora. Vou ficando de olho — tenta de novo mais tarde ou veja tudo no app: ${await linkApp(motoristaId, "/buscar-frete")}` +
+        avisoPro +
         avisoNovo,
     );
     return;
@@ -2535,6 +2563,7 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string, opcoes:
   const n = compativeis.length;
   const corpo =
     `${opcoes.prefixo ?? ""}Encontrei ${n} ${n > 1 ? "opções" : "opção"} de ${descCarga} pra ${tipoVeiculo} perto de ${lugar}. Toque numa pra ver se vale a pena:` +
+    avisoPro +
     avisoNovo;
   await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto: textoOriginal, extracao: null, status: "busca_lista", resultado: { origem: lugar, encontrados: n } });
   await enviarListaFretes(fromE164, linhas, corpo);
@@ -3312,8 +3341,11 @@ async function processarPayload(payload: unknown): Promise<Response> {
     }
     await registrarConversa(msg.fromE164, "motorista", msg.texto);
 
-    // Cota diária (ver LIMITE_CONSULTAS_DIA). SAIR passa sempre.
-    const usadas = RE_SAIR.test(msg.texto.trim()) ? 0 : await contarConsultasHoje(msg.fromE164);
+    // Cota diária (ver LIMITE_CONSULTAS_DIA). SAIR passa sempre; PRO não tem cota (09/10).
+    const { data: mCota } = await supabase.from("motoristas").select("id").eq("telefone_e164", msg.fromE164).maybeSingle();
+    const assinante = await ehAssinante(mCota?.id ?? null);
+    // PRO também passa sempre: quem bateu a cota precisa conseguir assinar.
+    const usadas = RE_SAIR.test(msg.texto.trim()) || RE_PRO.test(msg.texto.trim()) || assinante ? 0 : await contarConsultasHoje(msg.fromE164);
     if (usadas >= LIMITE_CONSULTAS_DIA) {
       await registrarTentativaFrete({ waMessageId: msg.waMessageId, motoristaId: null, fromE164: msg.fromE164, texto: msg.texto, extracao: null, status: "limite_diario" });
       // eslint-disable-next-line no-console
@@ -3325,6 +3357,8 @@ async function processarPayload(payload: unknown): Promise<Response> {
       await tratarSair(msg.fromE164, msg.waMessageId);
     } else if (RE_CADASTRO.test(msg.texto.trim())) {
       await tratarComandoCadastro(msg.fromE164, msg.texto, msg.waMessageId);
+    } else if (RE_PRO.test(msg.texto.trim())) {
+      await tratarComandoPro(msg.fromE164, msg.texto, msg.waMessageId);
     } else if (RE_AJUDA.test(msg.texto.trim())) {
       // "ajuda"/"menu" — apresentação fixa, sem IA (conta nasce se for novo).
       const { id, novo } = await garantirMotorista(msg.fromE164, msg.texto);

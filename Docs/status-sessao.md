@@ -1600,11 +1600,16 @@ Textos: `Docs/bot-cadastro-por-foto.md`. Escopo: item 6 da fila (nome da CNH val
 
 **Raphael pediu tudo em 09/10**: domínio, conta Play (organização), D-U-N-S. Vai avisar quando chegar e o domínio estiver na Vercel.
 
+## 09/10 (fim do dia) — Assinatura "Rode com Lucro PRO" (Stripe) — código pronto, falta a conta
+
+Decisão do Raphael: Stripe, sem trial; PRO = fretes ilimitados + primeira mão + WhatsApp sem limite; compra fora do app da Play (política do Google), bot como canal de venda. Tudo em `Docs/pagamentos-assinatura.md` (pesquisa com fontes, decisão, implementação, passo a passo no Stripe). Feito: migration `assinatura_pro` (aplicada), Edge Functions `stripe-webhook` e `assinar`, `wa-webhook/assinatura.ts` + comandos PRO/ASSINAR/PLANO + intent `assinar` + cota só pra grátis + primeira mão na busca (bot v78), app com `CardPro` na Garagem e limite/primeira mão no Buscar. **Falta**: Raphael criar a conta Stripe (modo teste) e gravar `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`; sem elas o bot diz "ainda não disponível" e o card não aparece. Ligar pra valer só depois da semeadura (30–50 usuários ativos).
+
 ## CHECKPOINT — 09/10 (fim de sessão, bot v81, app com barra de abas)
 
 **Estado**: wa-webhook **v81** no ar (v74 insumos no contexto, v75 cota por dia de calendário + `busca_lista` + aviso sem pedágio, v76/77 eixos do conjunto + foto = autorização + "Está correto/Corrigir" + `campo_errado` + apresentação fixa). Regressão completa na v81: 30 cenários ✅ (`Docs/testes-bot.md`, 69 cenários). App na Vercel com barra de abas (fases 1 e 2) e rótulos "eixos do conjunto". Piso ANTT na Portaria SUROC 22/2026. Contas do Oscar e do Rapha zeradas pra reteste; roteiro de 9 passos enviado ao Rapha (cálculo, diesel, CNH/CRLV por foto, busca, contato, vlw).
 
 **AO RETOMAR**:
+0a. **PRO/Stripe**: quando o Raphael criar a conta → gravar os 3 segredos, deploy de `stripe-webhook` (--no-verify-jwt) e `assinar`, testar cenários 70–73, depois trocar pra chaves live. Contador (NFS-e) e `/termos`.
 0. **Google Play** (quando o Raphael avisar que domínio + conta + D-U-N-S chegaram): seguir `Docs/play-store-twa.md` — eu faço `/privacidade`, service worker + Barlow local, `assetlinks.json`, Bubblewrap (package `br.com.rodecomlucro.app`), gráfico 1024×500 e textos da ficha; trocar `URL_APP` nas Edge Functions e links do bot pro domínio novo. Teste interno com os 4 → fechado com a semeadura → produção.
 1. **OTP WhatsApp**: aguardando print do David (nome/idioma/status do modelo na Meta) → `npx supabase@latest secrets set WA_TEMPLATE_OTP=… WA_TEMPLATE_OTP_IDIOMA=…`.
 2. **Decisão aberta**: contato do frete direto no WhatsApp (a) ou só pelo app (b) — print do Emerson "me manda o contato dessa Carfall".

@@ -174,6 +174,15 @@ Números 12–15. Reexecutados: 5 (coruipe/truck), 6 (pedágio), 7 (volta vazia)
 
 Melhoria vista de passagem (fila, não é regressão): "carreta ls 6 eixos faz uns 2 e meio" numa mensagem só, durante o onboarding, só aproveitou o tipo e perguntou eixos e consumo de novo — o onboarding podia pegar os três de uma vez.
 
+## Rodada 13 (09/10, v78 — assinatura PRO)
+
+| # | Mensagem | Esperado | Resultado |
+|---|---|---|---|
+| 70 | `PRO` (sem chaves do Stripe) | "O plano PRO ainda não está disponível — em breve…" | pendente de deploy |
+| 71 | `quanto custa o pro?` | intent assinar → mesma resposta do comando | pendente de deploy |
+| 72 | `PRO` (com chaves de teste) | Preço lido do Stripe + link do Checkout; depois de pagar com 4242…, `PRO` → "Você é PRO, renova em …" + link do portal | aguardando conta Stripe |
+| 73 | busca com fretes publicados há < 2 h, sem PRO | Lista sem eles + "🔒 Mais N … só no PRO" | aguardando frete novo no banco |
+
 ## Pra acrescentar (próximas rodadas)
 - `Quero sair do abc paulista` logo depois de "de que cidade?" (memória da pergunta).
 - `nao esta certo, leu errado` / `validade 23/03/2035` depois de uma leitura (precisa de foto real).

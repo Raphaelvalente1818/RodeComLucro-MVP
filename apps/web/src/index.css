@@ -1028,6 +1028,88 @@ button:disabled {
   padding: 14px;
 }
 
+/* =====================================================================
+   Card "Rode com Lucro PRO" na Garagem (09/10/2026) — components/CardPro.tsx.
+   Amarelo = marca/ação, como manda a paleta: selo e botão em --marca; o
+   fundo do card usa --marca-bg (tênue) pra não brigar com o veredito.
+   ===================================================================== */
+.card-pro {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: var(--marca-bg);
+  border: 1px solid var(--marca-escura);
+  border-radius: var(--r-card);
+  padding: 14px;
+}
+
+.card-pro-ativo {
+  background: var(--surf);
+  border-color: var(--linha);
+}
+
+.card-pro-selo {
+  font-family: var(--fonte-cond);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  background: var(--marca);
+  color: var(--marca-tx);
+  border-radius: 6px;
+  padding: 4px 8px;
+  flex-shrink: 0;
+}
+
+.card-pro-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--txt-2);
+}
+
+.card-pro-corpo b {
+  color: var(--txt);
+  font-size: 15px;
+}
+
+.card-pro-botao {
+  align-self: flex-start;
+  margin-top: 4px;
+  background: var(--marca);
+  color: var(--marca-tx);
+  border: 0;
+  border-radius: var(--r-campo);
+  padding: 10px 16px;
+  font-weight: 700;
+  font-family: inherit;
+}
+
+.card-pro-whats {
+  color: var(--txt-dim);
+  font-size: 13px;
+}
+
+.card-pro-corpo .link-secundario {
+  align-self: flex-start;
+  padding: 0;
+  font-size: 13px;
+}
+
+/* Aviso de fretes escondidos pra quem não é PRO (tela Buscar). */
+.aviso-pro {
+  background: var(--marca-bg);
+  border: 1px solid var(--marca-escura);
+  border-radius: var(--r-card);
+  padding: 10px 12px;
+  color: var(--txt);
+}
+
+.aviso-pro .link-secundario {
+  padding: 0;
+  font-size: inherit;
+}
+
 .card-eyebrow {
   font-size: 10px;
   text-transform: uppercase;

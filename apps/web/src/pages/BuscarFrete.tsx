@@ -16,6 +16,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { PRO, carregarAssinatura, primeiraMao } from '../lib/assinatura';
 import { supabase } from '../lib/supabaseClient';
 import { fmtBRL } from '@rode/calc';
 import type { TipoVeiculo } from '@rode/calc';
@@ -103,6 +104,9 @@ export default function BuscarFrete() {
   const [searchParams] = useSearchParams();
   const freteDestacadoId = searchParams.get('frete');
   const [freteDestacado, setFreteDestacado] = useState<FretePublicado | null>(null);
+  // PRO (09/10): quem não assina vê até PRO.appGratis fretes e nenhum publicado
+  // há menos de PRO.primeiraMaoHoras — mesma regra do bot.
+  const [assinante, setAssinante] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -112,6 +116,7 @@ export default function BuscarFrete() {
         return;
       }
       setUserId(uid);
+      carregarAssinatura(uid).then((a) => setAssinante(a.ativa));
       const [motorista, perfil] = await Promise.all([carregarMotorista(uid), carregarPerfil(uid)]);
       setNomeMotorista(primeiroNome(motorista?.nome));
       setTipoVeiculoPerfil(perfil?.tipo_veiculo ?? null);
@@ -172,7 +177,7 @@ export default function BuscarFrete() {
     });
   }, [destinoUf, soMeuTipo, tipoVeiculoPerfil]);
 
-  const listaExibir = useMemo<FreteComDistancia[]>(() => {
+  const listaCompleta = useMemo<FreteComDistancia[]>(() => {
     const destacado: FreteComDistancia[] = freteDestacado
       ? [
           {
@@ -210,6 +215,16 @@ export default function BuscarFrete() {
     if (!cidadeSelecionada) return [...destacado, ...filtrada];
     return [...destacado, ...[...filtrada].sort((a, b) => (a.distancia ?? 0) - (b.distancia ?? 0))];
   }, [fretes, freteDestacado, cidadeSelecionada, raioKm, relevancia, cargaMaximaPerfil]);
+
+  // Regra PRO aplicada por cima da lista pronta: o destacado (veio do link do
+  // bot) sempre aparece; o resto respeita primeira mão e o limite do grátis.
+  const { listaExibir, novosSoPro, ocultosPro } = useMemo(() => {
+    if (assinante) return { listaExibir: listaCompleta, novosSoPro: 0, ocultosPro: 0 };
+    const semNovos = listaCompleta.filter((f) => f.id === freteDestacado?.id || !primeiraMao(f.createdAt));
+    const novos = listaCompleta.length - semNovos.length;
+    const limitada = semNovos.slice(0, PRO.appGratis);
+    return { listaExibir: limitada, novosSoPro: novos, ocultosPro: semNovos.length - limitada.length };
+  }, [listaCompleta, assinante, freteDestacado]);
 
   const semLocalizacao = cidadeSelecionada
     ? fretes.filter((f) => f.origemLat == null || f.origemLng == null).length
@@ -337,6 +352,15 @@ export default function BuscarFrete() {
       {cidadeSelecionada && semLocalizacao > 0 && (
         <p className="aviso">
           {semLocalizacao} frete(s) sem localização cadastrada não entraram na comparação de distância.
+        </p>
+      )}
+
+      {!assinante && (novosSoPro > 0 || ocultosPro > 0) && (
+        <p className="aviso aviso-pro">
+          🔒 {novosSoPro > 0 ? `${novosSoPro} frete${novosSoPro > 1 ? 's' : ''} publicado${novosSoPro > 1 ? 's' : ''} nas últimas ${PRO.primeiraMaoHoras} h` : ''}
+          {novosSoPro > 0 && ocultosPro > 0 ? ' e ' : ''}
+          {ocultosPro > 0 ? `mais ${ocultosPro} frete${ocultosPro > 1 ? 's' : ''}` : ''} só no <b>PRO</b>.{' '}
+          <button type="button" className="link-secundario" onClick={() => navigate('/')}>Ver o plano</button>
         </p>
       )}
 

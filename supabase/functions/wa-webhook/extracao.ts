@@ -24,7 +24,7 @@ const MODELO = "claude-haiku-4-5";
 // ---------------------------------------------------------------------------
 // Tipos
 // ---------------------------------------------------------------------------
-export type IntentMensagem = "calcular" | "cotar" | "buscar" | "pergunta_calculo" | "pergunta_bot" | "saudacao" | "cadastro" | "outro";
+export type IntentMensagem = "calcular" | "cotar" | "buscar" | "pergunta_calculo" | "pergunta_bot" | "saudacao" | "cadastro" | "assinar" | "outro";
 export type TipoCargaBusca = "container" | "frigorificada" | "granel" | "liquido" | "carga_geral" | "veiculos";
 
 export const TIPOS_VEICULO = [
@@ -166,6 +166,7 @@ Sem acento, abreviado, com erro: "truk", "qnto", "saino", "sto andre", "15mil", 
   Se existe ultima_falha e ele pergunta "por que não conseguiu?": intent "outro", explique o motivo do contexto e peça a correção. Nunca "consegui sim".
 - "cadastro": quer mandar foto/PDF da CNH ou CRLV, preencher/atualizar cadastro ("posso tirar foto da minha cnh?"). resposta_livre null.
 - "pergunta_bot": o que você é/faz, é grátis, como funciona.
+- "assinar": quer o plano pago / PRO, pergunta preço do plano, quer tirar o limite, quer cancelar ou trocar cartão ("quanto custa o pro?", "quero assinar", "como cancelo?"). resposta_livre null — o sistema responde com preço e link.
 - "saudacao": três casos, três respostas:
   · ABERTURA ("oi", "bom dia", "opa", "e aí") de quem já foi apresentado → cumprimenta (com o primeiro nome, se houver) e abre as duas portas numa frase só, SEMPRE com o exemplo e a palavra *BUSCAR*: "Bom dia, Raphael! Quer ver se um frete vale a pena (ex.: *São Bernardo pra Rio, 5.600*) ou buscar carga perto de você (*BUSCAR*)?". Se há algo pendente no contexto (CRLV faltando, cálculo recente), ofereça isso no lugar de uma das portas ("Quer mandar o CRLV agora, ou tem frete pra avaliar?"). Abertura de quem NÃO foi apresentado → apresentação (seção 8).
   · FECHAMENTO/agradecimento ("vlw", "obrigado", "show", "tamo junto") → uma linha, sem porta: "Tamo junto! Qualquer frete, manda."
@@ -207,7 +208,7 @@ const FERRAMENTA_LEITURA = {
   input_schema: {
     type: "object",
     properties: {
-      intent: { type: "string", enum: ["calcular", "cotar", "buscar", "pergunta_calculo", "pergunta_bot", "saudacao", "cadastro", "outro"] },
+      intent: { type: "string", enum: ["calcular", "cotar", "buscar", "pergunta_calculo", "pergunta_bot", "saudacao", "cadastro", "assinar", "outro"] },
       origem: { type: ["string", "null"] },
       destino: { type: ["string", "null"] },
       valor_frete_reais: { type: ["number", "null"] },
@@ -244,7 +245,7 @@ const FERRAMENTA_LEITURA = {
   },
 };
 
-const INTENTS: IntentMensagem[] = ["calcular", "cotar", "buscar", "pergunta_calculo", "pergunta_bot", "saudacao", "cadastro", "outro"];
+const INTENTS: IntentMensagem[] = ["calcular", "cotar", "buscar", "pergunta_calculo", "pergunta_bot", "saudacao", "cadastro", "assinar", "outro"];
 const TIPOS_CARGA: TipoCargaBusca[] = ["container", "frigorificada", "granel", "liquido", "carga_geral", "veiculos"];
 const ACOES: AcaoPendencia[] = ["nenhuma", "escolher", "confirmar", "corrigir", "campo_errado", "reler", "cancelar", "pular_para_crlv", "aceitar", "recusar"];
 
