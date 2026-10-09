@@ -1453,7 +1453,11 @@ async function tratarRespostaOnboarding(fromE164: string, rowId: string, waMessa
       .eq("from_e164", fromE164);
     const sugestao = tipo?.eixosPadrao ?? 5;
     const opcoes = [sugestao - 1, sugestao, sugestao + 1].filter((n) => n >= 2 && n <= 9);
-    await enviarBotoes(fromE164, `${valor}. Quantos eixos?`, opcoes.map((n) => ({ id: `onb_eixos:${n}`, titulo: `${n} eixos` })));
+    // 09/10 (Raphael): "eixos" sem dizer de quê confunde — o motorista pode
+    // responder só os da carreta (3) achando que é a parte de trás. Pedágio e
+    // piso ANTT usam o conjunto inteiro, então a pergunta diz isso.
+    const deQue = tipo?.id === "onb_tipo:Truck" ? "o caminhão" : "o conjunto todo (cavalo + carreta)";
+    await enviarBotoes(fromE164, `${valor}. Quantos eixos tem ${deQue}, contando tudo?`, opcoes.map((n) => ({ id: `onb_eixos:${n}`, titulo: `${n} eixos` })));
     return;
   }
 
@@ -2789,7 +2793,7 @@ function textoConfirmacaoDoc(estado: EstadoCadastroFoto): string {
   if (d.especie === "semirreboque" || d.especie === "reboque") {
     return (
       `🚛 Li no CRLV:\n` +
-      `*Semirreboque:* ${veic}${d.carroceria ? ` ${d.carroceria}` : ""}${ano} · Placa ${d.placa ?? "—"} · ${d.eixos ?? "—"} eixos · ${d.capacidadeT ?? "—"} t\n` +
+      `*Semirreboque:* ${veic}${d.carroceria ? ` ${d.carroceria}` : ""}${ano} · Placa ${d.placa ?? "—"} · ${d.eixos ?? "—"} eixos (só da carreta) · ${d.capacidadeT ?? "—"} t\n` +
       `*Licenciamento:* ${d.exercicio ?? "—"}\n` +
       `Tá certo?`
     );

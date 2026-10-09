@@ -460,7 +460,7 @@ export default function Analisar() {
       {mostrarAvancado && (
         <div className="accordion-custos">
           <label>
-            Número de eixos
+            Eixos do conjunto (cavalo + carreta)
             <input type="number" min={2} max={9} value={numeroEixos} onChange={(e) => setNumeroEixos(Number(e.target.value))} />
           </label>
           {perfil?.tipo_carroceria && (

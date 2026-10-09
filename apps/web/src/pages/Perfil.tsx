@@ -461,7 +461,7 @@ export default function Perfil() {
       </div>
 
       <label>
-        Número de eixos
+        Número de eixos do conjunto (cavalo + carreta, contando tudo)
         <input
           type="number"
           min={2}
@@ -474,7 +474,7 @@ export default function Perfil() {
         />
       </label>
       {form.tipo_carroceria && !eixosEditadoManualmente && (
-        <p className="aviso">Sugerido pela carroceria escolhida — edite se souber o real.</p>
+        <p className="aviso">Sugerido pela carroceria escolhida — edite se souber o real. Pedágio e piso ANTT usam o total de eixos no chão (cavalo + carreta), não só os da carreta.</p>
       )}
 
       <label>

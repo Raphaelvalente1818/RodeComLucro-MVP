@@ -135,6 +135,17 @@ Linha do tempo (554199871818): cálculo pela lista (SBC → Aparecida de Goiâni
 | 57 | `manaus pra boa vista 9 mil` (rota sem pedágio no Google) | Resposta traz "não achei o pedágio dessa rota — o custo está SEM pedágio"; na cotação, linha "Pedágio: não disponível" | ✅ v77 (Manaus→Boa Vista 747 km e cotação Porto Velho→Rio Branco) |
 | 56 | Virada da meia-noite (SP) | Contador zera | conferido na função (`inicioDoDiaSaoPaulo`: 11:30Z → 03:00Z do dia; 02:30Z → 03:00Z do dia anterior) ✅ |
 
+## Rodada 10 (09/10, v76 — eixos são do CONJUNTO)
+
+Pedido do Raphael: "o caminhoneiro pode responder o número de eixos da carreta, pensando na parte de trás" (o Rapha fez isso em 08/10: "só a carreta tem 3 eixos, o conjunto é LS 6"). Mudou: pergunta do onboarding ("Quantos eixos tem o conjunto todo (cavalo + carreta), contando tudo?"; Truck: "o caminhão"), prompt (eixos sempre do conjunto; parte só → null / explica e pede o total), pendência, confirmação do CRLV ("3 eixos (só da carreta)"), rótulos do app (Perfil e Calcular).
+
+| # | Mensagem | Esperado | Resultado |
+|---|---|---|---|
+| 58 | `quero uma carga` → botão Carreta | Pergunta "Quantos eixos tem o conjunto todo (cavalo + carreta), contando tudo?" com 4/5/6 | pendente de deploy |
+| 59 | na etapa eixos: `a carreta tem 3` | Não grava 3; explica que conta tudo junto (LS 6, simples 5, bitrem 7) e pede o total | pendente de deploy |
+| 60 | `só a carreta ou o conjunto todo?` | Mesma explicação, sem gravar | pendente de deploy |
+| 61 | `sp pro rio 4500 carreta ls 6 eixos` | numero_eixos 6 | pendente de deploy |
+
 ## Pra acrescentar (próximas rodadas)
 - `Quero sair do abc paulista` logo depois de "de que cidade?" (memória da pergunta).
 - `nao esta certo, leu errado` / `validade 23/03/2035` depois de uma leitura (precisa de foto real).

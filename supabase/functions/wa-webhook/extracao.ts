@@ -171,7 +171,7 @@ Sem acento, abreviado, com erro: "truk", "qnto", "saino", "sto andre", "15mil", 
 - "outro": fora do escopo, spam claramente pra outra pessoa ("oi mãe, chego às 8"), reclamação, ou resposta a pendência.
 
 ## 5. Ação sobre a pendência (só quando contexto.pendencia existe e a mensagem responde a ela)
-- onboarding_caminhao: ele responde o tipo/eixos/consumo em texto ("carreta", "6", "uns 2 e meio", "faz 2,3") → acao "escolher", opcao_escolhida = o valor normalizado (tipo exato da lista; eixos como "6"; consumo como "2.5").
+- onboarding_caminhao: ele responde o tipo/eixos/consumo em texto ("carreta", "6", "uns 2 e meio", "faz 2,3") → acao "escolher", opcao_escolhida = o valor normalizado (tipo exato da lista; eixos como "6"; consumo como "2.5"). Na etapa eixos, o número é do CONJUNTO (cavalo + carreta): se ele responder só de uma parte ("a carreta tem 3", "o cavalo é 3 eixos") ou perguntar "só a carreta ou o conjunto?", acao "nenhuma", intent "outro" e resposta_livre explicando em uma linha: conta tudo junto, cavalo + carreta (uma LS costuma dar 6, carreta simples 5, bitrem 7), e pede o total.
 - cidade_em_duvida / busca_origem: ele escolhe um candidato ou escreve outra cidade → "escolher", opcao_escolhida = o candidato exato (Nome/UF) ou a cidade como ele escreveu.
 - consentimento_documento: "pode", "bora", "sim", "manda" → "aceitar"; "não", "depois", "agora não" → "recusar".
 - confirmar_leitura (o bot mostrou o que leu da CNH/CRLV — valores em contexto.pendencia.leitura):
@@ -184,7 +184,7 @@ Sem acento, abreviado, com erro: "truk", "qnto", "saino", "sto andre", "15mil", 
 - aguardando_foto não tem ação: se ele diz "já mandei" e o contexto mostra que nada foi lido, intent "outro" com resposta "Não chegou nada que desse pra ler — manda de novo, foto ou PDF". Nunca diga que já fez um cadastro que o contexto mostra como não feito; nunca diga que não lê documento.
 
 ## 6. Caminhão na mensagem (qualquer intent)
-tipo_veiculo com UM valor exato: Carreta, Carreta LS, Vanderléia, Carreta 4º eixo, Bitrem 7 eixos, Bitrem 9 eixos, Rodotrem, Truck, BiTruck, Fiorino, VLC, 3/4, Toco. Sinônimos: "LS"=Carreta LS; "bitrem"=Bitrem 7 eixos (9 se disser); "truck"/"truk"/"truque"=Truck; "bitruck"=BiTruck; "cavalo"/"carreta"/"semi-reboque"=Carreta. numero_eixos só se ele disser. tipo_carroceria com UM valor exato da lista: Graneleiro, Grade baixa, Prancha, Caçamba, Plataforma, Sider, Baú, Baú Frigorífico, Baú Refrigerado, Silo, Cegonheiro, Gaiola, Tanque, Bug Porta Container, Munk, Apenas Cavalo, Cavaqueira, Hoper. "palete" não é carroceria. Sem menção = null.
+tipo_veiculo com UM valor exato: Carreta, Carreta LS, Vanderléia, Carreta 4º eixo, Bitrem 7 eixos, Bitrem 9 eixos, Rodotrem, Truck, BiTruck, Fiorino, VLC, 3/4, Toco. Sinônimos: "LS"=Carreta LS; "bitrem"=Bitrem 7 eixos (9 se disser); "truck"/"truk"/"truque"=Truck; "bitruck"=BiTruck; "cavalo"/"carreta"/"semi-reboque"=Carreta. numero_eixos só se ele disser, e SEMPRE do CONJUNTO inteiro (cavalo + carreta): "LS 6 eixos"→6. Se ele disser os eixos só de uma parte ("a carreta tem 3 eixos", "cavalo 3 eixos") ou mostrar dúvida ("só a carreta ou o conjunto?"), numero_eixos null. tipo_carroceria com UM valor exato da lista: Graneleiro, Grade baixa, Prancha, Caçamba, Plataforma, Sider, Baú, Baú Frigorífico, Baú Refrigerado, Silo, Cegonheiro, Gaiola, Tanque, Bug Porta Container, Munk, Apenas Cavalo, Cavaqueira, Hoper. "palete" não é carroceria. Sem menção = null.
 
 ## 7. Valores
 valor_frete_reais: "8 mil"→8000, "4,5 mil"→4500, "R$ 4.500"→4500, "15mil"→15000. Valor POR TONELADA ("180 a tonelada", "180/t", "180 o ton") → valor_por_tonelada_reais, valor_frete_reais null. Tonelagem dita ("32 ton", "vou com 30 toneladas", ou só "37" quando o bot perguntou toneladas) → toneladas. volta_vazia true SÓ se disser que volta vazio. Preço do diesel dito ("diesel a 6,50", "óleo tá 7", "com diesel a 15,00") → diesel_preco_litro (reais por litro). Consumo dito ("faz 2,3 por litro", "2,5 km/l") → consumo_km_por_litro. "E se o diesel for 7?" / "com diesel a 6,50" sobre o último cálculo = RECÁLCULO: intent calcular, rota e valor do ultimo_calculo, diesel_preco_litro novo, resposta_livre null. confianca_* 0..1 (0 em busca/pergunta/outro).
@@ -306,7 +306,7 @@ function fmtBRL(v: number): string {
 function descreverPendencia(p: Pendencia): string {
   switch (p.tipo) {
     case "onboarding_caminhao":
-      return `pendencia=onboarding_caminhao etapa=${p.etapa} (o bot perguntou ${p.etapa === "tipo" ? "o tipo do caminhão" : p.etapa === "eixos" ? "quantos eixos" : "quantos km por litro"}; opções: ${p.opcoes.join(" | ")})`;
+      return `pendencia=onboarding_caminhao etapa=${p.etapa} (o bot perguntou ${p.etapa === "tipo" ? "o tipo do caminhão" : p.etapa === "eixos" ? "quantos eixos tem o CONJUNTO todo, cavalo + carreta" : "quantos km por litro"}; opções: ${p.opcoes.join(" | ")})`;
     case "cidade_em_duvida":
       return `pendencia=cidade_em_duvida campo=${p.campo} escrito="${p.texto}" candidatos: ${p.candidatos.join(" | ")} (o bot perguntou qual é)`;
     case "busca_origem":
