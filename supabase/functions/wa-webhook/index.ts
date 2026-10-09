@@ -2046,6 +2046,10 @@ async function calcularEResponderFrete(params: {
   // convite, não manda o cartão viral na mesma rodada.
   if (!anonimo && motoristaId && (await convidarCadastroPorFoto(fromE164, motoristaId, waMessageId))) return;
 
+  // Frete da lista já saiu com "Mandar pra um colega" (compartilhar o frete)
+  // — não empilhar o cartão genérico em cima (print do Emerson, 09/10).
+  if (fretePublicado?.codigo) return;
+
   if (!anonimo && motoristaId && (recalculoDe != null || (await contarCalculos(motoristaId)) % 5 === 0)) {
     await enviarBotoes(fromE164, "Conhece alguém que ia gostar de saber se o frete vale a pena?", [
       { id: "viral:cartao", titulo: "Mandar pro colega" },

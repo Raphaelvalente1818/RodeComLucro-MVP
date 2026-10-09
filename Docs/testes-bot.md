@@ -194,6 +194,7 @@ Pedido do Raphael ("última de hoje"): compartilhar um frete; o colega, mesmo se
 | 76 | número NOVO: `FRETE 82PUW #GTDGKY` | "Opa! … um colega te mandou esse frete" + cálculo SBC→Aparecida + convite do caminhão; linha em `indicacao` (indicador = Emerson) | ✅ v84 (Opa + cálculo + `indicacao` com indicador Emerson, `indicado_por_codigo=GTDGKY`) — **mas** o rodapé dizia "com base no seu perfil cadastrado no app" e não puxou o onboarding do caminhão: `tratarRespostaLista` nunca passava `semPerfil` (bug antigo do clique na lista). Corrigido e reconfirmado na v85 ✅: rodapé "carreta padrão de 5 eixos — você ainda não cadastrou o seu" + botões Carreta/Bitrem/Truck |
 | 77 | `FRETE ZZZZZ` (não existe) | "Esse frete já foi fechado ou saiu do ar… manda BUSCAR" | ✅ v84 |
 | 78 | mesmo número manda `FRETE …` de novo com outro #ref | Não cria segunda indicação (unique por indicado) | ✅ v84 — `FRETE 82PUW #P3JP5Y` calculou de novo, `indicacao` continua 1 linha (GTDGKY) |
+| 79 | motorista com perfil clica num frete da lista no 5º cálculo | Só o botão "Mandar pra um colega" (do frete); o cartão genérico "Mandar pro colega" (vCard, a cada 5 cálculos) não sai na mesma rodada | print do Emerson 09/10: saíram os dois → corrigido na v86 (`fretePublicado?.codigo` encerra antes do cartão) |
 
 ## Pra acrescentar (próximas rodadas)
 - `Quero sair do abc paulista` logo depois de "de que cidade?" (memória da pergunta).
