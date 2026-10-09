@@ -118,6 +118,14 @@ Guia em `Docs/play-store-twa.md` (TWA via Bubblewrap, conta de organização, do
 próprio + `assetlinks.json`, service worker). Raphael pediu domínio/conta/D-U-N-S em
 09/10; retomar quando ele avisar.
 
+## Assinatura PRO / Stripe (09/10) — parado por decisão dos sócios
+
+Código pronto e dormente (migration aplicada; `stripe-webhook`, `assinar`,
+`wa-webhook/assinatura.ts`, `CardPro`). Sem `STRIPE_SECRET_KEY`/`STRIPE_PRICE_ID`/
+`STRIPE_WEBHOOK_SECRET` nada aparece. Não deployar as duas functions novas nem abrir a
+conta Stripe antes de os sócios fecharem `Docs/decisoes-pagamento-2026-10-09.xlsx`.
+Detalhes e passo a passo: `Docs/pagamentos-assinatura.md`.
+
 ## Pendências abertas (ver checkpoint pra ordem)
 
 Testes da v47 (conversa livre) e v48 (OTP WhatsApp + link mágico) com o David e o Rapha;
