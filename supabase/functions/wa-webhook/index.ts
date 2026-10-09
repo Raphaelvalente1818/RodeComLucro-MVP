@@ -984,9 +984,12 @@ async function tratarConversaLivre(fromE164: string, texto: string, waMessageId:
   // fixo; se ele chegou por indicação, o código agradece a quem indicou.
   const primeiraVez = !jaApresentado && (extracao?.intent === "saudacao" || extracao?.intent === "pergunta_bot" || !extracao?.respostaLivre);
   const agradecimento = extracao?.nomeIndicador ? `Opa! Que bom que ${extracao.nomeIndicador} te passou meu contato. ` : "";
+  // Já apresentado e a IA ficou sem resposta: uma linha com as portas, não a
+  // apresentação inteira de novo.
+  const semResposta = `Não peguei. Manda a rota e o valor (ex.: *"Sinop pra Santos, 14 mil"*), só a rota pra eu cotar, ou *BUSCAR*.`;
   const corpo = primeiraVez
     ? agradecimento + mensagemApresentacao(Boolean(motoristaId) && !novo).replace(/^Opa! /, agradecimento ? "" : "Opa! ")
-    : (extracao?.respostaLivre ?? mensagemApresentacao(Boolean(motoristaId) && !novo));
+    : (extracao?.respostaLivre ?? (jaApresentado ? semResposta : mensagemApresentacao(Boolean(motoristaId) && !novo)));
   const resposta = novo && motoristaId ? corpo + AVISO_CADASTRO : corpo;
   await registrarTentativaFrete({
     waMessageId,
@@ -1591,7 +1594,7 @@ async function tratarPedidoDeCalculo(fromE164: string, texto: string, waMessageI
   if (!extracao) {
     // Sem chave da IA ou a chamada falhou: nunca silêncio — apresentação
     // fixa (e a conta nasce do mesmo jeito, é a primeira mensagem dele).
-    await tratarConversaLivre(fromE164, texto, waMessageId, null);
+    await tratarConversaLivre(fromE164, texto, waMessageId, null, "resposta_livre", contexto.jaApresentado);
     return;
   }
   await despacharExtracao(fromE164, texto, waMessageId, extracao, contexto.pendencia, contexto.jaApresentado);

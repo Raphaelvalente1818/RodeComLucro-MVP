@@ -246,7 +246,7 @@ const FERRAMENTA_LEITURA = {
 
 const INTENTS: IntentMensagem[] = ["calcular", "cotar", "buscar", "pergunta_calculo", "pergunta_bot", "saudacao", "cadastro", "outro"];
 const TIPOS_CARGA: TipoCargaBusca[] = ["container", "frigorificada", "granel", "liquido", "carga_geral", "veiculos"];
-const ACOES: AcaoPendencia[] = ["nenhuma", "escolher", "confirmar", "corrigir", "reler", "cancelar", "pular_para_crlv", "aceitar", "recusar"];
+const ACOES: AcaoPendencia[] = ["nenhuma", "escolher", "confirmar", "corrigir", "campo_errado", "reler", "cancelar", "pular_para_crlv", "aceitar", "recusar"];
 
 function normalizar(input: Record<string, unknown>, contexto: ContextoConversa): ExtracaoFrete {
   let intent = INTENTS.includes(input.intent as IntentMensagem) ? (input.intent as IntentMensagem) : "outro";
