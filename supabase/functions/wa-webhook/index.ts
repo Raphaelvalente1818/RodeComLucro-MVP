@@ -154,7 +154,8 @@ async function registrarEventoAnalytics(
     | "wa_first_contact"
     | "truck_profile_saved"
     | "driver_profile_saved"
-    | "referral_shared",
+    | "referral_shared"
+    | "referral_converted",
   actorId: string | null,
   props: Record<string, unknown>,
 ): Promise<void> {
@@ -220,6 +221,7 @@ function rotuloBotao(rowId: string): string {
   if (rowId.startsWith("cidade:")) return rowId.split(":").slice(2).join(":");
   if (rowId.startsWith("busca:origem:")) { const v = rowId.split(":").slice(3).join(":"); return v === "?" ? "Outra cidade" : v; }
   if (rowId.startsWith("perfil:salvar:")) return "Salvar esse caminhão";
+  if (rowId.startsWith("frete:share:")) return "Mandar pra um colega";
   return "um frete da lista";
 }
 
@@ -897,6 +899,8 @@ const RE_AJUDA = /^(ajuda|help|menu|comandos)\s*[?!.]*$/i;
 const RE_CADASTRO = /^cadastro\s*[?!.]*$/i;
 // 09/10: assinatura PRO (Docs/pagamentos-assinatura.md). Vende pra quem não tem, gerencia pra quem tem.
 const RE_PRO = /^(pro|assinar|assinatura|plano)\s*[?!.]*$/i;
+// 09/10: link compartilhado — "FRETE 82PUW #GTDGKY" (código do frete + quem indicou).
+const RE_FRETE_CODIGO = /^frete\s+([a-z0-9]{5})\b/i;
 
 // Cota diária (02/10, decisão do Raphael): 20 consultas por número e por dia.
 // Na 20ª o bot avisa e manda o link do app (abre logado, sem limite); da 21ª
@@ -1834,7 +1838,7 @@ async function calcularEResponderFrete(params: {
   /** Recalculando o mesmo frete depois do onboarding: lucro da estimativa genérica, pra mostrar a diferença. */
   recalculoDe?: number | null;
   /** Veio de um frete publicado (clique na lista): vai pro histórico com empresa/contato e o link do app destaca esse frete. */
-  fretePublicado?: { id: string; empresaNome: string | null; contatoNome: string | null; contatoTelefone: string | null } | null;
+  fretePublicado?: { id: string; codigo: string | null; empresaNome: string | null; contatoNome: string | null; contatoTelefone: string | null } | null;
   /** Caminhão dito na mensagem (resolverVeiculoDaMensagem): sobrepõe eixos/carroceria do perfil nesse cálculo. */
   veiculo?: VeiculoDaMensagem | null;
   /** "entendi 'coruipe' como Coruripe/AL" — corrigirCidades (03/10). */
@@ -2013,6 +2017,13 @@ async function calcularEResponderFrete(params: {
 
   await enviarMensagemWhatsapp(fromE164, resposta);
 
+  // Compartilhar frete (09/10): frete que veio da lista ganha o botão "Mandar
+  // pra um colega" — o colega toca no link, cai no nosso WhatsApp com
+  // "FRETE <código> #<quem indicou>" preenchido e recebe o cálculo.
+  if (fretePublicado?.codigo && motoristaId) {
+    await enviarBotoes(fromE164, "Conhece um colega que ia querer esse frete?", [{ id: `frete:share:${fretePublicado.codigo}`, titulo: "Mandar pra um colega" }]);
+  }
+
   // Caminhão da mensagem difere do cadastrado: oferece salvar (um toque).
   if (veiculo?.botaoSalvar) {
     await enviarBotoes(fromE164, "Quer que eu use esse caminhão nos próximos cálculos?", [veiculo.botaoSalvar]);
@@ -2059,6 +2070,73 @@ async function tratarPedidoCartao(fromE164: string, waMessageId: string): Promis
   const link = NUMERO_OFICIAL_WA && codigo ? `\n\nOu manda esse link num grupo: https://wa.me/${NUMERO_OFICIAL_WA}?text=${encodeURIComponent(`Calcula um frete pra mim #${codigo}`)}` : "";
   await enviarMensagemWhatsapp(fromE164, `👆 Encaminha esse contato pro colega. Ele salva e já manda a rota e o valor.${link}`);
   if (m) await registrarEventoAnalytics("referral_shared", m.id, { via: "cartao", wa_message_id: waMessageId });
+}
+
+// ---------------------------------------------------------------------
+// Compartilhar frete com um colega (09/10/2026, pedido do Raphael).
+// Quem compartilha recebe uma mensagem pronta pra encaminhar; o colega toca
+// no link wa.me já com "FRETE <código> #<indicador>" e cai em
+// tratarFreteCompartilhado: conta nasce (número já é o cadastro), indicação
+// registrada, frete calculado pelo mesmo caminho do clique na lista.
+// ---------------------------------------------------------------------
+
+/** Botão "Mandar pra um colega": mensagem pronta pra encaminhar + instrução. */
+async function tratarCompartilharFrete(fromE164: string, codigoFrete: string, waMessageId: string): Promise<void> {
+  const { data: m } = await supabase.from("motoristas").select("id, codigo_indicacao").eq("telefone_e164", fromE164).maybeSingle();
+  const { data: frete } = await supabase
+    .from("fretes_publicados")
+    .select("id, codigo, status, origem_cidade, origem_uf, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, tipos_veiculo_aceitos")
+    .eq("codigo", codigoFrete.toUpperCase())
+    .maybeSingle();
+  if (!frete || frete.status !== "aberto") {
+    await enviarMensagemWhatsapp(fromE164, "Esse frete não está mais disponível pra compartilhar.");
+    return;
+  }
+  if (!NUMERO_OFICIAL_WA) {
+    await enviarMensagemWhatsapp(fromE164, "Não consegui montar o link agora. Tenta de novo em instantes.");
+    return;
+  }
+  const ref = m?.codigo_indicacao ? ` #${m.codigo_indicacao}` : "";
+  const link = `https://wa.me/${NUMERO_OFICIAL_WA}?text=${encodeURIComponent(`FRETE ${frete.codigo}${ref}`)}`;
+  const tipos = ((frete.tipos_veiculo_aceitos as string[] | null) ?? []).slice(0, 3).join(", ");
+  const mensagemPronta =
+    `📦 *${frete.origem_cidade}/${frete.origem_uf} → ${frete.destino_cidade}/${frete.destino_uf}* · ${textoValorCurto(Boolean(frete.valor_a_combinar), frete.valor_frete_centavos as number | null, frete.tipo_valor as string | null)}` +
+    (tipos ? ` · ${tipos}` : "") +
+    `\nVê se esse frete vale a pena pro seu caminhão 👉 ${link}` +
+    `\n_Rode com Lucro: custo real, lucro e piso ANTT na hora, de graça._`;
+  await enviarMensagemWhatsapp(fromE164, mensagemPronta);
+  await enviarMensagemWhatsapp(fromE164, "👆 Encaminha essa mensagem pro colega. Quando ele tocar no link, eu mostro o frete já calculado pra ele.");
+  if (m) await registrarEventoAnalytics("referral_shared", m.id, { via: "frete", frete_id: frete.id, wa_message_id: waMessageId });
+}
+
+/** "FRETE 82PUW #GTDGKY": o colega chegou pelo link. */
+async function tratarFreteCompartilhado(fromE164: string, texto: string, waMessageId: string): Promise<void> {
+  const codigoFrete = texto.trim().match(RE_FRETE_CODIGO)![1].toUpperCase();
+  const { id: motoristaId, novo } = await garantirMotorista(fromE164, texto); // extrai o #indicador se for conta nova
+  if (!motoristaId) return;
+  const ref = extrairCodigoIndicacao(texto);
+  const { data: frete } = await supabase.from("fretes_publicados").select("id, status").eq("codigo", codigoFrete).maybeSingle();
+
+  // Indicação: só na primeira vez que o número aparece, e nunca de si mesmo.
+  if (novo && ref) {
+    const { data: indicador } = await supabase.from("motoristas").select("id").eq("codigo_indicacao", ref).maybeSingle();
+    if (indicador && indicador.id !== motoristaId) {
+      await supabase.from("indicacao").insert({ indicador_id: indicador.id, indicador_codigo: ref, indicado_id: motoristaId, frete_id: frete?.id ?? null, origem: "frete" });
+      await registrarEventoAnalytics("referral_converted", indicador.id, { indicado_id: motoristaId, via: "frete", frete_id: frete?.id ?? null });
+    }
+  }
+
+  if (!frete || frete.status !== "aberto") {
+    await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao: null, status: "busca_sem_resultado", resultado: { motivo: "frete_compartilhado_indisponivel", codigo: codigoFrete } });
+    await enviarMensagemWhatsapp(
+      fromE164,
+      `Esse frete já foi fechado ou saiu do ar. Mas tenho outros: manda *BUSCAR* que eu mostro cargas perto de você.` + (novo ? AVISO_CADASTRO : ""),
+    );
+    return;
+  }
+  if (novo) await enviarMensagemWhatsapp(fromE164, `Opa! Sou o Rode com Lucro 🚛 — um colega te mandou esse frete. Calculando pro seu caminhão…${AVISO_CADASTRO}`);
+  // Mesmo caminho do clique na lista: calcula, mostra contato, convida pro caminhão/cadastro.
+  await tratarRespostaLista(fromE164, frete.id as string, waMessageId);
 }
 
 // ---------------------------------------------------------------------
@@ -2609,7 +2687,7 @@ async function tratarRespostaLista(fromE164: string, rowId: string, waMessageId:
 
   const { data: frete } = await supabase
     .from("fretes_publicados")
-    .select("id, origem_cidade, origem_uf, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, status, empresa_nome, contato_nome, contato_telefone")
+    .select("id, codigo, origem_cidade, origem_uf, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, status, empresa_nome, contato_nome, contato_telefone")
     .eq("id", rowId)
     .maybeSingle();
 
@@ -2664,6 +2742,7 @@ async function tratarRespostaLista(fromE164: string, rowId: string, waMessageId:
     extracao: null,
     fretePublicado: {
       id: frete.id as string,
+      codigo: (frete.codigo as string | null) ?? null,
       empresaNome: (frete.empresa_nome as string | null) ?? null,
       contatoNome: (frete.contato_nome as string | null) ?? null,
       contatoTelefone: (frete.contato_telefone as string | null) ?? null,
@@ -3361,6 +3440,8 @@ async function processarPayload(payload: unknown): Promise<Response> {
       await tratarComandoCadastro(msg.fromE164, msg.texto, msg.waMessageId);
     } else if (RE_PRO.test(msg.texto.trim())) {
       await tratarComandoPro(msg.fromE164, msg.texto, msg.waMessageId);
+    } else if (RE_FRETE_CODIGO.test(msg.texto.trim())) {
+      await tratarFreteCompartilhado(msg.fromE164, msg.texto, msg.waMessageId);
     } else if (RE_AJUDA.test(msg.texto.trim())) {
       // "ajuda"/"menu" — apresentação fixa, sem IA (conta nasce se for novo).
       const { id, novo } = await garantirMotorista(msg.fromE164, msg.texto);
@@ -3417,6 +3498,8 @@ async function processarPayload(payload: unknown): Promise<Response> {
       await tratarRespostaOnboarding(it.fromE164, it.rowId, it.waMessageId);
     } else if (it.rowId === "viral:cartao") {
       await tratarPedidoCartao(it.fromE164, it.waMessageId);
+    } else if (it.rowId.startsWith("frete:share:")) {
+      await tratarCompartilharFrete(it.fromE164, it.rowId.slice("frete:share:".length), it.waMessageId);
     } else if (it.rowId.startsWith("cidade:")) {
       await tratarEscolhaCidade(it.fromE164, it.rowId, it.waMessageId);
     } else if (it.rowId.startsWith("doc:")) {

@@ -31,6 +31,8 @@ export interface FretePublicado {
   tiposCarroceriaAceitos: TipoCarroceria[];
   status: string;
   createdAt: string;
+  /** Código curto (5 letras) pro link de compartilhar — "FRETE 82PUW" no WhatsApp (09/10). */
+  codigo: string | null;
 }
 
 export interface FiltrosFrete {
@@ -40,7 +42,7 @@ export interface FiltrosFrete {
 }
 
 const COLUNAS_FRETE =
-  'id, empresa_nome, contato_nome, contato_telefone, origem_cidade, origem_uf, origem_lat, origem_lng, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, tipos_veiculo_aceitos, tipos_carroceria_aceitos, status, created_at';
+  'id, codigo, empresa_nome, contato_nome, contato_telefone, origem_cidade, origem_uf, origem_lat, origem_lng, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, tipos_veiculo_aceitos, tipos_carroceria_aceitos, status, created_at';
 
 function mapFretePublicado(r: Record<string, unknown>): FretePublicado {
   return {
@@ -61,6 +63,7 @@ function mapFretePublicado(r: Record<string, unknown>): FretePublicado {
     tiposCarroceriaAceitos: (r.tipos_carroceria_aceitos as TipoCarroceria[] | null) ?? [],
     status: r.status as string,
     createdAt: r.created_at as string,
+    codigo: (r.codigo as string | null) ?? null,
   };
 }
 
@@ -71,7 +74,9 @@ function mapFretePublicado(r: Record<string, unknown>): FretePublicado {
  * ou não está mais aberto.
  */
 export async function carregarFretePorId(id: string): Promise<FretePublicado | null> {
-  const { data, error } = await supabase.from('fretes_publicados').select(COLUNAS_FRETE).eq('id', id).maybeSingle();
+  // Aceita o uuid (link do bot) ou o código curto de 5 letras (link compartilhado, 09/10).
+  const porCodigo = /^[A-Z0-9]{5}$/i.test(id);
+  const { data, error } = await supabase.from('fretes_publicados').select(COLUNAS_FRETE).eq(porCodigo ? 'codigo' : 'id', porCodigo ? id.toUpperCase() : id).maybeSingle();
   if (error || !data) return null;
   return mapFretePublicado(data as Record<string, unknown>);
 }

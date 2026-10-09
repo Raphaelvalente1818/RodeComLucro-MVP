@@ -28,6 +28,8 @@ import { gravarOuEnfileirar, registrarExecutor } from './filaOffline';
 export interface Motorista {
   id: string;
   nome: string | null;
+  /** Código de indicação (6 letras) — vai no link compartilhado como #CODIGO (09/10). */
+  codigo_indicacao: string | null;
   uf_base: string | null;
   /** Cidade do endereço base (onde mora) — par de uf_base, com coordenadas pra poder ser usada como origem de busca. */
   cidade_base: string | null;
@@ -81,7 +83,7 @@ export async function carregarMotorista(userId: string): Promise<Motorista | nul
   const { data, error } = await supabase
     .from('motoristas')
     .select(
-      'id, nome, uf_base, cidade_base, cidade_base_lat, cidade_base_lng, meta_alvo_centavos, media_lucro_frete_centavos, canal_wa_ativo, telefone_verificado, cnh_numero, cnh_vencimento, exame_toxicologico_vencimento, cidade_atual, uf_atual, cidade_atual_lat, cidade_atual_lng',
+      'id, nome, codigo_indicacao, uf_base, cidade_base, cidade_base_lat, cidade_base_lng, meta_alvo_centavos, media_lucro_frete_centavos, canal_wa_ativo, telefone_verificado, cnh_numero, cnh_vencimento, exame_toxicologico_vencimento, cidade_atual, uf_atual, cidade_atual_lat, cidade_atual_lng',
     )
     .eq('id', userId)
     .maybeSingle();

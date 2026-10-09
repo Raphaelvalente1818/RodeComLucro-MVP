@@ -118,6 +118,7 @@ export default function Garagem() {
         m ?? {
           id: uid,
           nome: null,
+          codigo_indicacao: null,
           uf_base: null,
           cidade_base: null,
           cidade_base_lat: null,

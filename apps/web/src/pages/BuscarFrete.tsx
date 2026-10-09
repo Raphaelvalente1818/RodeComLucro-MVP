@@ -17,6 +17,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PRO, carregarAssinatura, planoProDisponivel, primeiraMao } from '../lib/assinatura';
+import { compartilharFrete } from '../lib/compartilharFrete';
 import { supabase } from '../lib/supabaseClient';
 import { fmtBRL } from '@rode/calc';
 import type { TipoVeiculo } from '@rode/calc';
@@ -81,6 +82,7 @@ export default function BuscarFrete() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
   const [nomeMotorista, setNomeMotorista] = useState<string | null>(null);
+  const [codigoIndicacao, setCodigoIndicacao] = useState<string | null>(null);
   const [tipoVeiculoPerfil, setTipoVeiculoPerfil] = useState<string | null>(null);
   const [cargaMaximaPerfil, setCargaMaximaPerfil] = useState<number | null>(null);
 
@@ -122,6 +124,7 @@ export default function BuscarFrete() {
       planoProDisponivel().then(setPlanoDisponivel);
       const [motorista, perfil] = await Promise.all([carregarMotorista(uid), carregarPerfil(uid)]);
       setNomeMotorista(primeiroNome(motorista?.nome));
+      setCodigoIndicacao(motorista?.codigo_indicacao ?? null);
       setTipoVeiculoPerfil(perfil?.tipo_veiculo ?? null);
       // 09/10 (Raphael): já entra filtrando pelo caminhão dele — é o que
       // interessa; quem quiser ver tudo desmarca.
@@ -423,6 +426,11 @@ export default function BuscarFrete() {
                 {!indisponivel && (
                   <button type="button" className="btn-frete-analisar" onClick={() => abrirAnalise(f)}>
                     Analisar frete
+                  </button>
+                )}
+                {!indisponivel && f.codigo && (
+                  <button type="button" className="link-secundario btn-compartilhar-frete" onClick={() => void compartilharFrete(f, codigoIndicacao)}>
+                    ↗ Mandar pra um colega
                   </button>
                 )}
                 {!indisponivel && f.contatoTelefone && (

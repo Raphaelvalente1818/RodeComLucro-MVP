@@ -1102,6 +1102,16 @@ button:disabled {
   font-size: 13px;
 }
 
+/* "Mandar pra um colega" no card do frete (09/10) — ação, logo na cor da marca. */
+.btn-compartilhar-frete {
+  color: var(--marca);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 4px 0;
+  align-self: flex-start;
+}
+
 /* Aviso de fretes escondidos pra quem não é PRO (tela Buscar). */
 .aviso-pro {
   background: var(--marca-bg);

@@ -183,6 +183,18 @@ Melhoria vista de passagem (fila, não é regressão): "carreta ls 6 eixos faz u
 | 72 | `PRO` (com chaves de teste) | Preço lido do Stripe + link do Checkout; depois de pagar com 4242…, `PRO` → "Você é PRO, renova em …" + link do portal | aguardando conta Stripe |
 | 73 | busca com fretes publicados há < 2 h, sem PRO | Lista sem eles + "🔒 Mais N … só no PRO" | aguardando frete novo no banco |
 
+## Rodada 14 (09/10, v79 — compartilhar frete com um colega)
+
+Pedido do Raphael ("última de hoje"): compartilhar um frete; o colega, mesmo sem conta, entra e recebe o frete. WhatsApp não deixa a gente iniciar conversa sem opt-in, então o fluxo tem **um toque** do colega: mensagem pronta pra encaminhar → link `wa.me/<bot>?text=FRETE <código> #<indicador>` → ele envia → conta nasce, indicação gravada (`indicacao`), frete calculado pelo mesmo caminho do clique na lista. Migration `20261009200000` (código de 5 letras por frete, `codigo_indicacao` preenchido pra todos os motoristas + trigger, tabela `indicacao`).
+
+| # | Mensagem | Esperado | Resultado |
+|---|---|---|---|
+| 74 | clique num frete da lista | Depois do cálculo, botão "Mandar pra um colega" | pendente de deploy |
+| 75 | botão Mandar pra um colega | Mensagem pronta (rota · valor · tipos + link wa.me com FRETE <cod> #<ref>) + "👆 Encaminha…" | pendente de deploy |
+| 76 | número NOVO: `FRETE 82PUW #GTDGKY` | "Opa! … um colega te mandou esse frete" + cálculo SBC→Aparecida + convite do caminhão; linha em `indicacao` (indicador = Emerson) | pendente de deploy |
+| 77 | `FRETE ZZZZZ` (não existe) | "Esse frete já foi fechado ou saiu do ar… manda BUSCAR" | pendente de deploy |
+| 78 | mesmo número manda `FRETE …` de novo com outro #ref | Não cria segunda indicação (unique por indicado) | pendente de deploy |
+
 ## Pra acrescentar (próximas rodadas)
 - `Quero sair do abc paulista` logo depois de "de que cidade?" (memória da pergunta).
 - `nao esta certo, leu errado` / `validade 23/03/2035` depois de uma leitura (precisa de foto real).

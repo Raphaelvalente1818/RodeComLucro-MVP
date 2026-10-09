@@ -21,7 +21,8 @@ export type EventName =
   | 'freight_search'
   | 'simulation_run'
   | 'freight_accepted'
-  | 'opportunity_engaged';
+  | 'opportunity_engaged'
+  | 'referral_shared';
 
 /**
  * Grava um evento de analytics. Fire-and-forget: chame como `void track(...)`,
