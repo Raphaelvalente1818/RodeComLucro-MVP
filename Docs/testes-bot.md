@@ -141,10 +141,10 @@ Pedido do Raphael: "o caminhoneiro pode responder o número de eixos da carreta,
 
 | # | Mensagem | Esperado | Resultado |
 |---|---|---|---|
-| 58 | `quero uma carga` → botão Carreta | Pergunta "Quantos eixos tem o conjunto todo (cavalo + carreta), contando tudo?" com 4/5/6 | pendente de deploy |
-| 59 | na etapa eixos: `a carreta tem 3` | Não grava 3; explica que conta tudo junto (LS 6, simples 5, bitrem 7) e pede o total | pendente de deploy |
-| 60 | `só a carreta ou o conjunto todo?` | Mesma explicação, sem gravar | pendente de deploy |
-| 61 | `sp pro rio 4500 carreta ls 6 eixos` | numero_eixos 6 | pendente de deploy |
+| 58 | `quero uma carga` → botão Carreta | Pergunta "Quantos eixos tem o conjunto todo (cavalo + carreta), contando tudo?" com 4/5/6 | ✅ v80 |
+| 59 | na etapa eixos: `a carreta tem 3` | Não grava 3; explica que conta tudo junto (LS 6, simples 5, bitrem 7) e pede o total | ✅ v80 "Preciso do total junto: se a carreta tem 3, quantos eixos o cavalo tem? Aí soma e manda o número" → "então são 6" seguiu pro consumo |
+| 60 | `só a carreta ou o conjunto todo?` | Mesma explicação, sem gravar | (coberto pelo 59) |
+| 61 | `sp pro rio 4500 carreta ls 6 eixos` | numero_eixos 6 | ✅ (onboarding por texto "carreta ls 6 eixos" na regressão) |
 
 ## Rodada 11 (09/10, v76 — foto = autorização; "Está correto / Corrigir")
 
@@ -154,9 +154,9 @@ Pedido do Raphael: não perguntar "Pode ler?" depois que a foto chegou (a autori
 |---|---|---|---|
 | 62 | foto da CNH sem ter falado nada antes (manual — Rapha) | Lê direto, sem "Pode ler?"; mostra a leitura com *Está correto* / *Corrigir* | manual |
 | 63 | botão Corrigir | "Me diz o que está errado e o valor certo…" | manual |
-| 64 | (leitura pendente) `o nome ta errado` | Pergunta "Qual é o nome certo?" — não pede foto nova | pendente de deploy (estado montado no banco) |
-| 65 | (leitura pendente) `ta tudo errado` | Descarta e pede a foto de novo | pendente de deploy |
-| 66 | (leitura pendente) `a validade certa eh 23/03/2035` | Corrige só a validade e reapresenta com os 2 botões | pendente de deploy |
+| 64 | (leitura pendente) `o nome ta errado` | Pergunta "Qual é o nome certo?" — não pede foto nova | ❌ v80: parser não aceitava `campo_errado` (caiu na apresentação) → v81 ✅ "Beleza. Qual é o *nome* certo? Manda só o valor." |
+| 65 | (leitura pendente) `ta tudo errado` | Descarta e pede a foto de novo | ✅ v81 |
+| 66 | (leitura pendente) `a validade certa eh 23/03/2035` | Corrige só a validade e reapresenta com os 2 botões | ✅ v81 (corrigiu o nome e reapresentou com *Está correto* / *Corrigir*) |
 
 ## Rodada 12 (09/10, v76 — apresentação é texto fixo)
 
@@ -164,9 +164,15 @@ Print do Rapha (08/10 18:58): "Ola" → a IA escreveu a apresentação de cabeç
 
 | # | Mensagem | Esperado | Resultado |
 |---|---|---|---|
-| 67 | número novo: `Ola` | Apresentação fixa (1️⃣ 2️⃣ 3️⃣ + CADASTRO), sem texto da IA | pendente de deploy |
-| 68 | número novo: `Oi, recebi esse contato do João da boca` | "Opa! Que bom que o João te passou meu contato." + apresentação fixa | pendente de deploy |
-| 69 | já apresentado: `bom dia` | Continua a abertura curta da IA com exemplo e *BUSCAR* (cenário 47) | pendente de deploy |
+| 67 | número novo: `Ola` | Apresentação fixa (1️⃣ 2️⃣ 3️⃣ + foto da CNH/CRLV), sem texto da IA | ✅ v80 |
+| 68 | número novo: `Oi, recebi esse contato do João da boca` | "Opa! Que bom que o João te passou meu contato." + apresentação fixa | ✅ v80 |
+| 69 | já apresentado: `bom dia` | Continua a abertura curta da IA com exemplo e *BUSCAR* (cenário 47) | ✅ v81 "Bom dia! Tem frete novo pra avaliar ou quer *BUSCAR* carga perto de você?" |
+
+## Regressão completa — 09/10, v81 (pedido do Raphael: "rodar a bancada")
+
+Números 12–15. Reexecutados: 5 (coruipe/truck), 6 (pedágio), 7 (volta vazia), 17 (e se pagar 18 mil — manteve a volta vazia do recálculo anterior, correto), 8 (cotação Carandaí→Piracaia), 9+41 (Bom Jesus → "o do piaui"), 27 (190 o ton → 14 t), 28 (Belém capital), 31 (Minas é estado), 22 (spam), 47 (bom dia), 29 (vlw), 25 (frete picado em 3 — cotou e depois calculou com 14 mil), 18–20 (abc paulista → onboarding → São Bernardo do Campo/SP com 3 fretes), clique na lista (SBC→Aparecida), 24 (SAIR). **Todos ✅.** Mais os de hoje: 55, 57, 58–61, 64–69.
+
+Melhoria vista de passagem (fila, não é regressão): "carreta ls 6 eixos faz uns 2 e meio" numa mensagem só, durante o onboarding, só aproveitou o tipo e perguntou eixos e consumo de novo — o onboarding podia pegar os três de uma vez.
 
 ## Pra acrescentar (próximas rodadas)
 - `Quero sair do abc paulista` logo depois de "de que cidade?" (memória da pergunta).
