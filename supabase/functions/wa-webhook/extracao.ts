@@ -54,7 +54,7 @@ export type Pendencia =
   | { tipo: "confirmar_leitura"; documento: "cnh" | "crlv"; leitura: Record<string, string | number | null> }
   | { tipo: "tipo_veiculo_crlv"; opcoes: string[] };
 
-export type AcaoPendencia = "nenhuma" | "escolher" | "confirmar" | "corrigir" | "reler" | "cancelar" | "pular_para_crlv" | "aceitar" | "recusar";
+export type AcaoPendencia = "nenhuma" | "escolher" | "confirmar" | "corrigir" | "campo_errado" | "reler" | "cancelar" | "pular_para_crlv" | "aceitar" | "recusar";
 
 export interface ContextoConversa {
   jaApresentado: boolean;
@@ -175,13 +175,14 @@ Sem acento, abreviado, com erro: "truk", "qnto", "saino", "sto andre", "15mil", 
 - cidade_em_duvida / busca_origem: ele escolhe um candidato ou escreve outra cidade → "escolher", opcao_escolhida = o candidato exato (Nome/UF) ou a cidade como ele escreveu.
 - consentimento_documento: "pode", "bora", "sim", "manda" → "aceitar"; "não", "depois", "agora não" → "recusar".
 - confirmar_leitura (o bot mostrou o que leu da CNH/CRLV — valores em contexto.pendencia.leitura):
-  · "tá certo", "sim", "salva", "isso" → "confirmar".
+  · "tá certo", "está correto", "sim", "salva", "isso" → "confirmar".
   · Ele dá o valor certo de um ou mais campos ("placa ABC1D23", "validade 23/03/2035", "o nome é João da Silva", "são 6 eixos") → "corrigir", correcoes com SÓ os campos que ele deu, no formato: validade AAAA-MM-DD, placa sem hífen maiúscula, numero só dígitos, categoria A/B/C/D/E/AB…, eixos/ano/exercicio inteiros, capacidade_t número.
-  · Ele diz que está errado SEM dar o valor certo ("leu errado", "tá tudo errado", "a data tá errada, só o nome tá certo") → "reler" (o sistema pede a foto de novo). Nunca invente o valor.
+  · Ele diz QUAL campo está errado mas não o valor certo ("o nome tá errado", "a validade não é essa", "a data tá errada, só o nome tá certo") → "campo_errado", opcao_escolhida = o nome do campo como o bot mostrou (nome, categoria, validade, número da CNH, placa, eixos, capacidade, licenciamento, veículo). O sistema pergunta o valor certo. Nunca invente o valor.
+  · Ele diz que está tudo errado ou ilegível, sem apontar campo ("leu errado", "tá tudo errado", "não é isso") → "reler" (o sistema pede a foto de novo).
   · "esquece", "cancela", "deixa pra lá" → "cancelar".
   · "vou mandar o do cavalo", "esquece a CNH, manda o CRLV", "deixa a CNH pra depois" → "pular_para_crlv".
 - tipo_veiculo_crlv: ele responde Carreta / Carreta LS / Bitrem → "escolher", opcao_escolhida = o tipo exato.
-- aguardando_foto não tem ação: se ele diz "já mandei" e o contexto mostra que nada foi lido, intent "outro" com resposta "Não chegou nada que desse pra ler — manda de novo, foto ou PDF". Nunca diga que já fez um cadastro que o contexto mostra como não feito; nunca diga que não lê documento.
+- aguardando_foto não tem ação: se ele diz "já mandei" e o contexto mostra que nada foi lido, intent "outro" com resposta "Não chegou nada que desse pra ler — manda de novo, foto ou PDF". Se ele topa ("pode", "bora", "quero", "manda") → intent "outro", resposta curta: "Manda a foto da CNH aqui (frente, aberta). Depois a do CRLV." Se recusa ("agora não", "depois") → "Beleza, quando quiser é só mandar a foto ou escrever CADASTRO." Nunca diga que já fez um cadastro que o contexto mostra como não feito; nunca diga que não lê documento.
 
 ## 6. Caminhão na mensagem (qualquer intent)
 tipo_veiculo com UM valor exato: Carreta, Carreta LS, Vanderléia, Carreta 4º eixo, Bitrem 7 eixos, Bitrem 9 eixos, Rodotrem, Truck, BiTruck, Fiorino, VLC, 3/4, Toco. Sinônimos: "LS"=Carreta LS; "bitrem"=Bitrem 7 eixos (9 se disser); "truck"/"truk"/"truque"=Truck; "bitruck"=BiTruck; "cavalo"/"carreta"/"semi-reboque"=Carreta. numero_eixos só se ele disser, e SEMPRE do CONJUNTO inteiro (cavalo + carreta): "LS 6 eixos"→6. Se ele disser os eixos só de uma parte ("a carreta tem 3 eixos", "cavalo 3 eixos") ou mostrar dúvida ("só a carreta ou o conjunto?"), numero_eixos null. tipo_carroceria com UM valor exato da lista: Graneleiro, Grade baixa, Prancha, Caçamba, Plataforma, Sider, Baú, Baú Frigorífico, Baú Refrigerado, Silo, Cegonheiro, Gaiola, Tanque, Bug Porta Container, Munk, Apenas Cavalo, Cavaqueira, Hoper. "palete" não é carroceria. Sem menção = null.
@@ -221,7 +222,7 @@ const FERRAMENTA_LEITURA = {
       confianca_origem: { type: "number" },
       confianca_destino: { type: "number" },
       confianca_valor: { type: "number" },
-      acao: { type: "string", enum: ["nenhuma", "escolher", "confirmar", "corrigir", "reler", "cancelar", "pular_para_crlv", "aceitar", "recusar"] },
+      acao: { type: "string", enum: ["nenhuma", "escolher", "confirmar", "corrigir", "campo_errado", "reler", "cancelar", "pular_para_crlv", "aceitar", "recusar"] },
       opcao_escolhida: { type: ["string", "null"] },
       correcoes: {
         type: ["object", "null"],

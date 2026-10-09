@@ -208,7 +208,7 @@ async function registrarConversa(fromE164: string, papel: "motorista" | "bot", t
 /** Texto humano do botão/linha pro histórico (ids são técnicos). */
 function rotuloBotao(rowId: string): string {
   const fixos: Record<string, string> = {
-    "doc:ok": "Pode ler", "doc:nao": "Agora não", "doc:frete": "Era um frete", "doc:salvar": "Salvar", "doc:corrigir": "Corrigir", "doc:cancelar": "Cancelar",
+    "doc:ok": "Pode ler", "doc:nao": "Agora não", "doc:frete": "Era um frete", "doc:salvar": "Está correto", "doc:corrigir": "Corrigir", "doc:cancelar": "Cancelar",
     "viral:cartao": "Mandar pro colega", abrir_app: "Abrir o app",
   };
   if (fixos[rowId]) return fixos[rowId];
@@ -2651,8 +2651,10 @@ interface EstadoCadastroFoto {
   convidado_em: string | null;
 }
 
+// 09/10 (Raphael, print do Emerson): o convite não pergunta "Pode ler?" — a
+// foto é a autorização. Só diz o que fazer; sem botões.
 const TEXTO_CONVITE_CADASTRO =
-  `Quer que eu preencha seu cadastro sozinho? Manda uma *foto da CNH* e eu pego seu nome, categoria e validade. Depois a *foto do CRLV* do caminhão: marca, placa, eixos e capacidade.\n` +
+  `Quer que eu preencha seu cadastro sozinho? É só mandar aqui uma *foto da CNH* — eu pego nome, categoria e validade. Depois a *foto do CRLV* do caminhão: marca, placa, eixos e capacidade.\n` +
   `Eu leio e apago a foto na hora — não guardo imagem nem CPF.`;
 const TEXTO_PEDIR_FOTO = "Manda a foto da CNH (frente, aberta, sem dedo em cima). Depois a do CRLV.";
 const TEXTO_CANCELOU = "Beleza, não salvei nada e a foto já foi apagada.";
@@ -2694,12 +2696,9 @@ async function convidarCadastroPorFoto(fromE164: string, motoristaId: string, wa
   if (await temConsentimentoLeitura(motoristaId)) return false;
   const { data: m } = await supabase.from("motoristas").select("nome, cnh_numero").eq("id", motoristaId).maybeSingle();
   if (m?.nome && m?.cnh_numero) return false; // já tem cadastro — não precisa
-  await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "aguardando_consentimento", convidado_em: new Date().toISOString() });
+  await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "aguardando_foto", convidado_em: new Date().toISOString() });
   await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto: "[convite cadastro por foto]", extracao: null, status: "doc_convite" });
-  await enviarBotoes(fromE164, TEXTO_CONVITE_CADASTRO, [
-    { id: "doc:ok", titulo: "Pode ler" },
-    { id: "doc:nao", titulo: "Agora não" },
-  ]);
+  await enviarMensagemWhatsapp(fromE164, TEXTO_CONVITE_CADASTRO);
   return true;
 }
 
@@ -2712,12 +2711,9 @@ async function tratarComandoCadastro(fromE164: string, texto: string, waMessageI
     await enviarMensagemWhatsapp(fromE164, TEXTO_PEDIR_FOTO + (novo ? AVISO_CADASTRO : ""));
     return;
   }
-  await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "aguardando_consentimento", convidado_em: new Date().toISOString() });
+  await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "aguardando_foto", convidado_em: new Date().toISOString() });
   await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao: null, status: "doc_convite" });
-  await enviarBotoes(fromE164, TEXTO_CONVITE_CADASTRO + (novo ? AVISO_CADASTRO : ""), [
-    { id: "doc:ok", titulo: "Pode ler" },
-    { id: "doc:nao", titulo: "Agora não" },
-  ]);
+  await enviarMensagemWhatsapp(fromE164, TEXTO_CONVITE_CADASTRO + (novo ? AVISO_CADASTRO : ""));
 }
 
 /** Baixa a mídia da Meta (2 passos: id → url assinada → bytes). Nada é gravado. */
@@ -2752,20 +2748,13 @@ async function tratarImagemRecebida(img: ImagemRecebida): Promise<void> {
     await enviarMensagemWhatsapp(img.fromE164, "Esse arquivo não deu pra abrir. Manda a CNH ou o CRLV como *foto* (JPG/PNG) ou *PDF* — a CNH digital do gov.br em PDF funciona.");
     return;
   }
-  if (await temConsentimentoLeitura(motoristaId)) {
-    await processarImagemDocumento(img.fromE164, motoristaId, img.mediaId, img.waMessageId);
-    return;
-  }
-  await gravarEstadoCadastroFoto(img.fromE164, motoristaId, { etapa: "aguardando_consentimento", media_id: img.mediaId });
-  await registrarTentativaFrete({ waMessageId: img.waMessageId, motoristaId, fromE164: img.fromE164, texto: "[imagem sem consentimento]", extracao: null, status: "doc_imagem_sem_contexto" });
-  await enviarBotoes(
-    img.fromE164,
-    "Recebi uma imagem. Se for sua *CNH* ou o *CRLV*, posso ler e preencher seu cadastro — não guardo a foto nem o CPF. Se for um frete, me manda em texto: rota e valor.",
-    [
-      { id: "doc:ok", titulo: "Pode ler" },
-      { id: "doc:frete", titulo: "Era um frete" },
-    ],
-  );
+  // 09/10 (Raphael): mandar o documento JÁ é a autorização — perguntar "Pode
+  // ler?" depois da foto não faz sentido. Registra o consentimento com a
+  // própria foto como evidência (wa_message_id fica em wa_freight_query) e lê
+  // na hora. Se não for CNH/CRLV (print de frete, selfie), a leitura devolve
+  // "outro" e o bot orienta a mandar em texto.
+  if (!(await temConsentimentoLeitura(motoristaId))) await registrarConsentimentoLeitura(motoristaId, img.waMessageId);
+  await processarImagemDocumento(img.fromE164, motoristaId, img.mediaId, img.waMessageId);
 }
 
 function fmtDataBRdoc(iso: string | null): string {
@@ -2785,7 +2774,7 @@ function textoConfirmacaoDoc(estado: EstadoCadastroFoto): string {
       `*Validade:* ${fmtDataBRdoc(d.validade ?? null)}\n` +
       `*Nº da CNH:* ${d.numero ?? "—"}\n` +
       (vencida ? `⚠️ Essa CNH venceu em ${fmtDataBRdoc(d.validade ?? null)}.\n` : "") +
-      `Tá certo?`
+      `Está correto?`
     );
   }
   const veic = [d.marca, d.modelo].filter(Boolean).join(" ") || "—";
@@ -2795,7 +2784,7 @@ function textoConfirmacaoDoc(estado: EstadoCadastroFoto): string {
       `🚛 Li no CRLV:\n` +
       `*Semirreboque:* ${veic}${d.carroceria ? ` ${d.carroceria}` : ""}${ano} · Placa ${d.placa ?? "—"} · ${d.eixos ?? "—"} eixos (só da carreta) · ${d.capacidadeT ?? "—"} t\n` +
       `*Licenciamento:* ${d.exercicio ?? "—"}\n` +
-      `Tá certo?`
+      `Está correto?`
     );
   }
   return (
@@ -2804,14 +2793,15 @@ function textoConfirmacaoDoc(estado: EstadoCadastroFoto): string {
     `*Placa:* ${d.placa ?? "—"}\n` +
     `*Eixos:* ${d.eixos ?? "—"} · *Capacidade:* ${d.capacidadeT ?? "—"} t\n` +
     `*Licenciamento:* ${d.exercicio ?? "—"}\n` +
-    `Tá certo?`
+    `Está correto?`
   );
 }
 
+// 09/10 (Raphael): a pergunta é "Está correto?" com dois botões. Cancelar
+// continua possível em texto ("esquece", "cancela" → acao cancelar).
 const BOTOES_CONFIRMAR_DOC = [
-  { id: "doc:salvar", titulo: "Salvar" },
+  { id: "doc:salvar", titulo: "Está correto" },
   { id: "doc:corrigir", titulo: "Corrigir" },
-  { id: "doc:cancelar", titulo: "Cancelar" },
 ];
 
 async function processarImagemDocumento(fromE164: string, motoristaId: string, mediaId: string, waMessageId: string): Promise<void> {
@@ -3069,6 +3059,14 @@ async function executarAcaoPendencia(fromE164: string, texto: string, waMessageI
     const motoristaId = estado.motorista_id;
     if (acao === "confirmar") { await tratarBotaoCadastroFoto(fromE164, "doc:salvar", waMessageId); return true; }
     if (acao === "cancelar") { await tratarBotaoCadastroFoto(fromE164, "doc:cancelar", waMessageId); return true; }
+    if (acao === "campo_errado") {
+      // Ele disse QUAL campo está errado mas não o valor certo: pergunta o valor,
+      // sem descartar a leitura (09/10 — antes caía em "reler" e pedia foto nova).
+      const campo = (ex.opcaoEscolhida ?? "esse campo").trim();
+      await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "corrigir" });
+      await enviarMensagemWhatsapp(fromE164, `Beleza. Qual é ${/^(validade|placa|categoria|capacidade)/i.test(campo) ? "a" : "o"} *${campo}* certo? Manda só o valor.`);
+      return true;
+    }
     if (acao === "reler") {
       await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao: null, status: "doc_cancelado", resultado: { tipo: estado.tipo_doc, motivo: "reler" } });
       await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "aguardando_foto", tipo_doc: null, dados: null, media_id: null });
@@ -3130,7 +3128,10 @@ async function tratarBotaoCadastroFoto(fromE164: string, rowId: string, waMessag
   }
   if (rowId === "doc:corrigir") {
     await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "corrigir" });
-    await enviarMensagemWhatsapp(fromE164, 'O que tá errado? Manda só o campo, tipo *"placa ABC1D23"* ou *"validade 14/03/2029"*.');
+    await enviarMensagemWhatsapp(
+      fromE164,
+      `Me diz o que está errado e o valor certo, do jeito que vier — ex.: *"a validade é 23/03/2035"*, *"o nome é João da Silva"*, *"placa ABC1D23"*. Pode mandar mais de um. Se preferir, manda a foto de novo.`,
+    );
     return;
   }
   if (rowId === "doc:cancelar") {

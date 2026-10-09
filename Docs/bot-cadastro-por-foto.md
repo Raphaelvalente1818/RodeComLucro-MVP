@@ -79,3 +79,10 @@ Botões: `Pode ler` · `Era um frete`.
 - CNH → `motoristas`: `nome`, `cnh_numero`, `cnh_vencimento`, `cnh_categoria` (novo).
 - CRLV → `caminhao_perfil`: `marca`, `modelo`, `ano`, `numero_eixos`, `carga_maxima_toneladas`,
   `placa`, `renavam`, `crlv_exercicio` (novos). `tipo_veiculo` só por sugestão + botão.
+
+
+## Revisão 09/10/2026 (Raphael)
+
+- **Mandar a foto já é a autorização.** O convite depois do cálculo (print do Emerson, 09/10) vira texto sem botões: "Quer que eu preencha seu cadastro sozinho? É só mandar aqui uma foto da CNH…". E o bot não pergunta "Pode ler?" depois de receber o documento: registra o consentimento (evidência = a própria mensagem da foto) e lê na hora. O convite por `CADASTRO` ("Pode ler / Agora não") continua, porque vem antes da foto.
+- **Confirmação**: "Está correto?" com dois botões, *Está correto* e *Corrigir*. Cancelar continua por texto ("esquece", "cancela").
+- **Corrigir**: "Me diz o que está errado e o valor certo, do jeito que vier — ex.: *a validade é 23/03/2035*, *o nome é João da Silva*, *placa ABC1D23*. Pode mandar mais de um. Se preferir, manda a foto de novo." Se ele só apontar o campo ("o nome tá errado"), o bot pergunta "Qual é o nome certo?" sem descartar a leitura; "tá tudo errado" pede a foto de novo.

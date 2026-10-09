@@ -146,6 +146,18 @@ Pedido do Raphael: "o caminhoneiro pode responder o número de eixos da carreta,
 | 60 | `só a carreta ou o conjunto todo?` | Mesma explicação, sem gravar | pendente de deploy |
 | 61 | `sp pro rio 4500 carreta ls 6 eixos` | numero_eixos 6 | pendente de deploy |
 
+## Rodada 11 (09/10, v76 — foto = autorização; "Está correto / Corrigir")
+
+Pedido do Raphael: não perguntar "Pode ler?" depois que a foto chegou (a autorização está implícita no envio); a pergunta é "Está correto?" com botões *Está correto* / *Corrigir*; em Corrigir, pedir o que está errado e o valor certo. Mudou: `tratarImagemRecebida` registra o consentimento com a própria foto como evidência e lê na hora (status `doc_imagem_sem_contexto` deixa de existir no fluxo); botões 2 em vez de 3 (cancelar continua por texto); ação nova `campo_errado` (ele diz o campo sem o valor → bot pergunta o valor, sem descartar a leitura; `reler` só pra "tá tudo errado").
+
+| # | Mensagem | Esperado | Resultado |
+|---|---|---|---|
+| 62 | foto da CNH sem ter falado nada antes (manual — Rapha) | Lê direto, sem "Pode ler?"; mostra a leitura com *Está correto* / *Corrigir* | manual |
+| 63 | botão Corrigir | "Me diz o que está errado e o valor certo…" | manual |
+| 64 | (leitura pendente) `o nome ta errado` | Pergunta "Qual é o nome certo?" — não pede foto nova | pendente de deploy (estado montado no banco) |
+| 65 | (leitura pendente) `ta tudo errado` | Descarta e pede a foto de novo | pendente de deploy |
+| 66 | (leitura pendente) `a validade certa eh 23/03/2035` | Corrige só a validade e reapresenta com os 2 botões | pendente de deploy |
+
 ## Pra acrescentar (próximas rodadas)
 - `Quero sair do abc paulista` logo depois de "de que cidade?" (memória da pergunta).
 - `nao esta certo, leu errado` / `validade 23/03/2035` depois de uma leitura (precisa de foto real).
