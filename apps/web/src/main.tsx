@@ -10,6 +10,8 @@ import Resultado from './pages/Resultado';
 import Perfil from './pages/Perfil';
 import BuscarFrete from './pages/BuscarFrete';
 import LayoutMotorista from './components/LayoutMotorista';
+import Termos from './pages/Termos';
+import Privacidade from './pages/Privacidade';
 import AdminLayout from './admin/AdminLayout';
 import VisaoGeral from './admin/pages/VisaoGeral';
 import Motoristas from './admin/pages/Motoristas';
@@ -44,6 +46,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <LoginPorLink>
       <Routes>
         <Route path="/entrar" element={<Entrada />} />
+        {/* Páginas públicas (sem login, sem barra de abas) — linkadas na Entrada,
+            no rodapé do bot e exigidas pela Google Play/Stripe (09/10). */}
+        <Route path="/termos" element={<Termos />} />
+        <Route path="/privacidade" element={<Privacidade />} />
         <Route path="/verificar" element={<Verificacao />} />
         {/* App do motorista: LayoutMotorista só acrescenta a barra de abas
             embaixo (Início · Calcular · Fretes · Caminhão); as telas são as

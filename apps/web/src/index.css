@@ -1116,6 +1116,18 @@ button:disabled {
   font-size: inherit;
 }
 
+/* Páginas legais /termos e /privacidade (09/10) — components/PaginaLegal.tsx */
+.tela-legal { max-width: 640px; }
+.legal-versao { margin: 0; color: var(--txt-dim); font-size: 13px; }
+.legal-corpo { display: flex; flex-direction: column; gap: 10px; font-size: 15px; line-height: 1.55; color: var(--txt-2); }
+.legal-corpo h2 { margin: 12px 0 0; font-size: 17px; color: var(--txt); opacity: 1; }
+.legal-corpo p { margin: 0; }
+.legal-corpo b { color: var(--txt); }
+.legal-corpo ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.legal-corpo a { color: var(--marca); }
+.legal-rodape { margin: 16px 0 0; color: var(--txt-dim); font-size: 13px; }
+.legal-rodape a { color: var(--marca); }
+
 .card-eyebrow {
   font-size: 10px;
   text-transform: uppercase;
