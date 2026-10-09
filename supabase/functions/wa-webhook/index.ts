@@ -824,6 +824,7 @@ async function registrarTentativaFrete(params: {
     | "limite_diario"
     | "busca_sem_resultado"
     | "busca_origem"
+    | "busca_lista"
     | "cotado"
     | "pergunta_calculo"
     | "veiculo_salvo"
@@ -894,19 +895,27 @@ const RE_SAIR = /^sair$/i;
 const RE_AJUDA = /^(ajuda|help|menu|comandos)\s*[?!.]*$/i;
 const RE_CADASTRO = /^cadastro\s*[?!.]*$/i;
 
-// Cota diária (02/10, decisão do Raphael): 20 consultas por número e por dia,
-// contando TUDO que o bot responde (cálculo, cotação, busca, conversa) — cada
-// resposta custa mensagem na Meta; no app o cálculo não custa. Na 20ª o bot
-// avisa e manda o link do app (abre logado, sem limite); da 21ª em diante,
-// silêncio até o dia virar. Toques de botão (onboarding, salvar caminhão) não
-// contam. Mudar aqui quando ele pedir pra baixar.
+// Cota diária (02/10, decisão do Raphael): 20 consultas por número e por dia.
+// Na 20ª o bot avisa e manda o link do app (abre logado, sem limite); da 21ª
+// em diante, silêncio até o dia virar. Mudar aqui quando ele pedir pra baixar.
+//
+// 09/10 (opção A, caso do Emerson — "segunda consulta do dia" e veio o aviso):
+// "hoje" era uma janela de 24 h corridas e contava bate-papo e até o bot
+// perguntando "qual cidade?". Agora: dia de CALENDÁRIO em America/Sao_Paulo e
+// só consulta de verdade conta — cálculo, cotação, busca que achou frete. O
+// bate-papo tem o próprio limite (resposta livre, 5/dia).
 const LIMITE_CONSULTAS_DIA = 20;
-// Status que representam uma consulta respondida (entram na cota).
-const STATUS_CONSULTA = [
-  "calculado", "calculado_novo", "recalculado_perfil", "calculado_anonimo", "cotado",
-  "resposta_livre", "pergunta_calculo", "boas_vindas", "dado_faltando", "confirmacao_pendente",
-  "busca_sem_resultado", "busca_origem", "erro_extracao", "nao_cadastrado", "cidade_pendente", "doc_lido", "doc_ilegivel",
-];
+// Status que representam uma consulta de verdade (entram na cota).
+const STATUS_CONSULTA = ["calculado", "calculado_novo", "recalculado_perfil", "calculado_anonimo", "cotado", "busca_lista"];
+
+/** Meia-noite de hoje em São Paulo, em ISO UTC — início do "dia" da cota. */
+function inicioDoDiaSaoPaulo(agora = new Date()): string {
+  const partes = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).formatToParts(agora);
+  const v = (t: string) => Number(partes.find((p) => p.type === t)?.value ?? "0");
+  // segundos desde a meia-noite local = hora*3600 + min*60 + seg; subtrai de "agora"
+  const desdeMeiaNoiteMs = ((v("hour") % 24) * 3600 + v("minute") * 60 + v("second")) * 1000 + (agora.getTime() % 1000);
+  return new Date(agora.getTime() - desdeMeiaNoiteMs).toISOString();
+}
 const AVISO_CADASTRO = `\n\n_Seu número ficou cadastrado no Rode com Lucro. Pra apagar, manda SAIR._`;
 
 /** Apresentação em uma mensagem só (custo pós-1/10) — usada quando a IA não responde (sem chave, erro) e nos comandos "ajuda"/"menu". */
@@ -938,7 +947,7 @@ async function garantirMotorista(fromE164: string, texto: string): Promise<{ id:
 
 /** Quantas consultas esse número já teve respondidas nas últimas 24h (cota diária). */
 async function contarConsultasHoje(fromE164: string): Promise<number> {
-  const desde = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const desde = inicioDoDiaSaoPaulo();
   const { count } = await supabase
     .from("wa_freight_query")
     .select("id", { count: "exact", head: true })
@@ -2508,6 +2517,7 @@ async function tratarBuscaDeFrete(fromE164: string, waMessageId: string, opcoes:
   const corpo =
     `${opcoes.prefixo ?? ""}Encontrei ${n} ${n > 1 ? "opções" : "opção"} de ${descCarga} pra ${tipoVeiculo} perto de ${lugar}. Toque numa pra ver se vale a pena:` +
     avisoNovo;
+  await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto: textoOriginal, extracao: null, status: "busca_lista", resultado: { origem: lugar, encontrados: n } });
   await enviarListaFretes(fromE164, linhas, corpo);
 }
 

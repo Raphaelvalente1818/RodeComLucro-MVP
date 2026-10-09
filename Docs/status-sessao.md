@@ -1585,6 +1585,11 @@ Textos: `Docs/bot-cadastro-por-foto.md`. Escopo: item 6 da fila (nome da CNH val
 - ARLA ✅; alimentação/pernoite × dias ✅; estacionamento/chapa fixos ✅.
 - Piso ANTT: km de ida × CCD + CC, por eixos e tipo de carga ✅. **A conferir na Res. 5.867**: retorno vazio (acréscimo de 92% do deslocamento?) e pedágio fora do piso — hoje o piso ignora volta vazia.
 
+## 09/10 — Cota diária por dia de calendário (bot v75) + OTP WhatsApp caindo pra SMS
+
+- **Emerson**: "segunda consulta do dia" e veio o aviso de última. Causa: janela de 24 h corridas + contava tudo (bate-papo, "qual cidade?"). **Opção A aprovada** ("o motorista não vai entender que são as últimas 24 horas"): `inicioDoDiaSaoPaulo()` (meia-noite America/Sao_Paulo) e `STATUS_CONSULTA` = só `calculado*`, `cotado`, `busca_lista`. Status novo `busca_lista` (migration `20261009100000_wa_freight_query_status_busca_lista.sql`, aplicada) — a busca que achava frete não gravava linha nenhuma. Quando baixar pra 5, agora são 5 cálculos de verdade.
+- **Raphael**: pediu OTP por WhatsApp e veio SMS. `identidade_audit`: `canal_pedido=whatsapp`, `canal=sms` — o fallback funcionou. `app_log`: Meta 404 `(#132001) template name (modelo01) does not exist in pt_BR`. O nome/idioma são os segredos `WA_TEMPLATE_OTP`/`WA_TEMPLATE_OTP_IDIOMA` (padrão modelo01/pt_BR). **Aguardando print do David** (WhatsApp Manager → Modelos: nome exato, idioma, status) pra `npx supabase@latest secrets set …` — sem redeploy.
+
 ## CHECKPOINT — 08/10 (fim de sessão, v70 no ar, barra de abas pronta pra push)
 
 **Estado**: wa-webhook **v70** no ar (diesel/consumo ditos; regressão completa; 50 cenários em `Docs/testes-bot.md`). App: barra de abas codificada (fase 1), **precisa do push** pra ir pra Vercel e o Raphael olhar no iPhone. Pendente de teste manual: CRLV por foto/PDF (cavalo e semirreboque) e botões no celular.

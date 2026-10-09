@@ -121,9 +121,18 @@ Linha do tempo (554199871818): cálculo pela lista (SBC → Aparecida de Goiâni
 
 | # | Mensagem | Esperado | Resultado |
 |---|---|---|---|
-| 52 | cálculo → `quanto vc usou de diesel?` | Cita o valor dos insumos (ex.: R$ 6,10/L), sem inventar | pendente de deploy |
-| 53 | `atualiza que o diesel aqui ta 6,03` → `por que o custo ficou menor?` | Recalcula; depois compara: "antes 6,10, agora 6,03, por isso caiu R$ 25" | pendente de deploy |
-| 54 | `quanto ta o diesel em santo andre?` | "Não tenho preço de posto; no cálculo usei X; manda o preço que eu recalculo" | pendente de deploy |
+| 52 | cálculo → `quanto vc usou de diesel?` | Cita o valor dos insumos (ex.: R$ 6,10/L), sem inventar | ✅ "Usei R$ 2.225,77 em diesel. Consumo 2,5 km/L, preço R$ 6,10/L — uns 365 litros" |
+| 53 | `atualiza que o diesel aqui ta 6,03` → `por que o custo ficou menor?` | Recalcula; depois compara: "antes 6,10, agora 6,03, por isso caiu R$ 25" | ✅ "O diesel *desceu*, não subiu. Antes 6,10, agora 6,03 … economizou R$ 25,55, exatamente a diferença (3.776,30 → 3.750,76)" |
+| 54 | `quanto ta o diesel em santo andre?` | "Não tenho preço de posto; manda o preço que eu recalculo" | ✅ |
+
+## Rodada 9 (09/10, v75 — cota diária, opção A) — caso real do Emerson
+
+"Segunda consulta do dia e veio 'última de hoje'": a janela era 24 h corridas (ontem 10:02 → hoje 08:05 ainda contava) e contava bate-papo e "qual cidade?" (11 cálculos + 5 respostas livres + 4 cidade_pendente = 20). v75: dia de calendário em São Paulo; só `calculado*`, `cotado` e `busca_lista` (status novo — a busca que acha frete não gravava linha) contam.
+
+| # | Mensagem | Esperado | Resultado |
+|---|---|---|---|
+| 55 | 5 respostas livres + 3 "qual cidade?" + 2 cálculos | Cota usada = 2 (só os cálculos) | pendente de deploy |
+| 56 | Virada da meia-noite (SP) | Contador zera | conferido na função (`inicioDoDiaSaoPaulo`: 11:30Z → 03:00Z do dia; 02:30Z → 03:00Z do dia anterior) ✅ |
 
 ## Pra acrescentar (próximas rodadas)
 - `Quero sair do abc paulista` logo depois de "de que cidade?" (memória da pergunta).
