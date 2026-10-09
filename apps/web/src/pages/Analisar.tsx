@@ -245,7 +245,9 @@ export default function Analisar() {
     const custos = montarCustos();
     const base = { origem: origem || 'Origem', destino: destino || 'Destino', distanciaKm: km, voltaVazia, margemDesejada, custos, distanciaEstimada, numeroEixos, tipoCarga };
     const { custoTotal } = calcularFrete({ ...base, valorFrete: 0 });
-    const freteMinimo = custoTotal / (1 - margemDesejada / 100);
+    // Arredonda pra CIMA no centavo: o valor mostrado tem que entregar a margem
+    // pedida de verdade (09/10 — antes podia ficar R$ 0,004 abaixo).
+    const freteMinimo = Math.ceil((custoTotal / (1 - margemDesejada / 100)) * 100) / 100;
     const resultado = calcularFrete({ ...base, valorFrete: freteMinimo });
     return { freteMinimo, resultado };
     // eslint-disable-next-line react-hooks/exhaustive-deps

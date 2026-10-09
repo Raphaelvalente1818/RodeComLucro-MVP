@@ -76,7 +76,10 @@ export function calcularFrete(entrada: FreteInput): FreteResultado {
   let veredicto: FreteResultado['veredicto'];
   if (lucro <= 0 || abaixoPisoANTT) {
     veredicto = 'RUIM';
-  } else if (margemReal >= margemDesejada) {
+  } else if (margemReal + 1e-9 >= margemDesejada) {
+    // 09/10: tolerância de ponto flutuante — no modo "a negociar" o valor é
+    // calculado pra dar EXATAMENTE a margem desejada e a conta de volta dava
+    // 65,999999 em vez de 66 (print do Raphael: ACEITÁVEL ↔ BOM ao mover o slider).
     veredicto = 'BOM';
   } else {
     veredicto = 'ACEITÁVEL';
