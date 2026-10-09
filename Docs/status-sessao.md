@@ -1594,6 +1594,24 @@ Textos: `Docs/bot-cadastro-por-foto.md`. Escopo: item 6 da fila (nome da CNH val
 - **Apresentação vira texto fixo** (print do Rapha: "Evalio", "coto rotas"): `tratarConversaLivre` manda `mensagemApresentacao()` na primeira saudação/pergunta_bot; IA só preenche `nome_indicador`. Bot v76.
 - **Raphael**: pediu OTP por WhatsApp e veio SMS. `identidade_audit`: `canal_pedido=whatsapp`, `canal=sms` — o fallback funcionou. `app_log`: Meta 404 `(#132001) template name (modelo01) does not exist in pt_BR`. O nome/idioma são os segredos `WA_TEMPLATE_OTP`/`WA_TEMPLATE_OTP_IDIOMA` (padrão modelo01/pt_BR). **Aguardando print do David** (WhatsApp Manager → Modelos: nome exato, idioma, status) pra `npx supabase@latest secrets set …` — sem redeploy.
 
+## 09/10 (tarde) — Google Play via TWA: decisões e guia
+
+**Pedido do Raphael**: abrir conta na Google Play e publicar o app ("ele só abre o link"). Guia completo com fontes em `Docs/play-store-twa.md`. Decisões/recomendações: **conta de organização** (CNPJ, D-U-N-S grátis; sem a exigência de 12 testadores × 14 dias das contas pessoais; US$ 25 uma vez, sem mensalidade), **domínio próprio antes de publicar** (`rodecomlucro.com.br` no Registro.br → Vercel; a TWA é amarrada ao domínio via `assetlinks.json`), **service worker** (`vite-plugin-pwa`, junto com a Barlow local) pra abrir sem sinal e não cair na política de "só um webview". Apple continua fora (diretriz 4.2).
+
+**Raphael pediu tudo em 09/10**: domínio, conta Play (organização), D-U-N-S. Vai avisar quando chegar e o domínio estiver na Vercel.
+
+## CHECKPOINT — 09/10 (fim de sessão, bot v81, app com barra de abas)
+
+**Estado**: wa-webhook **v81** no ar (v74 insumos no contexto, v75 cota por dia de calendário + `busca_lista` + aviso sem pedágio, v76/77 eixos do conjunto + foto = autorização + "Está correto/Corrigir" + `campo_errado` + apresentação fixa). Regressão completa na v81: 30 cenários ✅ (`Docs/testes-bot.md`, 69 cenários). App na Vercel com barra de abas (fases 1 e 2) e rótulos "eixos do conjunto". Piso ANTT na Portaria SUROC 22/2026. Contas do Oscar e do Rapha zeradas pra reteste; roteiro de 9 passos enviado ao Rapha (cálculo, diesel, CNH/CRLV por foto, busca, contato, vlw).
+
+**AO RETOMAR**:
+0. **Google Play** (quando o Raphael avisar que domínio + conta + D-U-N-S chegaram): seguir `Docs/play-store-twa.md` — eu faço `/privacidade`, service worker + Barlow local, `assetlinks.json`, Bubblewrap (package `br.com.rodecomlucro.app`), gráfico 1024×500 e textos da ficha; trocar `URL_APP` nas Edge Functions e links do bot pro domínio novo. Teste interno com os 4 → fechado com a semeadura → produção.
+1. **OTP WhatsApp**: aguardando print do David (nome/idioma/status do modelo na Meta) → `npx supabase@latest secrets set WA_TEMPLATE_OTP=… WA_TEMPLATE_OTP_IDIOMA=…`.
+2. **Decisão aberta**: contato do frete direto no WhatsApp (a) ou só pelo app (b) — print do Emerson "me manda o contato dessa Carfall".
+3. **Auditoria do cálculo** (`Docs/auditoria-calculo-frete-2026-10-08.{pdf,xlsx}`): aguardando validação do Raphael; propostas: pneus por eixo, depreciação do implemento, diesel padrão 7,33, ANTT retorno vazio.
+4. Resultados do roteiro do Rapha (foto real de CNH/CRLV, "campo_errado" ao vivo).
+5. Fila: onboarding pegar tipo+eixos+consumo numa mensagem só; tarefa ANTT semanal com INSERT pronto; pg_cron (`limpar_tokens_wa`, `limpar_wa_conversa`); Aferi+; `codigo_indicacao`; Funil viral; verificar empresa na Meta; logo Sofrete; identidade visual; senha do portal; Barlow local (entra com o SW); população IBGE pra homônimos; baixar cota pra 5.
+
 ## CHECKPOINT — 08/10 (fim de sessão, v70 no ar, barra de abas pronta pra push)
 
 **Estado**: wa-webhook **v70** no ar (diesel/consumo ditos; regressão completa; 50 cenários em `Docs/testes-bot.md`). App: barra de abas codificada (fase 1), **precisa do push** pra ir pra Vercel e o Raphael olhar no iPhone. Pendente de teste manual: CRLV por foto/PDF (cavalo e semirreboque) e botões no celular.

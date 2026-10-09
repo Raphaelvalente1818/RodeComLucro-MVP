@@ -112,6 +112,12 @@ Se `@rode/calc` não resolver, apague `node_modules` na raiz, em `apps/web` e em
   Cores só via variáveis CSS no `:root` de `apps/web/src/index.css` — nunca hex solto.
 - Português, direto, sem enrolação.
 
+## Google Play (09/10)
+
+Guia em `Docs/play-store-twa.md` (TWA via Bubblewrap, conta de organização, domínio
+próprio + `assetlinks.json`, service worker). Raphael pediu domínio/conta/D-U-N-S em
+09/10; retomar quando ele avisar.
+
 ## Pendências abertas (ver checkpoint pra ordem)
 
 Testes da v47 (conversa livre) e v48 (OTP WhatsApp + link mágico) com o David e o Rapha;
