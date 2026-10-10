@@ -204,6 +204,15 @@ Números 19 e 20. Reexecutados: 67 (Ola → apresentação fixa), 5 (coruipe/tru
 |---|---|---|---|
 | 80 | na etapa eixos: `a carreta tem 3` | Funcionou (não gravou, pediu o cavalo), mas a IA discutiu o número dele: "Uma carreta tem normalmente 2 eixos (reboque)" | prompt seção 5: não corrigir nem discutir o número da parte — só perguntar o cavalo e pedir a soma (v87, reconferir) |
 
+## Rodada 15 (09/10 noite, v88 — pneus por eixo)
+
+Decisão do Raphael (item da auditoria): custo de pneu deixa de ser R$ 0,12/km fixo e passa a ser calculado pelos eixos do conjunto (2 na direção + 4 por eixo; carcaça R$ 2.000 + 2 recapagens de R$ 600 ÷ 240 mil km): Truck 3 eixos 0,133 · Carreta 5 eixos 0,240 · LS 6 eixos 0,293 · Bitrem 7 eixos 0,347. Modelo híbrido: `caminhao_perfil.pneus_por_km` vazio = automático; preenchido pelo motorista = vence. Migration `20261009230000`.
+
+| # | Mensagem | Esperado | Resultado |
+|---|---|---|---|
+| 81 | número 19 (Truck 3 eixos): `qnto cobro de carandai pra piracaia` | "Manutenção + pneus + depreciação" sobe de R$ 358,70 (v86) pra ≈ R$ 365 (pneus 0,133 × 498 km) | pendente de deploy |
+| 82 | número 20 (Carreta LS 6 eixos): `piso antt de bh pra salvador` | mesma linha sobe de R$ 1.028,45 pra ≈ R$ 1.275 (pneus 0,293 × 1.428 km) | pendente de deploy |
+
 ## Pra acrescentar (próximas rodadas)
 - `Quero sair do abc paulista` logo depois de "de que cidade?" (memória da pergunta).
 - `nao esta certo, leu errado` / `validade 23/03/2035` depois de uma leitura (precisa de foto real).

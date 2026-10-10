@@ -296,6 +296,12 @@ button:disabled {
   margin: -8px 0 0;
 }
 
+.dica-campo {
+  /* legenda curta abaixo de um input (ex.: pneus automáticos pelos eixos, 09/10) */
+  font-size: 12px;
+  color: var(--txt-dim);
+}
+
 .sucesso {
   color: var(--bom);
 }

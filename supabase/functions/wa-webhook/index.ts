@@ -45,7 +45,7 @@
 // conta nasce em QUALQUER primeira mensagem (garantirMotorista).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { calcularFrete, tipoCargaPorCarroceria, fmtBRL, fmtPct, diasPorFaixaKm, definirTabelaANTT, montarTabelaANTT, type Custos, type LinhaTabelaANTT } from "./calc.ts";
+import { calcularFrete, tipoCargaPorCarroceria, fmtBRL, fmtPct, diasPorFaixaKm, definirTabelaANTT, montarTabelaANTT, pneusPorKmPadrao, type Custos, type LinhaTabelaANTT } from "./calc.ts";
 import { extrairFreteDeTexto, EIXOS_PADRAO, TIPOS_VEICULO, type ExtracaoFrete, type TipoCargaBusca, type ContextoConversa, type TipoVeiculoMsg, type TipoCarroceriaMsg, type Pendencia, type Correcoes } from "./extracao.ts";
 import { lerDocumento, bytesParaBase64, normalizarPlaca, normalizarCategoriaCNH, type DadosCNH, type DadosCRLV } from "./documentos.ts";
 import { PRO, assinaturaConfigurada, ehAssinante, mensagemPro, textoPreco } from "./assinatura.ts";
@@ -707,7 +707,7 @@ const PERFIL_CUSTO_DEFAULT: PerfilCusto = {
   arla_km_por_lt: 20,
   arla_preco_por_litro: 4.5,
   manutencao_por_km: 0.35,
-  pneus_por_km: 0.12,
+  pneus_por_km: null, // automático pelos eixos (pneusPorKmPadrao) — 09/10
   depreciacao_por_km: 0.25,
   alimentacao_dia: 90,
   pernoite_dia: 0,
@@ -724,7 +724,8 @@ interface PerfilCusto {
   arla_km_por_lt: number;
   arla_preco_por_litro: number;
   manutencao_por_km: number;
-  pneus_por_km: number;
+  /** null = automático pelo número de eixos; preenchido = valor do motorista vence (09/10). */
+  pneus_por_km: number | null;
   depreciacao_por_km: number;
   alimentacao_dia: number;
   pernoite_dia: number;
@@ -759,7 +760,7 @@ function perfilParaCustos(perfil: PerfilCusto, dias: number, pedagioReais: numbe
     estacionamento: perfil.estacionamento_padrao,
     chapa: perfil.chapa_padrao,
     manutencaoPorKm: perfil.manutencao_por_km,
-    pneusPorKm: perfil.pneus_por_km,
+    pneusPorKm: perfil.pneus_por_km ?? pneusPorKmPadrao(perfil.numero_eixos),
     depreciacaoPorKm: perfil.depreciacao_por_km,
   };
 }

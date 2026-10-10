@@ -9,6 +9,7 @@
 // fase posterior só troca o miolo desta função — as telas não mudam.
 
 import type { Custos, FreteResultado } from '@rode/calc';
+import { pneusPorKmPadrao } from '@rode/calc';
 import { supabase } from './supabaseClient';
 import { gravarOuEnfileirar, registrarExecutor } from './filaOffline';
 import { lerCache, salvarCache } from './cacheLocal';
@@ -25,7 +26,8 @@ export interface CaminhaoPerfil {
   arla_km_por_lt: number;
   arla_preco_por_litro: number;
   manutencao_por_km: number;
-  pneus_por_km: number;
+  /** R$/km de pneus. null = automático pelo número de eixos (pneusPorKmPadrao). Preenchido = valor do motorista vence (09/10). */
+  pneus_por_km: number | null;
   depreciacao_por_km: number;
   alimentacao_dia: number;
   pernoite_dia: number;
@@ -58,7 +60,7 @@ export const PERFIL_DEFAULT: Omit<CaminhaoPerfil, 'id' | 'user_id'> = {
   arla_km_por_lt: 20,
   arla_preco_por_litro: 4.5,
   manutencao_por_km: 0.35,
-  pneus_por_km: 0.12,
+  pneus_por_km: null,
   depreciacao_por_km: 0.25,
   alimentacao_dia: 90,
   pernoite_dia: 0,
@@ -152,7 +154,7 @@ export function perfilParaCustos(
     estacionamento: perfil.estacionamento_padrao,
     chapa: perfil.chapa_padrao,
     manutencaoPorKm: perfil.manutencao_por_km,
-    pneusPorKm: perfil.pneus_por_km,
+    pneusPorKm: perfil.pneus_por_km ?? pneusPorKmPadrao(perfil.numero_eixos),
     depreciacaoPorKm: perfil.depreciacao_por_km,
   };
 }

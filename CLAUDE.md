@@ -45,6 +45,10 @@ constantes no código são fallback. Reajuste = INSERT com `versao` + `vigencia_
 30/09/2026: **Portaria SUROC nº 22/2026** (gatilho do diesel — pode sair em qualquer
 semana, não só jan/jul; conferir no ANTTlegis). `supabase/functions/wa-webhook/calc.ts`
 é uma CÓPIA isomórfica dele pro Deno — se a fórmula mudar, atualizar os dois.
+**Pneus por eixo (09/10)**: `caminhao_perfil.pneus_por_km` NULL = automático
+(`pneusPorKmPadrao(eixos)` em `rode-calc/src/pneus.ts` e na cópia do bot: 2 pneus na
+direção + 4 por eixo, carcaça R$ 2.000 + 2 recapagens ÷ 240 mil km); preenchido = o
+valor do motorista vence. Constantes `PNEU` ainda a validar com o Raphael.
 
 ## Infra
 

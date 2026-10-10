@@ -285,6 +285,25 @@ export function fmtPct(value: number): string {
   return `${value.toFixed(1)}%`;
 }
 
+// ---------------------------------------------------------------------
+// Pneus por eixo (09/10/2026) — CÓPIA de packages/rode-calc/src/pneus.ts.
+// 2 pneus na direção + 4 por eixo restante; custo da carcaça (novo +
+// recapagens) dividido pelos km que ela roda. É só o PADRÃO: se o perfil
+// tem pneus_por_km preenchido, o valor do motorista vence.
+// ---------------------------------------------------------------------
+export const PNEU = { precoNovo: 2000, recapagens: 2, precoRecapagem: 600, vidaKmTotal: 240_000 } as const;
+
+export function numeroPneus(numeroEixos: number): number {
+  const eixos = Math.max(1, Math.round(numeroEixos));
+  return 2 + (eixos - 1) * 4;
+}
+
+export function pneusPorKmPadrao(numeroEixos: number): number {
+  const custoPorPneu = PNEU.precoNovo + PNEU.recapagens * PNEU.precoRecapagem;
+  const porKm = (numeroPneus(numeroEixos) * custoPorPneu) / PNEU.vidaKmTotal;
+  return Math.round(porKm * 1000) / 1000;
+}
+
 /** Dias estimados por faixa de km (mesma regra de apps/web/src/lib/frete.ts). */
 export function diasPorFaixaKm(distanciaKm: number): number {
   if (distanciaKm <= 600) return 1;

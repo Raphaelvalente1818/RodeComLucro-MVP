@@ -18,6 +18,7 @@ export {
 export type { TipoCarga, TabelaANTT, LinhaTabelaANTT } from './pisoANTT';
 export { TIPO_CARGA_POR_CARROCERIA, tipoCargaPorCarroceria } from './tipoCargaPorCarroceria';
 export { fmtBRL, fmtPct, centsToReais, reaisToCents, parseNumeroPtBR } from './format';
+export { PNEU, numeroPneus, pneusPorKmPadrao } from './pneus';
 export { caminhoes, marcas } from './caminhoes';
 export type { ModeloCaminhao } from './caminhoes';
 export { VEICULOS, CARROCERIAS, eixosPorCarroceria } from './tiposCaminhao';

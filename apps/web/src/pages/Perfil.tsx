@@ -22,7 +22,7 @@ import { supabase } from '../lib/supabaseClient';
 import { carregarPerfil, salvarPerfil, PERFIL_DEFAULT, type CaminhaoPerfil } from '../lib/frete';
 import { track } from '../lib/track';
 import type { ModeloCaminhao, TipoVeiculo, TipoCarroceria } from '@rode/calc';
-import { VEICULOS, CARROCERIAS, eixosPorCarroceria } from '@rode/calc';
+import { VEICULOS, CARROCERIAS, eixosPorCarroceria, pneusPorKmPadrao, numeroPneus } from '@rode/calc';
 import {
   buscarMarcasFipe,
   buscarModelosFipe,
@@ -587,7 +587,17 @@ export default function Perfil() {
 
       <label>
         Pneus (R$/km)
-        <input type="number" step="0.01" value={form.pneus_por_km} onChange={(e) => campo('pneus_por_km', Number(e.target.value))} />
+        <input
+          type="number"
+          step="0.01"
+          value={form.pneus_por_km ?? pneusPorKmPadrao(form.numero_eixos)}
+          onChange={(e) => campo('pneus_por_km', e.target.value === '' ? null : Number(e.target.value))}
+        />
+        <span className="dica-campo">
+          {form.pneus_por_km == null
+            ? `automático: ${numeroPneus(form.numero_eixos)} pneus (2 na direção + 4 por eixo) pros seus ${form.numero_eixos} eixos`
+            : 'seu valor — apague o campo pra voltar ao automático pelos eixos'}
+        </span>
       </label>
 
       <label>

@@ -7,7 +7,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { calcularFrete, fmtBRL, parseNumeroPtBR, tipoCargaPorCarroceria, TIPO_CARGA_LABEL, type FreteResultado } from '@rode/calc';
+import { calcularFrete, fmtBRL, parseNumeroPtBR, tipoCargaPorCarroceria, TIPO_CARGA_LABEL, pneusPorKmPadrao, numeroPneus, type FreteResultado } from '@rode/calc';
 import { supabase } from '../lib/supabaseClient';
 import { track } from '../lib/track';
 import {
@@ -86,7 +86,8 @@ export default function Analisar() {
   const [estacionamento, setEstacionamento] = useState('0');
   const [chapa, setChapa] = useState('0');
   const [manutencaoPorKm, setManutencaoPorKm] = useState(0.35);
-  const [pneusPorKm, setPneusPorKm] = useState(0.12);
+  // null = automático pelos eixos (pneusPorKmPadrao); número = o motorista editou (09/10).
+  const [pneusPorKm, setPneusPorKm] = useState<number | null>(null);
   const [depreciacaoPorKm, setDepreciacaoPorKm] = useState(0.25);
 
   useEffect(() => {
@@ -496,7 +497,17 @@ export default function Analisar() {
           </label>
           <label>
             Pneus (R$/km)
-            <input type="number" step="0.01" value={pneusPorKm} onChange={(e) => setPneusPorKm(Number(e.target.value))} />
+            <input
+              type="number"
+              step="0.01"
+              value={pneusPorKm ?? pneusPorKmPadrao(numeroEixos)}
+              onChange={(e) => setPneusPorKm(e.target.value === '' ? null : Number(e.target.value))}
+            />
+            <span className="dica-campo">
+              {pneusPorKm == null
+                ? `automático: ${numeroPneus(numeroEixos)} pneus pros seus ${numeroEixos} eixos`
+                : 'seu valor — apague o campo pra voltar ao automático'}
+            </span>
           </label>
           <label>
             Depreciação (R$/km)
