@@ -210,8 +210,8 @@ Decisão do Raphael (item da auditoria): custo de pneu deixa de ser R$ 0,12/km f
 
 | # | Mensagem | Esperado | Resultado |
 |---|---|---|---|
-| 81 | número 19 (Truck 3 eixos): `qnto cobro de carandai pra piracaia` | "Manutenção + pneus + depreciação" sobe de R$ 358,70 (v86) pra ≈ R$ 365 (pneus 0,133 × 498 km) | pendente de deploy |
-| 82 | número 20 (Carreta LS 6 eixos): `piso antt de bh pra salvador` | mesma linha sobe de R$ 1.028,45 pra ≈ R$ 1.275 (pneus 0,293 × 1.428 km) | pendente de deploy |
+| 81 | número 19 (Truck 3 eixos): `qnto cobro de carandai pra piracaia` | "Manutenção + pneus + depreciação" sobe de R$ 358,70 (v86) pra ≈ R$ 365 (pneus 0,133 × 498 km) | ✅ v88 — R$ 365,18 = 498 × (0,35 + 0,133 + 0,25) |
+| 82 | número 20 (Carreta LS 6 eixos): `qnto cobro de bh pra vitoria` | pneus 0,293 × 514 km → linha ≈ R$ 459 | ✅ v88 — R$ 459,27 = 514 × (0,35 + 0,293 + 0,25). Obs.: repetir uma rota já calculada ("piso antt de bh pra salvador") faz a IA responder de memória com o cálculo anterior — comportamento esperado da memória curta, não recalcula |
 
 ## Pra acrescentar (próximas rodadas)
 - `Quero sair do abc paulista` logo depois de "de que cidade?" (memória da pergunta).

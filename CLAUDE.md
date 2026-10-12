@@ -124,6 +124,14 @@ Bot: botão "Mandar pra um colega" após frete da lista → mensagem com
 indicação e calcula. App: `lib/compartilharFrete.ts`. Próximos passos (ordem combinada)
 no checkpoint 09/10 do `status-sessao.md`, item 0b.
 
+## "Tenho interesse" (12/10) — proposta aguardando os sócios
+
+Contato do frete só aparece quando o embarcador permite; o resto vai pelo fluxo "Tenho
+interesse" com CNH obrigatória, cartão público verificado e **o motorista mandando a 1ª
+mensagem ao embarcador do WhatsApp dele** (nunca do nosso número — opt-in da Meta).
+Plano em `Docs/proposta-tenho-interesse.txt` (18 itens, 5 etapas). Análise do concorrente
+Zé Boléia em `Docs/analise-concorrente-zeboleia-2026-10-12.md`.
+
 ## Google Play (09/10)
 
 Guia em `Docs/play-store-twa.md` (TWA via Bubblewrap, conta de organização, domínio

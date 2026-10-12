@@ -1,0 +1,54 @@
+PROBLEMA
+
+O telefone do contratante só pode aparecer quando o embarcador autorizar. Hoje o Rode com Lucro mostra o contato de todo frete, o que não vai se sustentar quando as empresas publicarem pela Sofrete. Um chat interno completo custaria ~6 dias e dependeria de o caminhoneiro abrir o app pra ler resposta — o que o concorrente (Zé Boléia) prova que não funciona. A saída é inverter o fluxo: o caminhoneiro se candidata ao frete e entrega o contato dele, verificado; o embarcador escolhe e chama. A limitação vira produto: verificação por CNH, funil de frete pro embarcador e reputação dos dois lados — exatamente o que ninguém no mercado tem.
+
+SOLUÇÃO
+
+1) Botão "Tenho interesse" no WhatsApp (depois do cálculo de um frete da lista) e no app (Buscar frete).
+
+2) Ao tocar, o caminhoneiro que ainda não mandou a CNH recebe o pedido da foto; o interesse só chega ao embarcador depois da CNH lida. Quem já mandou, pula. Efeito colateral: cadastro completo e selo "Verificado".
+
+3) Aviso ao embarcador somente dentro da Sofrete: contador no menu, destaque no frete, lista de interessados em tempo real. Sem WhatsApp pra empresa (sem template, sem custo).
+
+4) Resposta imediata ao caminhoneiro: "A empresa recebeu sua solicitação e está analisando." E nunca silêncio depois: "a empresa viu", "fechou com você", "escolheu outro".
+
+5) Tela "Meus interesses" no app, com as fases (enviado > visto > em contato > fechado / não foi dessa vez), e o comando INTERESSES no bot.
+
+6) Página de fretes na Sofrete com fases: publicado > com interessados > em negociação > fechado com fulano > carregado > entregue > avaliado. O cartão do interessado traz nome, telefone, caminhão, eixos, cidade atual, selo e quem indicou.
+
+7) "Fechar frete com fulano" no portal avisa os demais interessados, tira o frete da lista e vira "Realizado" no app do motorista (lucro do mês) e faturamento no portal, sem ninguém digitar nada.
+
+8) Avaliação do embarcador pelo motorista (o bot pergunta 2 dias após a entrega) e do motorista pelo embarcador (no portal) — só depois de frete fechado, 1 a 5 estrelas + uma frase. Nota média aparece no anúncio (da empresa) e no cartão do interessado (do motorista).
+
+9) Telefone do motorista só pra empresa aprovada na moderação; o botão é o consentimento, com uma linha nos Termos e na Privacidade.
+
+10) Anti-abuso desde o início: limite de interesses por dia, bloqueio pela empresa, denúncia nos dois lados.
+
+11) Lembrete do bot ao motorista se a empresa não responder em 24 h ("quer ver outros fretes?"), e medição do tempo de resposta das empresas no admin. Se ficar lento, ligamos notificação do navegador no portal (1 dia) ou e-mail.
+
+12) Dois templates na Meta (pedir no primeiro dia, demoram 1 a 3 dias): atualização do interesse pro motorista fora da janela de 24 h e pedido de avaliação.
+
+13) Painel admin: aba "Funil de fretes" (interesses, tempo de resposta, fechamentos, avaliações) e moderação de avaliações.
+
+14) Testes no simulador (interesse sem/com CNH, dois interessados, fechamento, avaliação) e piloto com uma empresa amiga antes de abrir.
+
+EMBARCADOR QUE AINDA NÃO NOS CONHECE
+
+A maioria dos fretes vem de empresas que nunca falaram com a gente. Nós NÃO podemos mandar WhatsApp pra elas a partir do nosso número: a Meta exige opt-in pra mensagem iniciada pela empresa, e disparar pra quem não pediu derruba a nota de qualidade e corta o limite do bot (que é o produto inteiro). A solução é o próprio caminhoneiro mandar a primeira mensagem, do WhatsApp dele, com o texto pronto:
+
+15) Quando o embarcador do frete não é cadastrado na Sofrete, o "Tenho interesse" devolve um botão que abre o WhatsApp do embarcador com a mensagem pronta: "Olá! Vi o frete [rota] no Rode com Lucro e tenho interesse. [Caminhão, eixos, cidade atual]. Meu cadastro verificado: [link do cartão]. Publique seus fretes grátis na Sofrete: [link]". A conversa é pessoa-pra-pessoa, fora do nosso número — compatível com a Meta. Cada interesse vira uma apresentação da Sofrete feita pelo caminhoneiro.
+
+16) Cartão público do motorista (link curto): nome, selo verificado, caminhão, eixos, cidade atual, nota, quem indicou — e, pro embarcador, o convite "publique seus fretes grátis na Sofrete". É a página de venda da Sofrete, aberta pelo embarcador no momento em que ele mais precisa de caminhão.
+
+17) No cadastro da Sofrete, a empresa informa o WhatsApp e marca "aceito receber avisos por WhatsApp" (opt-in). A partir daí o nosso bot pode avisá-la por template (novo interessado, lembrete), e o fluxo dos itens 3 a 8 passa a valer por dentro. Antes do cadastro, só o aviso dentro da Sofrete não existe — vale o item 15.
+
+18) Depois que o motorista manda a mensagem, o bot registra o interesse mesmo assim e pergunta no dia seguinte "a empresa respondeu?" — pra medirmos quais anunciantes respondem e pra sugerir outros fretes se não respondeu.
+
+ESFORÇO E ORDEM
+
+Etapa 1 — itens 1, 2, 4, 9, 15, 16: ~3 dias (já resolve o telefone e começa a trazer embarcador pra Sofrete).
+Etapa 2 — itens 3, 6, 7, 17: ~2,5 dias.
+Etapa 3 — itens 5, 11, 12, 18: ~1,5 dia + espera da Meta.
+Etapa 4 — itens 8, 10, 13: ~2,5 dias.
+Etapa 5 — item 14: ~1 dia.
+Total: cerca de 10,5 dias úteis, entregável por etapa.
