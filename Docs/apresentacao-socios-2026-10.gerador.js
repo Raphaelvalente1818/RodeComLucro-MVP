@@ -194,18 +194,18 @@ pres.addSection({ title: "Problema e solução" });
   ], { x: 5.45, y: 2.0, w: 3.7, h: 2.8, fontSize: 13, color: C.background1, paraSpaceAfter: 8, isTextBox: true, margin: 0, objectName: "desc lista" });
 }
 
-// ---------- 7. Solução: fluxo
+// ---------- 7. Solução: fluxo (concierge, decidido na prévia de 15/10)
 {
   const s = pres.addSlide({ masterName: "CLARO", sectionTitle: "Problema e solução" });
-  s.addText("A solução: \"Tenho interesse\"", { placeholder: "title" });
-  txt(s, "O motorista se candidata e entrega o contato dele, verificado. O embarcador escolhe e chama.", { x: 0.6, y: 1.2, w: 8.8, h: 0.4, fontSize: 13, color: C.accent6, objectName: "intro" });
+  s.addText("A solução: \"Tenho interesse\" com concierge", { placeholder: "title" });
+  txt(s, "O motorista se candidata, verificado. Empresa que ainda não nos conhece: um operador liga primeiro (uma vez só). Empresa já cadastrada: aviso automático na Sofrete e no WhatsApp.", { x: 0.6, y: 1.2, w: 8.8, h: 0.5, fontSize: 12.5, color: C.accent6, objectName: "intro" });
   const passos = [
     ["Tenho\ninteresse", "no bot ou no app"],
     ["CNH\npor foto", "só depois vale; ganha selo"],
-    ["Cartão\nverificado", "nome, caminhão, nota, link"],
-    ["Mensagem\npronta", "do WhatsApp dele pro embarcador"],
-    ["Embarcador\nchama", "e conhece a Sofrete"],
-    ["Fases +\navaliação", "no portal e no app"],
+    ["Cartão +\nsenha", "nome, caminhão, nota, código"],
+    ["1ª vez:\noperador liga", "até 2 h; apresenta a Sofrete"],
+    ["Depois:\nautomático", "Sofrete + WhatsApp, já com opt-in"],
+    ["Empresa\nentra", "cadastra, chama o motorista com a senha"],
   ];
   const bw = 1.3, gap = 0.2, x0 = 0.6;
   passos.forEach(([h, p], i) => {
@@ -217,9 +217,9 @@ pres.addSection({ title: "Problema e solução" });
     if (i < passos.length - 1) s.addShape(pres.ShapeType.rightArrow, { x: x + bw + 0.02, y: 2.45, w: 0.16, h: 0.25, fill: { color: THEME.colors.accent2 }, line: { width: 0 }, objectName: "seta " + (i + 1) });
   });
   box(s, { x: 0.6, y: 3.6, w: 8.8, h: 1.35, fill: { color: THEME.colors.dk1 }, objectName: "msg" });
-  txt(s, "A mensagem que o motorista manda (pronta pelo bot):", { x: 0.8, y: 3.68, w: 8.4, h: 0.3, fontSize: 11, color: C.accent6, objectName: "msg h" });
-  txt(s, "\"Olá! Vi o frete Itajaí → Jundiaí no Rode com Lucro e tenho interesse. Carreta sider 6 eixos, estou em Itajaí. Meu cadastro verificado: rodecomlucro.app/m/8CAENY — Publique seus fretes grátis na Sofrete: sofrete.app\"", { x: 0.8, y: 3.98, w: 8.4, h: 0.9, fontSize: 12.5, italic: true, color: C.background1, objectName: "msg p" });
-  s.addNotes("Conversa pessoa-pra-pessoa, fora do nosso número: compatível com a Meta. Depois que a empresa se cadastra com opt-in, o bot pode avisá-la por template e o fluxo segue por dentro da Sofrete.");
+  txt(s, "O que o operador diz ao telefone (30 segundos):", { x: 0.8, y: 3.68, w: 8.4, h: 0.3, fontSize: 11, color: C.accent6, objectName: "msg h" });
+  txt(s, "\"Aqui é da Sofrete. Um caminhoneiro verificado, carreta sider 6 eixos em Itajaí, se interessou pelo seu frete Itajaí → Jundiaí. Posso te mandar o cartão dele no WhatsApp? O cadastro pra publicar é grátis.\" — Indicador por operador: ligações, empresas cadastradas, fretes fechados (modelo Aferi+). Sem ligação em 2 h ou fora do horário: o bot libera a mensagem pronta pro motorista mandar ele mesmo, e o operador liga depois.", { x: 0.8, y: 3.98, w: 8.4, h: 0.95, fontSize: 11, italic: true, color: C.background1, objectName: "msg p" });
+  s.addNotes("Decidido na prévia de 15/10: nunca mandar do número oficial pra empresa sem opt-in. A ligação do operador, na primeira vez, é o opt-in; a partir do segundo interesse a empresa já é conhecida e o aviso é automático. Frete é perecível: por isso o prazo de 2 h e o fallback da mensagem do próprio motorista.");
 }
 
 // ---------- 8. Efeitos colaterais

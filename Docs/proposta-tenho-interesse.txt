@@ -58,7 +58,7 @@ O que NÃO copiar: carteira/antecipação (operação financeira regulada, fora 
 
 PONTOS DA REUNIÃO PRÉVIA (15/10) — ANÁLISE SEM PENDER PRA NENHUM LADO
 
-22) Página no admin concentrando os pedidos de interesse; nós ligamos pra empresa, nos apresentamos e só então mandamos o WhatsApp com o link do frete e do interessado. VALE: sim — é o jeito certo de abrir embarcador. A ligação resolve o opt-in (depois dela a empresa consentiu) e converte muito mais que mensagem fria. Página com fila, status (a ligar / ligado / cadastrou / recusou), registro de quem ligou. Etapa 1, ~1,5 dia.
+22) Página no admin concentrando os pedidos de interesse; nós ligamos pra empresa, nos apresentamos e só então mandamos o WhatsApp com o link do frete e do interessado. VALE: sim — é o jeito certo de abrir embarcador. A ligação resolve o opt-in (depois dela a empresa consentiu) e converte muito mais que mensagem fria. Página com fila, status (a ligar / ligado / cadastrou / recusou), registro de quem ligou. Regra decidida em 15/10: a ligação vem antes SÓ NA PRIMEIRA VEZ que a empresa é acionada — a partir do segundo interesse ela já é conhecida (cadastro + opt-in) e o aviso é automático (Sofrete + WhatsApp). Como frete é perecível: prazo de 2 h em horário comercial pra ligação; passou o prazo ou é fora do horário, o bot libera a mensagem pronta pro motorista mandar ele mesmo (item 31a) e o operador liga depois pra fechar o cadastro. Etapa 1, ~1,5 dia.
 
 23) Atrair os motoristas que já estão na Fretebras. VALE: como aquisição, sim — é a população ativa, já acostumada a se verificar. Como verificação, não: não dá pra conferir se alguém é da Fretebras (sem API), seria autodeclaração. Já, esforço de marketing, não de código.
 
