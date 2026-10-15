@@ -249,23 +249,52 @@ pres.addSection({ title: "Plano" });
   const itens = [
     ["Fretes vivos", "robô diário ou só Sofrete", "1 dia", true],
     ["Pedágio pago pelo embarcador", "toggle no app, entendido pelo bot", "horas", true],
-    ["Tenho interesse — etapa 1", "botão, CNH, cartão, mensagem pronta", "3 dias", true],
-    ["Tenho interesse — etapas 2 a 5", "fases na Sofrete, disponível na busca, RNTRC, foto, avaliações", "9 dias", false],
-    ["Tô vazio", "bot + app, expira em 24 h", "2 dias", false],
-    ["Vários destinos", "no cálculo (app e bot)", "1 dia", false],
+    ["Tenho interesse — etapa 1", "botão, CNH, cartão, senha, link pronto, admin concierge", "4,5 dias", true],
+    ["Tenho interesse — etapas 2 a 5", "fases na Sofrete, disponível na busca, localização, níveis, RNTRC, avaliações", "11 dias", false],
+    ["Depois dos 300 motoristas", "prova de vida, PIX de R$ 1, Comunidade", "—", false],
   ];
-  s.addShape(pres.ShapeType.line, { x: 1.0, y: 1.55, w: 0, h: 3.45, line: { color: THEME.colors.accent1, width: 2 }, objectName: "linha" });
+  s.addShape(pres.ShapeType.line, { x: 1.0, y: 1.55, w: 0, h: 2.85, line: { color: THEME.colors.accent1, width: 2 }, objectName: "linha" });
   itens.forEach(([h, p, d, agora], i) => {
-    const y = 1.4 + i * 0.6;
+    const y = 1.4 + i * 0.7;
     s.addShape(pres.ShapeType.ellipse, { x: 0.86, y: y + 0.12, w: 0.28, h: 0.28, fill: { color: agora ? THEME.colors.accent1 : THEME.colors.lt1 }, line: { color: THEME.colors.accent1, width: 2 }, objectName: "ponto " + (i + 1) });
     txt(s, h, { x: 1.4, y: y, w: 3.6, h: 0.5, fontSize: 15, bold: true, valign: "middle", objectName: "h " + (i + 1) });
     txt(s, p, { x: 5.0, y: y, w: 3.0, h: 0.5, fontSize: 12, color: C.accent6, valign: "middle", objectName: "p " + (i + 1) });
     box(s, { x: 8.2, y: y + 0.08, w: 1.2, h: 0.36, fill: { color: agora ? THEME.colors.accent1 : THEME.colors.lt2 }, objectName: "dias " + (i + 1) });
     txt(s, d, { x: 8.2, y: y + 0.08, w: 1.2, h: 0.36, fontSize: 12, bold: true, align: "center", valign: "middle", objectName: "dias txt " + (i + 1) });
   });
-  txt(s, "Total ≈ 16 dias úteis. Os três primeiros (≈ 4 dias) já resolvem telefone, custo real e lista velha.", { x: 0.6, y: 4.95, w: 8.8, h: 0.3, fontSize: 11, italic: true, color: C.accent6, objectName: "total" });
+  txt(s, "Total ≈ 17 dias úteis. Os três primeiros (≈ 6 dias) já resolvem telefone, custo real, lista velha e abrem embarcador por telefone.", { x: 0.6, y: 4.95, w: 8.8, h: 0.3, fontSize: 11, italic: true, color: C.accent6, objectName: "total" });
   s.addNotes("A ordem vem da conclusão do concorrente: carga primeiro. Tô vazio só depois de ter frete vivo, senão vira cidade fantasma.");
 }
+
+// ---------- 9b/9c. Pontos da reunião prévia
+function slidePontos(titulo, linhas, notas) {
+  const s = pres.addSlide({ masterName: "CLARO", sectionTitle: "Plano" });
+  s.addText(titulo, { placeholder: "title" });
+  const hdr = { bold: true, color: THEME.colors.dk1, fill: { color: THEME.colors.accent1 }, fontSize: 11, fontFace: "Arial" };
+  const c = (t, o = {}) => ({ text: t, options: Object.assign({ fontSize: 9.5, color: THEME.colors.dk1, valign: "middle" }, o) });
+  const sim = (t) => c("✔ " + t, { color: "1D7A45", bold: true });
+  const nao = (t) => c("✘ " + t, { color: "9E2F2F", bold: true });
+  const dep = (t) => c("◐ " + t, { color: "8A5A14", bold: true });
+  const rows = [[c("Ponto levantado", hdr), c("Vale a pena?", hdr), c("Quando", hdr), c("Esforço", hdr)]];
+  linhas.forEach(([pt, v, q, e]) => rows.push([c(pt), v === "sim" ? sim(q[0]) : v === "nao" ? nao(q[0]) : dep(q[0]), c(q[1]), c(e)]));
+  s.addTable(rows, { x: 0.6, y: 1.2, w: 8.8, colW: [3.9, 2.3, 1.5, 1.1], rowH: 0.5, border: { type: "solid", color: "D8D2C2", pt: 0.5 }, fontFace: "Calibri", objectName: "tabela " + titulo });
+  s.addNotes(notas);
+}
+slidePontos("Pontos da reunião prévia (1/2)", [
+  ["1. Página no admin com os pedidos de interesse; nós ligamos pra empresa, nos apresentamos e só então mandamos o WhatsApp com o link", "sim", ["Sim — é o jeito certo de abrir embarcador", "Etapa 1"], "1,5 dia"],
+  ["2. Atrair os motoristas que já estão na Fretebras", "dep", ["Como aquisição sim; como verificação não (não dá pra conferir)", "Já"], "marketing"],
+  ["3. Senha no \"Tenho interesse\": a empresa se identifica pro motorista com o código (modelo iFood)", "sim", ["Sim — barato e mata o golpe do falso embarcador", "Etapa 1"], "horas"],
+  ["4. Selfie com prova de vida (piscar, mexer o rosto) conferida com a foto da CNH", "dep", ["Depois — serviço pago por checagem; vira o nível mais alto da certificação", "Pós 300"], "2–3 dias + fornecedor"],
+  ["5. VIP vê fretes antes, usa mais o WhatsApp e tem nível de confiança maior", "dep", ["Fretes antes e WhatsApp sim (é o PRO). Confiança não: selo vem de verificação, não de pagamento", "PRO"], "pronto"],
+  ["6. Checar o RNTRC direto na ANTT", "sim", ["Sim — a consulta pública tem captcha; via API paga (centavos por consulta)", "Etapa 3"], "1 dia"],
+], "1: concierge — ligar antes resolve o opt-in (depois da ligação a empresa consentiu) e converte muito mais que mensagem fria. 3: código de 4 dígitos gerado no interesse; a empresa vê no portal ou recebe na ligação; o motorista vê no bot. 5: misturar PRO com selo destrói a credibilidade do selo.");
+slidePontos("Pontos da reunião prévia (2/2)", [
+  ["7. PIX de R$ 1 pra validar o motorista (nome do banco bate com a CNH)", "dep", ["Depois — exige PSP com PIX (Asaas/Pagar.me; Stripe não); entra como nível de certificação", "Pós PRO"], "2 dias"],
+  ["8. Localização do motorista pra indicar frete e serviço perto", "sim", ["Sim — pontual, não rastreio: o WhatsApp manda localização; o app pede no navegador", "Etapa 2"], "1 dia"],
+  ["9. Níveis de certificação (CNH → RNTRC/PIX → frete feito → …) em vez de pedir tudo de uma vez", "sim", ["Sim — é a nossa resposta ao atrito da Fretebras; o cartão mostra o nível", "Etapa 2–3"], "1 dia"],
+  ["10. Não usar o número oficial pra empresa sem opt-in: mensagem do WhatsApp do motorista ou página nossa + operadores com indicador por operador (modelo Aferi+)", "sim", ["Sim, os dois: link pronto pro motorista (custo zero) + concierge com indicador por operador", "Etapa 1"], "junto com o 1"],
+  ["11. Vale implementar o \"Estou vazio\"? Quando?", "sim", ["Sim — como \"quer que as empresas te vejam?\" na busca, só depois de ter frete vivo", "Etapa 2"], "2 dias"],
+], "10 explicado: o bot devolve um link; ao tocar, abre o WhatsApp do próprio motorista com a mensagem pra empresa já escrita; ele só aperta enviar. A mensagem sai do número dele, como já acontece nos grupos. A página intermediária + operadores é o concierge do ponto 1 — mesma coisa, com gente ligando antes.");
 
 // ---------- 10. PRO
 {
@@ -313,7 +342,7 @@ pres.addSection({ title: "Decisões" });
   const s = pres.addSlide({ masterName: "ESCURO", sectionTitle: "Decisões" });
   s.addText("As 5 decisões de hoje", { placeholder: "title" });
   const dec = [
-    ["Aprovar o \"Tenho interesse\" (21 itens) e a ordem do MVP", "fretes vivos → pedágio → interesse etapa 1 → resto"],
+    ["Aprovar o \"Tenho interesse\" (32 itens) e a ordem do MVP", "fretes vivos → pedágio → interesse etapa 1 (com concierge e senha) → resto"],
     ["CNH obrigatória pra se candidatar a um frete", "o interesse só chega ao embarcador depois da CNH lida"],
     ["Fechar a tabela do PRO", "preço, limite do grátis em 5, Stripe só cartão, ligar após semeadura"],
     ["Quem traz as 3 primeiras empresas pra Sofrete", "sem carga viva nada do resto funciona"],

@@ -56,11 +56,37 @@ Vimos em 13/10: verificação pesada (ANTT na hora, CNH, endereço, PIX confirma
 
 O que NÃO copiar: carteira/antecipação (operação financeira regulada, fora do alcance), selfie e comprovante de endereço (atrito sem ganho pro nosso tamanho), bloqueio de print (nós espalhamos o frete, eles guardam), chat interno (já descartado).
 
-ESFORÇO E ORDEM
+PONTOS DA REUNIÃO PRÉVIA (15/10) — ANÁLISE SEM PENDER PRA NENHUM LADO
 
-Etapa 1 — itens 1, 2, 4, 9, 15, 16: ~3 dias (já resolve o telefone e começa a trazer embarcador pra Sofrete).
-Etapa 2 — itens 3, 6, 7, 17, 21: ~3,5 dias.
-Etapa 3 — itens 5, 11, 12, 18, 19, 20: ~2 dias + espera da Meta.
+22) Página no admin concentrando os pedidos de interesse; nós ligamos pra empresa, nos apresentamos e só então mandamos o WhatsApp com o link do frete e do interessado. VALE: sim — é o jeito certo de abrir embarcador. A ligação resolve o opt-in (depois dela a empresa consentiu) e converte muito mais que mensagem fria. Página com fila, status (a ligar / ligado / cadastrou / recusou), registro de quem ligou. Etapa 1, ~1,5 dia.
+
+23) Atrair os motoristas que já estão na Fretebras. VALE: como aquisição, sim — é a população ativa, já acostumada a se verificar. Como verificação, não: não dá pra conferir se alguém é da Fretebras (sem API), seria autodeclaração. Já, esforço de marketing, não de código.
+
+24) Senha no "Tenho interesse": o embarcador se identifica pro motorista com o código (modelo iFood). VALE: sim — barato e mata o golpe do falso embarcador, que é exatamente o que vimos no Zé Boléia. Código de 4 dígitos gerado no interesse; a empresa vê no portal (ou recebe na ligação do item 22); o motorista vê no bot: "quem te ligar com o código 7319 é a Transportes X". Etapa 1, horas.
+
+25) Selfie com prova de vida (piscar, mexer o rosto) conferida com a foto da CNH. VALE: depois. É serviço pago por checagem (Serpro Datavalid, Unico, idwall — R$ 1 a 5 cada), a imagem passa por fornecedor (ajuste nos Termos) e é atrito. Vira o nível mais alto da certificação (item 30), depois dos 300 motoristas. 2–3 dias + contratar fornecedor.
+
+26) VIP vê fretes antes, usa mais o WhatsApp e tem nível de confiança maior. VALE em parte: fretes antes e WhatsApp sem limite já são o PRO (pronto). "Confiança maior" não: o selo vem de verificação, não de pagamento. Misturar os dois destrói a credibilidade do selo pro embarcador. PRO ganha destaque, não selo.
+
+27) Checar o RNTRC direto na ANTT. VALE: sim. A consulta pública tem captcha; via API paga (ex.: Infosimples, centavos por consulta) é automático. Mostra no cartão "ANTT ativa em nome de X" e acusa titular diferente, como a Fretebras. Etapa 3, ~1 dia. Substitui o item 19.
+
+28) PIX de R$ 1 pra validar o motorista (nome do banco bate com a CNH). VALE: depois. Exige provedor com PIX de entrada e devolução (Asaas ou Pagar.me; o Stripe não faz); entra como nível de certificação. Depois do PRO/provedor definido, ~2 dias.
+
+29) Localização do motorista pra indicar frete e serviço perto. VALE: sim, pontual — não rastreio contínuo (LGPD, bateria, Termos). O WhatsApp já permite mandar localização: o bot aceita e grava a cidade atual; o app pede no navegador. Alimenta a busca e o "disponível". Etapa 2, ~1 dia.
+
+30) Níveis de certificação em vez de pedir tudo de uma vez: nível 1 telefone (conta) → nível 2 CNH (selo) → nível 3 RNTRC e PIX → nível 4 frete realizado e avaliado → nível 5 prova de vida. VALE: sim — é a nossa resposta ao atrito da Fretebras; o cartão mostra o nível, o motorista sobe quando quiser. Etapa 2–3, ~1 dia.
+
+31) Não usar o número oficial pra empresa sem opt-in. Duas saídas, e valem as duas: (a) link pronto pro motorista — o bot devolve um botão; ao tocar, abre o WhatsApp do próprio motorista com a mensagem pra empresa já escrita, ele só aperta enviar; a mensagem sai do número dele, como já acontece nos grupos; custo zero. (b) Página nossa + operadores (o concierge do item 22) com indicador por operador, modelo Aferi+: quantas ligações, quantas empresas cadastradas, quantos fretes fechados por operador. Etapa 1, junto com o 22.
+
+32) Vale implementar o "Estou vazio"? VALE: sim, mas só depois de ter frete vivo e embarcador na Sofrete, senão é lista sem quem olhe. Formato: "quer que as empresas te vejam?" na hora da busca (item 21), expira em 24 h, lista na Sofrete. Etapa 2, ~2 dias.
+
+ESFORÇO E ORDEM (atualizado em 15/10)
+
+Etapa 1 — itens 1, 2, 4, 9, 15, 16, 22, 24, 31: ~4,5 dias (resolve o telefone, abre embarcador por telefone, protege o motorista com a senha).
+Etapa 2 — itens 3, 6, 7, 17, 21, 29, 32: ~5 dias.
+Etapa 3 — itens 5, 11, 12, 18, 20, 27, 30: ~3 dias + espera da Meta.
 Etapa 4 — itens 8, 10, 13: ~2,5 dias.
 Etapa 5 — item 14: ~1 dia.
-Total: cerca de 12 dias úteis, entregável por etapa.
+Depois dos 300 motoristas / do PRO: itens 25 e 28.
+Já, sem código: item 23. Fora: parte "confiança" do item 26.
+Total: cerca de 16 dias úteis, entregável por etapa.
