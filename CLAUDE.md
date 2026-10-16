@@ -3,6 +3,13 @@
 Lido automaticamente ao abrir esta pasta. Migrado do Cowork em 30/09/2026 (o Cowork
 descontinuou tarefas em pasta local em 06/10/2026). Tudo que importa está aqui no repo.
 
+## Decisão de marca (15/10/2026)
+
+Os sócios decidiram (3×1): **o produto se chama SOFRETE nos dois lados** — motorista e
+embarcador. "Rode com Lucro" sai dos textos, do app, do bot, das páginas legais e das lojas
+(rebrand é o passo 1.1 de `Docs/plano-execucao-2026-10.md`). Até o rebrand terminar, o código
+e esta pasta ainda usam o nome antigo; não criar nada novo com "Rode com Lucro".
+
 ## Comece por aqui
 
 1. **`Docs/status-sessao.md`** é a fonte da verdade do estado do projeto. Leia a

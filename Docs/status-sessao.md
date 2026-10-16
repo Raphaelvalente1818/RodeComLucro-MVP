@@ -1,6 +1,6 @@
 # Status da sessão — RODE COM LUCRO
 
-> Última atualização: 2026-10-12 — ver "CHECKPOINT — 12/10" perto do fim do arquivo (os checkpoints mais novos ficam ACIMA dos antigos a partir de 05/10). A sessão anterior (17/07) foi perdida num reset — este arquivo e `sequencia-construcao.md` foram o que permitiu retomar o contexto. Manter este hábito daqui pra frente.
+> Última atualização: 2026-10-16 — ver "CHECKPOINT — 16/10" perto do fim do arquivo (os checkpoints mais novos ficam ACIMA dos antigos a partir de 05/10). A sessão anterior (17/07) foi perdida num reset — este arquivo e `sequencia-construcao.md` foram o que permitiu retomar o contexto. Manter este hábito daqui pra frente.
 
 ## O que já está pronto (confirmado lendo o repo em 04/08)
 
@@ -1635,6 +1635,14 @@ Raphael perguntou se o pneu muda com os eixos — não mudava (R$ 0,12/km fixo).
 - App: `CaminhaoPerfil.pneus_por_km: number | null`, `PERFIL_DEFAULT` null, `perfilParaCustos` usa `?? pneusPorKmPadrao(eixos)`; Analisar e Perfil mostram o automático no campo com legenda "automático: 22 pneus pros seus 6 eixos" (`.dica-campo`); apagar o campo volta ao automático.
 - Bot: `PERFIL_CUSTO_DEFAULT.pneus_por_km = null`, `perfilParaCustos` idem. **Deploy obrigatório logo após a migration** (v86 lia o campo como número → pneu zero).
 - Pergunta do Raphael sobre escala: refinamento de fórmula é aritmética (µs); o que pesa são as chamadas externas (Haiku, Google, Meta) — ver `plano-escala.md`.
+
+## CHECKPOINT — 16/10 (reunião de sócios de 15/10 — plano aprovado, começar a codificar)
+
+**Estado do código**: igual ao de 09/10 (bot v88, app com abas, compartilhar frete, pneus por eixo). 12–15/10 foram análise e documentos: `analise-concorrente-zeboleia-2026-10-12.md`, `analise-concorrente-fretebras-motorista` (prints do Rapha, 13/10, resumidos no `.txt` abaixo), `proposta-tenho-interesse.txt` (32 itens), `apresentacao-socios-2026-10-v4.pptx` (16 slides).
+
+**Reunião de 15/10 — tudo aprovado, com estes ajustes** (detalhe em `Docs/plano-execucao-2026-10.md`): marca única **SOFRETE** nos dois lados (3×1); melhorar CNH por PDF; pesquisar Serasa; entrada do embarcador com checagem (CNPJ, RNTRC, lista "aceito na Fretebras"); ver como a Fretebras confere a chave PIX (DICT via provedor); robô de fretes a cada 3 h (spike primeiro); Rapha levanta motoristas da Fretebras; selfie viva só com 10 mil; Emerson renova a Fretebras; RNTRC por foto ou número + ANTT; Play primeiro, Apple com 10 mil; tô vazio pergunta onde está e pra onde vai; provedor de pagamento só com a empresa aberta (~10 dias); Rapha propõe o preço do VIP.
+
+**AO RETOMAR**: seguir `Docs/plano-execucao-2026-10.md` na ordem — Fase 0 (domínio Sofrete, templates na Meta, Fretebras renovada) → Fase 1 (rebrand Sofrete, CNH por PDF, pedágio do embarcador, spike do robô) → Fase 2 (Tenho interesse etapa 1, com mockups antes) → 3 (Sofrete empresa) → 4 (tô vazio, níveis, RNTRC) → 5 (avaliações, abuso, admin, piloto) → 6 (Play, PRO). Primeiro passo de código: **1.1 rebrand** — nada novo nasce com o nome antigo.
 
 ## CHECKPOINT — 12/10 (fim de sessão, bot v88 — dia de análise, sem código novo)
 
