@@ -410,9 +410,19 @@ export default function BuscarFrete() {
                       {f.empresaNome}
                       {f.distancia != null ? ` · ${f.distancia.toFixed(0)} km` : ''}
                     </p>
-                    {f.tiposVeiculoAceitos.length > 0 && (
-                      <p className="linha-analise-detalhe">Aceita: {f.tiposVeiculoAceitos.join(', ')}</p>
+                    {(f.carga || f.especie) && (
+                      <p className="linha-analise-detalhe">
+                        Carga: {[f.carga, f.especie].filter(Boolean).join(' · ')}
+                        {f.distanciaKm != null ? ` · ${f.distanciaKm.toFixed(0)} km de rota` : ''}
+                      </p>
                     )}
+                    {f.tiposVeiculoAceitos.length > 0 && (
+                      <p className="linha-analise-detalhe">
+                        Aceita: {f.tiposVeiculoAceitos.join(', ')}
+                        {f.tiposCarroceriaAceitos.length > 0 ? ` · ${f.tiposCarroceriaAceitos.join(', ')}` : ''}
+                      </p>
+                    )}
+                    {f.observacoes && <p className="frete-observacoes">{f.observacoes}</p>}
                     {f.tipoValor === 'por_tonelada' && totalEstimado == null && (
                       <p className="linha-analise-detalhe">Cadastre a carga máxima no Perfil do caminhão pra ver o valor total estimado.</p>
                     )}

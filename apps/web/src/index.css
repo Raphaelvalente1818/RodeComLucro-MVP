@@ -296,6 +296,18 @@ button:disabled {
   margin: -8px 0 0;
 }
 
+.frete-observacoes {
+  /* observações do anunciante no card do Buscar frete (base Fretebras, 16/10) */
+  margin: 4px 0 0;
+  padding: 6px 8px;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--txt-2);
+  background: var(--surf-2);
+  border-radius: 8px;
+  white-space: pre-wrap;
+}
+
 .dica-campo {
   /* legenda curta abaixo de um input (ex.: pneus automáticos pelos eixos, 09/10) */
   font-size: 12px;

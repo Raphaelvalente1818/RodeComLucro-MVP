@@ -1839,7 +1839,7 @@ async function calcularEResponderFrete(params: {
   /** Recalculando o mesmo frete depois do onboarding: lucro da estimativa genérica, pra mostrar a diferença. */
   recalculoDe?: number | null;
   /** Veio de um frete publicado (clique na lista): vai pro histórico com empresa/contato e o link do app destaca esse frete. */
-  fretePublicado?: { id: string; codigo: string | null; empresaNome: string | null; contatoNome: string | null; contatoTelefone: string | null } | null;
+  fretePublicado?: { id: string; codigo: string | null; empresaNome: string | null; contatoNome: string | null; contatoTelefone: string | null; carga?: string | null; especie?: string | null; observacoes?: string | null } | null;
   /** Caminhão dito na mensagem (resolverVeiculoDaMensagem): sobrepõe eixos/carroceria do perfil nesse cálculo. */
   veiculo?: VeiculoDaMensagem | null;
   /** "entendi 'coruipe' como Coruripe/AL" — corrigirCidades (03/10). */
@@ -2003,13 +2003,21 @@ async function calcularEResponderFrete(params: {
       linhaCompartilhe;
   }
 
+  // Frete da lista (base Fretebras, 16/10): mostra o produto e o que o anunciante escreveu
+  // ("carregar na Ambev", "precisa lona e cintas") — o motorista decide com isso.
+  const linhaCarga = fretePublicado && (fretePublicado.carga || fretePublicado.especie)
+    ? `Carga: ${[fretePublicado.carga, fretePublicado.especie].filter(Boolean).join(" · ")}\n`
+    : "";
+  const linhaObs = fretePublicado?.observacoes ? `📝 ${fretePublicado.observacoes.replace(/\s+/g, " ").trim().slice(0, 300)}\n` : "";
   const resposta =
     `📦 ${origem} → ${destino} (${rota.distanciaKm.toFixed(0)} km${rota.distanciaEstimada ? ", estimado" : ""}${voltaVazia ? ", voltando vazio" : ""})\n` +
+    linhaCarga +
     `Valor ofertado: ${fmtBRL(valorFreteReais)}\n` +
     `Custo estimado: ${fmtBRL(resultado.custoTotal)}\n` +
     `Lucro estimado: ${fmtBRL(resultado.lucro)} (margem ${fmtPct(resultado.margemReal)})\n` +
     `Piso ANTT: ${fmtBRL(resultado.pisoANTT)}${avisoPiso}\n\n` +
     `${emoji} Veredito: ${resultado.veredicto}\n\n` +
+    linhaObs +
     rodape +
     (rota.pedagioCentavos == null ? `\n_${NOTA_SEM_PEDAGIO}_` : "") +
     (custosDitos.nota ? `\n_${custosDitos.nota}_` : "") +
@@ -2692,7 +2700,7 @@ async function tratarRespostaLista(fromE164: string, rowId: string, waMessageId:
 
   const { data: frete } = await supabase
     .from("fretes_publicados")
-    .select("id, codigo, origem_cidade, origem_uf, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, status, empresa_nome, contato_nome, contato_telefone")
+    .select("id, codigo, origem_cidade, origem_uf, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, status, empresa_nome, contato_nome, contato_telefone, carga, especie, observacoes")
     .eq("id", rowId)
     .maybeSingle();
 
@@ -2758,6 +2766,9 @@ async function tratarRespostaLista(fromE164: string, rowId: string, waMessageId:
       id: frete.id as string,
       codigo: (frete.codigo as string | null) ?? null,
       empresaNome: (frete.empresa_nome as string | null) ?? null,
+      carga: (frete.carga as string | null) ?? null,
+      especie: (frete.especie as string | null) ?? null,
+      observacoes: (frete.observacoes as string | null) ?? null,
       contatoNome: (frete.contato_nome as string | null) ?? null,
       contatoTelefone: (frete.contato_telefone as string | null) ?? null,
     },

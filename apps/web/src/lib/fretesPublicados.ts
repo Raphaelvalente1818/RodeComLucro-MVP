@@ -33,6 +33,14 @@ export interface FretePublicado {
   createdAt: string;
   /** Código curto (5 letras) pro link de compartilhar — "FRETE 82PUW" no WhatsApp (09/10). */
   codigo: string | null;
+  /** Produto anunciado (ex.: MILHO) e espécie (Granel, Pallet…) — base de 16/10. */
+  carga: string | null;
+  especie: string | null;
+  /** Observações do anunciante (texto livre: "carregar na Ambev", "precisa lona e cintas"). */
+  observacoes: string | null;
+  /** Data do anúncio na fonte (Fretebras); null quando desconhecida. */
+  anunciadoEm: string | null;
+  distanciaKm: number | null;
 }
 
 export interface FiltrosFrete {
@@ -42,7 +50,7 @@ export interface FiltrosFrete {
 }
 
 const COLUNAS_FRETE =
-  'id, codigo, empresa_nome, contato_nome, contato_telefone, origem_cidade, origem_uf, origem_lat, origem_lng, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, tipos_veiculo_aceitos, tipos_carroceria_aceitos, status, created_at';
+  'id, codigo, empresa_nome, contato_nome, contato_telefone, origem_cidade, origem_uf, origem_lat, origem_lng, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, tipos_veiculo_aceitos, tipos_carroceria_aceitos, status, created_at, carga, especie, observacoes, anunciado_em, distancia_km';
 
 function mapFretePublicado(r: Record<string, unknown>): FretePublicado {
   return {
@@ -64,6 +72,11 @@ function mapFretePublicado(r: Record<string, unknown>): FretePublicado {
     status: r.status as string,
     createdAt: r.created_at as string,
     codigo: (r.codigo as string | null) ?? null,
+    carga: (r.carga as string | null) ?? null,
+    especie: (r.especie as string | null) ?? null,
+    observacoes: (r.observacoes as string | null) ?? null,
+    anunciadoEm: (r.anunciado_em as string | null) ?? null,
+    distanciaKm: r.distancia_km != null ? Number(r.distancia_km) : null,
   };
 }
 
