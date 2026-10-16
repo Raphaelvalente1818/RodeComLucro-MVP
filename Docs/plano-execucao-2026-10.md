@@ -26,7 +26,8 @@ tabela, Comunidade com gatilho 300.
 
 ## Pesquisas pendentes (não travam o código)
 
-- Serasa Experian (D3): produto, custo por consulta, consentimento. Responsável: a definir.
+- Serasa Experian (D3): produto, custo por consulta, consentimento. Responsável: **Emerson**.
+- 3 empresas piloto na Sofrete: responsável **Raphael**.
 - Fornecedor de consulta RNTRC/ANTT por API (D10) — ex.: Infosimples; custo por consulta.
 - Acesso automatizável à lista de fretes da Fretebras (D6) — spike de 1 dia, depois da renovação.
 - Domínio Sofrete (D1): `sofrete.com.br` / `sofrete.app` — disponibilidade e registro. O domínio pedido pro Rode com Lucro em 09/10 serve só como redirecionamento.

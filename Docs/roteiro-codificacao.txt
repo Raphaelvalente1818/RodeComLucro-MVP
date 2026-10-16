@@ -1,0 +1,61 @@
+ROTEIRO DE CODIFICAÇÃO — SOFRETE (a partir de 16/10/2026)
+[CÓDIGO] = Claude faz · [EXTERNO — quem] = ação de fora que destrava os passos seguintes
+Marque com [x] conforme concluir.
+
+PREPARAÇÃO
+[ ] 1. [EXTERNO — Raphael] Domínio Sofrete + Vercel (antigo redireciona)
+[ ] 2. [EXTERNO — Raphael] Meta: nome de exibição "Sofrete" + 3 templates (atualização do interesse, avalie a empresa, novo interessado)
+[ ] 3. [EXTERNO — Emerson] Renovar a Fretebras
+[ ] 4. [EXTERNO — Rapha] Levantar motoristas da Fretebras; propor preço do VIP/PRO
+[ ] 5. [EXTERNO — Raphael] Iniciar conversa com as 3 empresas piloto
+
+FASE 1 — MARCA E FUNDAÇÕES
+[ ] 6. [CÓDIGO] Rebrand Sofrete (bot, app, legais, manifest, links; transição 30 dias)
+[ ] 7. [CÓDIGO] CNH por PDF (caso do Rapha; CNH-e 2 páginas; foto como caminho principal)
+[ ] 8. [CÓDIGO] Pedágio pago pelo embarcador (app + bot)
+[ ] 9. [CÓDIGO] Spike do robô de fretes (depende do 3)
+[ ] 10. [CÓDIGO] Robô a cada 3 h OU importação diária por planilha + fretes das empresas piloto
+
+FASE 2 — "TENHO INTERESSE", ETAPA 1
+[ ] 11. [CÓDIGO] Mockups: cartão público, admin Interesses, Meus interesses → [Raphael] aprova
+[ ] 12. [CÓDIGO] Migration: interesse (senha, status, operador), rntrc, foto_caminhao, opt_in_whatsapp, telefone_visivel
+[ ] 13. [CÓDIGO] Bot: botão, CNH obrigatória, senha, concierge 1ª vez, fallback em 2 h
+[ ] 14. [CÓDIGO] Cartão público /m/<código>
+[ ] 15. [CÓDIGO] Admin Interesses (fila, liguei, WhatsApp do operador, indicador por operador)
+[ ] 16. [CÓDIGO] Botão no app + Termos/Privacidade
+[ ] 17. [CÓDIGO] Testes + deploy → [Rapha] roteiro real com empresa piloto
+
+FASE 3 — SOFRETE, LADO DA EMPRESA
+[ ] 18. [CÓDIGO] Mockups: cadastro reforçado, Meus fretes com fases, interessados, disponíveis → [Raphael] aprova
+[ ] 19. [CÓDIGO] Entrada segura: CNPJ (BrasilAPI), RNTRC, WhatsApp + opt-in, flag "aceito na Fretebras" → [Emerson] lista de embarcadores da Fretebras
+[ ] 20. [CÓDIGO] Fases do frete; "fechar com fulano" → Realizado no app
+[ ] 21. [CÓDIGO] Avisos na Sofrete + template "novo interessado" (depende do 2)
+[ ] 22. [CÓDIGO] Testes + deploy
+
+FASE 4 — MOTORISTA
+[ ] 23. [CÓDIGO] Tô vazio: onde está (localização/cidade) e pra onde vai; 24 h; lista na Sofrete; geolocalização no app
+[ ] 24. [CÓDIGO] Níveis de certificação no cartão
+[ ] 25. [CÓDIGO] RNTRC por foto ou número → [EXTERNO — a definir] fornecedor de consulta ANTT por API → checagem automática
+[ ] 26. [CÓDIGO] Meus interesses no app, INTERESSES no bot, lembrete em 24 h
+
+FASE 5 — REPUTAÇÃO, ABUSO, ADMIN, PILOTO
+[ ] 27. [CÓDIGO] Avaliações dos dois lados após frete fechado
+[ ] 28. [CÓDIGO] Anti-abuso: limite diário, bloqueio, denúncia
+[ ] 29. [CÓDIGO] Admin Funil de fretes
+[ ] 30. [CÓDIGO] Bateria completa + piloto → [todos] usar por 2 semanas
+
+FASE 6 — LOJAS E PAGAMENTO (quando chegarem os pré-requisitos)
+[ ] 31. [EXTERNO — Raphael] Conta Google Play + D-U-N-S + domínio
+[ ] 32. [CÓDIGO] Google Play via TWA (service worker, assetlinks, Bubblewrap, ficha Sofrete)
+[ ] 33. [EXTERNO — Raphael] Abertura da empresa (~10 dias)
+[ ] 34. [EXTERNO — Raphael] Provedor de pagamento no nome da empresa; produto com o preço do Rapha; 3 chaves
+[ ] 35. [CÓDIGO] Ligar o PRO (segredos, deploy, cenários 70–73, grátis em 5/dia) → [contador] NFS-e
+[ ] 36. [CÓDIGO] Validação da chave PIX (nível de certificação), se o provedor permitir
+
+DEPOIS, POR GATILHO
+[ ] 37. [EXTERNO — Emerson] Pesquisa Serasa → decisão → código se aprovado
+[ ] 38. [CÓDIGO] Comunidade dos Caminhoneiros — 300 motoristas
+[ ] 39. [EXTERNO + CÓDIGO] Selfie com prova de vida — 10.000 motoristas
+[ ] 40. [CÓDIGO] App Store — 10.000 motoristas
+
+Estimativa de código, fases 1 a 5: ~26 dias úteis. Travas externas: domínio (1), Meta (2), Fretebras (3).
