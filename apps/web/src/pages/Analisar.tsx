@@ -37,6 +37,8 @@ interface EstadoBuscarFrete {
   /** Em reais — só vem quando o frete já tem valor definido (não é "a combinar"). */
   valorFrete?: number | null;
   aNegociar?: boolean;
+  /** Frete da lista marcado como "pedágio por conta do embarcador" (16/10, passo 8). */
+  pedagioEmbarcador?: boolean;
   contato?: ContatoFrete | null;
 }
 
@@ -70,6 +72,8 @@ export default function Analisar() {
   // quando o frete veio "a combinar" da tela Buscar Frete.
   const [aNegociar, setANegociar] = useState(Boolean(estadoInicial.aNegociar));
   const [voltaVazia, setVoltaVazia] = useState(false);
+  // Pedágio pago pelo embarcador ("frete + pedágio na TAG"): zera o pedágio no custo.
+  const [pedagioEmbarcador, setPedagioEmbarcador] = useState(Boolean(estadoInicial.pedagioEmbarcador));
   const [margemDesejada, setMargemDesejada] = useState(20);
   const [dias, setDias] = useState(1);
   const [diasEditadoManual, setDiasEditadoManual] = useState(false);
@@ -231,7 +235,7 @@ export default function Analisar() {
         proxima_troca_oleo: null,
       },
       dias,
-      parseNumeroPtBR(pedagio),
+      pedagioEmbarcador ? 0 : parseNumeroPtBR(pedagio),
     );
   }
 
@@ -254,7 +258,7 @@ export default function Analisar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     aNegociar, distanciaKm, voltaVazia, margemDesejada, numeroEixos, dieselKmPorLt, dieselPreco,
-    arlaKmPorLt, arlaPreco, pedagio, estacionamento, chapa, manutencaoPorKm, pneusPorKm,
+    arlaKmPorLt, arlaPreco, pedagio, pedagioEmbarcador, estacionamento, chapa, manutencaoPorKm, pneusPorKm,
     depreciacaoPorKm, dias, distanciaEstimada, origem, destino, tipoCarga,
   ]);
 
@@ -346,7 +350,8 @@ export default function Analisar() {
           Pedágio de ida (R$) {buscandoRota ? '— buscando...' : ''}
           <input
             inputMode="decimal"
-            value={pedagio}
+            value={pedagioEmbarcador ? '0' : pedagio}
+            disabled={pedagioEmbarcador}
             onChange={(e) => {
               setPedagio(e.target.value);
               setPedagioEditadoManual(true);
@@ -355,12 +360,16 @@ export default function Analisar() {
           />
         </label>
       </div>
-      {!buscandoRota && distanciaKm && pedagio === '0' && (
+      <label className="campo-toggle">
+        <input type="checkbox" role="switch" checked={pedagioEmbarcador} onChange={(e) => setPedagioEmbarcador(e.target.checked)} />
+        Pedágio por conta do embarcador (frete + pedágio na TAG / vale-pedágio) — não entra no custo
+      </label>
+      {!buscandoRota && distanciaKm && pedagio === '0' && !pedagioEmbarcador && (
         <p className="aviso">
           Não veio pedágio automático pra essa rota (ou é uma via sem cobertura da API) — confere e ajusta na mão se souber o valor.
         </p>
       )}
-      {pedagioCarroCentavos != null && !pedagioEditadoManual && (
+      {pedagioCarroCentavos != null && !pedagioEditadoManual && !pedagioEmbarcador && (
         <p className="aviso">
           Já ajustado pros seus {numeroEixos} eixos (o Google devolve tarifa de carro — pedágio no Brasil é cobrado por eixo, carro
           equivale a 2). Pode variar por concessionária; ajuste como preferir.

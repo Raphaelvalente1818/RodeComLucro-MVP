@@ -253,7 +253,7 @@ export default function Garagem() {
         <div>
           {/* "Garagem" no título, não na aba (decisão 08/10): a aba se chama
               Início pra não colidir com "Caminhão"; a personalidade fica aqui. */}
-          <p className="garagem-eyebrow">Rode com Lucro</p>
+          <p className="garagem-eyebrow">Sofrete</p>
           <h1>Garagem{primeiroNome ? ` do ${primeiroNome}` : ''}</h1>
         </div>
         {/* PROVISÓRIO — botões de teste/backlog para os sócios testando o

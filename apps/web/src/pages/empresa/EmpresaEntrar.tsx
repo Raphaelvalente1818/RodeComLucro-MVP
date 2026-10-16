@@ -40,7 +40,7 @@ export default function EmpresaEntrar() {
     <main className="tela tela-empresa-login">
       <p className="garagem-eyebrow">Sofrete · Empresas</p>
       <h1>Entrar</h1>
-      <p className="admin-card-nota">Publique cargas direto pros motoristas do Rode com Lucro.</p>
+      <p className="admin-card-nota">Publique cargas direto pros motoristas do Sofrete.</p>
       <form className="empresa-form" onSubmit={onSubmit}>
         <label>
           E-mail

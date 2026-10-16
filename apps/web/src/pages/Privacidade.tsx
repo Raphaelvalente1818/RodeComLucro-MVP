@@ -14,7 +14,7 @@ export default function Privacidade() {
   return (
     <PaginaLegal titulo="Política de Privacidade" versao={PRIVACIDADE_VERSAO}>
       <p>
-        Esta política explica quais dados o <b>Rode com Lucro</b> coleta, por que coleta, com quem compartilha e como você
+        Esta política explica quais dados o <b>Sofrete</b> coleta, por que coleta, com quem compartilha e como você
         controla isso. Ela vale para o aplicativo (rode-com-lucro-mvp.vercel.app), para o assistente no WhatsApp e para o
         portal Sofrete. O controlador dos dados é <b>[RAZÃO SOCIAL]</b>, CNPJ <b>[CNPJ]</b>, com sede em <b>[ENDEREÇO]</b>.
         Contato do encarregado de dados (DPO): <b>[E-MAIL]</b>.

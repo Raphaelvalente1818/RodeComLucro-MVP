@@ -115,7 +115,7 @@ export default function Verificacao() {
   return (
     <main className="tela tela-verificacao">
       <div className="entrada-hero entrada-hero-compacto">
-        <img src="/img/logo-rode-com-lucro.jpg" alt="Rode com Lucro" className="entrada-logo" width="720" height="621" />
+        <img src="/img/logo-rode-com-lucro.jpg" alt="Sofrete" className="entrada-logo" width="720" height="621" />
       </div>
 
       <div className="entrada-card">

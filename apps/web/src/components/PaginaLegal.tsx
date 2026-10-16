@@ -11,7 +11,7 @@ export default function PaginaLegal({ titulo, versao, children }: { titulo: stri
     <main className="tela tela-legal">
       <header className="garagem-header">
         <div>
-          <p className="garagem-eyebrow">Rode com Lucro</p>
+          <p className="garagem-eyebrow">Sofrete</p>
           <h1>{titulo}</h1>
         </div>
       </header>

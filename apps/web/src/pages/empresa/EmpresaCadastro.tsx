@@ -88,7 +88,7 @@ export default function EmpresaCadastro() {
       <p className="garagem-eyebrow">Sofrete · Empresas</p>
       <h1>Cadastrar empresa</h1>
       <p className="admin-card-nota">
-        Publique cargas direto pros motoristas do Rode com Lucro. O cadastro passa por uma aprovação rápida da nossa
+        Publique cargas direto pros motoristas do Sofrete. O cadastro passa por uma aprovação rápida da nossa
         equipe antes de liberar a publicação.
       </p>
 

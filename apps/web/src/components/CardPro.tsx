@@ -51,7 +51,7 @@ export default function CardPro({ userId }: { userId: string }) {
       <div className="card-pro card-pro-ativo">
         <span className="card-pro-selo">PRO</span>
         <div className="card-pro-corpo">
-          <b>Você é Rode com Lucro PRO</b>
+          <b>Você é Sofrete PRO</b>
           <span>
             Fretes ilimitados e em primeira mão, WhatsApp sem limite.
             {estado.periodoFim ? ` Renova em ${new Date(estado.periodoFim).toLocaleDateString('pt-BR')}.` : ''}
@@ -72,7 +72,7 @@ export default function CardPro({ userId }: { userId: string }) {
         <b>Fretes ilimitados e em primeira mão</b>
         <span>Veja os fretes antes de todo mundo e use o WhatsApp sem limite de consultas. Cancela quando quiser.</span>
         {naPlay ? (
-          <span className="card-pro-whats">Pra assinar, manda <b>PRO</b> no WhatsApp do Rode com Lucro.</span>
+          <span className="card-pro-whats">Pra assinar, manda <b>PRO</b> no WhatsApp do Sofrete.</span>
         ) : (
           <button type="button" className="card-pro-botao" disabled={abrindo} onClick={() => abrir('checkout')}>
             {abrindo ? 'Abrindo…' : 'Assinar o PRO'}

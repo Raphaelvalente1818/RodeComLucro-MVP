@@ -29,7 +29,7 @@ export function mensagemFreteCompartilhado(f: FretePublicado, codigoIndicacao: s
   return (
     `📦 *${f.origemCidade}/${f.origemUf} → ${f.destinoCidade}/${f.destinoUf}* · ${valorCurto(f)}${tipos ? ` · ${tipos}` : ''}\n` +
     `Vê se esse frete vale a pena pro seu caminhão 👉 ${linkDoFreteCompartilhado(f.codigo ?? '', codigoIndicacao)}\n` +
-    `_Rode com Lucro: custo real, lucro e piso ANTT na hora, de graça._`
+    `_Sofrete: custo real, lucro e piso ANTT na hora, de graça._`
   );
 }
 

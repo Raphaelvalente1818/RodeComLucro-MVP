@@ -16,15 +16,15 @@ export default function Termos() {
   return (
     <PaginaLegal titulo="Termos de Uso" versao={TERMOS_VERSAO}>
       <p>
-        Estes termos regulam o uso do <b>Rode com Lucro</b> (aplicativo e assistente no WhatsApp) e do <b>Sofrete</b> (portal
-        onde empresas publicam fretes), operados por <b>[RAZÃO SOCIAL]</b>, CNPJ <b>[CNPJ]</b> ("nós"). Ao usar qualquer um
+        Estes termos regulam o uso do <b>Sofrete</b>: o aplicativo e o assistente no WhatsApp do motorista e o portal
+        onde empresas publicam fretes, operados por <b>[RAZÃO SOCIAL]</b>, CNPJ <b>[CNPJ]</b> ("nós"). Ao usar qualquer um
         deles — inclusive mandando a primeira mensagem para o nosso número de WhatsApp — você concorda com estes termos e com
         a <a href="/privacidade">Política de Privacidade</a>, que faz parte deles. Se não concordar, não use o serviço.
       </p>
 
       <h2>1. O que o serviço é (e o que não é)</h2>
       <p>
-        O Rode com Lucro é uma ferramenta de <b>apoio à decisão</b> do motorista autônomo: calcula o custo estimado de uma
+        O Sofrete é uma ferramenta de <b>apoio à decisão</b> do motorista autônomo: calcula o custo estimado de uma
         viagem com os dados do seu caminhão, compara com o valor ofertado e com o piso mínimo da ANTT, cota rotas, mostra
         fretes publicados por empresas perto de você e preenche seu cadastro a partir da foto dos seus documentos.
       </p>
@@ -63,7 +63,7 @@ export default function Termos() {
       <h2>5. Planos e pagamento</h2>
       <p>
         O uso básico é <b>gratuito</b>, com limites (por exemplo, número de consultas por dia no WhatsApp e de fretes exibidos
-        por busca). O plano <b>Rode com Lucro PRO</b>, quando disponível, é uma assinatura mensal paga por cartão, cobrada pelo
+        por busca). O plano <b>Sofrete PRO</b>, quando disponível, é uma assinatura mensal paga por cartão, cobrada pelo
         Stripe em página própria dele, que amplia esses limites conforme descrito no momento da contratação. Você pode cancelar
         a qualquer momento pelo portal do assinante (comando PLANO no WhatsApp ou botão no aplicativo); o acesso PRO segue até
         o fim do período já pago e não há cobrança seguinte. Nos primeiros 7 dias após a primeira contratação, você pode
@@ -97,7 +97,7 @@ export default function Termos() {
 
       <h2>9. Propriedade intelectual</h2>
       <p>
-        A marca Rode com Lucro, o Sofrete, o aplicativo, o assistente, os textos e o motor de cálculo são nossos. Você recebe
+        A marca Sofrete, o aplicativo, o assistente, os textos e o motor de cálculo são nossos. Você recebe
         uma licença pessoal, gratuita (ou conforme o plano), não exclusiva e revogável para usar o serviço; não pode copiar,
         modificar, fazer engenharia reversa ou criar produto derivado. Os dados que você informa continuam seus; você nos
         autoriza a usá-los para prestar o serviço e, de forma agregada e anônima, para estatísticas e melhoria.

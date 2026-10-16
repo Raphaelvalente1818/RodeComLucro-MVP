@@ -272,6 +272,7 @@ export default function BuscarFrete() {
         destino: `${f.destinoCidade}/${f.destinoUf}`,
         valorFrete,
         aNegociar: semValor,
+        pedagioEmbarcador: f.pedagioPorContaDe === 'empresa',
         contato: {
           empresaNome: f.empresaNome,
           contatoNome: f.contatoNome,
@@ -422,6 +423,7 @@ export default function BuscarFrete() {
                         {f.tiposCarroceriaAceitos.length > 0 ? ` · ${f.tiposCarroceriaAceitos.join(', ')}` : ''}
                       </p>
                     )}
+                    {f.pedagioPorContaDe === 'empresa' && <p className="linha-analise-detalhe">Pedágio por conta do embarcador</p>}
                     {f.observacoes && <p className="frete-observacoes">{f.observacoes}</p>}
                     {f.tipoValor === 'por_tonelada' && totalEstimado == null && (
                       <p className="linha-analise-detalhe">Cadastre a carga máxima no Perfil do caminhão pra ver o valor total estimado.</p>

@@ -9,6 +9,10 @@
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const MODELO = "claude-haiku-4-5";
+// PDF (CNH-e/CRLV-e do gov.br) traz os dados em IMAGEM dentro do PDF, não em texto; o Haiku
+// lê isso pior que uma foto (15/10: a CNH do Rapha por PDF saiu errada, a do Oscar por foto
+// perfeita). PDF vai pro Sonnet — mais preciso, custa centavos e é uma vez por motorista.
+const MODELO_PDF = "claude-sonnet-4-5";
 
 export interface DadosCNH {
   nome: string | null;
@@ -183,7 +187,7 @@ export async function lerDocumento(base64: string, mediaType: string): Promise<L
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: MODELO,
+        model: ehPdf ? MODELO_PDF : MODELO,
         max_tokens: 600,
         system: SYSTEM_PROMPT,
         messages: [

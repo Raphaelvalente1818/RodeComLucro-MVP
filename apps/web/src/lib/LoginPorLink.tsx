@@ -44,7 +44,7 @@ export default function LoginPorLink({ children }: { children: ReactNode }) {
     return (
       <main className="tela tela-entrada">
         <div className="entrada-hero entrada-hero-compacto">
-          <img src="/img/logo-rode-com-lucro.jpg" alt="Rode com Lucro" className="entrada-logo" width="720" height="621" />
+          <img src="/img/logo-rode-com-lucro.jpg" alt="Sofrete" className="entrada-logo" width="720" height="621" />
           <p className="entrada-tagline">Entrando…</p>
         </div>
       </main>

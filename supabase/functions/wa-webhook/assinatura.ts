@@ -142,7 +142,7 @@ export async function mensagemPro(motoristaId: string, fromE164: string, urlApp:
   if (estado.ativa) {
     const portal = estado.customerId ? await linkPortal(estado.customerId, urlApp) : null;
     return (
-      `✅ Você é *Rode com Lucro PRO*${estado.periodoFim ? ` — renova em ${fmtDataBR(estado.periodoFim)}` : ""}.\n` +
+      `✅ Você é *Sofrete PRO*${estado.periodoFim ? ` — renova em ${fmtDataBR(estado.periodoFim)}` : ""}.\n` +
       `Fretes ilimitados e em primeira mão, WhatsApp sem limite.` +
       (estado.status === "atrasada" ? `\n⚠️ A última cobrança falhou — atualiza o cartão pra não perder o PRO.` : "") +
       (portal ? `\n\nTrocar cartão, ver faturas ou cancelar: ${portal}` : "")
@@ -153,7 +153,7 @@ export async function mensagemPro(motoristaId: string, fromE164: string, urlApp:
   const link = await linkCheckout(motoristaId, fromE164, urlApp);
   if (!link) return "Não consegui gerar o link de assinatura agora. Tenta de novo em instantes.";
   return (
-    `*Rode com Lucro PRO* — ${preco}, cancela quando quiser:\n` +
+    `*Sofrete PRO* — ${preco}, cancela quando quiser:\n` +
     `• Fretes *ilimitados* na busca\n` +
     `• Fretes *em primeira mão* (você vê antes de todo mundo)\n` +
     `• WhatsApp *sem limite* de consultas por dia\n\n` +

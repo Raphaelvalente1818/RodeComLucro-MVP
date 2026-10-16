@@ -10,11 +10,11 @@ PREPARAÇÃO
 [ ] 5. [EXTERNO — Raphael] Iniciar conversa com as 3 empresas piloto
 
 FASE 1 — MARCA E FUNDAÇÕES
-[ ] 6. [CÓDIGO] Rebrand Sofrete (bot, app, legais, manifest, links; transição 30 dias)
-[ ] 7. [CÓDIGO] CNH por PDF (caso do Rapha; CNH-e 2 páginas; foto como caminho principal)
-[ ] 8. [CÓDIGO] Pedágio pago pelo embarcador (app + bot)
+[x] 6. [CÓDIGO] Rebrand Sofrete (bot, app, legais, manifest, links; transição 30 dias)
+[x] 7. [CÓDIGO] CNH por PDF (caso do Rapha; CNH-e 2 páginas; foto como caminho principal)
+[x] 8. [CÓDIGO] Pedágio pago pelo embarcador (app + bot)
 [ ] 9. [CÓDIGO] Spike do robô de fretes (depende do 3)
-[ ] 10. [CÓDIGO] Robô a cada 3 h OU importação diária por planilha + fretes das empresas piloto
+[x] 10. [CÓDIGO] Robô a cada 3 h OU importação diária por planilha + fretes das empresas piloto
 
 FASE 2 — "TENHO INTERESSE", ETAPA 1
 [ ] 11. [CÓDIGO] Mockups: cartão público, admin Interesses, Meus interesses → [Raphael] aprova

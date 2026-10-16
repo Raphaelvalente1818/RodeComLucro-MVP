@@ -382,7 +382,7 @@ async function enviarCartaoDeContato(paraE164: string): Promise<void> {
       type: "contacts",
       contacts: [
         {
-          name: { formatted_name: "Rode com Lucro", first_name: "Rode com Lucro" },
+          name: { formatted_name: MARCA, first_name: MARCA },
           phones: [{ phone: `+${NUMERO_OFICIAL_WA}`, wa_id: NUMERO_OFICIAL_WA, type: "WORK" }],
           urls: [{ url: URL_APP, type: "WORK" }],
         },
@@ -927,12 +927,18 @@ function inicioDoDiaSaoPaulo(agora = new Date()): string {
   const desdeMeiaNoiteMs = ((v("hour") % 24) * 3600 + v("minute") * 60 + v("second")) * 1000 + (agora.getTime() % 1000);
   return new Date(agora.getTime() - desdeMeiaNoiteMs).toISOString();
 }
-const AVISO_CADASTRO = `\n\n_Seu número ficou cadastrado no Rode com Lucro. Pra apagar, manda SAIR._`;
+// Marca (decisão dos sócios, 15/10/2026): o produto é SOFRETE nos dois lados.
+// Sem "antigo Rode com Lucro": o produto ainda não foi lançado (Raphael, 16/10).
+const MARCA = "Sofrete";
+function marcaApresentacao(): string {
+  return MARCA;
+}
+const AVISO_CADASTRO = `\n\n_Seu número ficou cadastrado no ${MARCA}. Pra apagar, manda SAIR._`;
 
 /** Apresentação em uma mensagem só (custo pós-1/10) — usada quando a IA não responde (sem chave, erro) e nos comandos "ajuda"/"menu". */
 function mensagemApresentacao(temConta: boolean): string {
   return (
-    `Opa! Sou o Rode com Lucro 🚛 — faço três coisas pra você:\n\n` +
+    `Opa! Sou o ${marcaApresentacao()} 🚛 — faço três coisas pra você:\n\n` +
     `1️⃣ Digo se um frete *vale a pena* (custo real, lucro e piso ANTT). Manda a rota e o valor. Ex.: *"Sinop pra Santos, 14 mil"*\n\n` +
     `2️⃣ *Faço a cotação* de uma rota: km, pedágio, piso ANTT e quanto cobrar. Manda só a rota. Ex.: *"Carandaí pra Piracaia"*\n\n` +
     `3️⃣ Mostro *cargas perto de você*. Escreve *BUSCAR*.\n\n` +
@@ -1345,7 +1351,8 @@ async function tratarCotacao(fromE164: string, texto: string, waMessageId: strin
   const temPerfil = (perfis ?? 0) > 0;
 
   const dias = diasPorFaixaKm(rota.distanciaKm);
-  const pedagioReais = rota.pedagioCentavos != null ? Math.round(rota.pedagioCentavos * (perfil.numero_eixos / 2)) / 100 : 0;
+  const pedagioEmbarcadorCot = Boolean(ex.pedagioEmbarcador);
+  const pedagioReais = pedagioEmbarcadorCot ? 0 : rota.pedagioCentavos != null ? Math.round(rota.pedagioCentavos * (perfil.numero_eixos / 2)) / 100 : 0;
   const custos = perfilParaCustos(perfil, dias, pedagioReais);
   const tipoCarga = tipoCargaPorCarroceria(perfil.tipo_carroceria);
   // valorFrete 0 só pra extrair custo e piso; o "valor" aqui é o que ele deve cobrar.
@@ -1370,7 +1377,7 @@ async function tratarCotacao(fromE164: string, texto: string, waMessageId: strin
   const descVeiculo = veiculo?.tipoVeiculo ? nomeVeiculo(veiculo.tipoVeiculo, perfil.numero_eixos) : temPerfil ? `seu caminhão (${perfil.numero_eixos} eixos)` : `carreta padrão de ${perfil.numero_eixos} eixos`;
   const resposta =
     `📍 ${origem} → ${destino}: *${rota.distanciaKm.toFixed(0)} km*${rota.distanciaEstimada ? " (estimado)" : ""}, ${dias} dia${dias > 1 ? "s" : ""} de viagem${ex.voltaVazia ? ", voltando vazio" : ""}\n` +
-    `Pedágio: ${rota.pedagioCentavos == null ? "não disponível" : fmtBRL(d.pedagio)}\n` +
+    `Pedágio: ${pedagioEmbarcadorCot ? "por conta do embarcador" : rota.pedagioCentavos == null ? "não disponível" : fmtBRL(d.pedagio)}\n` +
     `Diesel: ${fmtBRL(d.diesel)} · Arla: ${fmtBRL(d.arla)}\n` +
     `Manutenção + pneus + depreciação: ${fmtBRL(d.manutencao + d.pneus + d.depreciacao)}\n` +
     `Alimentação/pernoite: ${fmtBRL(d.alimentacao + d.pernoite)}\n` +
@@ -1379,7 +1386,7 @@ async function tratarCotacao(fromE164: string, texto: string, waMessageId: strin
     `💰 Pra ter ${margem.toFixed(0)}% de margem, cobre a partir de *${fmtBRL(valorSugerido)}*` +
     (abaixoPiso ? ` (o piso ANTT manda — é o mínimo legal)` : ` (acima do piso ANTT)`) +
     `\n\n_estimativa com ${descVeiculo}_` +
-    (rota.pedagioCentavos == null ? `\n_${NOTA_SEM_PEDAGIO}_` : "") +
+    (!pedagioEmbarcadorCot && rota.pedagioCentavos == null ? `\n_${NOTA_SEM_PEDAGIO}_` : "") +
     (custosDitos.nota ? `\n_${custosDitos.nota}_` : "") +
     (notaCidade ? `\n_${notaCidade}_` : "") +
     (veiculo?.nota ? `\n_${veiculo.nota}_` : "") +
@@ -1555,7 +1562,7 @@ async function tratarRespostaOnboarding(fromE164: string, rowId: string, waMessa
     if (f.cotacao && f.origem && f.destino) {
       await tratarCotacao(fromE164, "(cotação pós-onboarding)", waMessageId, {
         intent: "cotar", ePedidoDeFrete: false, ePedidoDeBusca: false, origem: f.origem, destino: f.destino, valorFreteReais: null, valorPorToneladaReais: null, toneladas: null, dieselPrecoLitro: null, consumoKmPorLitro: null, acao: "nenhuma", opcaoEscolhida: null, correcoes: null,
-        voltaVazia: Boolean(f.voltaVazia), tipoCarga: null, tipoVeiculo: null, numeroEixos: null, tipoCarroceria: null, respostaLivre: null, nomeIndicador: null,
+        voltaVazia: Boolean(f.voltaVazia), pedagioEmbarcador: false, tipoCarga: null, tipoVeiculo: null, numeroEixos: null, tipoCarroceria: null, respostaLivre: null, nomeIndicador: null,
         confiancaOrigem: 1, confiancaDestino: 1, confiancaValor: 0,
       });
       return;
@@ -1839,7 +1846,7 @@ async function calcularEResponderFrete(params: {
   /** Recalculando o mesmo frete depois do onboarding: lucro da estimativa genérica, pra mostrar a diferença. */
   recalculoDe?: number | null;
   /** Veio de um frete publicado (clique na lista): vai pro histórico com empresa/contato e o link do app destaca esse frete. */
-  fretePublicado?: { id: string; codigo: string | null; empresaNome: string | null; contatoNome: string | null; contatoTelefone: string | null; carga?: string | null; especie?: string | null; observacoes?: string | null } | null;
+  fretePublicado?: { id: string; codigo: string | null; empresaNome: string | null; contatoNome: string | null; contatoTelefone: string | null; carga?: string | null; especie?: string | null; observacoes?: string | null; pedagioPorContaDe?: string | null } | null;
   /** Caminhão dito na mensagem (resolverVeiculoDaMensagem): sobrepõe eixos/carroceria do perfil nesse cálculo. */
   veiculo?: VeiculoDaMensagem | null;
   /** "entendi 'coruipe' como Coruripe/AL" — corrigirCidades (03/10). */
@@ -1867,7 +1874,9 @@ async function calcularEResponderFrete(params: {
     : perfilBase;
   const dias = diasPorFaixaKm(rota.distanciaKm);
   // Mesmo ajuste carro->caminhão de Analisar.tsx: tarifa_caminhão = tarifa_carro × (eixos/2).
-  const pedagioReais = rota.pedagioCentavos != null ? Math.round(rota.pedagioCentavos * (perfil.numero_eixos / 2)) / 100 : 0;
+  // Pedágio por conta do embarcador (16/10, passo 8): dito na mensagem ou marcado no frete da lista → não entra no custo.
+  const pedagioEmbarcador = Boolean(extracao?.pedagioEmbarcador) || fretePublicado?.pedagioPorContaDe === "empresa";
+  const pedagioReais = pedagioEmbarcador ? 0 : rota.pedagioCentavos != null ? Math.round(rota.pedagioCentavos * (perfil.numero_eixos / 2)) / 100 : 0;
   const custos = perfilParaCustos(perfil, dias, pedagioReais);
   const tipoCarga = tipoCargaPorCarroceria(perfil.tipo_carroceria);
 
@@ -1984,7 +1993,7 @@ async function calcularEResponderFrete(params: {
       : `uma carreta padrão de ${perfil.numero_eixos} eixos`;
     rodape =
       `_(estimativa com ${comQue})_\n\n` +
-      `Seu número ficou cadastrado no Rode com Lucro. Pra apagar tudo, manda *SAIR*. Termos: ${URL_APP}/termos`;
+      `Seu número ficou cadastrado no ${MARCA}. Pra apagar tudo, manda *SAIR*. Termos: ${URL_APP}/termos`;
   } else if (semPerfil && !veiculo?.perfilCriado) {
     rodape = `_(estimativa com uma carreta padrão de ${perfil.numero_eixos} eixos — você ainda não cadastrou o seu)_`;
   } else if (veiculo?.perfilCriado) {
@@ -2008,7 +2017,7 @@ async function calcularEResponderFrete(params: {
   const linhaCarga = fretePublicado && (fretePublicado.carga || fretePublicado.especie)
     ? `Carga: ${[fretePublicado.carga, fretePublicado.especie].filter(Boolean).join(" · ")}\n`
     : "";
-  const linhaObs = fretePublicado?.observacoes ? `📝 ${fretePublicado.observacoes.replace(/\s+/g, " ").trim().slice(0, 300)}\n` : "";
+  const linhaObs = fretePublicado?.observacoes ? `📝 ${fretePublicado.observacoes.replace(/\s+/g, " ").trim().slice(0, 300)}\n\n` : "";
   const resposta =
     `📦 ${origem} → ${destino} (${rota.distanciaKm.toFixed(0)} km${rota.distanciaEstimada ? ", estimado" : ""}${voltaVazia ? ", voltando vazio" : ""})\n` +
     linhaCarga +
@@ -2019,7 +2028,7 @@ async function calcularEResponderFrete(params: {
     `${emoji} Veredito: ${resultado.veredicto}\n\n` +
     linhaObs +
     rodape +
-    (rota.pedagioCentavos == null ? `\n_${NOTA_SEM_PEDAGIO}_` : "") +
+    (pedagioEmbarcador ? `\n_Pedágio por conta do embarcador — não entrou no custo._` : rota.pedagioCentavos == null ? `\n_${NOTA_SEM_PEDAGIO}_` : "") +
     (custosDitos.nota ? `\n_${custosDitos.nota}_` : "") +
     (notaCidade ? `\n_${notaCidade}_` : "") +
     (veiculo?.nota ? `\n_${veiculo.nota}_` : "");
@@ -2116,7 +2125,7 @@ async function tratarCompartilharFrete(fromE164: string, codigoFrete: string, wa
     `📦 *${frete.origem_cidade}/${frete.origem_uf} → ${frete.destino_cidade}/${frete.destino_uf}* · ${textoValorCurto(Boolean(frete.valor_a_combinar), frete.valor_frete_centavos as number | null, frete.tipo_valor as string | null)}` +
     (tipos ? ` · ${tipos}` : "") +
     `\nVê se esse frete vale a pena pro seu caminhão 👉 ${link}` +
-    `\n_Rode com Lucro: custo real, lucro e piso ANTT na hora, de graça._`;
+    `\n_${MARCA}: custo real, lucro e piso ANTT na hora, de graça._`;
   await enviarMensagemWhatsapp(fromE164, mensagemPronta);
   await enviarMensagemWhatsapp(fromE164, "👆 Encaminha essa mensagem pro colega. Quando ele tocar no link, eu mostro o frete já calculado pra ele.");
   if (m) await registrarEventoAnalytics("referral_shared", m.id, { via: "frete", frete_id: frete.id, wa_message_id: waMessageId });
@@ -2147,7 +2156,7 @@ async function tratarFreteCompartilhado(fromE164: string, texto: string, waMessa
     );
     return;
   }
-  if (novo) await enviarMensagemWhatsapp(fromE164, `Opa! Sou o Rode com Lucro 🚛 — um colega te mandou esse frete. Calculando pro seu caminhão…${AVISO_CADASTRO}`);
+  if (novo) await enviarMensagemWhatsapp(fromE164, `Opa! Sou o ${marcaApresentacao()} 🚛 — um colega te mandou esse frete. Calculando pro seu caminhão…${AVISO_CADASTRO}`);
   // Mesmo caminho do clique na lista: calcula, mostra contato, convida pro caminhão/cadastro.
   await tratarRespostaLista(fromE164, frete.id as string, waMessageId);
 }
@@ -2700,7 +2709,7 @@ async function tratarRespostaLista(fromE164: string, rowId: string, waMessageId:
 
   const { data: frete } = await supabase
     .from("fretes_publicados")
-    .select("id, codigo, origem_cidade, origem_uf, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, status, empresa_nome, contato_nome, contato_telefone, carga, especie, observacoes")
+    .select("id, codigo, origem_cidade, origem_uf, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, status, empresa_nome, contato_nome, contato_telefone, carga, especie, observacoes, pedagio_por_conta_de")
     .eq("id", rowId)
     .maybeSingle();
 
@@ -2769,6 +2778,7 @@ async function tratarRespostaLista(fromE164: string, rowId: string, waMessageId:
       carga: (frete.carga as string | null) ?? null,
       especie: (frete.especie as string | null) ?? null,
       observacoes: (frete.observacoes as string | null) ?? null,
+      pedagioPorContaDe: (frete.pedagio_por_conta_de as string | null) ?? null,
       contatoNome: (frete.contato_nome as string | null) ?? null,
       contatoTelefone: (frete.contato_telefone as string | null) ?? null,
     },
@@ -2801,7 +2811,7 @@ interface EstadoCadastroFoto {
 const TEXTO_CONVITE_CADASTRO =
   `Quer que eu preencha seu cadastro sozinho? É só mandar aqui uma *foto da CNH* — eu pego nome, categoria e validade. Depois a *foto do CRLV* do caminhão: marca, placa, eixos e capacidade.\n` +
   `Eu leio e apago a foto na hora — não guardo imagem nem CPF.`;
-const TEXTO_PEDIR_FOTO = "Manda a foto da CNH (frente, aberta, sem dedo em cima). Depois a do CRLV.";
+const TEXTO_PEDIR_FOTO = "Manda a *foto* da CNH (aberta, com luz, sem dedo em cima — foto lê melhor que PDF). Depois a do CRLV.";
 const TEXTO_CANCELOU = "Beleza, não salvei nada e a foto já foi apagada.";
 
 async function estadoCadastroFoto(fromE164: string): Promise<EstadoCadastroFoto | null> {
@@ -2890,7 +2900,7 @@ async function tratarImagemRecebida(img: ImagemRecebida): Promise<void> {
   if (!motoristaId) return;
   if (!MIMES_LEGIVEIS.includes(img.mimeType)) {
     await registrarTentativaFrete({ waMessageId: img.waMessageId, motoristaId, fromE164: img.fromE164, texto: `[arquivo ${img.mimeType}]`, extracao: null, status: "doc_ilegivel", resultado: { motivo: "tipo_nao_suportado" } });
-    await enviarMensagemWhatsapp(img.fromE164, "Esse arquivo não deu pra abrir. Manda a CNH ou o CRLV como *foto* (JPG/PNG) ou *PDF* — a CNH digital do gov.br em PDF funciona.");
+    await enviarMensagemWhatsapp(img.fromE164, "Esse arquivo não deu pra abrir. Manda a CNH ou o CRLV como *foto* (JPG/PNG) — se só tiver a digital, o PDF do gov.br também serve.");
     return;
   }
   // 09/10 (Raphael): mandar o documento JÁ é a autorização — perguntar "Pode
@@ -3221,7 +3231,7 @@ async function executarAcaoPendencia(fromE164: string, texto: string, waMessageI
     if (acao === "pular_para_crlv") {
       await registrarTentativaFrete({ waMessageId, motoristaId, fromE164, texto, extracao: null, status: "doc_cancelado", resultado: { tipo: estado.tipo_doc, motivo: "pular_para_crlv" } });
       await gravarEstadoCadastroFoto(fromE164, motoristaId, { etapa: "aguardando_foto", tipo_doc: null, dados: null, media_id: null });
-      await enviarMensagemWhatsapp(fromE164, "Beleza, deixa a CNH pra depois. Manda o CRLV do caminhão (foto ou PDF).");
+      await enviarMensagemWhatsapp(fromE164, "Beleza, deixa a CNH pra depois. Manda a foto do CRLV do caminhão (ou o PDF).");
       return true;
     }
     if (acao === "corrigir" && ex.correcoes) {

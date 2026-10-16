@@ -41,6 +41,8 @@ export interface FretePublicado {
   /** Data do anúncio na fonte (Fretebras); null quando desconhecida. */
   anunciadoEm: string | null;
   distanciaKm: number | null;
+  /** 'empresa' = embarcador paga o pedágio (não entra no custo); 'motorista' ou null = entra. */
+  pedagioPorContaDe: 'empresa' | 'motorista' | null;
 }
 
 export interface FiltrosFrete {
@@ -50,7 +52,7 @@ export interface FiltrosFrete {
 }
 
 const COLUNAS_FRETE =
-  'id, codigo, empresa_nome, contato_nome, contato_telefone, origem_cidade, origem_uf, origem_lat, origem_lng, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, tipos_veiculo_aceitos, tipos_carroceria_aceitos, status, created_at, carga, especie, observacoes, anunciado_em, distancia_km';
+  'id, codigo, empresa_nome, contato_nome, contato_telefone, origem_cidade, origem_uf, origem_lat, origem_lng, destino_cidade, destino_uf, valor_frete_centavos, valor_a_combinar, tipo_valor, tipos_veiculo_aceitos, tipos_carroceria_aceitos, status, created_at, carga, especie, observacoes, anunciado_em, distancia_km, pedagio_por_conta_de';
 
 function mapFretePublicado(r: Record<string, unknown>): FretePublicado {
   return {
@@ -77,6 +79,7 @@ function mapFretePublicado(r: Record<string, unknown>): FretePublicado {
     observacoes: (r.observacoes as string | null) ?? null,
     anunciadoEm: (r.anunciado_em as string | null) ?? null,
     distanciaKm: r.distancia_km != null ? Number(r.distancia_km) : null,
+    pedagioPorContaDe: (r.pedagio_por_conta_de as 'empresa' | 'motorista' | null) ?? null,
   };
 }
 

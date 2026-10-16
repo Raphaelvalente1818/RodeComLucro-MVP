@@ -73,7 +73,7 @@ export default function Entrada() {
       {/* O logo já vem com o fundo no nosso asfalto, então entra sem
           recorte; o fade na base emenda com a página. */}
       <div className="entrada-hero">
-        <img src="/img/logo-rode-com-lucro.jpg" alt="Rode com Lucro" className="entrada-logo" width="720" height="621" />
+        <img src="/img/logo-rode-com-lucro.jpg" alt="Sofrete" className="entrada-logo" width="720" height="621" />
         <p className="entrada-tagline">Saiba se o frete vale a pena antes de aceitar.</p>
       </div>
 
